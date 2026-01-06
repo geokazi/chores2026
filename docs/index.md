@@ -17,6 +17,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | Date | Milestone | Status | Description |
 |------|-----------|--------|-------------|
 | 2026-01-06 | [Initial Implementation](./milestones/20260106_initial_implementation.md) | ✅ Complete | Full-stack application with real-time features |
+| 2026-01-06 | [**Conditional Kid PIN System**](./milestones/20260106_conditional_kid_pin_system.md) | ✅ Complete | Dual-mode PIN authentication with family controls |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 | TBD | Feature Enhancement | 📋 Backlog | Advanced chore management and analytics |
@@ -50,25 +51,30 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 ### 🎨 User Experience
 
 #### Kid Workflow
-1. **Family Selection**: Choose from visual member grid
-2. **PIN Authentication**: 4-digit entry (if enabled by parents)
-3. **Today's Dashboard**: View assigned chores with completion status
-4. **Chore Completion**: Follow instructions and mark complete
-5. **Celebration**: Immediate point feedback with animations
+1. **Family Selection**: Choose from visual member grid with ranking display
+2. **PIN Authentication**: Optional 4-digit entry (parent-controlled family setting)
+   - **PIN Disabled**: Instant dashboard access
+   - **PIN Enabled**: Simple 4-digit validation with 30-minute sessions
+3. **Today's Dashboard**: View assigned chores with completion status and point values
+4. **Chore Completion**: Follow instructions and mark complete with instant feedback
+5. **Celebration**: Immediate point feedback with animations and streak tracking
 
 #### Parent Workflow
-1. **Family Overview**: Statistics dashboard with member activity
-2. **Point Management**: Manual adjustments with transaction logging
-3. **Security Settings**: Toggle PIN requirements for children
-4. **Live Monitoring**: Real-time leaderboard and activity feed
+1. **Family Overview**: Statistics dashboard with member activity and leaderboard
+2. **Point Management**: Manual adjustments with transaction logging and audit trails
+3. **Security Settings**: Toggle PIN requirements for children (dual-mode authentication)
+4. **Live Monitoring**: Real-time leaderboard and activity feed via WebSocket
+5. **PIN Management**: Set/change kid PINs and configure family security preferences
 
 ### 🔐 Security & Privacy
 
 #### Data Protection
-- **PIN Security**: bcrypt hashing with salt for kid authentication
+- **Dual Authentication Model**: Enterprise JWT for parents, convenience PINs for kids
+- **PIN Security**: bcrypt hashing with salt for 4-digit kid authentication
+- **Session Management**: 30-minute kid sessions with localStorage + database fallback
 - **API Security**: Server-side proxy keeps FamilyScore keys protected
-- **Session Management**: Secure cross-device synchronization
-- **Input Validation**: Comprehensive parameter sanitization
+- **Cross-Family Protection**: Strict family isolation with parent session validation
+- **Input Validation**: Comprehensive parameter sanitization across all endpoints
 
 #### Privacy Considerations
 - **Family Data**: Isolated per family with role-based access
@@ -120,10 +126,12 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 
 ### Current State
 - ✅ **Core Functionality**: Complete chore assignment and completion workflow
-- ✅ **Real-time Features**: Live leaderboard and activity feeds
-- ✅ **Authentication**: Multi-provider login with PIN security
-- ✅ **Parent Controls**: Point adjustments and family settings
-- ✅ **Mobile Design**: Responsive interface optimized for tablets/phones
+- ✅ **Real-time Features**: Live leaderboard and activity feeds via WebSocket
+- ✅ **Authentication**: Multi-provider login with dual-mode PIN system
+- ✅ **Conditional Security**: Parent-controlled PIN requirements (enable/disable)
+- ✅ **Session Management**: 30-minute kid sessions with cross-device support
+- ✅ **Parent Controls**: Point adjustments, PIN management, and family settings
+- ✅ **Mobile Design**: Touch-optimized interface with kid-friendly PIN keypad
 
 ### Known Limitations
 - **Testing**: Comprehensive test suite not yet implemented

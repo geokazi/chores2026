@@ -6,6 +6,7 @@
 import { useEffect, useState } from "preact/hooks";
 // @ts-ignore: bcrypt types not compatible with Deno 2
 import * as bcrypt from "bcryptjs";
+import { createKidSession, KidProfile } from "../lib/auth/kid-session.ts";
 
 interface FamilyMember {
   id: string;
@@ -20,6 +21,8 @@ interface Props {
 }
 
 export default function PinEntryModal({ kid, onSuccess, onCancel }: Props) {
+  console.log("🔍 PinEntryModal opened for kid:", kid.name, "- This is for LOGIN, not setting PINs");
+  
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [isValidating, setIsValidating] = useState(false);
@@ -46,25 +49,67 @@ export default function PinEntryModal({ kid, onSuccess, onCancel }: Props) {
     setIsValidating(true);
     setError("");
 
+    console.log("🔧 PIN validation started for kid:", kid.name);
+    console.log("🔧 Entered PIN:", enteredPin.replace(/./g, '*'));
+    console.log("🔧 Kid has pin_hash:", !!kid.pin_hash);
+
     try {
       // Check localStorage first (instant access)
       const localHash = localStorage.getItem(`kid_pin_${kid.id}`);
-      if (localHash) {
+      console.log("🔧 localStorage hash:", localHash ? "EXISTS" : "NOT_FOUND");
+      
+      if (localHash && localHash !== "SET" && localHash.startsWith('$')) {
+        console.log("🔧 Comparing against localStorage hash");
         const isValid = await bcrypt.compare(enteredPin, localHash);
+        console.log("🔧 localStorage validation result:", isValid);
         if (isValid) {
+          // Create kid session for validated access
+          const kidProfile: KidProfile = {
+            id: kid.id,
+            name: kid.name,
+            role: 'child',
+            family_id: '', // Will be set by server
+            pin_hash: localHash,
+          };
+          createKidSession(kidProfile);
+          
           onSuccess();
           return;
         }
       }
 
+      // Clear invalid localStorage entry
+      if (localHash === "SET") {
+        console.log("🔧 Clearing invalid localStorage entry");
+        localStorage.removeItem(`kid_pin_${kid.id}`);
+      }
+
       // Check database pin_hash (cross-device)
       if (kid.pin_hash) {
-        const isValid = await bcrypt.compare(enteredPin, kid.pin_hash);
-        if (isValid) {
-          // Cache in localStorage for next time
-          localStorage.setItem(`kid_pin_${kid.id}`, kid.pin_hash);
-          onSuccess();
-          return;
+        console.log("🔧 Comparing against database pin_hash");
+        console.log("🔧 Database pin_hash format:", kid.pin_hash.substring(0, 10) + "...");
+        try {
+          const isValid = await bcrypt.compare(enteredPin, kid.pin_hash);
+          console.log("🔧 Database validation result:", isValid);
+          if (isValid) {
+            // Cache in localStorage for next time
+            localStorage.setItem(`kid_pin_${kid.id}`, kid.pin_hash);
+            
+            // Create kid session for validated access
+            const kidProfile: KidProfile = {
+              id: kid.id,
+              name: kid.name,
+              role: 'child',
+              family_id: '', // Will be set by server
+              pin_hash: kid.pin_hash,
+            };
+            createKidSession(kidProfile);
+            
+            onSuccess();
+            return;
+          }
+        } catch (error) {
+          console.error("🔧 Database bcrypt comparison error:", error);
         }
       }
 
@@ -81,15 +126,26 @@ export default function PinEntryModal({ kid, onSuccess, onCancel }: Props) {
           body: JSON.stringify({ pin_hash: hash }),
         });
 
+        // Create kid session for new PIN setup
+        const kidProfile: KidProfile = {
+          id: kid.id,
+          name: kid.name,
+          role: 'child',
+          family_id: '', // Will be set by server
+          pin_hash: hash,
+        };
+        createKidSession(kidProfile);
+
         onSuccess();
         return;
       }
 
       // Invalid PIN
+      console.log("❌ PIN validation failed - incorrect PIN");
       setError("Incorrect PIN. Try again.");
       setPin("");
     } catch (error) {
-      console.error("PIN validation error:", error);
+      console.error("❌ PIN validation error:", error);
       setError("Error validating PIN");
       setPin("");
     } finally {
@@ -225,6 +281,128 @@ export default function PinEntryModal({ kid, onSuccess, onCancel }: Props) {
           </button>
         </div>
       </div>
+
+      <style jsx>{`
+        .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.6);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+        }
+
+        .modal {
+          background: var(--color-card);
+          border-radius: 16px;
+          padding: 2rem;
+          max-width: 360px;
+          width: 90%;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+          text-align: center;
+          margin-bottom: 2rem;
+        }
+
+        .modal-header h2 {
+          margin: 0 0 0.5rem 0;
+          color: var(--color-text);
+          font-size: 1.5rem;
+        }
+
+        .pin-display {
+          display: flex;
+          justify-content: center;
+          gap: 1rem;
+          margin-bottom: 2rem;
+        }
+
+        .pin-dot {
+          width: 20px;
+          height: 20px;
+          border: 2px solid var(--color-primary);
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1.5rem;
+          color: var(--color-primary);
+          transition: all 0.2s ease;
+        }
+
+        .pin-dot.filled {
+          background: var(--color-primary);
+          color: white;
+          transform: scale(1.1);
+        }
+
+        .pin-keypad {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 1rem;
+          margin-bottom: 1rem;
+        }
+
+        .pin-key {
+          width: 60px;
+          height: 60px;
+          border: 2px solid var(--color-primary);
+          border-radius: 12px;
+          background: var(--color-bg);
+          color: var(--color-text);
+          font-size: 1.5rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .pin-key:hover:not(:disabled) {
+          background: var(--color-primary);
+          color: white;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .pin-key:active {
+          transform: translateY(0);
+        }
+
+        .pin-key:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        @media (max-width: 480px) {
+          .modal {
+            padding: 1.5rem;
+          }
+
+          .pin-key {
+            width: 50px;
+            height: 50px;
+            font-size: 1.25rem;
+          }
+
+          .pin-display {
+            gap: 0.75rem;
+          }
+
+          .pin-dot {
+            width: 16px;
+            height: 16px;
+            font-size: 1.25rem;
+          }
+        }
+      `}</style>
     </div>
   );
 }

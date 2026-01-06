@@ -454,14 +454,13 @@ export class ChoreService {
     familyId: string,
     limit: number = 10,
   ): Promise<ChoreAssignment[]> {
-    const { data, error } = await this.client
+    // Get completed chore assignments first
+    const { data: assignments, error: assignmentsError } = await this.client
       .schema("choretracker")
       .from("chore_assignments")
       .select(`
         *,
-        chore_template:chore_templates(*),
-        assigned_to_profile:family_profiles!assigned_to_profile_id(name, id),
-        completed_by_profile:family_profiles!completed_by_profile_id(name, id)
+        chore_template:chore_templates(*)
       `)
       .eq("family_id", familyId)
       .eq("status", "completed")
@@ -470,37 +469,77 @@ export class ChoreService {
       .order("completed_at", { ascending: false })
       .limit(limit);
 
-    if (error) {
-      console.error("Error fetching recent activity:", error);
+    if (assignmentsError) {
+      console.error("Error fetching recent activity:", assignmentsError);
       return [];
     }
 
-    return data || [];
+    if (!assignments || assignments.length === 0) {
+      return [];
+    }
+
+    // Get family profiles separately
+    const profileIds = [...new Set([
+      ...assignments.map(a => a.assigned_to_profile_id).filter(Boolean),
+      ...assignments.map(a => a.completed_by_profile_id).filter(Boolean),
+    ])];
+
+    const { data: profiles } = await this.client
+      .from("family_profiles")
+      .select("id, name")
+      .in("id", profileIds);
+
+    // Map profiles to assignments
+    const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+
+    return assignments.map(assignment => ({
+      ...assignment,
+      assigned_to_profile: profileMap.get(assignment.assigned_to_profile_id) || null,
+      completed_by_profile: profileMap.get(assignment.completed_by_profile_id) || null,
+    }));
   }
 
   /**
    * Get all chores for a family (for parent dashboard)
    */
   async getAllChores(familyId: string): Promise<ChoreAssignment[]> {
-    const { data, error } = await this.client
+    // Get chore assignments first
+    const { data: assignments, error: assignmentsError } = await this.client
       .schema("choretracker")
       .from("chore_assignments")
       .select(`
         *,
-        chore_template:chore_templates(*),
-        assigned_to_profile:family_profiles!assigned_to_profile_id(name, id, role)
+        chore_template:chore_templates(*)
       `)
       .eq("family_id", familyId)
       .eq("is_deleted", false)
       .order("assigned_date", { ascending: false })
       .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error("Error fetching all chores:", error);
+    if (assignmentsError) {
+      console.error("Error fetching all chores:", assignmentsError);
       return [];
     }
 
-    return data || [];
+    if (!assignments || assignments.length === 0) {
+      return [];
+    }
+
+    // Get family profiles separately
+    const profileIds = [...new Set(assignments.map(a => a.assigned_to_profile_id).filter(Boolean))];
+
+    const { data: profiles } = await this.client
+      .from("family_profiles")
+      .select("id, name, role")
+      .in("id", profileIds);
+
+    // Map profiles to assignments
+    const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+
+    return assignments.map(assignment => ({
+      ...assignment,
+      assigned_to_profile: profileMap.get(assignment.assigned_to_profile_id) || null,
+    }));
   }
 
   /**
@@ -510,17 +549,74 @@ export class ChoreService {
     familyId: string,
     enabled: boolean,
   ): Promise<boolean> {
-    const { error } = await this.client
+    console.log("🔧 ChoreService.updateFamilyPinSetting called:", {
+      familyId,
+      enabled,
+      clientReady: !!this.client
+    });
+
+    const { data, error } = await this.client
       .from("families")
       .update({ children_pins_enabled: enabled })
-      .eq("id", familyId);
+      .eq("id", familyId)
+      .select("id, children_pins_enabled")
+      .single();
+
+    console.log("🔧 Supabase update response:", { data, error });
 
     if (error) {
-      console.error("Error updating family PIN setting:", error);
+      console.error("❌ Error updating family PIN setting:", error);
       return false;
     }
 
+    console.log("✅ Family PIN setting updated in database:", data);
     return true;
+  }
+
+  /**
+   * Set kid PIN (hash and store)
+   */
+  async setKidPin(kidId: string, pin: string): Promise<boolean> {
+    console.log("🔧 ChoreService.setKidPin called:", {
+      kidId,
+      pinLength: pin.length,
+      clientReady: !!this.client
+    });
+
+    try {
+      // Hash the PIN using bcryptjs (same as client)
+      console.log("🔧 Importing bcryptjs...");
+      const bcrypt = await import("https://esm.sh/bcryptjs@2.4.3");
+      console.log("🔧 bcryptjs imported successfully");
+      
+      console.log("🔧 Hashing PIN...");
+      const pinHash = await bcrypt.hash(pin, 10);
+      console.log("🔧 PIN hashed successfully with format:", pinHash.substring(0, 10) + "...");
+      console.log("🔧 Is valid bcrypt format:", pinHash.startsWith('$2'));
+
+      const { data, error } = await this.client
+        .from("family_profiles")
+        .update({ pin_hash: pinHash })
+        .eq("id", kidId)
+        .select("id, name, pin_hash")
+        .single();
+
+      console.log("🔧 Supabase PIN update response:", { 
+        data: data ? { id: data.id, name: data.name, hasPinHash: !!data.pin_hash } : null, 
+        error 
+      });
+
+      if (error) {
+        console.error("❌ Error updating kid PIN:", error);
+        return false;
+      }
+
+      console.log("✅ Kid PIN updated successfully in database");
+      return true;
+    } catch (error) {
+      console.error("❌ Error in setKidPin:", error);
+      return false;
+    }
   }
 
   /**
@@ -595,5 +691,23 @@ export class ChoreService {
     }
 
     return data?.pin_hash || null;
+  }
+
+  /**
+   * Get family settings (PIN enabled, theme, etc.)
+   */
+  async getFamilySettings(familyId: string): Promise<any> {
+    const { data, error } = await this.client
+      .from("families")
+      .select("children_pins_enabled, theme, created_at")
+      .eq("id", familyId)
+      .single();
+
+    if (error) {
+      console.error("Error getting family settings:", error);
+      return { children_pins_enabled: false, theme: "fresh_meadow" };
+    }
+
+    return data || { children_pins_enabled: false, theme: "fresh_meadow" };
   }
 }

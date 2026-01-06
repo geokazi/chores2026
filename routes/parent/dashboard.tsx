@@ -1,11 +1,12 @@
 /**
- * Parent Dashboard Page
- * Family management and monitoring interface
+ * SECURE Parent Dashboard Page
+ * Uses session-based family access (NO family_id in URL)
  */
 
 import { Handlers, PageProps } from "$fresh/server.ts";
-import { ChoreService } from "../../../lib/services/chore-service.ts";
-import ParentDashboard from "../../../islands/ParentDashboard.tsx";
+import { getAuthenticatedSession } from "../../lib/auth/session.ts";
+import { ChoreService } from "../../lib/services/chore-service.ts";
+import ParentDashboard from "../../islands/ParentDashboard.tsx";
 
 interface ParentDashboardData {
   family: any;
@@ -17,22 +18,23 @@ interface ParentDashboardData {
 
 export const handler: Handlers<ParentDashboardData> = {
   async GET(req, ctx) {
-    const familyId = ctx.params.family_id;
+    // SECURITY: Get family_id from authenticated session, not URL
+    const session = await getAuthenticatedSession(req);
+
+    if (!session.isAuthenticated || !session.family) {
+      return new Response(null, {
+        status: 303,
+        headers: { Location: "/login" },
+      });
+    }
+
+    const familyId = session.family.id;
 
     try {
       const choreService = new ChoreService();
 
-      // Get family info
-      const family = await choreService.getFamily(familyId);
-      if (!family) {
-        return ctx.render({
-          family: null,
-          members: [],
-          chores: [],
-          recentActivity: [],
-          error: "Family not found",
-        });
-      }
+      // Get family info (already validated via session)
+      const family = session.family;
 
       // Get family members
       const members = await choreService.getFamilyMembers(familyId);
@@ -43,6 +45,8 @@ export const handler: Handlers<ParentDashboardData> = {
       // Get recent activity (last 10 items)
       const recentActivity = await choreService.getRecentActivity(familyId, 10);
 
+      console.log("✅ Parent dashboard loaded for family:", family.name);
+
       return ctx.render({
         family,
         members,
@@ -50,9 +54,9 @@ export const handler: Handlers<ParentDashboardData> = {
         recentActivity,
       });
     } catch (error) {
-      console.error("Error loading parent dashboard:", error);
+      console.error("❌ Error loading parent dashboard:", error);
       return ctx.render({
-        family: null,
+        family: session.family,
         members: [],
         chores: [],
         recentActivity: [],

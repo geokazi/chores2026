@@ -48,31 +48,45 @@ export default function ParentDashboard(
     null,
   );
   const [adjustmentAmount, setAdjustmentAmount] = useState("");
+  const [pinsEnabled, setPinsEnabled] = useState(family.children_pins_enabled);
+  const [isUpdatingPins, setIsUpdatingPins] = useState(false);
   const [adjustmentReason, setAdjustmentReason] = useState("");
 
   const kids = members.filter((m) => m.role === "child");
   const pendingChores = chores.filter((c) => c.status === "pending");
   const completedChores = chores.filter((c) => c.status === "completed");
 
-  const togglePinSetting = async () => {
+  const updatePinSetting = async (enabled: boolean): Promise<boolean> => {
     try {
-      const response = await fetch(`/api/family/${family.id}/pin-setting`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          children_pins_enabled: !family.children_pins_enabled,
-        }),
+      console.log(`🔧 updatePinSetting called with: ${enabled}`);
+      
+      const response = await fetch('/api/family/pin-setting', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ children_pins_enabled: enabled }),
       });
 
-      if (response.ok) {
-        window.location.reload();
-      } else {
-        console.error("Failed to update PIN setting");
+      console.log(`🔧 API response status: ${response.status}`);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`🔧 API error response: ${errorText}`);
+        return false;
       }
+
+      const result = await response.json();
+      console.log('✅ PIN setting API response:', result);
+      
+      // Update localStorage for debugging
+      if (typeof globalThis !== 'undefined' && globalThis.localStorage) {
+        globalThis.localStorage.setItem(`family_pins_enabled_${family.id}`, String(enabled));
+        console.log(`🔧 Updated localStorage: ${enabled}`);
+      }
+      
+      return result.success || false;
     } catch (error) {
-      console.error("Error updating PIN setting:", error);
+      console.error('❌ Error updating PIN setting:', error);
+      return false;
     }
   };
 
@@ -174,20 +188,58 @@ export default function ParentDashboard(
                 color: "var(--color-text-light)",
               }}
             >
-              {family.children_pins_enabled
-                ? "Kids must enter PIN to access their dashboard"
-                : "Kids can access dashboard directly"}
+              {pinsEnabled
+                ? "🔒 Kids need PINs to access dashboard"
+                : "🔓 Kids can access dashboard directly"}
             </div>
           </div>
-          <button
-            onClick={togglePinSetting}
-            class={`btn ${
-              family.children_pins_enabled ? "btn-secondary" : "btn-primary"
-            }`}
-            style={{ fontSize: "0.875rem" }}
-          >
-            {family.children_pins_enabled ? "Disable" : "Enable"}
-          </button>
+          <label class="toggle-switch" style={{ position: "relative", width: "60px", height: "34px", flexShrink: "0" }}>
+            <input
+              type="checkbox"
+              checked={pinsEnabled}
+              onChange={async (e) => {
+                const newState = e.currentTarget.checked;
+                console.log(`🔧 Dashboard toggle - old: ${pinsEnabled}, new: ${newState}`);
+                
+                setIsUpdatingPins(true);
+                const success = await updatePinSetting(newState);
+                
+                if (success) {
+                  setPinsEnabled(newState);
+                } else {
+                  console.log(`🔧 Failed to update, keeping old state: ${pinsEnabled}`);
+                  e.currentTarget.checked = pinsEnabled;
+                }
+                
+                setIsUpdatingPins(false);
+              }}
+              disabled={isUpdatingPins}
+              style={{ opacity: "0", width: "0", height: "0" }}
+            />
+            <span class="toggle-slider" style={{
+              position: "absolute",
+              cursor: "pointer",
+              top: "0",
+              left: "0",
+              right: "0",
+              bottom: "0",
+              backgroundColor: pinsEnabled ? "var(--color-primary)" : "#ccc",
+              borderRadius: "34px",
+              transition: "0.4s"
+            }}>
+              <span style={{
+                position: "absolute",
+                content: "",
+                height: "26px",
+                width: "26px",
+                left: pinsEnabled ? "30px" : "4px",
+                bottom: "4px",
+                backgroundColor: "white",
+                borderRadius: "50%",
+                transition: "0.4s"
+              }}></span>
+            </span>
+          </label>
         </div>
       </div>
 
@@ -212,11 +264,11 @@ export default function ParentDashboard(
             ⚡ Adjust Points
           </button>
           <a
-            href={`/parent/${family.id}/chores`}
+            href="/parent/settings"
             class="btn btn-secondary"
             style={{ fontSize: "0.875rem", textDecoration: "none" }}
           >
-            📝 Manage Chores
+            ⚙️ Settings
           </a>
           <a
             href={`/parent/${family.id}/reports`}

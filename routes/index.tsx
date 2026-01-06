@@ -15,32 +15,45 @@ interface IndexPageData {
 
 export const handler: Handlers<IndexPageData> = {
   async GET(req, ctx) {
-    // TODO: Get user session from authentication
-    // For now, use a demo family
-    const demoFamilyId = "445717ba-0841-4b68-994f-eef77bcf4f87"; // From the example data
+    // SECURITY: Check authentication first
+    const { getAuthenticatedSession } = await import("../lib/auth/session.ts");
+    const session = await getAuthenticatedSession(req);
+
+    // Redirect to login if not authenticated
+    if (!session.isAuthenticated || !session.family) {
+      return new Response(null, {
+        status: 303,
+        headers: { Location: "/login" },
+      });
+    }
+
+    // User is authenticated - show kid selector
+    const familyId = session.family.id;
 
     try {
       const choreService = new ChoreService();
 
-      const family = await choreService.getFamily(demoFamilyId);
-      if (!family) {
-        return ctx.render({
-          family: null,
-          familyMembers: [],
-          error: "Family not found. Please log in again.",
-        });
-      }
+      // Get fresh family data with current PIN setting (not stale session data)
+      const [family, familyMembers] = await Promise.all([
+        choreService.getFamily(familyId),
+        choreService.getFamilyMembers(familyId)
+      ]);
 
-      const familyMembers = await choreService.getFamilyMembers(demoFamilyId);
+      console.log("✅ Authenticated user accessing kid selector:", {
+        user: session.user?.email,
+        family: family?.name || session.family.name,
+        memberCount: familyMembers.length,
+        pinsEnabled: family?.children_pins_enabled
+      });
 
       return ctx.render({
-        family,
+        family: family || session.family, // Use fresh family data with current PIN setting
         familyMembers,
       });
     } catch (error) {
-      console.error("Error loading family data:", error);
+      console.error("❌ Error loading family data:", error);
       return ctx.render({
-        family: null,
+        family: session.family, // Fallback to session data if fresh fetch fails
         familyMembers: [],
         error: "Failed to load family data",
       });
@@ -77,7 +90,7 @@ export default function IndexPage({ data }: PageProps<IndexPageData>) {
     <div class="container">
       <div class="header">
         <div>
-          <a href="/login" style={{ color: "white", textDecoration: "none" }}>
+          <a href="/logout" style={{ color: "white", textDecoration: "none" }}>
             ← Logout
           </a>
         </div>

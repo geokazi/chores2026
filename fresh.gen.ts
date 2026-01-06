@@ -5,20 +5,29 @@
 import * as $_app from "./routes/_app.tsx";
 import * as $api_chores_chore_id_complete from "./routes/api/chores/[chore_id]/complete.ts";
 import * as $api_family_family_id_pin_setting from "./routes/api/family/[family_id]/pin-setting.ts";
+import * as $api_family_pin_setting from "./routes/api/family/pin-setting.ts";
+import * as $api_family_set_kid_pin from "./routes/api/family/set-kid-pin.ts";
 import * as $api_familyscore_live_family_id_ from "./routes/api/familyscore/live/[family_id].ts";
+import * as $api_kids_kid_id_pin from "./routes/api/kids/[kid_id]/pin.ts";
 import * as $api_pin_verify from "./routes/api/pin/verify.ts";
 import * as $api_points_adjust from "./routes/api/points/adjust.ts";
 import * as $index from "./routes/index.tsx";
 import * as $kid_kid_id_chore_chore_id_ from "./routes/kid/[kid_id]/chore/[chore_id].tsx";
 import * as $kid_kid_id_dashboard from "./routes/kid/[kid_id]/dashboard.tsx";
 import * as $login from "./routes/login.tsx";
-import * as $parent_family_id_dashboard from "./routes/parent/[family_id]/dashboard.tsx";
+import * as $logout from "./routes/logout.ts";
+import * as $parent_activity from "./routes/parent/activity.tsx";
+import * as $parent_dashboard from "./routes/parent/dashboard.tsx";
+import * as $parent_settings from "./routes/parent/settings.tsx";
 import * as $ChoreDetail from "./islands/ChoreDetail.tsx";
 import * as $ChoreList from "./islands/ChoreList.tsx";
+import * as $FamilySettings from "./islands/FamilySettings.tsx";
 import * as $KidDashboard from "./islands/KidDashboard.tsx";
 import * as $KidSelector from "./islands/KidSelector.tsx";
+import * as $KidSessionValidator from "./islands/KidSessionValidator.tsx";
 import * as $LiveActivityFeed from "./islands/LiveActivityFeed.tsx";
 import * as $LiveLeaderboard from "./islands/LiveLeaderboard.tsx";
+import * as $ParentActivityTab from "./islands/ParentActivityTab.tsx";
 import * as $ParentDashboard from "./islands/ParentDashboard.tsx";
 import * as $PinEntryModal from "./islands/PinEntryModal.tsx";
 import * as $SocialAuthButtons from "./islands/SocialAuthButtons.tsx";
@@ -34,23 +43,32 @@ const manifest = {
     "./routes/api/chores/[chore_id]/complete.ts": $api_chores_chore_id_complete,
     "./routes/api/family/[family_id]/pin-setting.ts":
       $api_family_family_id_pin_setting,
+    "./routes/api/family/pin-setting.ts": $api_family_pin_setting,
+    "./routes/api/family/set-kid-pin.ts": $api_family_set_kid_pin,
     "./routes/api/familyscore/live/[family_id].ts":
       $api_familyscore_live_family_id_,
+    "./routes/api/kids/[kid_id]/pin.ts": $api_kids_kid_id_pin,
     "./routes/api/pin/verify.ts": $api_pin_verify,
     "./routes/api/points/adjust.ts": $api_points_adjust,
     "./routes/index.tsx": $index,
     "./routes/kid/[kid_id]/chore/[chore_id].tsx": $kid_kid_id_chore_chore_id_,
     "./routes/kid/[kid_id]/dashboard.tsx": $kid_kid_id_dashboard,
     "./routes/login.tsx": $login,
-    "./routes/parent/[family_id]/dashboard.tsx": $parent_family_id_dashboard,
+    "./routes/logout.ts": $logout,
+    "./routes/parent/activity.tsx": $parent_activity,
+    "./routes/parent/dashboard.tsx": $parent_dashboard,
+    "./routes/parent/settings.tsx": $parent_settings,
   },
   islands: {
     "./islands/ChoreDetail.tsx": $ChoreDetail,
     "./islands/ChoreList.tsx": $ChoreList,
+    "./islands/FamilySettings.tsx": $FamilySettings,
     "./islands/KidDashboard.tsx": $KidDashboard,
     "./islands/KidSelector.tsx": $KidSelector,
+    "./islands/KidSessionValidator.tsx": $KidSessionValidator,
     "./islands/LiveActivityFeed.tsx": $LiveActivityFeed,
     "./islands/LiveLeaderboard.tsx": $LiveLeaderboard,
+    "./islands/ParentActivityTab.tsx": $ParentActivityTab,
     "./islands/ParentDashboard.tsx": $ParentDashboard,
     "./islands/PinEntryModal.tsx": $PinEntryModal,
     "./islands/SocialAuthButtons.tsx": $SocialAuthButtons,

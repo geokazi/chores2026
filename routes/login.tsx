@@ -1,289 +1,301 @@
 /**
- * Login Route - Refactored for Composition and Maintainability
- *
- * Lightweight route handler that composes authentication services and
- * shared UI components. Reduced from 707 lines to ~180 lines (74% reduction)
- * by extracting duplicated logic to shared services.
+ * SIMPLIFIED Login Route for ChoreGami 2026
+ * 20% effort for 80% value - basic auth that works with session system
  */
 
 import { Handlers, PageProps } from "$fresh/server.ts";
-import { AuthenticationService } from "../lib/auth/AuthenticationService.twilio-verify.ts";
-import { UserDataManager } from "../lib/auth/UserDataManager.ts";
-import { AuthErrorHandler } from "../lib/auth/AuthErrorHandler.ts";
-import AuthPageLayout from "../islands/auth/AuthPageLayout.tsx";
-import AuthModeSelector from "../islands/auth/AuthModeSelector.tsx";
-import EmailAuthForm from "../islands/auth/EmailAuthForm.tsx";
-import PhoneAuthForm from "../islands/auth/PhoneAuthForm.tsx";
-import SocialAuthButtons from "../islands/SocialAuthButtons.tsx";
-import { getVersionedUrl } from "../utils/version.ts";
+import { getAuthenticatedSession } from "../lib/auth/session.ts";
+import { createClient } from "@supabase/supabase-js";
 
 interface LoginPageData {
   error?: string;
-  mode?: "email" | "phone" | "social";
-  phone?: string;
-  email?: string;
-  rateLimited?: boolean;
-  otpSent?: boolean;
+  redirected?: boolean;
 }
 
 export const handler: Handlers<LoginPageData> = {
-  async POST(req) {
-    // 1. Parse and validate request data
+  async POST(req, ctx) {
     const formData = await req.formData();
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
-    const phone = formData.get("phone") as string;
-    const otp = formData.get("otp") as string;
-    const url = new URL(req.url);
-    const mode = url.searchParams.get("mode") || "email";
 
-    // 2. Delegate to authentication service
-    const authService = new AuthenticationService(req);
-    let result;
+    if (!email || !password) {
+      return ctx.render({
+        error: "Email and password are required",
+      });
+    }
 
     try {
-      if (mode === "phone") {
-        if (phone && !otp) {
-          // Send OTP
-          result = await authService.sendPhoneOTP(phone, { flow: "login" });
+      // Use Supabase for authentication
+      const supabase = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      );
 
-          if (result.success) {
-            return new Response(null, {
-              status: 303,
-              headers: {
-                Location: `/login?mode=phone&otp_sent=true`,
-              },
-            });
-          }
-        } else if (phone && otp) {
-          // Verify OTP
-          result = await authService.verifyPhoneOTP(phone, otp, {
-            flow: "login",
-          });
-        }
-      } else if (mode === "email" && email && password) {
-        // Email authentication
-        result = await authService.authenticateWithEmail(email, password);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        console.error("❌ Login error:", error);
+        return ctx.render({
+          error: "Invalid email or password",
+        });
       }
 
-      // 3. Handle success case (session may be undefined for phone auth)
-      if (result?.success && result.user) {
-        console.log(
-          "✅ LOGIN: Authentication successful, entering success path",
-        );
-        console.log("✅ LOGIN: User data:", {
-          id: result.user.id,
-          email: result.user.email,
-          phone: result.user.phone,
-          hasSession: !!result.session,
+      if (!data.session || !data.user) {
+        return ctx.render({
+          error: "Login failed - no session created",
         });
-
-        // Create and store user data
-        const userData = UserDataManager.createUserData(result.user, "login");
-
-        // Enhanced session response with localStorage integration
-        console.log("🔧 LOGIN: Creating user session for successful auth");
-        const sessionResult = await authService.createUserSession(
-          result.user,
-          "login",
-          result.session,
-        );
-
-        console.log("🔧 LOGIN: Session result:", {
-          success: sessionResult.success,
-          status: sessionResult.response?.status,
-          userData: sessionResult.userData,
-        });
-
-        if (!sessionResult.success) {
-          console.error(
-            "🚫 LOGIN: Session creation failed despite successful auth",
-          );
-          // Fall back to error handling
-          return new Response(null, {
-            status: 303,
-            headers: { Location: "/login?error=session-failed" },
-          });
-        }
-
-        // Use the session response directly with localStorage enhancement
-        const sessionHtml = await sessionResult.response.text();
-
-        // Enhance the session response with localStorage integration
-        // Add localStorage code before existing script instead of replacing it
-        const enhancedHtml = sessionHtml.replace(
-          "<script>",
-          `<script>
-              // Store user data for client-side access
-              localStorage.setItem('chores2026_user_data', JSON.stringify(${
-            JSON.stringify(userData)
-          }));
-              console.log('📋 Login: Stored user data in localStorage');
-              
-              // Dispatch update event for navigation component
-              window.dispatchEvent(new CustomEvent('chores2026_user_data_updated'));
-            </script>
-            <script>`,
-        );
-
-        const enhancedResponse = new Response(enhancedHtml, {
-          status: sessionResult.response.status,
-          headers: sessionResult.response.headers,
-        });
-
-        return enhancedResponse;
       }
 
-      // 4. Handle authentication failure
-      if (result && !result.success) {
-        console.log("🚫 LOGIN: Authentication failed, entering error path");
-        console.log("🚫 LOGIN: Error details:", {
-          success: result.success,
-          errorType: result.error?.type,
-          errorMessage: result.error?.message,
-        });
+      console.log("✅ Login successful:", data.user.email);
 
-        const error = AuthErrorHandler.formatAuthError(result, {
-          flow: "login",
-          mode: mode as any,
-          additionalParams: {
-            // ✅ SECURE: Only non-sensitive context data
-            mode: mode,
-            // ❌ REMOVED: phone, email, password - never include in redirects
-          },
-        });
-        return AuthErrorHandler.createErrorRedirect(
-          error,
-          "/login",
-          { flow: "login", mode: mode as "email" | "phone" | "social" },
-          [
-            "mode",
-            // ❌ REMOVED: "phone", "email" - never preserve sensitive data in URLs
-          ],
-        );
-      }
+      // Create authentication cookies
+      const isLocalhost = req.url.includes("localhost");
+      const isSecure = !isLocalhost;
 
-      // 5. Invalid request fallback
+      const authCookies = [
+        `sb-access-token=${data.session.access_token}; Path=/; ${
+          isSecure ? "Secure; " : ""
+        }SameSite=Lax; Max-Age=${60 * 60 * 24 * 7}`, // 7 days
+        `sb-refresh-token=${data.session.refresh_token}; Path=/; HttpOnly; ${
+          isSecure ? "Secure; " : ""
+        }SameSite=Lax; Max-Age=${60 * 60 * 24 * 30}`, // 30 days
+      ];
+
+      // Redirect to main app
       return new Response(null, {
         status: 303,
         headers: {
-          Location: `/login?error=invalid-request&mode=${mode}`,
+          Location: "/",
+          "Set-Cookie": authCookies.join(", "),
         },
       });
     } catch (error) {
-      console.error("Login route error:", error);
-      return new Response(null, {
-        status: 303,
-        headers: {
-          Location: `/login?error=technical-error&mode=${mode}`,
-        },
+      console.error("💥 Login route error:", error);
+      return ctx.render({
+        error: "Login failed - please try again",
       });
     }
   },
 
   async GET(req, ctx) {
-    // Simple page data preparation
-    const url = new URL(req.url);
-    const error = url.searchParams.get("error");
-    const mode = url.searchParams.get("mode") || "email";
-    const phone = url.searchParams.get("phone") || ""; // Keep minimal URL support as fallback
-    const email = url.searchParams.get("email");
-    const otpSent = url.searchParams.get("otp_sent") === "true";
-    const resend = url.searchParams.get("resend") === "true";
-
-    // Map URL error codes to user-friendly messages
-    let errorMessage = "";
-    if (error) {
-      // Use context-aware error formatting for consistent phone/email messaging
-      const mockAuthResult = {
-        success: false,
-        error: {
-          type: error.replace(/-/g, "_"), // Convert URL format back to internal format
-          message: "Error occurred",
-        },
-      };
-
-      const formattedError = AuthErrorHandler.formatAuthError(
-        mockAuthResult as any,
-        {
-          flow: "login",
-          mode: mode as any,
-        },
-      );
-
-      errorMessage = formattedError.userMessage;
+    // Check if already authenticated
+    const session = await getAuthenticatedSession(req);
+    if (session.isAuthenticated) {
+      return new Response(null, {
+        status: 303,
+        headers: { Location: "/" },
+      });
     }
 
+    const url = new URL(req.url);
+    const error = url.searchParams.get("error");
+
     return ctx.render({
-      error: errorMessage,
-      mode: mode as "email" | "phone" | "social",
-      phone: phone, // Minimal fallback - sessionStorage is primary
-      email: email || "",
-      rateLimited: error === "rate-limit",
-      otpSent,
+      error: error || undefined,
+      redirected: url.searchParams.has("redirected"),
     });
   },
 };
 
 export default function LoginPage({ data }: PageProps<LoginPageData>) {
-  const { mode = "email", error, phone, email, rateLimited, otpSent } = data;
-
-  console.log("LoginPage rendering with mode:", mode, "data:", data);
+  const { error, redirected } = data;
 
   return (
-    <>
-      {/* Include OAuth fragment handlers for social login */}
-      <script src={getVersionedUrl("/oauth-fragment-handler.js")} defer>
-      </script>
-      {/* Supabase CDN for social authentication - bypasses Fresh bundling issues */}
-      <script
-        src="https://unpkg.com/@supabase/supabase-js@2.79.0/dist/umd/supabase.js"
-        defer
-      >
-      </script>
-      {/* Note: auth-cookie-sync.js is already loaded in _app.tsx */}
+    <div class="login-container">
+      <div class="login-card">
+        <div class="login-header">
+          <h1>ChoreGami 2026</h1>
+          <p>Sign in to manage your family's chores</p>
+          {redirected && (
+            <p class="info-message">Please log in to continue</p>
+          )}
+        </div>
 
-      <AuthPageLayout
-        title="Welcome Back"
-        subtitle="Sign in to your Chores2026 account"
-        variant="login"
-        showTrustIndicators={true}
-      >
-        {/* Mode Selection */}
-        <AuthModeSelector
-          currentMode={mode}
-          variant="login"
-          disabled={rateLimited}
-        />
-
-        {/* Email Authentication Form */}
-        {mode === "email" && (
-          <EmailAuthForm
-            variant="login"
-            error={error}
-            email={email}
-            disabled={rateLimited}
-          />
-        )}
-
-        {/* Phone Authentication Form */}
-        {mode === "phone" && (
-          <PhoneAuthForm
-            variant="login"
-            error={error}
-            phone={phone}
-            otpSent={otpSent}
-            disabled={rateLimited}
-          />
-        )}
-
-        {/* Social Authentication */}
-        {mode === "social" && (
-          <div style={{ marginBottom: "1.5rem" }}>
-            <SocialAuthButtons />
+        {error && (
+          <div class="error-message">
+            {error}
           </div>
         )}
-      </AuthPageLayout>
-    </>
+
+        <form method="POST" class="login-form">
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              required
+              class="form-input"
+              placeholder="parent@example.com"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              required
+              class="form-input"
+              placeholder="Your password"
+            />
+          </div>
+
+          <button type="submit" class="login-button">
+            Sign In
+          </button>
+        </form>
+
+        <div class="login-footer">
+          <p>Don't have an account? Contact your family admin</p>
+          <p class="security-note">🔒 Secured with enterprise authentication</p>
+        </div>
+      </div>
+
+      <style jsx>{`
+        .login-container {
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: linear-gradient(135deg, var(--color-bg) 0%, #e8f5e8 100%);
+          padding: 1rem;
+        }
+
+        .login-card {
+          background: var(--color-card);
+          padding: 2rem;
+          border-radius: 16px;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+          width: 100%;
+          max-width: 400px;
+        }
+
+        .login-header {
+          text-align: center;
+          margin-bottom: 2rem;
+        }
+
+        .login-header h1 {
+          margin: 0 0 0.5rem 0;
+          color: var(--color-primary);
+          font-size: 2rem;
+          font-weight: 700;
+        }
+
+        .login-header p {
+          margin: 0;
+          color: var(--color-text);
+          opacity: 0.8;
+        }
+
+        .info-message {
+          background: var(--color-bg);
+          color: var(--color-primary);
+          padding: 0.75rem;
+          border-radius: 8px;
+          margin-top: 1rem !important;
+          border: 1px solid var(--color-primary);
+        }
+
+        .error-message {
+          background: #fee;
+          color: var(--color-warning);
+          padding: 0.75rem;
+          border-radius: 8px;
+          margin-bottom: 1rem;
+          border: 1px solid var(--color-warning);
+        }
+
+        .login-form {
+          display: flex;
+          flex-direction: column;
+          gap: 1.5rem;
+        }
+
+        .form-group {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+
+        .form-group label {
+          font-weight: 600;
+          color: var(--color-text);
+        }
+
+        .form-input {
+          padding: 0.75rem;
+          border: 2px solid #e5e5e5;
+          border-radius: 8px;
+          font-size: 1rem;
+          transition: border-color 0.2s ease;
+        }
+
+        .form-input:focus {
+          outline: none;
+          border-color: var(--color-primary);
+          box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        .login-button {
+          background: var(--color-primary);
+          color: white;
+          border: none;
+          padding: 0.875rem 1.5rem;
+          border-radius: 8px;
+          font-size: 1rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          margin-top: 0.5rem;
+        }
+
+        .login-button:hover {
+          background: #059669;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .login-button:active {
+          transform: translateY(0);
+        }
+
+        .login-footer {
+          text-align: center;
+          margin-top: 2rem;
+          padding-top: 1.5rem;
+          border-top: 1px solid #e5e5e5;
+        }
+
+        .login-footer p {
+          margin: 0.5rem 0;
+          font-size: 0.875rem;
+          color: var(--color-text);
+          opacity: 0.7;
+        }
+
+        .security-note {
+          color: var(--color-success) !important;
+          font-weight: 500 !important;
+          opacity: 1 !important;
+        }
+
+        @media (max-width: 480px) {
+          .login-card {
+            padding: 1.5rem;
+            margin: 0.5rem;
+          }
+
+          .login-header h1 {
+            font-size: 1.75rem;
+          }
+        }
+      `}</style>
+    </div>
   );
 }

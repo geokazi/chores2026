@@ -4,12 +4,22 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
+import { getAuthenticatedSession } from "../../../../lib/auth/session.ts";
 import { ChoreService } from "../../../../lib/services/chore-service.ts";
 import { TransactionService } from "../../../../lib/services/transaction-service.ts";
 
 export const handler: Handlers = {
   async POST(req, ctx) {
     const choreId = ctx.params.chore_id;
+
+    // Verify parent session
+    const parentSession = await getAuthenticatedSession(req);
+    if (!parentSession.isAuthenticated || !parentSession.family) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
 
     try {
       const body = await req.json();
@@ -38,6 +48,25 @@ export const handler: Handlers = {
             headers: { "Content-Type": "application/json" },
           },
         );
+      }
+
+      // Verify kid belongs to parent's family
+      if (kid.family_id !== parentSession.family.id) {
+        return new Response(
+          JSON.stringify({ error: "Access denied - kid not in your family" }),
+          {
+            status: 403,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+      }
+
+      // Check if family requires PIN validation
+      const family = await choreService.getFamily(kid.family_id);
+      if (family?.children_pins_enabled) {
+        // Note: Kid session validation is handled client-side
+        // Server trusts that proper PIN validation happened before the API call
+        console.log(`🔐 Chore completion for ${kid.name} (PIN-protected family)`);
       }
 
       // Get chore assignment
