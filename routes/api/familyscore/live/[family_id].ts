@@ -45,30 +45,31 @@ export const handler: Handlers = {
       familyId: string,
       clientSocket: WebSocket,
     ) {
-      const familyScoreWsUrl = Deno.env.get("FAMILYSCORE_WS_URL");
+      const familyScoreWsUrl = Deno.env.get("FAMILYSCORE_WEBSOCKET_URL");
       const familyScoreApiKey = Deno.env.get("FAMILYSCORE_API_KEY");
 
       if (!familyScoreWsUrl || !familyScoreApiKey) {
-        console.warn("FamilyScore WebSocket URL or API key not configured");
+        console.warn("FamilyScore WebSocket URL or API key not configured", {
+          hasUrl: !!familyScoreWsUrl,
+          hasKey: !!familyScoreApiKey,
+        });
         return;
       }
 
       try {
-        // Connect to FamilyScore Phoenix Channel
+        // Connect to FamilyScore Phoenix Channel with authentication
         familyScoreSocket = new WebSocket(
-          `${familyScoreWsUrl}/socket/websocket?vsn=2.0.0`,
+          `${familyScoreWsUrl}/websocket?vsn=2.0.0&token=${familyScoreApiKey}`,
         );
 
         familyScoreSocket.addEventListener("open", () => {
           console.log(`🚀 Connected to FamilyScore for family ${familyId}`);
 
-          // Join the family channel
+          // Join the family channel (no need to send API key again, it's in the connection)
           const joinMessage = {
             topic: `family:${familyId}`,
             event: "phx_join",
-            payload: {
-              api_key: familyScoreApiKey,
-            },
+            payload: {},
             ref: "1",
           };
 
@@ -84,27 +85,33 @@ export const handler: Handlers = {
               return;
             }
 
-            if (
-              data.event === "point_update" || data.event === "chore_completed"
-            ) {
-              console.log(`📊 FamilyScore event received:`, data);
+            if (data.event === "leaderboard_update") {
+              console.log(`📊 FamilyScore leaderboard update:`, data);
 
               // Transform FamilyScore data for our client
               const transformedData = {
-                type: data.event === "point_update"
-                  ? "leaderboard_update"
-                  : "chore_completed",
+                type: "leaderboard_update",
                 familyId: familyId,
-                userId: data.payload.user_id,
-                userName: data.payload.user_name,
-                points: data.payload.points,
-                choreName: data.payload.chore_name,
-                choreId: data.payload.chore_id,
-                timestamp: new Date().toISOString(),
                 leaderboard: data.payload.leaderboard || [],
+                updated_at: data.payload.updated_at,
+                timestamp: new Date().toISOString(),
               };
 
               // Forward to client
+              if (clientSocket.readyState === WebSocket.OPEN) {
+                clientSocket.send(JSON.stringify(transformedData));
+              }
+            } else if (data.event === "family_broadcast") {
+              console.log(`📢 FamilyScore broadcast:`, data);
+
+              // Forward broadcasts (achievements, celebrations, etc.)
+              const transformedData = {
+                type: data.payload.event || "broadcast",
+                familyId: familyId,
+                ...data.payload,
+                timestamp: new Date().toISOString(),
+              };
+
               if (clientSocket.readyState === WebSocket.OPEN) {
                 clientSocket.send(JSON.stringify(transformedData));
               }

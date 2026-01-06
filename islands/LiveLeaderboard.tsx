@@ -63,8 +63,9 @@ export default function LiveLeaderboard({
     const connectWebSocket = () => {
       try {
         // This will connect to our Fresh WebSocket proxy route
+        const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
         const ws = new WebSocket(
-          `wss://${window.location.host}/api/familyscore/live/${familyId}`,
+          `${protocol}//${window.location.host}/api/familyscore/live/${familyId}`,
         );
 
         ws.onopen = () => {
