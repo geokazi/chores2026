@@ -1,0 +1,80 @@
+/**
+ * Point Adjustment API Route
+ * Handles parent point adjustments with FamilyScore sync
+ */
+
+import { Handlers } from "$fresh/server.ts";
+import { TransactionService } from "../../../lib/services/transaction-service.ts";
+import { ChoreService } from "../../../lib/services/chore-service.ts";
+
+export const handler: Handlers = {
+  async POST(req) {
+    try {
+      const body = await req.json();
+      const { member_id, family_id, amount, reason } = body;
+
+      if (!member_id || !family_id || !amount || !reason) {
+        return new Response(
+          JSON.stringify({ error: "Missing required fields" }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+      }
+
+      const choreService = new ChoreService();
+      const transactionService = new TransactionService();
+
+      // Get the family member
+      const member = await choreService.getFamilyMember(member_id);
+      if (!member || member.family_id !== family_id) {
+        return new Response(
+          JSON.stringify({ error: "Family member not found" }),
+          {
+            status: 404,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+      }
+
+      // Record the point adjustment transaction
+      const adjustmentId = `adjustment_${Date.now()}_${member_id}`;
+      await transactionService.recordPointAdjustment(
+        adjustmentId,
+        amount,
+        reason,
+        member_id,
+        family_id,
+      );
+
+      // Update member's current points
+      await choreService.updateMemberPoints(member_id, amount);
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          new_balance: member.current_points + amount,
+          adjustment: {
+            amount,
+            reason,
+            member_name: member.name,
+          },
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    } catch (error) {
+      console.error("Error adjusting points:", error);
+      return new Response(
+        JSON.stringify({ error: "Internal server error" }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
+  },
+};
