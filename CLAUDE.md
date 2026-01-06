@@ -252,7 +252,7 @@ export const handler: Handlers = {
 
     // 3. Connect to FamilyScore (server-side only - hides API key)
     const familyScoreWs = new WebSocket(
-      `wss://familyscore-poc.fly.dev/families/${ctx.params.family_id}`,
+      `wss://your-familyscore-instance.com/families/${ctx.params.family_id}`,
       {
         headers: {
           "X-API-Key": Deno.env.get("FAMILYSCORE_API_KEY"),
@@ -383,12 +383,12 @@ deno test --allow-env --allow-net
 
 ```bash
 # Test WebSocket connection
-curl -H "x-api-key: fsc_choregami_5f6a56d2f5ad4bfa8ef1ca989d4ce367" \
-  https://familyscore-poc.fly.dev/health
+curl -H "x-api-key: your_familyscore_api_key" \
+  https://your-familyscore-instance.com/health
 
 # Test leaderboard API
-curl -H "x-api-key: fsc_choregami_5f6a56d2f5ad4bfa8ef1ca989d4ce367" \
-  https://familyscore-poc.fly.dev/api/leaderboard/[family_id]
+curl -H "x-api-key: your_familyscore_api_key" \
+  https://your-familyscore-instance.com/api/leaderboard/[family_id]
 ```
 
 ## Implementation Phases
@@ -575,7 +575,7 @@ choretracker.chore_transactions (
 
 - **Repository**: `/Users/georgekariuki/repos/elixir/famscorepoc/`
 - **API Documentation**: Production Phoenix application with comprehensive docs
-- **WebSocket Endpoint**: `wss://familyscore-poc.fly.dev/socket`
+- **WebSocket Endpoint**: `wss://your-familyscore-instance.com/socket`
 - **Reference Architecture**: Centralized Transaction Service pattern
 
 ### Design References
