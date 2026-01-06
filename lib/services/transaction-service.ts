@@ -298,11 +298,20 @@ export class TransactionService {
       ? "/api/points/award"
       : "/api/points/deduct";
 
+    // 🚀 ENHANCED: Include auto-registration metadata for smart family creation
     const payload = {
       family_id: request.familyId,
       user_id: request.profileId,
       points: Math.abs(request.pointsChange), // Always send positive value
       reason: this.mapTransactionTypeToReason(request),
+      
+      // 🆕 NEW: Optional smart auto-registration metadata
+      family_name: `Chores2026 Family`, // Will be used only if family doesn't exist
+      user_name: request.profileId.includes("parent") 
+        ? `Parent` 
+        : request.profileId.replace(/kid_|child_/, "").replace("_", " ").split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" "),
+      user_role: request.profileId.includes("parent") ? "parent" : "child",
+      
       metadata: {
         source: "chores2026_transaction_service",
         transaction_type: request.transactionType,

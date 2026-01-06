@@ -39,6 +39,9 @@ export const handler: Handlers<ParentDashboardData> = {
       // Get family members
       const members = await choreService.getFamilyMembers(familyId);
 
+      // 🚀 AUTO-REGISTRATION: FamilyScore now auto-registers families when first chore is completed
+      // No explicit registration needed - happens automatically via TransactionService
+
       // Get all chores (active and completed)
       const chores = await choreService.getAllChores(familyId);
 
