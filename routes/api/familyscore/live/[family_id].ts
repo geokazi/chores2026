@@ -45,8 +45,23 @@ export const handler: Handlers = {
       familyId: string,
       clientSocket: WebSocket,
     ) {
+      const familyScoreWsEnabled = Deno.env.get("FAMILYSCORE_WEBSOCKET_ENABLED") === "true";
       const familyScoreWsUrl = Deno.env.get("FAMILYSCORE_WEBSOCKET_URL");
       const familyScoreApiKey = Deno.env.get("FAMILYSCORE_API_KEY");
+
+      if (!familyScoreWsEnabled) {
+        console.log("🔕 FamilyScore WebSocket disabled via feature flag");
+        // Send fallback message to client
+        if (clientSocket.readyState === WebSocket.OPEN) {
+          clientSocket.send(JSON.stringify({
+            type: "feature_disabled",
+            message: "Real-time sync disabled - using polling mode",
+            familyId: familyId,
+            timestamp: new Date().toISOString(),
+          }));
+        }
+        return;
+      }
 
       if (!familyScoreWsUrl || !familyScoreApiKey) {
         console.warn("FamilyScore WebSocket URL or API key not configured", {
@@ -57,32 +72,24 @@ export const handler: Handlers = {
       }
 
       try {
-        // Connect to FamilyScore Phoenix Channel with authentication
-        // Try multiple authentication approaches
-        let wsUrl = `${familyScoreWsUrl}/websocket?vsn=2.0.0`;
+        // Connect to FamilyScore Phoenix Channel (matching working test pattern)
+        let wsUrl = `${familyScoreWsUrl}/websocket?vsn=1.0.0&token=${familyScoreApiKey}`;
         
-        familyScoreSocket = new WebSocket(wsUrl, {
-          headers: {
-            "Origin": "http://localhost:8001",
-            "Authorization": `Bearer ${familyScoreApiKey}`,
-            "x-api-key": familyScoreApiKey,
-          },
-        });
+        console.log(`🔗 Attempting to connect to: ${wsUrl}`);
+        familyScoreSocket = new WebSocket(wsUrl);
 
         familyScoreSocket.addEventListener("open", () => {
-          console.log(`🚀 Connected to FamilyScore for family ${familyId}`);
+          console.log(`🚀 Connected to FamilyScore Phoenix socket for family ${familyId}`);
 
-          // Join the family channel with authentication
+          // Join the family channel (matching working test - empty payload)
           const joinMessage = {
             topic: `family:${familyId}`,
-            event: "phx_join",
-            payload: {
-              api_key: familyScoreApiKey,
-              family_id: familyId,
-            },
-            ref: "1",
+            event: "phx_join", 
+            payload: {},
+            ref: Date.now().toString(),
           };
 
+          console.log(`📤 Sending join message:`, joinMessage);
           familyScoreSocket!.send(JSON.stringify(joinMessage));
         });
 
@@ -139,28 +146,28 @@ export const handler: Handlers = {
             url: wsUrl
           });
           
-          // If error code 1011 (internal server error), stop retrying
-          if (event.code === 1011) {
-            console.log(`🔴 FamilyScore WebSocket: Server error 1011, disabling reconnection for family ${familyId}`);
+          // If connection never established (code 0) or server error (1011), stop retrying
+          if (event.code === 0 || event.code === 1011) {
+            console.log(`🔴 FamilyScore WebSocket: Connection failed (${event.code}), disabling real-time sync for family ${familyId}`);
             
             // Send fallback message to client
             if (clientSocket.readyState === WebSocket.OPEN) {
               clientSocket.send(JSON.stringify({
-                type: "error",
-                message: "Real-time sync temporarily unavailable",
-                fallback: true,
+                type: "fallback_mode",
+                message: "Using polling mode - real-time sync unavailable",
                 familyId: familyId,
+                timestamp: new Date().toISOString(),
               }));
             }
             return;
           }
           
-          // For other errors, attempt reconnection after 5 seconds
+          // For other errors, attempt reconnection after 10 seconds
           setTimeout(() => {
             if (clientSocket.readyState === WebSocket.OPEN) {
               connectToFamilyScore(familyId, clientSocket);
             }
-          }, 5000);
+          }, 10000);
         });
 
         familyScoreSocket.addEventListener("error", (error) => {
