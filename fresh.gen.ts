@@ -31,6 +31,7 @@ import * as $ParentActivityTab from "./islands/ParentActivityTab.tsx";
 import * as $ParentDashboard from "./islands/ParentDashboard.tsx";
 import * as $PinEntryModal from "./islands/PinEntryModal.tsx";
 import * as $SocialAuthButtons from "./islands/SocialAuthButtons.tsx";
+import * as $WebSocketManager from "./islands/WebSocketManager.tsx";
 import * as $auth_AuthModeSelector from "./islands/auth/AuthModeSelector.tsx";
 import * as $auth_AuthPageLayout from "./islands/auth/AuthPageLayout.tsx";
 import * as $auth_EmailAuthForm from "./islands/auth/EmailAuthForm.tsx";
@@ -72,6 +73,7 @@ const manifest = {
     "./islands/ParentDashboard.tsx": $ParentDashboard,
     "./islands/PinEntryModal.tsx": $PinEntryModal,
     "./islands/SocialAuthButtons.tsx": $SocialAuthButtons,
+    "./islands/WebSocketManager.tsx": $WebSocketManager,
     "./islands/auth/AuthModeSelector.tsx": $auth_AuthModeSelector,
     "./islands/auth/AuthPageLayout.tsx": $auth_AuthPageLayout,
     "./islands/auth/EmailAuthForm.tsx": $auth_EmailAuthForm,

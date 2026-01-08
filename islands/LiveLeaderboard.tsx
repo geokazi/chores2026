@@ -4,6 +4,7 @@
  */
 
 import { useEffect, useState } from "preact/hooks";
+import WebSocketManager from "./WebSocketManager.tsx";
 
 interface FamilyMember {
   id: string;
@@ -55,70 +56,19 @@ export default function LiveLeaderboard({
     return "";
   };
 
-  // WebSocket connection for real-time updates
-  useEffect(() => {
-    // TODO: Implement WebSocket connection to FamilyScore
-    // For now, this is a placeholder for the WebSocket integration
-
-    const connectWebSocket = () => {
-      try {
-        // This will connect to our Fresh WebSocket proxy route
-        const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-        const ws = new WebSocket(
-          `${protocol}//${window.location.host}/api/familyscore/live/${familyId}`,
-        );
-
-        ws.onopen = () => {
-          console.log("🔗 Connected to FamilyScore WebSocket");
-          setIsLive(true);
-        };
-
-        ws.onmessage = (event) => {
-          try {
-            const data = JSON.parse(event.data);
-
-            if (data.type === "leaderboard_update") {
-              console.log("📊 Leaderboard update received", data);
-              setLeaderboard(data.leaderboard);
-            }
-          } catch (error) {
-            console.error("Error parsing WebSocket message:", error);
-          }
-        };
-
-        ws.onclose = () => {
-          console.log("❌ WebSocket connection closed");
-          setIsLive(false);
-          // Reconnect after 3 seconds
-          setTimeout(connectWebSocket, 3000);
-        };
-
-        ws.onerror = (error) => {
-          console.error("WebSocket error:", error);
-          setIsLive(false);
-        };
-
-        return ws;
-      } catch (error) {
-        console.error("Failed to connect WebSocket:", error);
-        setIsLive(false);
-        return null;
-      }
-    };
-
-    // Only connect WebSocket if FamilyScore is enabled
-    if (familyId) {
-      const ws = connectWebSocket();
-      return () => {
-        if (ws) {
-          ws.close();
-        }
-      };
-    }
-  }, [familyId]);
+  // Handle leaderboard updates from shared WebSocket
+  const handleLeaderboardUpdate = (newLeaderboard: any[]) => {
+    setLeaderboard(newLeaderboard);
+    setIsLive(true);
+    console.log("📊 Leaderboard updated via shared WebSocket");
+  };
 
   return (
-    <div class="leaderboard">
+    <WebSocketManager 
+      familyId={familyId} 
+      onLeaderboardUpdate={handleLeaderboardUpdate}
+    >
+      <div class="leaderboard">
       <div class="leaderboard-header">
         🏆 Family Leaderboard
         {isLive && (
@@ -186,6 +136,7 @@ export default function LiveLeaderboard({
           No family members found
         </div>
       )}
-    </div>
+      </div>
+    </WebSocketManager>
   );
 }

@@ -4,6 +4,7 @@
  */
 
 import { useEffect, useState } from "preact/hooks";
+import WebSocketManager from "./WebSocketManager.tsx";
 
 interface ActivityItem {
   id: string;
@@ -63,8 +64,13 @@ export default function LiveActivityFeed({ initialActivity, familyId }: Props) {
     return "✅";
   };
 
-  // WebSocket connection for real-time updates
+  // TODO: Temporarily disabled to prevent duplicate WebSocket connections
+  // WebSocket connection will be handled by LiveLeaderboard component
   useEffect(() => {
+    // Disabled to prevent duplicate connections
+    console.log("🔕 ActivityFeed WebSocket disabled - using shared connection");
+    return;
+    
     const connectWebSocket = () => {
       try {
         // This will connect to our Fresh WebSocket proxy route

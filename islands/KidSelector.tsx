@@ -29,15 +29,20 @@ export default function KidSelector({ family, familyMembers }: Props) {
   const [selectedKid, setSelectedKid] = useState<FamilyMember | null>(null);
   const [showPinEntry, setShowPinEntry] = useState(false);
 
-  const kids = familyMembers.filter((member) => member.role === "child");
+  // Show all family members (both parents and children)
+  const allMembers = familyMembers;
 
-  const handleKidSelect = (kid: FamilyMember) => {
-    if (family.children_pins_enabled && kid.role === "child") {
-      setSelectedKid(kid);
+  const handleMemberSelect = (member: FamilyMember) => {
+    if (member.role === "parent") {
+      // Parents go to parent dashboard
+      window.location.href = `/parent/dashboard`;
+    } else if (family.children_pins_enabled && member.role === "child") {
+      // Children with PIN enabled go through PIN entry
+      setSelectedKid(member);
       setShowPinEntry(true);
     } else {
-      // Direct access - redirect to kid dashboard
-      window.location.href = `/kid/${kid.id}/dashboard`;
+      // Children without PIN go directly to kid dashboard
+      window.location.href = `/kid/${member.id}/dashboard`;
     }
   };
 
@@ -68,19 +73,19 @@ export default function KidSelector({ family, familyMembers }: Props) {
     return "👶";
   };
 
-  // Sort kids by points for ranking
-  const sortedKids = [...kids].sort((a, b) =>
+  // Sort all members by points for ranking
+  const sortedMembers = [...allMembers].sort((a, b) =>
     b.current_points - a.current_points
   );
 
   return (
     <>
       <div>
-        {sortedKids.map((kid, index) => (
+        {sortedMembers.map((member, index) => (
           <div
-            key={kid.id}
+            key={member.id}
             class="card chore-card"
-            onClick={() => handleKidSelect(kid)}
+            onClick={() => handleMemberSelect(member)}
             style={{
               cursor: "pointer",
               marginBottom: "1rem",
@@ -89,7 +94,7 @@ export default function KidSelector({ family, familyMembers }: Props) {
             }}
           >
             <div style={{ fontSize: "3rem", marginBottom: "0.5rem" }}>
-              {getRankEmoji(index)}
+              {member.role === "parent" ? "👨‍💼" : getRankEmoji(index)}
             </div>
             <div
               style={{
@@ -98,7 +103,12 @@ export default function KidSelector({ family, familyMembers }: Props) {
                 marginBottom: "0.5rem",
               }}
             >
-              {kid.name}
+              {member.name}
+              {member.role === "parent" && (
+                <span style={{ fontSize: "0.875rem", marginLeft: "0.5rem", color: "var(--color-text-light)" }}>
+                  (Parent)
+                </span>
+              )}
             </div>
             <div
               style={{
@@ -108,11 +118,11 @@ export default function KidSelector({ family, familyMembers }: Props) {
                 marginBottom: "0.5rem",
               }}
             >
-              {kid.current_points} pts{" "}
-              {calculateStreakEmoji(kid.current_points)}
+              {member.current_points} pts{" "}
+              {calculateStreakEmoji(member.current_points)}
             </div>
 
-            {family.children_pins_enabled && (
+            {family.children_pins_enabled && member.role === "child" && (
               <div
                 style={{
                   fontSize: "0.875rem",
@@ -124,7 +134,7 @@ export default function KidSelector({ family, familyMembers }: Props) {
               </div>
             )}
 
-            {!family.children_pins_enabled && (
+            {(!family.children_pins_enabled && member.role === "child") || member.role === "parent" && (
               <div
                 style={{
                   fontSize: "0.875rem",
@@ -132,17 +142,17 @@ export default function KidSelector({ family, familyMembers }: Props) {
                   marginTop: "0.5rem",
                 }}
               >
-                Tap to enter →
+                {member.role === "parent" ? "Tap for Parent View →" : "Tap to enter →"}
               </div>
             )}
           </div>
         ))}
       </div>
 
-      {sortedKids.length === 0 && (
+      {sortedMembers.length === 0 && (
         <div class="card" style={{ textAlign: "center", padding: "3rem" }}>
           <p style={{ color: "var(--color-text-light)" }}>
-            No kids found in this family.
+            No family members found.
           </p>
           <a
             href="/parent/settings"

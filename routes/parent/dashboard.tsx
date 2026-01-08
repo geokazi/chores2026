@@ -12,6 +12,8 @@ interface ParentDashboardData {
   family: any;
   members: any[];
   chores: any[];
+  parentChores: any[];
+  parentProfileId?: string;
   recentActivity: any[];
   error?: string;
 }
@@ -39,11 +41,21 @@ export const handler: Handlers<ParentDashboardData> = {
       // Get family members
       const members = await choreService.getFamilyMembers(familyId);
 
+      // Get current parent profile ID
+      const currentParent = members.find(m => m.role === "parent" && m.user_id === session.user?.id);
+      const parentProfileId = currentParent?.id;
+
       // 🚀 AUTO-REGISTRATION: FamilyScore now auto-registers families when first chore is completed
       // No explicit registration needed - happens automatically via TransactionService
 
       // Get all chores (active and completed)
       const chores = await choreService.getAllChores(familyId);
+
+      // Get parent's own chores if we found their profile
+      let parentChores = [];
+      if (parentProfileId) {
+        parentChores = await choreService.getTodaysChores(parentProfileId, familyId);
+      }
 
       // Get recent activity (last 10 items)
       const recentActivity = await choreService.getRecentActivity(familyId, 10);
@@ -54,6 +66,8 @@ export const handler: Handlers<ParentDashboardData> = {
         family,
         members,
         chores,
+        parentChores,
+        parentProfileId,
         recentActivity,
       });
     } catch (error) {
@@ -62,6 +76,8 @@ export const handler: Handlers<ParentDashboardData> = {
         family: session.family,
         members: [],
         chores: [],
+        parentChores: [],
+        parentProfileId: undefined,
         recentActivity: [],
         error: "Failed to load dashboard",
       });
@@ -72,7 +88,7 @@ export const handler: Handlers<ParentDashboardData> = {
 export default function ParentDashboardPage(
   { data }: PageProps<ParentDashboardData>,
 ) {
-  const { family, members, chores, recentActivity, error } = data;
+  const { family, members, chores, parentChores, parentProfileId, recentActivity, error } = data;
 
   if (error) {
     return (
@@ -114,6 +130,8 @@ export default function ParentDashboardPage(
         family={family}
         members={members}
         chores={chores}
+        parentChores={parentChores}
+        parentProfileId={parentProfileId}
         recentActivity={recentActivity}
       />
     </div>

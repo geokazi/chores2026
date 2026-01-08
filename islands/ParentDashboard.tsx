@@ -37,11 +37,13 @@ interface Props {
   family: Family;
   members: FamilyMember[];
   chores: ChoreAssignment[];
+  parentChores: ChoreAssignment[];
+  parentProfileId?: string;
   recentActivity: any[];
 }
 
 export default function ParentDashboard(
-  { family, members, chores, recentActivity }: Props,
+  { family, members, chores, parentChores, parentProfileId, recentActivity }: Props,
 ) {
   const [showPointAdjustment, setShowPointAdjustment] = useState(false);
   const [selectedMember, setSelectedMember] = useState<FamilyMember | null>(
@@ -51,6 +53,7 @@ export default function ParentDashboard(
   const [pinsEnabled, setPinsEnabled] = useState(family.children_pins_enabled);
   const [isUpdatingPins, setIsUpdatingPins] = useState(false);
   const [adjustmentReason, setAdjustmentReason] = useState("");
+  const [completingChoreId, setCompletingChoreId] = useState<string | null>(null);
 
   const kids = members.filter((m) => m.role === "child");
   const pendingChores = chores.filter((c) => c.status === "pending");
@@ -123,6 +126,36 @@ export default function ParentDashboard(
     }
   };
 
+  const handleCompleteChore = async (choreId: string) => {
+    if (!parentProfileId) return;
+    
+    setCompletingChoreId(choreId);
+    
+    try {
+      const response = await fetch(`/api/chores/${choreId}/complete`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          profile_id: parentProfileId,
+          family_id: family.id,
+        }),
+      });
+
+      if (response.ok) {
+        // Reload to show updated state
+        window.location.reload();
+      } else {
+        console.error("Failed to complete chore");
+      }
+    } catch (error) {
+      console.error("Error completing chore:", error);
+    } finally {
+      setCompletingChoreId(null);
+    }
+  };
+
   return (
     <div>
       {/* Family Overview */}
@@ -158,6 +191,93 @@ export default function ParentDashboard(
           </div>
         </div>
       </div>
+
+      {/* My Chores Section */}
+      {parentChores.length > 0 && (
+        <div class="card" style={{ marginBottom: "1.5rem" }}>
+          <h2
+            style={{
+              fontSize: "1.25rem",
+              fontWeight: "600",
+              marginBottom: "1rem",
+            }}
+          >
+            My Chores
+          </h2>
+          
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+            {parentChores.map((chore) => (
+              <div
+                key={chore.id}
+                class="card"
+                style={{
+                  padding: "1rem",
+                  border: "1px solid var(--color-border)",
+                  backgroundColor: chore.status === "completed" ? "#f0f9ff" : "white",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
+                      <span style={{ fontSize: "1.25rem" }}>
+                        {chore.chore_template?.icon || "📋"}
+                      </span>
+                      <h3 style={{ fontSize: "1rem", fontWeight: "600", margin: 0 }}>
+                        {chore.chore_template?.name || "Chore"}
+                      </h3>
+                    </div>
+                    
+                    {chore.chore_template?.description && (
+                      <p style={{ 
+                        fontSize: "0.875rem", 
+                        color: "var(--color-text-light)", 
+                        margin: "0.25rem 0" 
+                      }}>
+                        {chore.chore_template.description}
+                      </p>
+                    )}
+                    
+                    <div style={{ 
+                      fontSize: "0.875rem", 
+                      color: "var(--color-primary)", 
+                      fontWeight: "600" 
+                    }}>
+                      {chore.point_value} points
+                    </div>
+                  </div>
+                  
+                  <div style={{ marginLeft: "1rem" }}>
+                    {chore.status === "completed" ? (
+                      <div style={{
+                        padding: "0.5rem 1rem",
+                        backgroundColor: "var(--color-success)",
+                        color: "white",
+                        borderRadius: "0.5rem",
+                        fontSize: "0.875rem",
+                        fontWeight: "600",
+                      }}>
+                        ✅ Completed
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => handleCompleteChore(chore.id)}
+                        disabled={completingChoreId === chore.id}
+                        class="btn btn-primary"
+                        style={{
+                          fontSize: "0.875rem",
+                          opacity: completingChoreId === chore.id ? 0.5 : 1,
+                        }}
+                      >
+                        {completingChoreId === chore.id ? "⏳ Completing..." : "✅ Complete"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* PIN Settings */}
       <div class="card" style={{ marginBottom: "1.5rem" }}>
