@@ -124,27 +124,57 @@ export class ChoreService {
     profileId: string,
     familyId: string,
   ): Promise<ChoreAssignment[]> {
-    const today = new Date().toISOString().split("T")[0];
+    // Get chores that are available today:
+    // - Recurring chores: only if due today
+    // - One-time chores: if due today or overdue
+    const today = new Date();
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+    
+    const todayStartStr = todayStart.toISOString();
+    const todayEndStr = todayEnd.toISOString();
 
+    // Get all pending chores for this user
     const { data, error } = await this.client
       .schema("choretracker")
       .from("chore_assignments")
       .select(`
         *,
-        chore_template:chore_templates(*)
+        chore_template:chore_templates!inner(*)
       `)
       .eq("family_id", familyId)
       .eq("assigned_to_profile_id", profileId)
-      .eq("assigned_date", today)
       .eq("is_deleted", false)
-      .order("created_at", { ascending: false });
+      .eq("chore_template.is_deleted", false)
+      .eq("chore_template.is_active", true)
+      .in("status", ["pending", "assigned"])
+      .order("due_date", { ascending: true });
 
     if (error) {
       console.error("Error fetching today's chores:", error);
       return [];
     }
 
-    return data || [];
+    // Filter chores based on type and due date
+    const filteredChores = (data || []).filter(chore => {
+      if (!chore.due_date) return false;
+      
+      const dueDate = new Date(chore.due_date);
+      const isRecurring = chore.chore_template?.is_recurring || chore.is_recurring_instance;
+      
+      if (isRecurring) {
+        // Recurring chores: only show if due today
+        const choreDay = dueDate.toDateString();
+        const todayDay = today.toDateString();
+        return choreDay === todayDay;
+      } else {
+        // One-time chores: show if due today or overdue
+        return dueDate <= todayEnd;
+      }
+    });
+
+    console.log(`📋 Found ${filteredChores.length} available chores for user ${profileId}`);
+    return filteredChores;
   }
 
   /**
