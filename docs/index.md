@@ -19,6 +19,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-06 | [Initial Implementation](./milestones/20260106_initial_implementation.md) | ✅ Complete | Full-stack application with real-time features |
 | 2026-01-06 | [**Conditional Kid PIN System**](./milestones/20260106_conditional_kid_pin_system.md) | ✅ Complete | Dual-mode PIN authentication with family controls |
 | 2026-01-06 | [**FamilyScore Auto-Registration**](./milestones/20260106_familyscore_auto_registration.md) | ✅ Complete | Seamless family/user creation on first chore completion |
+| 2026-01-08 | [**Parent Chore Completion**](./milestones/20260108_parent_chore_completion.md) | ✅ Complete | Parents can view and complete their assigned chores |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 | TBD | Feature Enhancement | 📋 Backlog | Advanced chore management and analytics |
@@ -132,6 +133,7 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 - ✅ **Conditional Security**: Parent-controlled PIN requirements (enable/disable)
 - ✅ **Session Management**: 30-minute kid sessions with cross-device support
 - ✅ **Parent Controls**: Point adjustments, PIN management, and family settings
+- ✅ **Parent Participation**: Parents can view and complete their own assigned chores
 - ✅ **Mobile Design**: Touch-optimized interface with kid-friendly PIN keypad
 - ✅ **Auto-Registration**: Seamless FamilyScore family/user creation on first use
 
