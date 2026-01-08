@@ -58,18 +58,28 @@ export const handler: Handlers = {
 
       try {
         // Connect to FamilyScore Phoenix Channel with authentication
-        familyScoreSocket = new WebSocket(
-          `${familyScoreWsUrl}/websocket?vsn=2.0.0&token=${familyScoreApiKey}`,
-        );
+        // Try multiple authentication approaches
+        let wsUrl = `${familyScoreWsUrl}/websocket?vsn=2.0.0`;
+        
+        familyScoreSocket = new WebSocket(wsUrl, {
+          headers: {
+            "Origin": "http://localhost:8001",
+            "Authorization": `Bearer ${familyScoreApiKey}`,
+            "x-api-key": familyScoreApiKey,
+          },
+        });
 
         familyScoreSocket.addEventListener("open", () => {
           console.log(`🚀 Connected to FamilyScore for family ${familyId}`);
 
-          // Join the family channel (no need to send API key again, it's in the connection)
+          // Join the family channel with authentication
           const joinMessage = {
             topic: `family:${familyId}`,
             event: "phx_join",
-            payload: {},
+            payload: {
+              api_key: familyScoreApiKey,
+              family_id: familyId,
+            },
             ref: "1",
           };
 
@@ -121,14 +131,36 @@ export const handler: Handlers = {
           }
         });
 
-        familyScoreSocket.addEventListener("close", () => {
-          console.log(`❌ FamilyScore WebSocket closed for family ${familyId}`);
-          // Attempt reconnection after 3 seconds
+        familyScoreSocket.addEventListener("close", (event) => {
+          console.log(`❌ FamilyScore WebSocket closed for family ${familyId}`, {
+            code: event.code,
+            reason: event.reason,
+            wasClean: event.wasClean,
+            url: wsUrl
+          });
+          
+          // If error code 1011 (internal server error), stop retrying
+          if (event.code === 1011) {
+            console.log(`🔴 FamilyScore WebSocket: Server error 1011, disabling reconnection for family ${familyId}`);
+            
+            // Send fallback message to client
+            if (clientSocket.readyState === WebSocket.OPEN) {
+              clientSocket.send(JSON.stringify({
+                type: "error",
+                message: "Real-time sync temporarily unavailable",
+                fallback: true,
+                familyId: familyId,
+              }));
+            }
+            return;
+          }
+          
+          // For other errors, attempt reconnection after 5 seconds
           setTimeout(() => {
             if (clientSocket.readyState === WebSocket.OPEN) {
               connectToFamilyScore(familyId, clientSocket);
             }
-          }, 3000);
+          }, 5000);
         });
 
         familyScoreSocket.addEventListener("error", (error) => {
