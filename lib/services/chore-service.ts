@@ -740,4 +740,80 @@ export class ChoreService {
 
     return data || { children_pins_enabled: false, theme: "fresh_meadow" };
   }
+
+  /**
+   * Create chore template AND assignment in one step (simplified)
+   */
+  async createChoreWithTemplate(
+    name: string,
+    description: string,
+    points: number,
+    assignedToProfileId: string,
+    familyId: string,
+    createdByProfileId: string,
+    dueDate: string,
+    category: string = "household"
+  ): Promise<{ success: boolean; assignment?: ChoreAssignment; error?: string }> {
+    try {
+      // First create the template
+      const { data: template, error: templateError } = await this.client
+        .schema("choretracker")
+        .from("chore_templates")
+        .insert({
+          family_id: familyId,
+          name,
+          description,
+          points,
+          category,
+          icon: "📋",
+          is_active: true,
+          is_deleted: false,
+          is_recurring: false,
+          created_by_profile_id: createdByProfileId,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (templateError) {
+        console.error("Error creating chore template:", templateError);
+        return { success: false, error: "Failed to create chore template" };
+      }
+
+      // Then create the assignment
+      const { data: assignment, error: assignmentError } = await this.client
+        .schema("choretracker")
+        .from("chore_assignments")
+        .insert({
+          family_id: familyId,
+          chore_template_id: template.id,
+          assigned_to_profile_id: assignedToProfileId,
+          assigned_date: new Date().toISOString().split("T")[0],
+          due_date: dueDate,
+          status: "pending",
+          point_value: points,
+          assigned_by_profile_id: createdByProfileId,
+          created_by_profile_id: createdByProfileId,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          is_deleted: false,
+        })
+        .select(`
+          *,
+          chore_template:chore_templates(*)
+        `)
+        .single();
+
+      if (assignmentError) {
+        console.error("Error creating chore assignment:", assignmentError);
+        return { success: false, error: "Failed to create chore assignment" };
+      }
+
+      return { success: true, assignment };
+    } catch (error) {
+      console.error("Error in createChoreWithTemplate:", error);
+      return { success: false, error: "Internal error" };
+    }
+  }
 }

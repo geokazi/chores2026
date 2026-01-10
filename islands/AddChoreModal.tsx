@@ -1,0 +1,310 @@
+/**
+ * Simple Add Chore Modal - Under 200 lines
+ * Focused on essential functionality: name, assign, due date, points
+ * Uses existing modal patterns from project
+ */
+
+import { useState } from "preact/hooks";
+
+interface FamilyMember {
+  id: string;
+  name: string;
+  role: "parent" | "child";
+}
+
+interface Props {
+  isOpen: boolean;
+  onClose: () => void;
+  familyMembers: FamilyMember[];
+  onSuccess?: () => void;
+}
+
+export default function AddChoreModal({ isOpen, onClose, familyMembers, onSuccess }: Props) {
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    assignedTo: "",
+    points: 5,
+    dueDate: new Date().toISOString().split("T")[0], // Today's date
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Get all family members for assignment (both parents and children)
+  const assignableMembers = familyMembers;
+
+  const handleSubmit = async (e: Event) => {
+    e.preventDefault();
+    setError(null);
+
+    // Basic validation
+    if (!formData.name.trim()) {
+      setError("Please enter a chore name");
+      return;
+    }
+    if (!formData.assignedTo) {
+      setError("Please assign the chore to someone");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("/api/chores/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.name,
+          description: formData.description,
+          points: formData.points,
+          assignedTo: formData.assignedTo,
+          dueDate: formData.dueDate + "T23:59:59.999Z", // End of day
+          category: "household",
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Reset form
+        setFormData({
+          name: "",
+          description: "",
+          assignedTo: "",
+          points: 5,
+          dueDate: new Date().toISOString().split("T")[0],
+        });
+        
+        onSuccess?.();
+        onClose();
+        
+        // Trigger page refresh to show new chore
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+      } else {
+        setError(result.error || "Failed to create chore");
+      }
+    } catch (err) {
+      console.error("Error creating chore:", err);
+      setError("Failed to create chore");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div 
+      className="modal-overlay"
+      onClick={() => onClose()}
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: "rgba(0, 0, 0, 0.5)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 1000,
+      }}
+    >
+      <div 
+        className="modal"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          backgroundColor: "white",
+          borderRadius: "0.75rem",
+          padding: "1.5rem",
+          width: "90%",
+          maxWidth: "400px",
+          maxHeight: "90vh",
+          overflow: "auto",
+        }}
+      >
+        <div style={{ 
+          display: "flex", 
+          justifyContent: "space-between", 
+          alignItems: "center",
+          marginBottom: "1.5rem"
+        }}>
+          <h2 style={{ fontSize: "1.25rem", fontWeight: "600", margin: 0 }}>
+            Add New Chore
+          </h2>
+          <button 
+            onClick={onClose}
+            style={{
+              background: "none",
+              border: "none",
+              fontSize: "1.5rem",
+              cursor: "pointer",
+              padding: "0.25rem",
+              color: "var(--color-text-light)"
+            }}
+          >
+            ×
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+          {error && (
+            <div style={{ 
+              color: "var(--color-warning)", 
+              fontSize: "0.875rem",
+              padding: "0.5rem",
+              backgroundColor: "#fef2f2",
+              borderRadius: "0.5rem"
+            }}>
+              {error}
+            </div>
+          )}
+
+          <div>
+            <label style={{ display: "block", fontSize: "0.875rem", fontWeight: "500", marginBottom: "0.5rem" }}>
+              Chore Name *
+            </label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.currentTarget.value })}
+              placeholder="e.g., Take out trash"
+              style={{
+                width: "100%",
+                padding: "0.75rem",
+                border: "1px solid var(--color-border)",
+                borderRadius: "0.5rem",
+                fontSize: "1rem",
+              }}
+              required
+            />
+          </div>
+
+          <div>
+            <label style={{ display: "block", fontSize: "0.875rem", fontWeight: "500", marginBottom: "0.5rem" }}>
+              Assign To *
+            </label>
+            <select
+              value={formData.assignedTo}
+              onChange={(e) => setFormData({ ...formData, assignedTo: e.currentTarget.value })}
+              style={{
+                width: "100%",
+                padding: "0.75rem",
+                border: "1px solid var(--color-border)",
+                borderRadius: "0.5rem",
+                fontSize: "1rem",
+              }}
+              required
+            >
+              <option value="">Select family member</option>
+              {assignableMembers.map((member) => (
+                <option key={member.id} value={member.id}>
+                  {member.name} {member.role === "parent" ? "(Parent)" : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ display: "flex", gap: "1rem" }}>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: "block", fontSize: "0.875rem", fontWeight: "500", marginBottom: "0.5rem" }}>
+                Points
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="50"
+                value={formData.points}
+                onChange={(e) => setFormData({ ...formData, points: parseInt(e.currentTarget.value) || 5 })}
+                style={{
+                  width: "100%",
+                  padding: "0.75rem",
+                  border: "1px solid var(--color-border)",
+                  borderRadius: "0.5rem",
+                  fontSize: "1rem",
+                }}
+              />
+            </div>
+
+            <div style={{ flex: 1 }}>
+              <label style={{ display: "block", fontSize: "0.875rem", fontWeight: "500", marginBottom: "0.5rem" }}>
+                Due Date
+              </label>
+              <input
+                type="date"
+                value={formData.dueDate}
+                onChange={(e) => setFormData({ ...formData, dueDate: e.currentTarget.value })}
+                min={new Date().toISOString().split("T")[0]}
+                style={{
+                  width: "100%",
+                  padding: "0.75rem",
+                  border: "1px solid var(--color-border)",
+                  borderRadius: "0.5rem",
+                  fontSize: "1rem",
+                }}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label style={{ display: "block", fontSize: "0.875rem", fontWeight: "500", marginBottom: "0.5rem" }}>
+              Description (Optional)
+            </label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.currentTarget.value })}
+              placeholder="Any special instructions..."
+              rows={2}
+              style={{
+                width: "100%",
+                padding: "0.75rem",
+                border: "1px solid var(--color-border)",
+                borderRadius: "0.5rem",
+                fontSize: "1rem",
+                resize: "vertical",
+              }}
+            />
+          </div>
+
+          <div style={{ display: "flex", gap: "0.75rem", marginTop: "1rem" }}>
+            <button
+              type="button"
+              onClick={onClose}
+              style={{
+                flex: 1,
+                padding: "0.75rem",
+                border: "1px solid var(--color-border)",
+                backgroundColor: "white",
+                color: "var(--color-text)",
+                borderRadius: "0.5rem",
+                cursor: "pointer",
+                fontSize: "1rem",
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              style={{
+                flex: 1,
+                padding: "0.75rem",
+                border: "none",
+                backgroundColor: isSubmitting ? "#ccc" : "var(--color-primary)",
+                color: "white",
+                borderRadius: "0.5rem",
+                cursor: isSubmitting ? "not-allowed" : "pointer",
+                fontSize: "1rem",
+                fontWeight: "600",
+              }}
+            >
+              {isSubmitting ? "Creating..." : "Create Chore"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}

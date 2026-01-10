@@ -6,6 +6,7 @@
 import { useState } from "preact/hooks";
 import LiveLeaderboard from "./LiveLeaderboard.tsx";
 import LiveActivityFeed from "./LiveActivityFeed.tsx";
+import AddChoreModal from "./AddChoreModal.tsx";
 
 interface Family {
   id: string;
@@ -37,13 +38,11 @@ interface Props {
   family: Family;
   members: FamilyMember[];
   chores: ChoreAssignment[];
-  parentChores: ChoreAssignment[];
-  parentProfileId?: string;
   recentActivity: any[];
 }
 
 export default function ParentDashboard(
-  { family, members, chores, parentChores, parentProfileId, recentActivity }: Props,
+  { family, members, chores, recentActivity }: Props,
 ) {
   const [showPointAdjustment, setShowPointAdjustment] = useState(false);
   const [selectedMember, setSelectedMember] = useState<FamilyMember | null>(
@@ -53,7 +52,7 @@ export default function ParentDashboard(
   const [pinsEnabled, setPinsEnabled] = useState(family.children_pins_enabled);
   const [isUpdatingPins, setIsUpdatingPins] = useState(false);
   const [adjustmentReason, setAdjustmentReason] = useState("");
-  const [completingChoreId, setCompletingChoreId] = useState<string | null>(null);
+  const [showAddChore, setShowAddChore] = useState(false);
 
   const kids = members.filter((m) => m.role === "child");
   const pendingChores = chores.filter((c) => c.status === "pending");
@@ -126,35 +125,6 @@ export default function ParentDashboard(
     }
   };
 
-  const handleCompleteChore = async (choreId: string) => {
-    if (!parentProfileId) return;
-    
-    setCompletingChoreId(choreId);
-    
-    try {
-      const response = await fetch(`/api/chores/${choreId}/complete`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          profile_id: parentProfileId,
-          family_id: family.id,
-        }),
-      });
-
-      if (response.ok) {
-        // Reload to show updated state
-        window.location.reload();
-      } else {
-        console.error("Failed to complete chore");
-      }
-    } catch (error) {
-      console.error("Error completing chore:", error);
-    } finally {
-      setCompletingChoreId(null);
-    }
-  };
 
   return (
     <div>
@@ -192,92 +162,6 @@ export default function ParentDashboard(
         </div>
       </div>
 
-      {/* My Chores Section */}
-      {parentChores.length > 0 && (
-        <div class="card" style={{ marginBottom: "1.5rem" }}>
-          <h2
-            style={{
-              fontSize: "1.25rem",
-              fontWeight: "600",
-              marginBottom: "1rem",
-            }}
-          >
-            My Chores
-          </h2>
-          
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-            {parentChores.map((chore) => (
-              <div
-                key={chore.id}
-                class="card"
-                style={{
-                  padding: "1rem",
-                  border: "1px solid var(--color-border)",
-                  backgroundColor: chore.status === "completed" ? "#f0f9ff" : "white",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
-                      <span style={{ fontSize: "1.25rem" }}>
-                        {chore.chore_template?.icon || "📋"}
-                      </span>
-                      <h3 style={{ fontSize: "1rem", fontWeight: "600", margin: 0 }}>
-                        {chore.chore_template?.name || "Chore"}
-                      </h3>
-                    </div>
-                    
-                    {chore.chore_template?.description && (
-                      <p style={{ 
-                        fontSize: "0.875rem", 
-                        color: "var(--color-text-light)", 
-                        margin: "0.25rem 0" 
-                      }}>
-                        {chore.chore_template.description}
-                      </p>
-                    )}
-                    
-                    <div style={{ 
-                      fontSize: "0.875rem", 
-                      color: "var(--color-primary)", 
-                      fontWeight: "600" 
-                    }}>
-                      {chore.point_value} points
-                    </div>
-                  </div>
-                  
-                  <div style={{ marginLeft: "1rem" }}>
-                    {chore.status === "completed" ? (
-                      <div style={{
-                        padding: "0.5rem 1rem",
-                        backgroundColor: "var(--color-success)",
-                        color: "white",
-                        borderRadius: "0.5rem",
-                        fontSize: "0.875rem",
-                        fontWeight: "600",
-                      }}>
-                        ✅ Completed
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => handleCompleteChore(chore.id)}
-                        disabled={completingChoreId === chore.id}
-                        class="btn btn-primary"
-                        style={{
-                          fontSize: "0.875rem",
-                          opacity: completingChoreId === chore.id ? 0.5 : 1,
-                        }}
-                      >
-                        {completingChoreId === chore.id ? "⏳ Completing..." : "✅ Complete"}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* PIN Settings */}
       <div class="card" style={{ marginBottom: "1.5rem" }}>
@@ -377,6 +261,13 @@ export default function ParentDashboard(
 
         <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
           <button
+            onClick={() => setShowAddChore(true)}
+            class="btn btn-primary"
+            style={{ fontSize: "0.875rem" }}
+          >
+            ➕ Add Chore
+          </button>
+          <button
             onClick={() => setShowPointAdjustment(true)}
             class="btn btn-secondary"
             style={{ fontSize: "0.875rem" }}
@@ -399,6 +290,80 @@ export default function ParentDashboard(
           </a>
         </div>
       </div>
+
+      {/* Family Chores Overview */}
+      {chores.length > 0 && (
+        <div class="card" style={{ marginBottom: "1.5rem" }}>
+          <h2
+            style={{
+              fontSize: "1.25rem",
+              fontWeight: "600",
+              marginBottom: "1rem",
+            }}
+          >
+            All Family Chores
+          </h2>
+          
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+            {chores.slice(0, 5).map((chore: any) => {
+              const assignedMember = members.find(m => m.id === chore.assigned_to_profile_id);
+              const isParentChore = assignedMember?.role === "parent";
+              
+              return (
+                <div
+                  key={chore.id}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "0.75rem",
+                    backgroundColor: chore.status === "completed" ? "#f0f9ff" : "#f9fafb",
+                    borderRadius: "0.5rem",
+                    fontSize: "0.875rem"
+                  }}
+                >
+                  <div>
+                    <div>
+                      <span style={{ fontSize: "1rem", marginRight: "0.5rem" }}>
+                        {chore.chore_template?.icon || "📋"}
+                      </span>
+                      <strong>{chore.chore_template?.name}</strong>
+                      <span style={{ color: "var(--color-text-light)", marginLeft: "0.5rem" }}>
+                        → {assignedMember?.name}
+                        {isParentChore && <span style={{ marginLeft: "0.25rem" }}>👨‍💼</span>}
+                      </span>
+                    </div>
+                    {chore.due_date && (
+                      <div style={{
+                        fontSize: "0.75rem",
+                        color: "var(--color-text-light)",
+                        marginTop: "0.25rem",
+                        marginLeft: "1.5rem"
+                      }}>
+                        📅 Due: {new Date(chore.due_date).toLocaleDateString()} at {new Date(chore.due_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ 
+                    fontSize: "0.75rem", 
+                    color: chore.status === "completed" ? "var(--color-success)" : "var(--color-text-light)"
+                  }}>
+                    {chore.status === "completed" ? "✅" : `${chore.point_value} pts`}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          
+          {chores.length > 5 && (
+            <div style={{ textAlign: "center", marginTop: "1rem" }}>
+              <span style={{ fontSize: "0.875rem", color: "var(--color-text-light)" }}>
+                +{chores.length - 5} more chores
+              </span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Live Leaderboard */}
       {kids.length > 0 && (
@@ -546,6 +511,16 @@ export default function ParentDashboard(
           </div>
         </div>
       )}
+
+      {/* Add Chore Modal */}
+      <AddChoreModal
+        isOpen={showAddChore}
+        onClose={() => setShowAddChore(false)}
+        familyMembers={members}
+        onSuccess={() => {
+          console.log("✅ Chore created successfully");
+        }}
+      />
     </div>
   );
 }

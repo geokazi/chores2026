@@ -32,23 +32,49 @@ export default function KidSelector({ family, familyMembers }: Props) {
   // Show all family members (both parents and children)
   const allMembers = familyMembers;
 
-  const handleMemberSelect = (member: FamilyMember) => {
+  const handleMemberSelect = async (member: FamilyMember) => {
     if (member.role === "parent") {
-      // Parents go to parent dashboard
-      window.location.href = `/parent/dashboard`;
+      try {
+        // Set active parent in session (same pattern as kids)
+        const { ActiveKidSessionManager } = await import("../lib/active-kid-session.ts");
+        ActiveKidSessionManager.setActiveKid(member.id, member.name); // Reuse same function for parents
+        // Parents go to their personal chore view
+        window.location.href = `/parent/my-chores`;
+      } catch (error) {
+        console.error("Failed to set active parent:", error);
+        // Fallback to family dashboard
+        window.location.href = `/parent/dashboard`;
+      }
     } else if (family.children_pins_enabled && member.role === "child") {
       // Children with PIN enabled go through PIN entry
       setSelectedKid(member);
       setShowPinEntry(true);
     } else {
-      // Children without PIN go directly to kid dashboard
-      window.location.href = `/kid/${member.id}/dashboard`;
+      // Children without PIN go to secure kid dashboard (session-based)
+      try {
+        const { ActiveKidSessionManager } = await import("../lib/active-kid-session.ts");
+        ActiveKidSessionManager.setActiveKid(member.id, member.name);
+        window.location.href = `/kid/dashboard`;
+      } catch (error) {
+        console.error("Failed to set active kid:", error);
+        // Fallback to old route temporarily
+        window.location.href = `/kid/${member.id}/dashboard`;
+      }
     }
   };
 
-  const handlePinSuccess = () => {
+  const handlePinSuccess = async () => {
     if (selectedKid) {
-      window.location.href = `/kid/${selectedKid.id}/dashboard`;
+      try {
+        // Set active kid in session and redirect to secure dashboard
+        const { ActiveKidSessionManager } = await import("../lib/active-kid-session.ts");
+        ActiveKidSessionManager.setActiveKid(selectedKid.id, selectedKid.name);
+        window.location.href = `/kid/dashboard`;
+      } catch (error) {
+        console.error("Failed to set active kid:", error);
+        // Fallback to old route temporarily
+        window.location.href = `/kid/${selectedKid.id}/dashboard`;
+      }
     }
   };
 

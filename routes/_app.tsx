@@ -11,7 +11,6 @@ export default function App({ Component }: PageProps) {
       </head>
       <body>
         <Component />
-        <script src="/websocket-client.js"></script>
       </body>
     </html>
   );

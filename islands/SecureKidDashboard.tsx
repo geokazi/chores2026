@@ -1,0 +1,149 @@
+/**
+ * Secure Kid Dashboard Component (Client-Side Active Kid Loading)
+ * Based on original repo's simple session pattern - under 200 lines
+ */
+
+import { useEffect, useState } from "preact/hooks";
+import { ActiveKidSessionManager } from "../lib/active-kid-session.ts";
+import KidDashboard from "./KidDashboard.tsx";
+
+interface Props {
+  family: any;
+  familyMembers: any[];
+  recentActivity: any[];
+}
+
+export default function SecureKidDashboard({ family, familyMembers, recentActivity }: Props) {
+  const [activeKid, setActiveKid] = useState<any>(null);
+  const [todaysChores, setTodaysChores] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadActiveKid();
+  }, [familyMembers]);
+
+  const loadActiveKid = async () => {
+    try {
+      // Get active kid from session
+      const activeKidId = ActiveKidSessionManager.getActiveKidId();
+      
+      if (!activeKidId) {
+        // No active kid - redirect to selector
+        window.location.href = "/";
+        return;
+      }
+
+      // Find kid in family members
+      const kid = familyMembers.find(member => member.id === activeKidId);
+      if (!kid) {
+        // Kid not in family - clear session and redirect
+        ActiveKidSessionManager.clearActiveKid();
+        window.location.href = "/";
+        return;
+      }
+
+      setActiveKid(kid);
+      
+      // Load kid's chores
+      await loadKidChores(activeKidId);
+      
+    } catch (err) {
+      console.error("Error loading active kid:", err);
+      setError("Failed to load kid information");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadKidChores = async (kidId: string) => {
+    try {
+      // Secure API call - kid ID in request body, not URL
+      const response = await fetch('/api/kids/chores', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ kidId }),
+      });
+      
+      if (response.ok) {
+        const chores = await response.json();
+        setTodaysChores(chores);
+      } else {
+        console.error("Failed to load chores");
+        setTodaysChores([]);
+      }
+    } catch (err) {
+      console.error("Error loading chores:", err);
+      setTodaysChores([]);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div class="container">
+        <div style={{ 
+          textAlign: "center", 
+          padding: "3rem",
+          color: "var(--color-text-light)" 
+        }}>
+          <div style={{ fontSize: "2rem", marginBottom: "1rem" }}>⏳</div>
+          <p>Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !activeKid) {
+    return (
+      <div class="container">
+        <div class="card" style={{ textAlign: "center", padding: "3rem" }}>
+          <p style={{ color: "var(--color-warning)" }}>
+            {error || "No active kid session found"}
+          </p>
+          <a href="/" class="btn btn-primary" style={{ marginTop: "1rem" }}>
+            Back to Kid Selection
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {/* Header with kid info */}
+      <div class="header">
+        <div>
+          <a href="/" style={{ color: "white", textDecoration: "none" }}>
+            ← Switch Kid
+          </a>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+          <span>👧</span>
+          <span>{activeKid.name}</span>
+          {family?.children_pins_enabled && (
+            <span style={{ fontSize: "0.75rem", opacity: 0.7 }}>🔐</span>
+          )}
+        </div>
+        <div>
+          <a
+            href="/parent/dashboard"
+            style={{ color: "white", textDecoration: "none" }}
+          >
+            ≡
+          </a>
+        </div>
+      </div>
+
+      {/* Kid Dashboard */}
+      <KidDashboard
+        kid={activeKid}
+        family={family}
+        familyMembers={familyMembers}
+        todaysChores={todaysChores}
+        recentActivity={recentActivity}
+      />
+    </>
+  );
+}
