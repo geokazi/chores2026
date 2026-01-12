@@ -37,6 +37,11 @@ export class ActiveKidSessionManager {
     };
     
     localStorage.setItem(`${this.STORAGE_KEY}_${sessionId}`, JSON.stringify(session));
+    
+    // 🔒 SECURITY: Also set server-readable cookie for secure routing (NO GUID in URL)
+    const cookieData = JSON.stringify({ kidId: profileId, kidName: profileName, sessionId });
+    document.cookie = `active_kid_session=${encodeURIComponent(cookieData)}; path=/; SameSite=Lax; secure=${window.location.protocol === 'https:'}`;
+    
     console.log(`✅ Active profile set: ${profileName} (session: ${sessionId.substr(-6)})`);
   }
   
@@ -83,6 +88,10 @@ export class ActiveKidSessionManager {
     
     const sessionId = this.getSessionId();
     localStorage.removeItem(`${this.STORAGE_KEY}_${sessionId}`);
+    
+    // 🔒 SECURITY: Also clear server-readable cookie
+    document.cookie = `active_kid_session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+    
     console.log(`🧹 Active profile session cleared (session: ${sessionId.substr(-6)})`);
   }
   

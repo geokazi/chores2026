@@ -27,6 +27,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-08 | [**Parent Chore Completion**](./milestones/20260108_parent_chore_completion.md) | ✅ Complete | Parents can view and complete their assigned chores |
 | 2026-01-10 | [**Secure Session Management**](./milestones/20260110_secure_session_management.md) | ✅ Complete | No GUIDs in URLs, multi-user browser support |
 | 2026-01-10 | [**Personal Parent Dashboards**](./milestones/20260110_personal_parent_dashboards.md) | ✅ Complete | Individual parent views separate from family dashboard |
+| 2026-01-11 | [**Real-Time WebSocket & Critical Security**](./milestones/20260111_real_time_websocket_security_implementation.md) | ✅ Complete | Strategic WebSocket integration + complete URL GUID elimination |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 
@@ -52,9 +53,10 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 - **AuthenticationService**: Secure session management across devices
 
 #### Real-time Features
-- **LiveLeaderboard**: Family rankings with streak calculations
+- **LiveLeaderboard**: Family rankings with streak calculations and sub-2-second updates
 - **LiveActivityFeed**: Recent chore completions with animations
-- **WebSocket Integration**: Secure proxy pattern for API key protection
+- **Strategic WebSocket Integration**: Direct FamilyScore Phoenix Channel connection
+- **Cross-Device Sync**: Real-time points updates across all family devices
 
 ### 🎨 User Experience
 
@@ -144,7 +146,8 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 - ✅ **Core Functionality**: Complete chore assignment and completion workflow for all family members
 - ✅ **Secure Session Management**: No GUIDs in URLs, multi-user browser support with session isolation
 - ✅ **Personal Parent Dashboards**: Individual parent views separate from family management dashboard
-- ✅ **Real-time Features**: Live leaderboard and activity feeds via WebSocket with FamilyScore integration
+- ✅ **Strategic Real-Time Features**: Sub-2-second WebSocket updates across all family devices
+- ✅ **Critical URL Security Fix**: 100% elimination of user GUIDs from ALL parts of URLs (paths AND query parameters)
 - ✅ **Authentication**: Multi-provider login with dual-mode PIN system and session-based routing
 - ✅ **Conditional Security**: Parent-controlled PIN requirements with family-wide enable/disable
 - ✅ **Cross-Device Sessions**: Browser tab-specific sessions with localStorage + sessionStorage
@@ -196,5 +199,5 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 
 ---
 
-*Last updated: January 6, 2026*  
+*Last updated: January 11, 2026*  
 *Maintained by: Claude Code AI Assistant*

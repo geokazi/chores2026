@@ -293,16 +293,14 @@ export class TransactionService {
       completion_time: completionTime,
     });
 
-    // Determine endpoint based on point change direction
-    const endpoint = request.pointsChange > 0
-      ? "/api/points/award"
-      : "/api/points/deduct";
+    // ✅ NEW: Always use state synchronization instead of incremental approach
+    const endpoint = "/api/points/set";
 
     // 🚀 ENHANCED: Include auto-registration metadata for smart family creation
     const payload = {
       family_id: request.familyId,
       user_id: request.profileId,
-      points: Math.abs(request.pointsChange), // Always send positive value
+      points: newBalance, // ✅ Use absolute current balance instead of incremental change
       reason: this.mapTransactionTypeToReason(request),
       
       // 🆕 NEW: Optional smart auto-registration metadata
@@ -328,11 +326,12 @@ export class TransactionService {
     };
 
     console.log(
-      `🚀 Notifying FamilyScore: ${request.transactionType} ${request.pointsChange}pts`,
+      `🚀 Notifying FamilyScore: ${request.transactionType} → balance: ${newBalance}pts`,
       {
         endpoint,
         family_id: request.familyId,
         user_id: request.profileId,
+        new_balance: newBalance,
         hash: transactionHash.substring(0, 8) + "...",
       },
     );

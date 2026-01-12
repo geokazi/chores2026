@@ -3,10 +3,11 @@
  * Family management and monitoring interface
  */
 
-import { useState } from "preact/hooks";
+import { useState, useEffect } from "preact/hooks";
 import LiveLeaderboard from "./LiveLeaderboard.tsx";
 import LiveActivityFeed from "./LiveActivityFeed.tsx";
 import AddChoreModal from "./AddChoreModal.tsx";
+import WebSocketManager from "./WebSocketManager.tsx";
 
 interface Family {
   id: string;
@@ -53,8 +54,35 @@ export default function ParentDashboard(
   const [isUpdatingPins, setIsUpdatingPins] = useState(false);
   const [adjustmentReason, setAdjustmentReason] = useState("");
   const [showAddChore, setShowAddChore] = useState(false);
+  
+  // 🎮 Real-time family leaderboard updates via WebSocketManager
+  const [liveMembers, setLiveMembers] = useState(members);
+  const [wsConnected, setWsConnected] = useState(false);
 
-  const kids = members.filter((m) => m.role === "child");
+  // Handle real-time leaderboard updates
+  const handleLeaderboardUpdate = (leaderboard: any[]) => {
+    console.log('🏆 Live leaderboard update:', leaderboard);
+    
+    // Update member points from FamilyScore real-time data
+    setLiveMembers(current => 
+      current.map(member => {
+        const updated = leaderboard.find(p => p.user_id === member.id);
+        return updated 
+          ? { ...member, current_points: updated.points }
+          : member;
+      })
+    );
+  };
+
+  const handleWebSocketMessage = (message: any) => {
+    if (message.type === "leaderboard_update") {
+      setWsConnected(true);
+    } else if (message.type === "feature_disabled" || message.type === "fallback_mode") {
+      setWsConnected(false);
+    }
+  };
+
+  const kids = liveMembers.filter((m) => m.role === "child");
   const pendingChores = chores.filter((c) => c.status === "pending");
   const completedChores = chores.filter((c) => c.status === "completed");
 
@@ -127,7 +155,12 @@ export default function ParentDashboard(
 
 
   return (
-    <div>
+    <WebSocketManager 
+      familyId={family.id}
+      onLeaderboardUpdate={handleLeaderboardUpdate}
+      onMessage={handleWebSocketMessage}
+    >
+      <div>
       {/* Family Overview */}
       <div class="card" style={{ marginBottom: "1.5rem" }}>
         <h2
@@ -368,8 +401,21 @@ export default function ParentDashboard(
       {/* Live Leaderboard */}
       {kids.length > 0 && (
         <div style={{ marginBottom: "1.5rem" }}>
+          <div style={{ 
+            display: "flex", 
+            alignItems: "center", 
+            gap: "0.5rem", 
+            marginBottom: "0.5rem" 
+          }}>
+            <span style={{ 
+              fontSize: "0.875rem", 
+              color: wsConnected ? "var(--color-success)" : "var(--color-text-light)" 
+            }}>
+              {wsConnected ? "🎮 Live updates" : "📊 Static view"}
+            </span>
+          </div>
           <LiveLeaderboard
-            familyMembers={members}
+            familyMembers={liveMembers}
             currentKidId=""
             familyId={family.id}
           />
@@ -521,6 +567,7 @@ export default function ParentDashboard(
           console.log("✅ Chore created successfully");
         }}
       />
-    </div>
+      </div>
+    </WebSocketManager>
   );
 }

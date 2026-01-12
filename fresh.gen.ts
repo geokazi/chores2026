@@ -14,8 +14,6 @@ import * as $api_kids_chores from "./routes/api/kids/chores.ts";
 import * as $api_pin_verify from "./routes/api/pin/verify.ts";
 import * as $api_points_adjust from "./routes/api/points/adjust.ts";
 import * as $index from "./routes/index.tsx";
-import * as $kid_kid_id_chore_chore_id_ from "./routes/kid/[kid_id]/chore/[chore_id].tsx";
-import * as $kid_kid_id_dashboard from "./routes/kid/[kid_id]/dashboard.tsx";
 import * as $kid_dashboard from "./routes/kid/dashboard.tsx";
 import * as $login from "./routes/login.tsx";
 import * as $logout from "./routes/logout.ts";
@@ -61,8 +59,6 @@ const manifest = {
     "./routes/api/pin/verify.ts": $api_pin_verify,
     "./routes/api/points/adjust.ts": $api_points_adjust,
     "./routes/index.tsx": $index,
-    "./routes/kid/[kid_id]/chore/[chore_id].tsx": $kid_kid_id_chore_chore_id_,
-    "./routes/kid/[kid_id]/dashboard.tsx": $kid_kid_id_dashboard,
     "./routes/kid/dashboard.tsx": $kid_dashboard,
     "./routes/login.tsx": $login,
     "./routes/logout.ts": $logout,

@@ -6,6 +6,7 @@
 import { useEffect, useState } from "preact/hooks";
 import { ActiveKidSessionManager } from "../lib/active-kid-session.ts";
 import KidDashboard from "./KidDashboard.tsx";
+import WebSocketManager from "./WebSocketManager.tsx";
 
 interface Props {
   family: any;
@@ -18,10 +19,35 @@ export default function SecureKidDashboard({ family, familyMembers, recentActivi
   const [todaysChores, setTodaysChores] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [wsConnected, setWsConnected] = useState(false);
 
   useEffect(() => {
     loadActiveKid();
   }, [familyMembers]);
+
+  // Handle real-time points updates via WebSocketManager
+  const handleLeaderboardUpdate = (leaderboard: any[]) => {
+    if (!activeKid) return;
+    
+    console.log('🏆 Live points update for kid:', leaderboard);
+    
+    // Update active kid's points if they're in the leaderboard update
+    const kidUpdate = leaderboard.find(p => p.user_id === activeKid.id);
+    if (kidUpdate) {
+      setActiveKid(current => ({
+        ...current,
+        current_points: kidUpdate.points
+      }));
+    }
+  };
+
+  const handleWebSocketMessage = (message: any) => {
+    if (message.type === "leaderboard_update") {
+      setWsConnected(true);
+    } else if (message.type === "feature_disabled" || message.type === "fallback_mode") {
+      setWsConnected(false);
+    }
+  };
 
   const loadActiveKid = async () => {
     try {
@@ -111,7 +137,11 @@ export default function SecureKidDashboard({ family, familyMembers, recentActivi
   }
 
   return (
-    <>
+    <WebSocketManager 
+      familyId={family.id}
+      onLeaderboardUpdate={handleLeaderboardUpdate}
+      onMessage={handleWebSocketMessage}
+    >
       {/* Header with kid info */}
       <div class="header">
         <div>
@@ -125,6 +155,13 @@ export default function SecureKidDashboard({ family, familyMembers, recentActivi
           {family?.children_pins_enabled && (
             <span style={{ fontSize: "0.75rem", opacity: 0.7 }}>🔐</span>
           )}
+          <span style={{ 
+            fontSize: "0.625rem", 
+            color: wsConnected ? "var(--color-success)" : "var(--color-text-light)",
+            marginLeft: "0.25rem"
+          }}>
+            {wsConnected ? "🎮" : "📊"}
+          </span>
         </div>
         <div>
           <a
@@ -143,7 +180,13 @@ export default function SecureKidDashboard({ family, familyMembers, recentActivi
         familyMembers={familyMembers}
         todaysChores={todaysChores}
         recentActivity={recentActivity}
+        onChoreComplete={() => {
+          // Refresh chores after completion to get updated data
+          if (activeKid) {
+            loadKidChores(activeKid.id);
+          }
+        }}
       />
-    </>
+    </WebSocketManager>
   );
 }

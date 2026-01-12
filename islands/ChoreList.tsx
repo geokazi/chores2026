@@ -25,13 +25,39 @@ interface Props {
 export default function ChoreList({ chores, onChoreComplete, kidId }: Props) {
   const [completingChore, setCompletingChore] = useState<string | null>(null);
 
-  const handleChoreClick = async (chore: ChoreAssignment) => {
-    if (chore.status === "completed") {
-      return; // Already completed
+  const handleChoreComplete = async (chore: ChoreAssignment) => {
+    if (chore.status === "completed" || completingChore === chore.id) {
+      return; // Already completed or in progress
     }
 
-    // Navigate to chore detail page for completion
-    window.location.href = `/kid/${kidId}/chore/${chore.id}`;
+    setCompletingChore(chore.id);
+
+    try {
+      const response = await fetch(`/api/chores/${chore.id}/complete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ kid_id: kidId }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('🎉 Chore completed:', result);
+        
+        // Call the parent's completion handler to update the UI
+        onChoreComplete(chore.id);
+      } else {
+        const error = await response.json();
+        console.error('Failed to complete chore:', error);
+        alert('Failed to complete chore. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error completing chore:', error);
+      alert('An error occurred. Please try again.');
+    } finally {
+      setCompletingChore(null);
+    }
   };
 
   const getChoreIcon = (chore: ChoreAssignment) => {
@@ -85,9 +111,7 @@ export default function ChoreList({ chores, onChoreComplete, kidId }: Props) {
           class={`card chore-card ${
             chore.status === "completed" ? "completed" : ""
           }`}
-          onClick={() => handleChoreClick(chore)}
           style={{
-            cursor: chore.status === "completed" ? "default" : "pointer",
             opacity: chore.status === "completed" ? 0.8 : 1,
           }}
         >
@@ -96,12 +120,15 @@ export default function ChoreList({ chores, onChoreComplete, kidId }: Props) {
               style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}
             >
               <span
+                onClick={() => handleChoreComplete(chore)}
                 style={{
                   fontSize: "1.25rem",
                   color: getStatusColor(chore.status),
+                  cursor: chore.status === "completed" || completingChore === chore.id ? "default" : "pointer",
+                  opacity: completingChore === chore.id ? 0.5 : 1,
                 }}
               >
-                {getStatusIcon(chore.status)}
+                {completingChore === chore.id ? "⏳" : getStatusIcon(chore.status)}
               </span>
               <span style={{ fontSize: "1.5rem" }}>
                 {getChoreIcon(chore)}
@@ -144,7 +171,7 @@ export default function ChoreList({ chores, onChoreComplete, kidId }: Props) {
                 textAlign: "center",
               }}
             >
-              Tap to complete
+              {completingChore === chore.id ? "Completing..." : "Tap ☐ to complete"}
             </div>
           )}
         </div>

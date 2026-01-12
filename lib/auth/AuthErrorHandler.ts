@@ -6,7 +6,7 @@
  * logic between login.tsx and signup.tsx.
  */
 
-import type { AuthResult } from "./AuthenticationService.twilio-verify.ts";
+import type { AuthResult } from "./AuthenticationService.ts";
 import { ParameterSanitizer } from "./ParameterSanitizer.ts";
 import { SecurityMonitor } from "./SecurityMonitor.ts";
 

@@ -32,6 +32,7 @@ interface Props {
   familyMembers: FamilyMember[];
   todaysChores: ChoreAssignment[];
   recentActivity: any[];
+  onChoreComplete?: () => void;
 }
 
 export default function KidDashboard({
@@ -40,10 +41,16 @@ export default function KidDashboard({
   familyMembers,
   todaysChores,
   recentActivity,
+  onChoreComplete,
 }: Props) {
   const [chores, setChores] = useState(todaysChores);
   const [leaderboard, setLeaderboard] = useState(familyMembers);
   const [activity, setActivity] = useState(recentActivity);
+
+  // Update chores when props change (after refresh)
+  useEffect(() => {
+    setChores(todaysChores);
+  }, [todaysChores]);
 
   // Calculate kid's ranking and streak
   const sortedMembers = [...leaderboard]
@@ -79,36 +86,23 @@ export default function KidDashboard({
     return "";
   };
 
-  const handleChoreComplete = async (choreId: string) => {
-    try {
-      const response = await fetch(`/api/chores/${choreId}/complete`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ kid_id: kid.id }),
-      });
+  const handleChoreComplete = (choreId: string) => {
+    // Update local chore status immediately for responsive UI
+    setChores((prev) =>
+      prev.map((chore) =>
+        chore.id === choreId
+          ? { ...chore, status: "completed" as const }
+          : chore
+      )
+    );
 
-      if (response.ok) {
-        // Update local chore status
-        setChores((prev) =>
-          prev.map((chore) =>
-            chore.id === choreId
-              ? { ...chore, status: "completed" as const }
-              : chore
-          )
-        );
-
-        // Show celebration (this could trigger a modal)
-        // TODO: Add celebration modal here
-
-        // The WebSocket connection will update leaderboard automatically
-      } else {
-        console.error("Failed to complete chore");
-      }
-    } catch (error) {
-      console.error("Error completing chore:", error);
+    // Trigger parent component refresh if provided
+    if (onChoreComplete) {
+      onChoreComplete();
     }
+
+    // The WebSocket connection will update leaderboard automatically via FamilyScore
+    console.log('🎉 Chore marked as completed locally:', choreId);
   };
 
   return (
@@ -170,18 +164,6 @@ export default function KidDashboard({
           </div>
         )}
 
-        {chores.length > 0 && (
-          <p
-            style={{
-              fontSize: "0.875rem",
-              color: "var(--color-text-light)",
-              textAlign: "center",
-              marginTop: "1rem",
-            }}
-          >
-            Tap any chore to complete →
-          </p>
-        )}
       </div>
 
       {/* Family Leaderboard */}

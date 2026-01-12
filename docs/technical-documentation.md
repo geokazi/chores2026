@@ -48,7 +48,7 @@ graph TB
 - **Database**: [Supabase](https://supabase.io/) PostgreSQL with real-time subscriptions
 - **Authentication**: Multi-provider OAuth with Supabase Auth
 - **API Integration**: RESTful APIs with WebSocket proxy pattern
-- **Security**: bcrypt for PIN hashing, server-side API key management
+- **Security**: bcrypt for PIN hashing, cookie-based sessions, complete URL GUID elimination
 
 #### External Services
 - **FamilyScore**: Real-time point tracking and family gamification

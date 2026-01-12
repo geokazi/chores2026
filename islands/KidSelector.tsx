@@ -4,8 +4,9 @@
  * Handles PIN entry if enabled for the family
  */
 
-import { useState } from "preact/hooks";
+import { useState, useEffect } from "preact/hooks";
 import PinEntryModal from "./PinEntryModal.tsx";
+import WebSocketManager from "./WebSocketManager.tsx";
 
 interface FamilyMember {
   id: string;
@@ -28,9 +29,34 @@ interface Props {
 export default function KidSelector({ family, familyMembers }: Props) {
   const [selectedKid, setSelectedKid] = useState<FamilyMember | null>(null);
   const [showPinEntry, setShowPinEntry] = useState(false);
+  const [liveMembers, setLiveMembers] = useState(familyMembers);
+  const [wsConnected, setWsConnected] = useState(false);
 
-  // Show all family members (both parents and children)
-  const allMembers = familyMembers;
+  // Handle real-time points updates via WebSocketManager
+  const handleLeaderboardUpdate = (leaderboard: any[]) => {
+    console.log('🏆 Live points update for selector:', leaderboard);
+    
+    // Update member points from FamilyScore real-time data
+    setLiveMembers(current => 
+      current.map(member => {
+        const updated = leaderboard.find(p => p.user_id === member.id);
+        return updated 
+          ? { ...member, current_points: updated.points }
+          : member;
+      })
+    );
+  };
+
+  const handleWebSocketMessage = (message: any) => {
+    if (message.type === "leaderboard_update") {
+      setWsConnected(true);
+    } else if (message.type === "feature_disabled" || message.type === "fallback_mode") {
+      setWsConnected(false);
+    }
+  };
+
+  // Show all family members with live points updates
+  const allMembers = liveMembers;
 
   const handleMemberSelect = async (member: FamilyMember) => {
     if (member.role === "parent") {
@@ -57,8 +83,8 @@ export default function KidSelector({ family, familyMembers }: Props) {
         window.location.href = `/kid/dashboard`;
       } catch (error) {
         console.error("Failed to set active kid:", error);
-        // Fallback to old route temporarily
-        window.location.href = `/kid/${member.id}/dashboard`;
+        // Error handling - stay on current page
+        alert("Failed to set active kid. Please try again.");
       }
     }
   };
@@ -72,8 +98,9 @@ export default function KidSelector({ family, familyMembers }: Props) {
         window.location.href = `/kid/dashboard`;
       } catch (error) {
         console.error("Failed to set active kid:", error);
-        // Fallback to old route temporarily
-        window.location.href = `/kid/${selectedKid.id}/dashboard`;
+        // Error handling - close PIN modal and stay on current page
+        setShowPinEntry(false);
+        alert("Failed to set active kid. Please try again.");
       }
     }
   };
@@ -105,7 +132,21 @@ export default function KidSelector({ family, familyMembers }: Props) {
   );
 
   return (
-    <>
+    <WebSocketManager 
+      familyId={family.id}
+      onLeaderboardUpdate={handleLeaderboardUpdate}
+      onMessage={handleWebSocketMessage}
+    >
+      {/* Connection Status */}
+      <div style={{ 
+        textAlign: "center", 
+        marginBottom: "1rem",
+        fontSize: "0.875rem",
+        color: wsConnected ? "var(--color-success)" : "var(--color-text-light)"
+      }}>
+        {wsConnected ? "🎮 Live points updating" : "📊 Static points display"}
+      </div>
+      
       <div>
         {sortedMembers.map((member, index) => (
           <div
@@ -197,6 +238,6 @@ export default function KidSelector({ family, familyMembers }: Props) {
           onCancel={handlePinCancel}
         />
       )}
-    </>
+    </WebSocketManager>
   );
 }

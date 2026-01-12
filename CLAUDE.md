@@ -536,7 +536,41 @@ choretracker.chore_transactions (
 - **Parent session**: Full family access via JWT
 - **Kid PIN**: Device-only validation, not security boundary
 - **WebSocket proxy**: Server-side API key protection
-- **FamilyScore sync**: Non-blocking (app works without FamilyScore)**
+- **FamilyScore sync**: Non-blocking (app works without FamilyScore)
+- **URL Security**: ✅ **NO USER GUIDs IN URL PATHS** (session-based routing only)
+
+### 🚨 **CRITICAL: URL Security Implementation (Jan 11, 2026)**
+
+**✅ SECURE URL PATTERNS (Required):**
+```
+/kid/dashboard                    # Pure session-based kid access
+/kid/chore/[chore_id]            # NO user identification anywhere in URL
+/parent/dashboard                # Family management
+/parent/my-chores               # Personal parent chores
+```
+
+**❌ INSECURE PATTERNS (ALL forms deprecated):**
+```
+/kid/[user_guid]/dashboard           # ❌ User GUID in URL path
+/kid/[user_guid]/chore/[chore_id]    # ❌ User GUID in URL path  
+/kid/chore/[chore_id]?kid=[guid]     # ❌ User GUID in query parameter
+/any/route?user=[guid]               # ❌ Any user GUID in URL
+```
+
+**Security Benefits:**
+- **Server logs protection**: Zero user GUIDs in access logs (path OR query params)
+- **Browser history protection**: No user identification anywhere in browser history  
+- **Google/SEO protection**: No user GUIDs can be indexed by search engines
+- **Cross-family protection**: Pure cookie-based session validation
+- **URL sharing safety**: ALL URLs can be shared without exposing user identity
+- **Accidental exposure prevention**: Copy/paste URL safe from user data leaks
+
+**Implementation Method:**
+- **Cookie-based sessions**: Server reads active kid from httpOnly cookie
+- **No URL parameters**: Zero user identification in any part of URL
+- **Session storage**: Client-side session management with browser tab isolation
+
+**Implementation Status**: ✅ **100% Complete** - Pure session-only routing with NO GUIDs**
 
 ## Success Criteria
 
