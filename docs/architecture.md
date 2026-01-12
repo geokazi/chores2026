@@ -295,7 +295,30 @@ export const handler: Handlers = {
 };
 ```
 
-#### 4. WebSocket Security (API Key Protection)
+#### 4. Parent PIN Protection (Sensitive Operations)
+```typescript
+// Session elevation for dangerous operations
+export const withParentPin = (handler) => async (req, ctx) => {
+  const parentSession = await getAuthenticatedSession(req);
+  
+  // Check if parent session is elevated (5-minute window)
+  const elevatedUntil = sessionStorage.getItem('parent_elevated_until');
+  if (!elevatedUntil || Date.now() > parseInt(elevatedUntil)) {
+    return new Response('PIN required', { status: 403 });
+  }
+  
+  return handler(req, ctx);
+};
+
+// Component-level PIN protection
+const ProtectedOperation = () => (
+  <ParentPinGate operation="adjust family points" familyMembers={members}>
+    <button onClick={adjustPoints}>⚡ Adjust Points</button>
+  </ParentPinGate>
+);
+```
+
+#### 5. WebSocket Security (API Key Protection)
 ```typescript
 // Client never sees FamilyScore API keys
 // Server-side proxy pattern
@@ -380,6 +403,10 @@ App Layout
 │   ├── LiveLeaderboard.tsx (Family rankings with WebSocket)
 │   ├── LiveActivityFeed.tsx (Recent completions feed)
 │   └── WebSocketManager.tsx (Connection management)
+├── Security Components
+│   ├── ParentPinGate.tsx (PIN protection wrapper)
+│   ├── ParentPinModal.tsx (Parent PIN verification)
+│   └── PinEntryModal.tsx (Kid PIN authentication)
 └── Shared Components
     ├── FamilySettings.tsx (PIN and family configuration)
     └── KidSessionValidator.tsx (Session validation utility)

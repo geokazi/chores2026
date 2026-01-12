@@ -15,7 +15,7 @@ interface FamilyMember {
 
 interface Props {
   familyMembers: FamilyMember[];
-  currentKidId: string;
+  currentKidId?: string; // Optional since it might be a parent viewing
   familyId: string;
 }
 
@@ -27,16 +27,21 @@ export default function LiveLeaderboard({
   const [leaderboard, setLeaderboard] = useState(familyMembers);
   const [isLive, setIsLive] = useState(false);
 
-  // Filter to only kids and sort by points
-  const kids = leaderboard
-    .filter((member) => member.role === "child")
+  // Show all family members (parents and kids) sorted by points
+  const allMembers = leaderboard
     .sort((a, b) => b.current_points - a.current_points);
 
-  const getRankEmoji = (index: number, isCurrentKid: boolean) => {
-    if (index === 0) return isCurrentKid ? "👑" : "🥇";
+  const getRankEmoji = (index: number, isCurrentUser: boolean, role: string) => {
+    if (index === 0) return isCurrentUser ? "👑" : "🥇";
     if (index === 1) return "🥈";
     if (index === 2) return "🥉";
-    return isCurrentKid ? "👶" : "🧒";
+    
+    // Different emojis for parents vs children
+    if (role === "parent") {
+      return isCurrentUser ? "👨‍👩‍👧‍👦" : "👨‍👩‍👧‍👦";
+    } else {
+      return isCurrentUser ? "👶" : "🧒";
+    }
   };
 
   const calculateStreak = (points: number) => {
@@ -84,14 +89,14 @@ export default function LiveLeaderboard({
         )}
       </div>
 
-      {kids.map((kid, index) => {
-        const isCurrentKid = kid.id === currentKidId;
+      {allMembers.map((member, index) => {
+        const isCurrentUser = currentKidId && member.id === currentKidId;
         return (
           <div
-            key={kid.id}
+            key={member.id}
             class="leaderboard-row"
             style={{
-              background: isCurrentKid
+              background: isCurrentUser
                 ? "linear-gradient(90deg, var(--color-accent)22, transparent)"
                 : index === 0
                 ? "linear-gradient(90deg, var(--color-accent)11, transparent)"
@@ -105,27 +110,36 @@ export default function LiveLeaderboard({
               style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
             >
               <span style={{ fontSize: "1.25rem" }}>
-                {getRankEmoji(index, isCurrentKid)}
+                {getRankEmoji(index, isCurrentUser, member.role)}
               </span>
               <span class="leaderboard-name">
-                {isCurrentKid ? `You (${kid.name})` : kid.name}
+                {isCurrentUser ? `You (${member.name})` : member.name}
+                {member.role === "parent" && (
+                  <span style={{ 
+                    fontSize: "0.75rem", 
+                    color: "var(--color-text-light)",
+                    marginLeft: "0.25rem"
+                  }}>
+                    (Parent)
+                  </span>
+                )}
               </span>
             </div>
             <div
               style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
             >
               <span class="leaderboard-points">
-                {kid.current_points} pts
+                {member.current_points} pts
               </span>
               <span class="streak">
-                {getStreakDisplay(kid.current_points)}
+                {getStreakDisplay(member.current_points)}
               </span>
             </div>
           </div>
         );
       })}
 
-      {kids.length === 0 && (
+      {allMembers.length === 0 && (
         <div
           style={{
             textAlign: "center",

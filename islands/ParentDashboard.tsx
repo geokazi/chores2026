@@ -8,6 +8,7 @@ import LiveLeaderboard from "./LiveLeaderboard.tsx";
 import LiveActivityFeed from "./LiveActivityFeed.tsx";
 import AddChoreModal from "./AddChoreModal.tsx";
 import WebSocketManager from "./WebSocketManager.tsx";
+import ParentPinGate from "./ParentPinGate.tsx";
 
 interface Family {
   id: string;
@@ -300,20 +301,30 @@ export default function ParentDashboard(
           >
             ➕ Add Chore
           </button>
-          <button
-            onClick={() => setShowPointAdjustment(true)}
-            class="btn btn-secondary"
-            style={{ fontSize: "0.875rem" }}
+          <ParentPinGate 
+            operation="adjust family points"
+            familyMembers={liveMembers}
           >
-            ⚡ Adjust Points
-          </button>
-          <a
-            href="/parent/settings"
-            class="btn btn-secondary"
-            style={{ fontSize: "0.875rem", textDecoration: "none" }}
+            <button
+              onClick={() => setShowPointAdjustment(true)}
+              class="btn btn-secondary"
+              style={{ fontSize: "0.875rem" }}
+            >
+              ⚡ Adjust Points
+            </button>
+          </ParentPinGate>
+          <ParentPinGate 
+            operation="access family settings"
+            familyMembers={liveMembers}
           >
-            ⚙️ Settings
-          </a>
+            <a
+              href="/parent/settings"
+              class="btn btn-secondary"
+              style={{ fontSize: "0.875rem", textDecoration: "none" }}
+            >
+              ⚙️ Settings
+            </a>
+          </ParentPinGate>
           <a
             href={`/parent/${family.id}/reports`}
             class="btn btn-secondary"

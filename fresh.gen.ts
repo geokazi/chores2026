@@ -11,6 +11,9 @@ import * as $api_family_set_kid_pin from "./routes/api/family/set-kid-pin.ts";
 import * as $api_familyscore_live_family_id_ from "./routes/api/familyscore/live/[family_id].ts";
 import * as $api_kids_kid_id_pin from "./routes/api/kids/[kid_id]/pin.ts";
 import * as $api_kids_chores from "./routes/api/kids/chores.ts";
+import * as $api_parent_session from "./routes/api/parent/session.ts";
+import * as $api_parent_set_pin from "./routes/api/parent/set-pin.ts";
+import * as $api_parent_verify_pin from "./routes/api/parent/verify-pin.ts";
 import * as $api_pin_verify from "./routes/api/pin/verify.ts";
 import * as $api_points_adjust from "./routes/api/points/adjust.ts";
 import * as $index from "./routes/index.tsx";
@@ -32,6 +35,8 @@ import * as $LiveActivityFeed from "./islands/LiveActivityFeed.tsx";
 import * as $LiveLeaderboard from "./islands/LiveLeaderboard.tsx";
 import * as $ParentActivityTab from "./islands/ParentActivityTab.tsx";
 import * as $ParentDashboard from "./islands/ParentDashboard.tsx";
+import * as $ParentPinGate from "./islands/ParentPinGate.tsx";
+import * as $ParentPinModal from "./islands/ParentPinModal.tsx";
 import * as $PinEntryModal from "./islands/PinEntryModal.tsx";
 import * as $SecureKidDashboard from "./islands/SecureKidDashboard.tsx";
 import * as $SecureParentDashboard from "./islands/SecureParentDashboard.tsx";
@@ -56,6 +61,9 @@ const manifest = {
       $api_familyscore_live_family_id_,
     "./routes/api/kids/[kid_id]/pin.ts": $api_kids_kid_id_pin,
     "./routes/api/kids/chores.ts": $api_kids_chores,
+    "./routes/api/parent/session.ts": $api_parent_session,
+    "./routes/api/parent/set-pin.ts": $api_parent_set_pin,
+    "./routes/api/parent/verify-pin.ts": $api_parent_verify_pin,
     "./routes/api/pin/verify.ts": $api_pin_verify,
     "./routes/api/points/adjust.ts": $api_points_adjust,
     "./routes/index.tsx": $index,
@@ -79,6 +87,8 @@ const manifest = {
     "./islands/LiveLeaderboard.tsx": $LiveLeaderboard,
     "./islands/ParentActivityTab.tsx": $ParentActivityTab,
     "./islands/ParentDashboard.tsx": $ParentDashboard,
+    "./islands/ParentPinGate.tsx": $ParentPinGate,
+    "./islands/ParentPinModal.tsx": $ParentPinModal,
     "./islands/PinEntryModal.tsx": $PinEntryModal,
     "./islands/SecureKidDashboard.tsx": $SecureKidDashboard,
     "./islands/SecureParentDashboard.tsx": $SecureParentDashboard,

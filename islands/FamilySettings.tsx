@@ -3,6 +3,7 @@
  */
 
 import { useState } from "preact/hooks";
+import ParentPinGate from "./ParentPinGate.tsx";
 
 interface FamilySettingsProps {
   family: any;
@@ -46,17 +47,31 @@ export default function FamilySettings({ family, members, settings }: FamilySett
     console.log('🔧 PARENT PIN SETTING modal opened for:', kidName, '- This is for SETTING new PINs');
   };
 
+  const handleSetParentPin = (parentId: string, parentName: string) => {
+    // Use the same modal but for parent PIN setup
+    setCurrentKid({ id: parentId, name: parentName });
+    setPinEntry("");
+    setShowPinModal(true);
+    console.log('🔐 PARENT PIN SETUP modal opened for:', parentName);
+  };
+
   const savePinForKid = async (kidId: string, pin: string): Promise<boolean> => {
     try {
-      console.log(`🔧 Saving PIN for kid ${kidId}:`, pin.replace(/./g, '*'));
+      // Determine if this is a parent or kid
+      const member = members.find(m => m.id === kidId);
+      const isParent = member?.role === 'parent';
       
-      const response = await fetch('/api/family/set-kid-pin', {
+      console.log(`🔧 Saving PIN for ${isParent ? 'parent' : 'kid'} ${kidId}:`, pin.replace(/./g, '*'));
+      
+      const apiEndpoint = isParent ? '/api/parent/set-pin' : '/api/family/set-kid-pin';
+      const requestBody = isParent 
+        ? { pin: pin }
+        : { kid_id: kidId, pin: pin };
+      
+      const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          kid_id: kidId, 
-          pin: pin 
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       console.log(`🔧 PIN API response status: ${response.status}`);
@@ -70,8 +85,11 @@ export default function FamilySettings({ family, members, settings }: FamilySett
       const result = await response.json();
       console.log('✅ PIN saved successfully:', result);
       
-      // Don't store anything in localStorage here - let the kid login process handle it
-      console.log(`🔧 PIN saved to database for kid ${kidId}`);
+      if (isParent) {
+        console.log(`🔐 Parent PIN saved to database for ${member.name}`);
+      } else {
+        console.log(`🔧 Kid PIN saved to database for ${member?.name}`);
+      }
       
       return result.success || false;
     } catch (error) {
@@ -187,14 +205,52 @@ export default function FamilySettings({ family, members, settings }: FamilySett
       </div>
 
       <div class="settings-section">
+        <h2>🔐 Parent PIN Security</h2>
+        <p style={{ fontSize: "0.875rem", color: "var(--color-text-light)", marginBottom: "1rem" }}>
+          Set a 4-digit PIN to protect point adjustments and family settings
+        </p>
+        
+        {members.filter(member => member.role === 'parent').map((parent) => (
+          <div key={parent.id} class="member-item">
+            <div class="member-info">
+              <span class="member-name">{parent.name}</span>
+              <span class="member-role parent">👨‍👩‍👧‍👦 Parent</span>
+            </div>
+            <div class="member-actions">
+              <button 
+                class="btn btn-outline" 
+                onClick={() => handleSetParentPin(parent.id, parent.name)}
+                style={{ fontSize: "0.75rem" }}
+              >
+                {parent.pin_hash ? "Change PIN" : "Set PIN"}
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div class="settings-section">
         <h2>⚠️ Danger Zone</h2>
+        <p style={{ fontSize: "0.875rem", color: "var(--color-warning)", marginBottom: "1rem" }}>
+          These actions require parent PIN verification and cannot be undone
+        </p>
         <div class="danger-actions">
-          <button class="btn-danger" onClick={handleResetAllPoints}>
-            Reset All Points
-          </button>
-          <button class="btn-danger" onClick={handleClearAllPins}>
-            Clear All Kid PINs
-          </button>
+          <ParentPinGate 
+            operation="reset all family points"
+            familyMembers={members}
+          >
+            <button class="btn-danger" onClick={handleResetAllPoints}>
+              Reset All Points
+            </button>
+          </ParentPinGate>
+          <ParentPinGate 
+            operation="clear all kid PINs"
+            familyMembers={members}
+          >
+            <button class="btn-danger" onClick={handleClearAllPins}>
+              Clear All Kid PINs
+            </button>
+          </ParentPinGate>
         </div>
       </div>
 
