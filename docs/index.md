@@ -28,6 +28,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-10 | [**Secure Session Management**](./milestones/20260110_secure_session_management.md) | ✅ Complete | No GUIDs in URLs, multi-user browser support |
 | 2026-01-10 | [**Personal Parent Dashboards**](./milestones/20260110_personal_parent_dashboards.md) | ✅ Complete | Individual parent views separate from family dashboard |
 | 2026-01-11 | [**Real-Time WebSocket & Critical Security**](./milestones/20260111_real_time_websocket_security_implementation.md) | ✅ Complete | Strategic WebSocket integration + complete URL GUID elimination |
+| 2026-01-11 | [**Fly.io Deployment Migration Guide**](./20260111_flyio_deployment_migration_guide.md) | 📋 Ready | Comprehensive migration plan from Cloud Run to Fly.io |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 
@@ -191,6 +192,7 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 - **Architecture**: Based on production Choregami Eats system
 - **Design System**: Fresh Meadow theme with nature-inspired palette
 - **FamilyScore**: Integration with existing family gamification platform
+- **Deployment Guide**: [Fly.io Migration](./20260111_flyio_deployment_migration_guide.md) - Production deployment strategy
 
 ### External Dependencies
 - **[Deno Fresh](https://fresh.deno.dev/)**: SSR framework with Islands architecture
