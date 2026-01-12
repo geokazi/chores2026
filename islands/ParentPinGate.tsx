@@ -31,6 +31,7 @@ export default function ParentPinGate({
   const [currentParent, setCurrentParent] = useState<FamilyMember | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasDefaultPin, setHasDefaultPin] = useState(false);
+  const [cancelAttempted, setCancelAttempted] = useState(false);
 
   useEffect(() => {
     checkParentPinStatus();
@@ -90,6 +91,9 @@ export default function ParentPinGate({
   const handlePinSuccess = async (enteredPin?: string) => {
     console.log('✅ Parent PIN verified successfully');
     
+    // Clear any cancel message
+    setCancelAttempted(false);
+    
     // Check if they used the default PIN (1234)
     if (enteredPin === "1234") {
       console.log('⚠️ Parent used default PIN 1234, requiring change');
@@ -106,7 +110,10 @@ export default function ParentPinGate({
 
   const handlePinCancel = () => {
     console.log('❌ Parent PIN verification cancelled');
-    setNeedsPin(false);
+    // SECURITY: Never allow access after PIN cancel - show message instead
+    setCancelAttempted(true);
+    // User must either enter correct PIN or navigate away manually
+    // setNeedsPin(false) is NOT called here to prevent bypass
   };
 
   if (loading) {
@@ -180,7 +187,11 @@ export default function ParentPinGate({
             Change PIN Now
           </button>
           <button
-            onClick={handlePinCancel}
+            onClick={() => {
+              // For default PIN modal, redirect to family selector
+              console.log('❌ Default PIN change cancelled - redirecting to family selector');
+              window.location.href = '/';
+            }}
             style={{
               background: '#e5e7eb',
               color: 'var(--color-text)',
@@ -200,13 +211,32 @@ export default function ParentPinGate({
 
   if (needsPin && currentParent) {
     return (
-      <ParentPinModal
-        parentName={currentParent.name}
-        operation={operation}
-        onSuccess={handlePinSuccess}
-        onCancel={handlePinCancel}
-        parentData={currentParent}
-      />
+      <div>
+        <ParentPinModal
+          parentName={currentParent.name}
+          operation={operation}
+          onSuccess={handlePinSuccess}
+          onCancel={handlePinCancel}
+          parentData={currentParent}
+        />
+        {cancelAttempted && (
+          <div style={{
+            position: 'fixed',
+            top: '20px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: 'var(--color-warning)',
+            color: 'white',
+            padding: '0.75rem 1.5rem',
+            borderRadius: '6px',
+            zIndex: 1001,
+            fontSize: '0.875rem',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+          }}>
+            🔐 PIN is required to {operation}. Navigate away or enter correct PIN.
+          </div>
+        )}
+      </div>
     );
   }
 
