@@ -323,6 +323,14 @@ const handleKidAccess = async () => {
   clearParentSessionOnKidAccess("switching to kid profile");
   // Proceed with kid access...
 };
+
+// CRITICAL: Cancel bypass prevention
+const handlePinCancel = () => {
+  // SECURITY: Never allow access after PIN cancel
+  // Show warning message but keep PIN modal active
+  setCancelAttempted(true);
+  // setNeedsPin(false) is NOT called here to prevent bypass
+};
 ```
 
 #### 5. WebSocket Security (API Key Protection)
