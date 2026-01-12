@@ -9,6 +9,7 @@ import LiveActivityFeed from "./LiveActivityFeed.tsx";
 import AddChoreModal from "./AddChoreModal.tsx";
 import WebSocketManager from "./WebSocketManager.tsx";
 import ParentPinGate from "./ParentPinGate.tsx";
+import { getCurrentTheme, changeTheme, themes, type ThemeId } from "../lib/theme-manager.ts";
 
 interface Family {
   id: string;
@@ -53,10 +54,16 @@ export default function ParentDashboard(
   const [adjustmentAmount, setAdjustmentAmount] = useState("");
   const [adjustmentReason, setAdjustmentReason] = useState("");
   const [showAddChore, setShowAddChore] = useState(false);
+  const [selectedTheme, setSelectedTheme] = useState<ThemeId>(() => getCurrentTheme());
   
   // 🎮 Real-time family leaderboard updates via WebSocketManager
   const [liveMembers, setLiveMembers] = useState(members);
   const [wsConnected, setWsConnected] = useState(false);
+
+  // Apply theme on component mount
+  useEffect(() => {
+    changeTheme(selectedTheme);
+  }, []);
 
   // Handle real-time leaderboard updates
   const handleLeaderboardUpdate = (leaderboard: any[]) => {
@@ -119,6 +126,12 @@ export default function ParentDashboard(
     }
   };
 
+  const handleThemeChange = (themeId: ThemeId) => {
+    console.log('🎨 Changing theme to:', themeId);
+    setSelectedTheme(themeId);
+    changeTheme(themeId);
+    console.log('✅ Theme applied and saved:', themeId);
+  };
 
   return (
     <WebSocketManager 
@@ -202,6 +215,76 @@ export default function ParentDashboard(
           >
             📊 View Reports
           </a>
+        </div>
+      </div>
+
+      {/* Theme Selector */}
+      <div class="card" style={{ marginBottom: "1.5rem" }}>
+        <h3
+          style={{
+            fontSize: "1.125rem",
+            fontWeight: "600",
+            marginBottom: "1rem",
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem"
+          }}
+        >
+          🎨 App Theme
+          <span style={{ 
+            fontSize: "0.75rem", 
+            color: "var(--color-text-light)",
+            fontWeight: "400"
+          }}>
+            (Everyone can change this!)
+          </span>
+        </h3>
+        <div style={{ 
+          display: "flex", 
+          gap: "1rem", 
+          flexWrap: "wrap" 
+        }}>
+          {themes.map((theme) => (
+            <div 
+              key={theme.id}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "0.5rem",
+                padding: "0.75rem 1rem",
+                borderRadius: "8px",
+                border: selectedTheme === theme.id 
+                  ? "2px solid var(--color-primary)" 
+                  : "1px solid var(--color-border)",
+                backgroundColor: selectedTheme === theme.id 
+                  ? "var(--color-bg)" 
+                  : "white",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                minWidth: "140px"
+              }}
+              onClick={() => handleThemeChange(theme.id)}
+            >
+              <div 
+                style={{ 
+                  width: "16px",
+                  height: "16px",
+                  borderRadius: "50%",
+                  backgroundColor: theme.color,
+                  border: "2px solid rgba(0,0,0,0.1)"
+                }}
+              ></div>
+              <span style={{ 
+                fontSize: "0.875rem",
+                fontWeight: selectedTheme === theme.id ? "600" : "400"
+              }}>
+                {theme.name}
+              </span>
+              {selectedTheme === theme.id && (
+                <span style={{ color: "var(--color-success)", fontSize: "0.875rem" }}>✓</span>
+              )}
+            </div>
+          ))}
         </div>
       </div>
 
