@@ -8,7 +8,6 @@ import LiveLeaderboard from "./LiveLeaderboard.tsx";
 import LiveActivityFeed from "./LiveActivityFeed.tsx";
 import AddChoreModal from "./AddChoreModal.tsx";
 import WebSocketManager from "./WebSocketManager.tsx";
-import ParentPinGate from "./ParentPinGate.tsx";
 import { getCurrentTheme, changeTheme, themes, type ThemeId } from "../lib/theme-manager.ts";
 
 interface Family {
@@ -196,18 +195,13 @@ export default function ParentDashboard(
           >
             ➕ Add Chore
           </button>
-          <ParentPinGate 
-            operation="access family settings"
-            familyMembers={liveMembers}
+          <a
+            href="/parent/settings"
+            class="btn btn-secondary"
+            style={{ fontSize: "0.875rem", textDecoration: "none" }}
           >
-            <a
-              href="/parent/settings"
-              class="btn btn-secondary"
-              style={{ fontSize: "0.875rem", textDecoration: "none" }}
-            >
-              ⚙️ Settings
-            </a>
-          </ParentPinGate>
+            ⚙️ Settings
+          </a>
           <a
             href={`/parent/${family.id}/reports`}
             class="btn btn-secondary"
