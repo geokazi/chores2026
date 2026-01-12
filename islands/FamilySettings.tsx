@@ -2,8 +2,9 @@
  * Family Settings - PIN management and theme selection
  */
 
-import { useState } from "preact/hooks";
+import { useState, useEffect } from "preact/hooks";
 import ParentPinGate from "./ParentPinGate.tsx";
+import { getCurrentTheme, changeTheme, themes, type ThemeId } from "../lib/theme-manager.ts";
 
 interface FamilySettingsProps {
   family: any;
@@ -31,7 +32,9 @@ export default function FamilySettings({ family, members, settings }: FamilySett
   console.log("🔧 LocalStorage state:", localState);
   
   const [pinsEnabled, setPinsEnabled] = useState(initialState);
-  const [selectedTheme, setSelectedTheme] = useState(settings.theme || "fresh_meadow");
+  const [selectedTheme, setSelectedTheme] = useState<ThemeId>(() => {
+    return getCurrentTheme();
+  });
   const [isUpdatingPins, setIsUpdatingPins] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
   const [currentKid, setCurrentKid] = useState<{id: string, name: string} | null>(null);
@@ -45,6 +48,11 @@ export default function FamilySettings({ family, members, settings }: FamilySett
   const [adjustmentReason, setAdjustmentReason] = useState("");
 
   const children = members.filter(member => member.role === "child");
+
+  // Apply theme on component mount
+  useEffect(() => {
+    changeTheme(selectedTheme);
+  }, []);
 
   const handleSetPin = (kidId: string, kidName: string) => {
     setCurrentKid({ id: kidId, name: kidName });
@@ -163,6 +171,18 @@ export default function FamilySettings({ family, members, settings }: FamilySett
       console.error("❌ Error adjusting points:", error);
     }
   };
+
+  const handleThemeChange = (themeId: ThemeId) => {
+    console.log('🎨 Changing theme to:', themeId);
+    
+    // Update state
+    setSelectedTheme(themeId);
+    
+    // Apply theme using theme manager
+    changeTheme(themeId);
+    
+    console.log('✅ Theme applied and saved:', themeId);
+  };
   
   return (
     <div class="settings-container">
@@ -227,17 +247,12 @@ export default function FamilySettings({ family, members, settings }: FamilySett
       <div class="settings-section">
         <h2>🎨 App Theme</h2>
         <div class="theme-selector">
-          {[
-            { id: "fresh_meadow", name: "Fresh Meadow", color: "#10b981" },
-            { id: "sunset_citrus", name: "Sunset Citrus", color: "#f59e0b" },
-            { id: "ocean_depth", name: "Ocean Depth", color: "#3b82f6" }
-          ].map((theme) => (
+          {themes.map((theme) => (
             <div 
               key={theme.id}
               class={`theme-option ${selectedTheme === theme.id ? 'selected' : ''}`}
               onClick={() => {
-                setSelectedTheme(theme.id);
-                // TODO: Save to backend
+                handleThemeChange(theme.id);
               }}
             >
               <div 
