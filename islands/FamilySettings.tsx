@@ -37,6 +37,12 @@ export default function FamilySettings({ family, members, settings }: FamilySett
   const [currentKid, setCurrentKid] = useState<{id: string, name: string} | null>(null);
   const [pinEntry, setPinEntry] = useState("");
   const [isSettingPin, setIsSettingPin] = useState(false);
+  
+  // Point adjustment modal state
+  const [showPointAdjustment, setShowPointAdjustment] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<any>(null);
+  const [adjustmentAmount, setAdjustmentAmount] = useState("");
+  const [adjustmentReason, setAdjustmentReason] = useState("");
 
   const children = members.filter(member => member.role === "child");
 
@@ -63,38 +69,98 @@ export default function FamilySettings({ family, members, settings }: FamilySett
       
       console.log(`🔧 Saving PIN for ${isParent ? 'parent' : 'kid'} ${kidId}:`, pin.replace(/./g, '*'));
       
-      const apiEndpoint = isParent ? '/api/parent/set-pin' : '/api/family/set-kid-pin';
-      const requestBody = isParent 
-        ? { pin: pin }
-        : { kid_id: kidId, pin: pin };
-      
-      const response = await fetch(apiEndpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody),
-      });
-
-      console.log(`🔧 PIN API response status: ${response.status}`);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`🔧 PIN API error: ${errorText}`);
-        return false;
-      }
-
-      const result = await response.json();
-      console.log('✅ PIN saved successfully:', result);
-      
       if (isParent) {
-        console.log(`🔐 Parent PIN saved to database for ${member.name}`);
+        // For parents, use plaintext storage for instant verification (no bcrypt issues)
+        console.log(`🔐 Storing plaintext PIN for parent ${member.name} (fast verification)`);
+        
+        // Store as plaintext in database using simple API
+        const response = await fetch(`/api/parent/setup-pin-simple`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ parent_id: kidId, pin: pin }),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`🔧 Parent PIN API error: ${errorText}`);
+          return false;
+        }
+
+        const result = await response.json();
+        console.log('✅ Parent PIN saved successfully:', result);
+        
+        // Update local members data with plaintext PIN for immediate verification
+        const updatedMembers = members.map(m => 
+          m.id === kidId && m.role === 'parent' 
+            ? { ...m, pin_hash: pin }
+            : m
+        );
+        console.log('🔧 Updated local member data with new PIN');
+        
+        return result.success || false;
       } else {
-        console.log(`🔧 Kid PIN saved to database for ${member?.name}`);
+        // For kids, use existing API
+        const response = await fetch('/api/family/set-kid-pin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ kid_id: kidId, pin: pin }),
+        });
+
+        console.log(`🔧 PIN API response status: ${response.status}`);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`🔧 PIN API error: ${errorText}`);
+          return false;
+        }
+
+        const result = await response.json();
+        console.log('✅ Kid PIN saved successfully:', result);
+        return result.success || false;
       }
-      
-      return result.success || false;
     } catch (error) {
       console.error('❌ Error saving PIN:', error);
       return false;
+    }
+  };
+
+  const handleMemberPointAdjustment = (member: any) => {
+    setSelectedMember(member);
+    setAdjustmentAmount("");
+    setAdjustmentReason("");
+    setShowPointAdjustment(true);
+  };
+
+  const handlePointAdjustment = async () => {
+    if (!selectedMember || !adjustmentAmount || !adjustmentReason) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/points/adjust`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          member_id: selectedMember.id,
+          family_id: family.id,
+          amount: parseInt(adjustmentAmount),
+          reason: adjustmentReason,
+        }),
+      });
+
+      if (response.ok) {
+        console.log("✅ Points adjusted successfully");
+        setShowPointAdjustment(false);
+        setSelectedMember(null);
+        setAdjustmentAmount("");
+        setAdjustmentReason("");
+        // TODO: Refresh the page or update member data
+        window.location.reload();
+      } else {
+        console.error("❌ Failed to adjust points");
+      }
+    } catch (error) {
+      console.error("❌ Error adjusting points:", error);
     }
   };
   
@@ -217,16 +283,62 @@ export default function FamilySettings({ family, members, settings }: FamilySett
               <span class="member-role parent">👨‍👩‍👧‍👦 Parent</span>
             </div>
             <div class="member-actions">
-              <button 
-                class="btn btn-outline" 
-                onClick={() => handleSetParentPin(parent.id, parent.name)}
-                style={{ fontSize: "0.75rem" }}
-              >
-                {parent.pin_hash ? "Change PIN" : "Set PIN"}
-              </button>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <button 
+                  class="btn btn-outline" 
+                  onClick={() => handleSetParentPin(parent.id, parent.name)}
+                  style={{ fontSize: "0.75rem" }}
+                >
+                  {parent.pin_hash ? "Change PIN" : "Set PIN"}
+                </button>
+                {parent.pin_hash === "1234" && (
+                  <span style={{ 
+                    fontSize: "0.75rem", 
+                    color: "var(--color-warning)",
+                    fontWeight: "500"
+                  }}>
+                    ⚠️ Using default PIN (change required)
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         ))}
+      </div>
+
+      <div class="settings-section">
+        <h2>⚡ Point Management</h2>
+        <p style={{ fontSize: "0.875rem", color: "var(--color-text-light)", marginBottom: "1rem" }}>
+          Adjust family member points with quick presets or custom amounts
+        </p>
+        
+        <ParentPinGate 
+          operation="adjust family points"
+          familyMembers={members}
+        >
+          <div class="point-management">
+            {members.map((member) => (
+              <div key={member.id} class="member-item">
+                <div class="member-info">
+                  <span class="member-name">{member.name}</span>
+                  <span class={`member-role ${member.role}`}>
+                    {member.role === 'parent' ? '👨‍👩‍👧‍👦 Parent' : '🧒 Kid'}
+                  </span>
+                  <span class="member-points">{member.current_points} points</span>
+                </div>
+                <div class="member-actions">
+                  <button 
+                    class="btn btn-outline" 
+                    onClick={() => handleMemberPointAdjustment(member)}
+                    style={{ fontSize: "0.75rem" }}
+                  >
+                    ⚡ Adjust Points
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </ParentPinGate>
       </div>
 
       <div class="settings-section">
@@ -361,6 +473,96 @@ export default function FamilySettings({ family, members, settings }: FamilySett
             >
               Cancel
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Point Adjustment Modal */}
+      {showPointAdjustment && selectedMember && (
+        <div class="modal-overlay">
+          <div class="modal">
+            <h3>⚡ Adjust Points for {selectedMember.name}</h3>
+            <p>Current points: {selectedMember.current_points}</p>
+            
+            <div class="adjustment-form">
+              <div class="preset-buttons">
+                <button
+                  onClick={() => {
+                    setAdjustmentAmount("5");
+                    setAdjustmentReason("Good job!");
+                  }}
+                  class="preset-btn good"
+                >
+                  +5 Good
+                </button>
+                <button
+                  onClick={() => {
+                    setAdjustmentAmount("10");
+                    setAdjustmentReason("Extra effort!");
+                  }}
+                  class="preset-btn extra"
+                >
+                  +10 Extra
+                </button>
+                <button
+                  onClick={() => {
+                    setAdjustmentAmount("-2");
+                    setAdjustmentReason("Partial completion");
+                  }}
+                  class="preset-btn half"
+                >
+                  -2 Half
+                </button>
+                <button
+                  onClick={() => {
+                    setAdjustmentAmount("-5");
+                    setAdjustmentReason("Remove points");
+                  }}
+                  class="preset-btn remove"
+                >
+                  -5 Remove
+                </button>
+              </div>
+              
+              <div class="custom-adjustment">
+                <label>Custom Amount:</label>
+                <input
+                  type="number"
+                  value={adjustmentAmount}
+                  onChange={(e) => setAdjustmentAmount(e.target.value)}
+                  placeholder="Enter amount"
+                />
+                
+                <label>Reason:</label>
+                <input
+                  type="text"
+                  value={adjustmentReason}
+                  onChange={(e) => setAdjustmentReason(e.target.value)}
+                  placeholder="Why are you adjusting points?"
+                />
+              </div>
+            </div>
+            
+            <div class="modal-actions">
+              <button
+                onClick={handlePointAdjustment}
+                class="btn btn-primary"
+                disabled={!adjustmentAmount || !adjustmentReason}
+              >
+                Apply Adjustment
+              </button>
+              <button
+                onClick={() => {
+                  setShowPointAdjustment(false);
+                  setSelectedMember(null);
+                  setAdjustmentAmount("");
+                  setAdjustmentReason("");
+                }}
+                class="btn btn-secondary"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -763,6 +965,136 @@ export default function FamilySettings({ family, members, settings }: FamilySett
           .theme-option {
             padding: 0.75rem;
           }
+        }
+
+        /* Modal styles */
+        .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.5);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+        }
+
+        .modal {
+          background: white;
+          padding: 2rem;
+          border-radius: 12px;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+          max-width: 500px;
+          width: 90%;
+          max-height: 80vh;
+          overflow-y: auto;
+        }
+
+        .modal h3 {
+          margin: 0 0 1rem 0;
+          color: var(--color-text);
+        }
+
+        .adjustment-form {
+          margin: 1.5rem 0;
+        }
+
+        .preset-buttons {
+          display: flex;
+          gap: 0.5rem;
+          margin-bottom: 1rem;
+          flex-wrap: wrap;
+        }
+
+        .preset-btn {
+          padding: 0.5rem 1rem;
+          border: none;
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 0.875rem;
+          font-weight: 500;
+          transition: all 0.2s ease;
+        }
+
+        .preset-btn.good {
+          background: var(--color-success);
+          color: white;
+        }
+
+        .preset-btn.extra {
+          background: var(--color-primary);
+          color: white;
+        }
+
+        .preset-btn.half {
+          background: var(--color-accent);
+          color: white;
+        }
+
+        .preset-btn.remove {
+          background: var(--color-warning);
+          color: white;
+        }
+
+        .preset-btn:hover {
+          opacity: 0.9;
+          transform: translateY(-1px);
+        }
+
+        .custom-adjustment {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+        }
+
+        .custom-adjustment label {
+          font-weight: 500;
+          color: var(--color-text);
+        }
+
+        .custom-adjustment input {
+          padding: 0.75rem;
+          border: 2px solid #e5e7eb;
+          border-radius: 6px;
+          font-size: 1rem;
+        }
+
+        .custom-adjustment input:focus {
+          outline: none;
+          border-color: var(--color-primary);
+        }
+
+        .modal-actions {
+          display: flex;
+          gap: 1rem;
+          justify-content: flex-end;
+          margin-top: 1.5rem;
+        }
+
+        .modal-actions .btn {
+          padding: 0.75rem 1.5rem;
+          border: none;
+          border-radius: 6px;
+          cursor: pointer;
+          font-weight: 500;
+        }
+
+        .modal-actions .btn-primary {
+          background: var(--color-primary);
+          color: white;
+        }
+
+        .modal-actions .btn-secondary {
+          background: #e5e7eb;
+          color: var(--color-text);
+        }
+
+        .modal-actions .btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
         }
       `}</style>
     </div>

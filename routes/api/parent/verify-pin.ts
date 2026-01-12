@@ -4,8 +4,6 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
-// @ts-ignore: bcrypt types not compatible with Deno 2
-import * as bcrypt from "bcryptjs";
 import { getAuthenticatedSession } from "../../../lib/auth/session.ts";
 import { ChoreService } from "../../../lib/services/chore-service.ts";
 
@@ -14,14 +12,14 @@ export const handler: Handlers = {
     try {
       const session = await getAuthenticatedSession(req);
       
-      if (!session.isAuthenticated || !session.family || !session.profile) {
+      if (!session.isAuthenticated || !session.family) {
         return new Response(JSON.stringify({ error: "Not authenticated" }), {
           status: 401,
           headers: { "Content-Type": "application/json" },
         });
       }
 
-      const { pin } = await req.json();
+      const { pin, parent_id } = await req.json();
       if (!pin || pin.length !== 4) {
         return new Response(JSON.stringify({ error: "Valid 4-digit PIN required" }), {
           status: 400,
@@ -29,8 +27,15 @@ export const handler: Handlers = {
         });
       }
 
+      if (!parent_id) {
+        return new Response(JSON.stringify({ error: "Parent ID required" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
       const choreService = new ChoreService();
-      const parent = await choreService.getFamilyMember(session.profile.id);
+      const parent = await choreService.getFamilyMember(parent_id);
       
       if (!parent || parent.role !== 'parent') {
         return new Response(JSON.stringify({ error: "Parent not found" }), {
@@ -39,15 +44,16 @@ export const handler: Handlers = {
         });
       }
 
-      // Verify PIN against stored hash
-      if (!parent.pin_hash) {
-        return new Response(JSON.stringify({ error: "No PIN set for parent" }), {
-          status: 400,
+      // Verify parent belongs to authenticated family
+      if (parent.family_id !== session.family.id) {
+        return new Response(JSON.stringify({ error: "Access denied" }), {
+          status: 403,
           headers: { "Content-Type": "application/json" },
         });
       }
 
-      const isValidPin = await bcrypt.compare(pin, parent.pin_hash);
+      // Verify PIN using ChoreService method (handles bcrypt internally)
+      const isValidPin = await choreService.verifyMemberPin(parent_id, pin);
       if (!isValidPin) {
         console.log(`❌ Invalid PIN attempt for parent: ${parent.name}`);
         return new Response(JSON.stringify({ error: "Invalid PIN" }), {

@@ -22,8 +22,21 @@ export default function SecureKidDashboard({ family, familyMembers, recentActivi
   const [wsConnected, setWsConnected] = useState(false);
 
   useEffect(() => {
+    // SECURITY: Clear parent session when kid dashboard is accessed
+    // This ensures parent must re-enter PIN when switching back to parent features
+    clearParentSessionOnKidDashboardAccess();
+    
     loadActiveKid();
   }, [familyMembers]);
+
+  const clearParentSessionOnKidDashboardAccess = async () => {
+    try {
+      const { clearParentSessionOnKidAccess } = await import("../lib/auth/parent-session.ts");
+      clearParentSessionOnKidAccess("kid dashboard accessed");
+    } catch (error) {
+      console.error("Failed to clear parent session on kid dashboard access:", error);
+    }
+  };
 
   // Handle real-time points updates via WebSocketManager
   const handleLeaderboardUpdate = (leaderboard: any[]) => {

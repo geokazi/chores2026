@@ -1,6 +1,6 @@
 /**
- * Parent PIN Setup API
- * Allows parents to set their 4-digit PIN for secure operations
+ * Parent PIN Hash Storage API
+ * Stores pre-hashed PIN for parents (client-side hashing like kid PINs)
  */
 
 import { Handlers } from "$fresh/server.ts";
@@ -19,9 +19,10 @@ export const handler: Handlers = {
         });
       }
 
-      const { pin, parent_id } = await req.json();
-      if (!pin || pin.length !== 4 || !/^\d{4}$/.test(pin)) {
-        return new Response(JSON.stringify({ error: "Valid 4-digit numeric PIN required" }), {
+      const { pin_hash, parent_id } = await req.json();
+      
+      if (!pin_hash || !pin_hash.startsWith('$2')) {
+        return new Response(JSON.stringify({ error: "Valid bcrypt hash required" }), {
           status: 400,
           headers: { "Content-Type": "application/json" },
         });
@@ -52,9 +53,8 @@ export const handler: Handlers = {
         });
       }
 
-      // Save to database using existing setKidPin method (works for parents too)
-      // Note: setKidPin handles hashing internally, don't pre-hash
-      const success = await choreService.setKidPin(parent_id, pin);
+      // Store the pre-hashed PIN directly (no server-side hashing)
+      const success = await choreService.setKidPinHash(parent_id, pin_hash);
       if (!success) {
         return new Response(JSON.stringify({ error: "Failed to set PIN" }), {
           status: 500,
@@ -62,7 +62,7 @@ export const handler: Handlers = {
         });
       }
 
-      console.log(`✅ PIN set for parent: ${parent.name}`);
+      console.log(`✅ PIN hash stored for parent: ${parent.name}`);
 
       return new Response(JSON.stringify({ 
         success: true,
@@ -72,7 +72,7 @@ export const handler: Handlers = {
         headers: { "Content-Type": "application/json" },
       });
     } catch (error) {
-      console.error("❌ Error setting parent PIN:", error);
+      console.error("❌ Error setting parent PIN hash:", error);
       return new Response(JSON.stringify({ error: "Internal server error" }), {
         status: 500,
         headers: { "Content-Type": "application/json" },

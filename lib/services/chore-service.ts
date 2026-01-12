@@ -604,6 +604,38 @@ export class ChoreService {
   }
 
   /**
+   * Set initial default PIN for a parent (1234)
+   */
+  async setDefaultParentPin(parentId: string): Promise<boolean> {
+    return await this.setKidPin(parentId, "1234");
+  }
+
+  /**
+   * Check if member is using default PIN (1234)
+   */
+  async isUsingDefaultPin(memberId: string): Promise<boolean> {
+    try {
+      const bcrypt = await import("https://esm.sh/bcryptjs@2.4.3");
+      
+      const { data, error } = await this.client
+        .from("family_profiles")
+        .select("pin_hash")
+        .eq("id", memberId)
+        .single();
+
+      if (error || !data?.pin_hash) {
+        return false;
+      }
+
+      // Check if the stored hash matches default PIN "1234"
+      return await bcrypt.compare("1234", data.pin_hash);
+    } catch (error) {
+      console.error("Error checking default PIN:", error);
+      return false;
+    }
+  }
+
+  /**
    * Set kid PIN (hash and store)
    */
   async setKidPin(kidId: string, pin: string): Promise<boolean> {
@@ -620,7 +652,7 @@ export class ChoreService {
       console.log("🔧 bcryptjs imported successfully");
       
       console.log("🔧 Hashing PIN...");
-      const pinHash = await bcrypt.hash(pin, 10);
+      const pinHash = await bcrypt.default.hash(pin, 10);
       console.log("🔧 PIN hashed successfully with format:", pinHash.substring(0, 10) + "...");
       console.log("🔧 Is valid bcrypt format:", pinHash.startsWith('$2'));
 
@@ -645,6 +677,51 @@ export class ChoreService {
       return true;
     } catch (error) {
       console.error("❌ Error in setKidPin:", error);
+      return false;
+    }
+  }
+
+  /**
+   * Verify PIN for any family member (parent or kid)
+   */
+  async verifyMemberPin(memberId: string, pin: string): Promise<boolean> {
+    console.log("🔧 ChoreService.verifyMemberPin called:", {
+      memberId,
+      pinLength: pin.length,
+      clientReady: !!this.client
+    });
+
+    try {
+      // Get the member's PIN hash from database
+      const { data, error } = await this.client
+        .from("family_profiles")
+        .select("pin_hash, name, role")
+        .eq("id", memberId)
+        .single();
+
+      if (error || !data) {
+        console.error("❌ Error getting member for PIN verification:", error);
+        return false;
+      }
+
+      if (!data.pin_hash) {
+        console.log("❌ No PIN set for member:", data.name);
+        return false;
+      }
+
+      // Import bcryptjs for PIN comparison (same as setKidPin)
+      console.log("🔧 Importing bcryptjs for verification...");
+      const bcrypt = await import("https://esm.sh/bcryptjs@2.4.3");
+      console.log("🔧 bcryptjs imported successfully");
+      console.log("🔧 Available bcrypt methods:", Object.keys(bcrypt));
+
+      // Verify PIN against stored hash
+      const isValid = await bcrypt.default.compare(pin, data.pin_hash);
+      console.log(`🔧 PIN verification result for ${data.name}: ${isValid ? "✅ Valid" : "❌ Invalid"}`);
+      
+      return isValid;
+    } catch (error) {
+      console.error("❌ Error in verifyMemberPin:", error);
       return false;
     }
   }
@@ -687,17 +764,16 @@ export class ChoreService {
   }
 
   /**
-   * Set kid PIN hash
+   * Set member PIN hash (works for both kids and parents)
    */
-  async setKidPin(kidId: string, pinHash: string): Promise<boolean> {
+  async setKidPinHash(memberId: string, pinHash: string): Promise<boolean> {
     const { error } = await this.client
       .from("family_profiles")
       .update({ pin_hash: pinHash })
-      .eq("id", kidId)
-      .eq("role", "child");
+      .eq("id", memberId);
 
     if (error) {
-      console.error("Error setting kid PIN:", error);
+      console.error("Error setting member PIN hash:", error);
       return false;
     }
 

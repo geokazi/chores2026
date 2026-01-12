@@ -297,7 +297,7 @@ export const handler: Handlers = {
 
 #### 4. Parent PIN Protection (Sensitive Operations)
 ```typescript
-// Session elevation for dangerous operations
+// Session elevation for dangerous operations with profile-switch clearing
 export const withParentPin = (handler) => async (req, ctx) => {
   const parentSession = await getAuthenticatedSession(req);
   
@@ -310,12 +310,19 @@ export const withParentPin = (handler) => async (req, ctx) => {
   return handler(req, ctx);
 };
 
-// Component-level PIN protection
+// Component-level PIN protection with instant verification
 const ProtectedOperation = () => (
   <ParentPinGate operation="adjust family points" familyMembers={members}>
     <button onClick={adjustPoints}>⚡ Adjust Points</button>
   </ParentPinGate>
 );
+
+// Profile-switch security: Clear parent session when accessing kid profiles
+const handleKidAccess = async () => {
+  const { clearParentSessionOnKidAccess } = await import("./parent-session.ts");
+  clearParentSessionOnKidAccess("switching to kid profile");
+  // Proceed with kid access...
+};
 ```
 
 #### 5. WebSocket Security (API Key Protection)

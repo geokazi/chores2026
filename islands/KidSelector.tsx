@@ -72,10 +72,26 @@ export default function KidSelector({ family, familyMembers }: Props) {
         window.location.href = `/parent/dashboard`;
       }
     } else if (family.children_pins_enabled && member.role === "child") {
+      // SECURITY: Clear parent session when switching to kid profile
+      try {
+        const { clearParentSessionOnKidAccess } = await import("../lib/auth/parent-session.ts");
+        clearParentSessionOnKidAccess("switching to kid profile with PIN");
+      } catch (error) {
+        console.error("Failed to clear parent session:", error);
+      }
+      
       // Children with PIN enabled go through PIN entry
       setSelectedKid(member);
       setShowPinEntry(true);
     } else {
+      // SECURITY: Clear parent session when switching to kid profile
+      try {
+        const { clearParentSessionOnKidAccess } = await import("../lib/auth/parent-session.ts");
+        clearParentSessionOnKidAccess("switching to kid profile without PIN");
+      } catch (error) {
+        console.error("Failed to clear parent session:", error);
+      }
+      
       // Children without PIN go to secure kid dashboard (session-based)
       try {
         const { ActiveKidSessionManager } = await import("../lib/active-kid-session.ts");

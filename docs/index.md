@@ -2,7 +2,7 @@
 
 **Version**: 1.0  
 **Status**: ✅ Production Ready  
-**Last Updated**: January 10, 2026
+**Last Updated**: January 12, 2026
 
 **Project Overview**: A simplified, real-time chore completion system built with Deno Fresh, transforming routine family chores into an engaging, competitive experience with sub-second real-time updates across all family devices.
 
@@ -28,7 +28,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-10 | [**Secure Session Management**](./milestones/20260110_secure_session_management.md) | ✅ Complete | No GUIDs in URLs, multi-user browser support |
 | 2026-01-10 | [**Personal Parent Dashboards**](./milestones/20260110_personal_parent_dashboards.md) | ✅ Complete | Individual parent views separate from family dashboard |
 | 2026-01-11 | [**Real-Time WebSocket & Critical Security**](./milestones/20260111_real_time_websocket_security_implementation.md) | ✅ Complete | Strategic WebSocket integration + complete URL GUID elimination |
-| 2026-01-11 | [**Parent PIN Security System**](./20260111_parent_pin_security_implementation.md) | ✅ Complete | PIN protection for sensitive operations with 85% code reuse |
+| 2026-01-11 | [**Parent PIN Security System**](./20260111_parent_pin_security_implementation.md) | ✅ Complete | PIN protection with profile-switch clearing & instant verification |
 | 2026-01-11 | [**Fly.io Deployment Migration Guide**](./20260111_flyio_deployment_migration_guide.md) | 📋 Ready | Comprehensive migration plan from Cloud Run to Fly.io |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
@@ -82,7 +82,11 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
    - Add chores and assign to any family member (including other parents)
    - Point adjustments with transaction logging and audit trails
    - Security settings and PIN management
-4. **Real-Time Updates**: Live leaderboard and activity feed via WebSocket
+4. **PIN-Protected Operations**: Sensitive actions (point adjustments, settings) require parent PIN
+   - **5-minute elevation window** for authenticated parent access
+   - **Profile-switch clearing**: PIN required when switching from kid profiles back to parent
+   - **Instant verification**: Sub-second PIN validation for seamless UX
+5. **Real-Time Updates**: Live leaderboard and activity feed via WebSocket
 
 ### 🔐 Security & Privacy
 
@@ -90,7 +94,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 - **Secure Session-Based Routing**: No GUIDs in URLs, session-based user identification  
 - **Multi-User Browser Support**: Unique session IDs prevent conflicts between family members
 - **Dual Authentication Model**: Enterprise JWT for parents, convenience PINs for kids
-- **PIN Security**: bcrypt hashing with salt for 4-digit kid authentication
+- **PIN Security**: Kid PINs with bcrypt, Parent PINs with instant plaintext verification
 - **Session Isolation**: Browser tab-specific sessions with localStorage + sessionStorage
 - **API Security**: Server-side WebSocket proxy keeps FamilyScore keys protected
 - **Cross-Family Protection**: Strict family isolation with parent session validation
@@ -203,5 +207,5 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 
 ---
 
-*Last updated: January 11, 2026*  
+*Last updated: January 12, 2026*  
 *Maintained by: Claude Code AI Assistant*

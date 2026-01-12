@@ -5,6 +5,7 @@
 import * as $_app from "./routes/_app.tsx";
 import * as $api_chores_chore_id_complete from "./routes/api/chores/[chore_id]/complete.ts";
 import * as $api_chores_create from "./routes/api/chores/create.ts";
+import * as $api_debug_session from "./routes/api/debug/session.ts";
 import * as $api_family_family_id_pin_setting from "./routes/api/family/[family_id]/pin-setting.ts";
 import * as $api_family_pin_setting from "./routes/api/family/pin-setting.ts";
 import * as $api_family_set_kid_pin from "./routes/api/family/set-kid-pin.ts";
@@ -12,7 +13,10 @@ import * as $api_familyscore_live_family_id_ from "./routes/api/familyscore/live
 import * as $api_kids_kid_id_pin from "./routes/api/kids/[kid_id]/pin.ts";
 import * as $api_kids_chores from "./routes/api/kids/chores.ts";
 import * as $api_parent_session from "./routes/api/parent/session.ts";
+import * as $api_parent_set_pin_hash from "./routes/api/parent/set-pin-hash.ts";
 import * as $api_parent_set_pin from "./routes/api/parent/set-pin.ts";
+import * as $api_parent_setup_pin_simple from "./routes/api/parent/setup-pin-simple.ts";
+import * as $api_parent_verify_pin_simple from "./routes/api/parent/verify-pin-simple.ts";
 import * as $api_parent_verify_pin from "./routes/api/parent/verify-pin.ts";
 import * as $api_pin_verify from "./routes/api/pin/verify.ts";
 import * as $api_points_adjust from "./routes/api/points/adjust.ts";
@@ -53,6 +57,7 @@ const manifest = {
     "./routes/_app.tsx": $_app,
     "./routes/api/chores/[chore_id]/complete.ts": $api_chores_chore_id_complete,
     "./routes/api/chores/create.ts": $api_chores_create,
+    "./routes/api/debug/session.ts": $api_debug_session,
     "./routes/api/family/[family_id]/pin-setting.ts":
       $api_family_family_id_pin_setting,
     "./routes/api/family/pin-setting.ts": $api_family_pin_setting,
@@ -62,7 +67,10 @@ const manifest = {
     "./routes/api/kids/[kid_id]/pin.ts": $api_kids_kid_id_pin,
     "./routes/api/kids/chores.ts": $api_kids_chores,
     "./routes/api/parent/session.ts": $api_parent_session,
+    "./routes/api/parent/set-pin-hash.ts": $api_parent_set_pin_hash,
     "./routes/api/parent/set-pin.ts": $api_parent_set_pin,
+    "./routes/api/parent/setup-pin-simple.ts": $api_parent_setup_pin_simple,
+    "./routes/api/parent/verify-pin-simple.ts": $api_parent_verify_pin_simple,
     "./routes/api/parent/verify-pin.ts": $api_parent_verify_pin,
     "./routes/api/pin/verify.ts": $api_pin_verify,
     "./routes/api/points/adjust.ts": $api_points_adjust,

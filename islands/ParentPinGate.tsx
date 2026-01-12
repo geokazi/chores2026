@@ -30,6 +30,7 @@ export default function ParentPinGate({
   const [needsPin, setNeedsPin] = useState(false);
   const [currentParent, setCurrentParent] = useState<FamilyMember | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasDefaultPin, setHasDefaultPin] = useState(false);
 
   useEffect(() => {
     checkParentPinStatus();
@@ -86,37 +87,22 @@ export default function ParentPinGate({
     }
   };
 
-  const handlePinSuccess = () => {
+  const handlePinSuccess = async (enteredPin?: string) => {
     console.log('✅ Parent PIN verified successfully');
     
-    // Elevate session for 5 minutes
-    const elevatedUntil = Date.now() + 5 * 60 * 1000;
-    sessionStorage.setItem('parent_elevated_until', elevatedUntil.toString());
+    // Check if they used the default PIN (1234)
+    if (enteredPin === "1234") {
+      console.log('⚠️ Parent used default PIN 1234, requiring change');
+      setHasDefaultPin(true);
+      // Don't elevate session yet - force PIN change first
+      return;
+    }
     
+    // Session elevation is now handled by createParentSession() in ParentPinModal
+    // No need to manually set sessionStorage here
     setNeedsPin(false);
   };
 
-  const verifyParentPin = async (pin: string) => {
-    try {
-      const response = await fetch('/api/parent/verify-pin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ pin }),
-      });
-
-      if (response.ok) {
-        return true;
-      } else {
-        const error = await response.json();
-        console.error('❌ Parent PIN verification failed:', error);
-        return false;
-      }
-    } catch (error) {
-      console.error('❌ Error verifying parent PIN:', error);
-      return false;
-    }
-  };
 
   const handlePinCancel = () => {
     console.log('❌ Parent PIN verification cancelled');
@@ -148,6 +134,70 @@ export default function ParentPinGate({
     );
   }
 
+  if (hasDefaultPin && currentParent) {
+    return (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(0, 0, 0, 0.8)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000
+      }}>
+        <div style={{
+          background: 'white',
+          padding: '2rem',
+          borderRadius: '12px',
+          maxWidth: '400px',
+          textAlign: 'center'
+        }}>
+          <h3 style={{ color: 'var(--color-warning)', marginBottom: '1rem' }}>
+            🔒 Default PIN Detected
+          </h3>
+          <p style={{ marginBottom: '1.5rem', color: 'var(--color-text)' }}>
+            You're using the default PIN (1234). For security, you must change it before accessing parent features.
+          </p>
+          <button
+            onClick={() => {
+              // Redirect to settings to change PIN
+              window.location.href = '/parent/settings';
+            }}
+            style={{
+              background: 'var(--color-primary)',
+              color: 'white',
+              border: 'none',
+              padding: '0.75rem 2rem',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '1rem',
+              marginRight: '1rem'
+            }}
+          >
+            Change PIN Now
+          </button>
+          <button
+            onClick={handlePinCancel}
+            style={{
+              background: '#e5e7eb',
+              color: 'var(--color-text)',
+              border: 'none',
+              padding: '0.75rem 1.5rem',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '1rem'
+            }}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (needsPin && currentParent) {
     return (
       <ParentPinModal
@@ -155,7 +205,7 @@ export default function ParentPinGate({
         operation={operation}
         onSuccess={handlePinSuccess}
         onCancel={handlePinCancel}
-        onVerifyPin={verifyParentPin}
+        parentData={currentParent}
       />
     );
   }

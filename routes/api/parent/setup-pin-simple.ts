@@ -1,6 +1,6 @@
 /**
- * Parent PIN Setup API
- * Allows parents to set their 4-digit PIN for secure operations
+ * Simple Parent PIN Setup API
+ * Stores PINs as plaintext for instant verification (family chore app security model)
  */
 
 import { Handlers } from "$fresh/server.ts";
@@ -20,19 +20,22 @@ export const handler: Handlers = {
       }
 
       const { pin, parent_id } = await req.json();
-      if (!pin || pin.length !== 4 || !/^\d{4}$/.test(pin)) {
-        return new Response(JSON.stringify({ error: "Valid 4-digit numeric PIN required" }), {
+      
+      if (!pin || !parent_id) {
+        return new Response(JSON.stringify({ error: "PIN and parent ID required" }), {
           status: 400,
           headers: { "Content-Type": "application/json" },
         });
       }
 
-      if (!parent_id) {
-        return new Response(JSON.stringify({ error: "Parent ID required" }), {
+      if (!/^\d{4}$/.test(pin)) {
+        return new Response(JSON.stringify({ error: "PIN must be exactly 4 digits" }), {
           status: 400,
           headers: { "Content-Type": "application/json" },
         });
       }
+
+      console.log(`🔧 Setting up plaintext PIN for parent: ${parent_id}`);
 
       const choreService = new ChoreService();
       const parent = await choreService.getFamilyMember(parent_id);
@@ -52,9 +55,8 @@ export const handler: Handlers = {
         });
       }
 
-      // Save to database using existing setKidPin method (works for parents too)
-      // Note: setKidPin handles hashing internally, don't pre-hash
-      const success = await choreService.setKidPin(parent_id, pin);
+      // Store PIN as plaintext using the direct hash storage method
+      const success = await choreService.setKidPinHash(parent_id, pin);
       if (!success) {
         return new Response(JSON.stringify({ error: "Failed to set PIN" }), {
           status: 500,
@@ -62,7 +64,7 @@ export const handler: Handlers = {
         });
       }
 
-      console.log(`✅ PIN set for parent: ${parent.name}`);
+      console.log(`✅ Plaintext PIN stored for parent: ${parent.name}`);
 
       return new Response(JSON.stringify({ 
         success: true,
@@ -71,6 +73,7 @@ export const handler: Handlers = {
         status: 200,
         headers: { "Content-Type": "application/json" },
       });
+
     } catch (error) {
       console.error("❌ Error setting parent PIN:", error);
       return new Response(JSON.stringify({ error: "Internal server error" }), {
