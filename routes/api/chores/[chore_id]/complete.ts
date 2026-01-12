@@ -23,11 +23,13 @@ export const handler: Handlers = {
 
     try {
       const body = await req.json();
-      const { kid_id } = body;
+      const { kid_id, profile_id } = body;
 
-      if (!kid_id) {
+      // Accept either kid_id (for kid chore completion) or profile_id (for parent chore completion)
+      const userId = kid_id || profile_id;
+      if (!userId) {
         return new Response(
-          JSON.stringify({ error: "Missing kid_id" }),
+          JSON.stringify({ error: "Missing kid_id or profile_id" }),
           {
             status: 400,
             headers: { "Content-Type": "application/json" },
@@ -38,11 +40,11 @@ export const handler: Handlers = {
       const choreService = new ChoreService();
       const transactionService = new TransactionService();
 
-      // Get the kid's profile to get family_id
-      const kid = await choreService.getFamilyMember(kid_id);
-      if (!kid) {
+      // Get the user's profile to get family_id (could be kid or parent)
+      const user = await choreService.getFamilyMember(userId);
+      if (!user) {
         return new Response(
-          JSON.stringify({ error: "Kid not found" }),
+          JSON.stringify({ error: "User not found" }),
           {
             status: 404,
             headers: { "Content-Type": "application/json" },
@@ -50,10 +52,10 @@ export const handler: Handlers = {
         );
       }
 
-      // Verify kid belongs to parent's family
-      if (kid.family_id !== parentSession.family.id) {
+      // Verify user belongs to parent's family
+      if (user.family_id !== parentSession.family.id) {
         return new Response(
-          JSON.stringify({ error: "Access denied - kid not in your family" }),
+          JSON.stringify({ error: "Access denied - user not in your family" }),
           {
             status: 403,
             headers: { "Content-Type": "application/json" },
@@ -62,17 +64,17 @@ export const handler: Handlers = {
       }
 
       // Check if family requires PIN validation
-      const family = await choreService.getFamily(kid.family_id);
-      if (family?.children_pins_enabled) {
+      const family = await choreService.getFamily(user.family_id);
+      if (family?.children_pins_enabled && user.role === 'child') {
         // Note: Kid session validation is handled client-side
         // Server trusts that proper PIN validation happened before the API call
-        console.log(`🔐 Chore completion for ${kid.name} (PIN-protected family)`);
+        console.log(`🔐 Chore completion for ${user.name} (PIN-protected family)`);
       }
 
       // Get chore assignment
       const chore = await choreService.getChoreAssignment(
         choreId,
-        kid.family_id,
+        user.family_id,
       );
       if (!chore) {
         return new Response(
@@ -84,10 +86,10 @@ export const handler: Handlers = {
         );
       }
 
-      // Verify chore is assigned to this kid
-      if (chore.assigned_to_profile_id !== kid_id) {
+      // Verify chore is assigned to this user (kid or parent)
+      if (chore.assigned_to_profile_id !== userId) {
         return new Response(
-          JSON.stringify({ error: "Chore not assigned to this kid" }),
+          JSON.stringify({ error: "Chore not assigned to this user" }),
           {
             status: 403,
             headers: { "Content-Type": "application/json" },
@@ -98,8 +100,8 @@ export const handler: Handlers = {
       // Complete the chore
       const result = await choreService.completeChore(
         choreId,
-        kid_id,
-        kid.family_id,
+        userId,
+        user.family_id,
       );
 
       if (!result.success) {
@@ -118,8 +120,8 @@ export const handler: Handlers = {
           choreId,
           chore.point_value,
           chore.chore_template?.name || "Chore",
-          kid_id,
-          kid.family_id,
+          userId,
+          user.family_id,
         );
       } catch (error) {
         console.warn("Failed to record FamilyScore transaction:", error);
