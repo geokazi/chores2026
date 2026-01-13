@@ -58,6 +58,11 @@ export default function ParentDashboard(
   // 🎮 Real-time family leaderboard updates via WebSocketManager
   const [liveMembers, setLiveMembers] = useState(members);
   const [wsConnected, setWsConnected] = useState(false);
+  
+  // 🔄 FamilyScore sync state
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'error'>('idle');
+  const [syncMessage, setSyncMessage] = useState<string>('');
+  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
 
   // Apply theme on component mount
   useEffect(() => {
@@ -132,6 +137,67 @@ export default function ParentDashboard(
     console.log('✅ Theme applied and saved:', themeId);
   };
 
+  const handleFamilyScoreSync = async () => {
+    setSyncStatus('syncing');
+    setSyncMessage('');
+    
+    try {
+      console.log('🔄 Starting FamilyScore sync...');
+      
+      const response = await fetch('/api/familyscore/sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          family_id: family.id,
+          sync_mode: 'force_local', // Trust local data as the source of truth
+          dry_run: false
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Sync failed: ${response.status}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setSyncStatus('success');
+        setLastSyncTime(new Date());
+        
+        if (result.sync_performed) {
+          setSyncMessage(`Sync completed! ${result.data?.sync_results?.discrepancies_found || 0} discrepancies resolved.`);
+          // Refresh the page to show updated data
+          setTimeout(() => window.location.reload(), 1500);
+        } else {
+          setSyncMessage('Sync completed - no changes needed.');
+        }
+        
+        console.log('✅ FamilyScore sync successful:', result);
+      } else {
+        throw new Error(result.error || 'Sync failed');
+      }
+      
+      // Auto-hide success message
+      setTimeout(() => {
+        setSyncStatus('idle');
+        setSyncMessage('');
+      }, 5000);
+      
+    } catch (error) {
+      console.error('❌ FamilyScore sync failed:', error);
+      setSyncStatus('error');
+      setSyncMessage(`Sync failed: ${error.message}`);
+      
+      // Auto-hide error message
+      setTimeout(() => {
+        setSyncStatus('idle');
+        setSyncMessage('');
+      }, 5000);
+    }
+  };
+
   return (
     <WebSocketManager 
       familyId={family.id}
@@ -195,6 +261,22 @@ export default function ParentDashboard(
           >
             ➕ Add Chore
           </button>
+          <button
+            onClick={handleFamilyScoreSync}
+            disabled={syncStatus === 'syncing'}
+            class={`btn ${syncStatus === 'success' ? 'btn-success' : syncStatus === 'error' ? 'btn-danger' : 'btn-secondary'}`}
+            style={{ 
+              fontSize: "0.875rem",
+              opacity: syncStatus === 'syncing' ? 0.7 : 1,
+              transition: "opacity 0.2s"
+            }}
+            title="Sync family leaderboard with FamilyScore"
+          >
+            {syncStatus === 'syncing' ? '🔄 Syncing...' : 
+             syncStatus === 'success' ? '✅ Sync Success' : 
+             syncStatus === 'error' ? '❌ Sync Error' : 
+             '🔄 Sync Leaderboard'}
+          </button>
           <a
             href="/parent/settings"
             class="btn btn-secondary"
@@ -210,6 +292,37 @@ export default function ParentDashboard(
             📊 View Reports
           </a>
         </div>
+        
+        {/* Sync Status Message */}
+        {syncMessage && (
+          <div 
+            style={{ 
+              marginTop: "0.75rem",
+              padding: "0.5rem",
+              borderRadius: "0.375rem",
+              fontSize: "0.875rem",
+              backgroundColor: syncStatus === 'success' ? '#d4edda' : 
+                              syncStatus === 'error' ? '#f8d7da' : '#e2e8f0',
+              color: syncStatus === 'success' ? '#155724' : 
+                     syncStatus === 'error' ? '#721c24' : '#475569',
+              border: `1px solid ${syncStatus === 'success' ? '#c3e6cb' : 
+                                   syncStatus === 'error' ? '#f5c6cb' : '#cbd5e1'}`
+            }}
+          >
+            {syncMessage}
+          </div>
+        )}
+        
+        {/* Last Sync Time */}
+        {lastSyncTime && (
+          <div style={{ 
+            marginTop: "0.5rem", 
+            fontSize: "0.75rem", 
+            color: "#64748b" 
+          }}>
+            Last sync: {lastSyncTime.toLocaleString()}
+          </div>
+        )}
       </div>
 
       {/* Theme Selector */}

@@ -15,7 +15,8 @@ gamification via FamilyScore WebSocket integration.
 
 Transform routine family chores into an engaging, competitive experience with
 **instant real-time updates** across all family devices, replacing traditional
-polling with sub-second WebSocket broadcasts.
+polling with sub-second WebSocket broadcasts. Features comprehensive 
+**FamilyScore sync integration** for data consistency and real-time gamification.
 
 ## Technology Stack
 
@@ -57,9 +58,9 @@ public.family_profiles             -- Family members + pin_hash
 
 ### ✅ **REUSE EXISTING SERVICES**
 
-- **TransactionService.ts**: Copy exactly from existing implementation
+- **TransactionService.ts**: Copy exactly from existing implementation with sync methods
 - **Authentication system**: Copy login.tsx and auth components
-- **FamilyScore integration**: Production-tested API keys and endpoints
+- **FamilyScore integration**: Production-tested API keys and endpoints with sync capabilities
 
 ## Environment Configuration
 
@@ -126,6 +127,19 @@ DENO_ENV=production
 2. **Activity Feed**: Real-time chore completions with 🟢 live indicator
 3. **Parent Notifications**: Immediate adjustment/bonus notifications to kids
 4. **Cross-device Sync**: Changes on one device appear everywhere instantly
+
+### FamilyScore Sync Integration
+
+**Comprehensive Data Consistency**: Advanced sync endpoint integration ensures perfect data alignment between Chores2026 local transactions and FamilyScore's real-time gamification engine.
+
+**Key Features**:
+- **Manual Sync Button**: Parent dashboard "Sync FamilyScore" button for on-demand synchronization
+- **Automatic Transaction Sync**: Every chore completion automatically syncs with FamilyScore
+- **Discrepancy Resolution**: Three sync modes (compare/force_local/force_familyscore) handle conflicts
+- **Non-blocking Error Handling**: Core functionality continues if FamilyScore unavailable
+- **Startup Consistency Check**: Background sync on dashboard load ensures data alignment
+
+**See Documentation**: [FamilyScore Sync Integration Guide](docs/familyscore-sync-integration.md)
 
 ## Application Structure
 

@@ -765,11 +765,14 @@ export const handler: Handlers = {
 
 #### 3. Transaction Logging Pattern
 ```typescript
-// api/chores/[chore_id]/complete.ts - Completion with FamilyScore sync
+// api/chores/[chore_id]/complete.ts - Universal completion for kids and parents
 export const handler: Handlers = {
   async POST(req, ctx) {
     const { chore_id } = ctx.params;
-    const { profile_id, family_id } = await req.json();
+    const { kid_id, profile_id } = await req.json();
+    
+    // Accept either kid_id (kids) or profile_id (parents) 
+    const userId = kid_id || profile_id;
     
     // Use production-tested TransactionService
     const transactionService = new TransactionService();
@@ -779,8 +782,8 @@ export const handler: Handlers = {
       chore_id,
       pointValue,
       choreName,
-      profile_id,
-      family_id
+      userId,
+      user.family_id
     );
     
     return Response.json(result);

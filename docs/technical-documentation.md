@@ -51,9 +51,11 @@ graph TB
 - **Security**: bcrypt for PIN hashing, cookie-based sessions, complete URL GUID elimination
 
 #### External Services
-- **FamilyScore**: Real-time point tracking and family gamification
+- **FamilyScore**: Real-time point tracking and family gamification with sync endpoints
 - **Twilio Verify**: Phone number authentication and SMS verification
 - **Supabase**: Database, authentication, and real-time subscriptions
+
+**See**: [FamilyScore Sync Integration Guide](familyscore-sync-integration.md) for detailed sync implementation
 
 ## 📁 Project Structure
 
@@ -108,6 +110,7 @@ graph TB
     ├── 📄 index.md              # Documentation table of contents
     ├── 📄 business-requirements.md # Product specifications
     ├── 📄 technical-documentation.md # This file
+    ├── 📄 familyscore-sync-integration.md # FamilyScore sync guide
     └── 📁 milestones/           # Implementation tracking
 ```
 
@@ -191,6 +194,8 @@ class TransactionService {
 3. **FamilyScore Sync**: POST to FamilyScore API with transaction hash
 4. **WebSocket Broadcast**: Real-time update to connected family members
 5. **Error Handling**: Graceful fallback if FamilyScore unavailable
+
+**See**: [FamilyScore Sync Integration Guide](familyscore-sync-integration.md) for comprehensive sync documentation
 
 #### Security Features
 

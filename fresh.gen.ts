@@ -10,6 +10,7 @@ import * as $api_family_family_id_pin_setting from "./routes/api/family/[family_
 import * as $api_family_pin_setting from "./routes/api/family/pin-setting.ts";
 import * as $api_family_set_kid_pin from "./routes/api/family/set-kid-pin.ts";
 import * as $api_familyscore_live_family_id_ from "./routes/api/familyscore/live/[family_id].ts";
+import * as $api_familyscore_sync from "./routes/api/familyscore/sync.ts";
 import * as $api_kids_kid_id_pin from "./routes/api/kids/[kid_id]/pin.ts";
 import * as $api_kids_chores from "./routes/api/kids/chores.ts";
 import * as $api_parent_session from "./routes/api/parent/session.ts";
@@ -65,6 +66,7 @@ const manifest = {
     "./routes/api/family/set-kid-pin.ts": $api_family_set_kid_pin,
     "./routes/api/familyscore/live/[family_id].ts":
       $api_familyscore_live_family_id_,
+    "./routes/api/familyscore/sync.ts": $api_familyscore_sync,
     "./routes/api/kids/[kid_id]/pin.ts": $api_kids_kid_id_pin,
     "./routes/api/kids/chores.ts": $api_kids_chores,
     "./routes/api/parent/session.ts": $api_parent_session,

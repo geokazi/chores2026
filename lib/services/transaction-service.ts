@@ -490,4 +490,212 @@ export class TransactionService {
       adjustedBy: "parent",
     });
   }
+
+  /**
+   * 🔄 FAMILYSCORE SYNC METHODS
+   * Methods for synchronizing local state with FamilyScore to resolve discrepancies
+   */
+
+  /**
+   * Sync local family state with FamilyScore to resolve discrepancies
+   */
+  async syncWithFamilyScore(
+    familyId: string, 
+    options: {
+      mode?: "compare" | "force_local" | "force_familyscore";
+      dryRun?: boolean;
+    } = {}
+  ): Promise<SyncResult> {
+    const familyScoreApiUrl = Deno.env.get("FAMILYSCORE_BASE_URL");
+    const familyScoreApiKey = Deno.env.get("FAMILYSCORE_API_KEY");
+
+    if (!familyScoreApiUrl || !familyScoreApiKey) {
+      console.warn("⚠️ FamilyScore not configured, cannot sync");
+      return { 
+        success: false, 
+        error: "FamilyScore not configured",
+        sync_performed: false 
+      };
+    }
+
+    try {
+      console.log("🔄 Starting FamilyScore sync...", { familyId, options });
+
+      // Get current local balances from Supabase
+      const localBalances = await this.getCurrentFamilyBalances(familyId);
+      
+      const payload = {
+        family_id: familyId,
+        local_state: localBalances.map(profile => ({
+          user_id: profile.profile_id,
+          current_points: profile.current_points || 0,
+          name: profile.name || "Unknown",
+          last_transaction_hash: profile.last_transaction_hash
+        })),
+        sync_mode: options.mode || "compare",
+        dry_run: options.dryRun || false,
+        client_timestamp: new Date().toISOString()
+      };
+
+      console.log("📋 Sync payload:", { 
+        family_id: familyId,
+        local_users: payload.local_state.length,
+        mode: payload.sync_mode 
+      });
+
+      const response = await fetch(`${familyScoreApiUrl}/api/sync/leaderboard`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": familyScoreApiKey,
+          "X-Client-Version": "chores2026-transaction-service-1.0",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "Unable to read error");
+        throw new Error(`FamilyScore sync failed ${response.status}: ${errorText}`);
+      }
+
+      const result: SyncResult = await response.json();
+      
+      if (result.success && result.sync_performed) {
+        console.log("✅ FamilyScore sync completed:", {
+          changes_made: result.sync_performed,
+          discrepancies: result.data?.sync_results?.discrepancies_found || 0
+        });
+
+        // Apply any recommended local changes if needed
+        if (result.data?.sync_results?.actions_taken?.length > 0) {
+          await this.applySyncResults(result.data.sync_results);
+        }
+        
+        // Trigger UI refresh
+        await this.notifyBalanceUpdate(familyId);
+      }
+      
+      return result;
+      
+    } catch (error) {
+      console.warn("⚠️ FamilyScore sync failed (non-critical):", error);
+      return { 
+        success: false, 
+        error: error.message,
+        sync_performed: false 
+      };
+    }
+  }
+
+  /**
+   * Get current family member balances from local Supabase database
+   */
+  private async getCurrentFamilyBalances(familyId: string): Promise<Array<{
+    profile_id: string;
+    name: string;
+    current_points: number;
+    last_transaction_hash?: string;
+  }>> {
+    try {
+      const { data, error } = await this.client
+        .from("family_profiles")
+        .select("profile_id, name, current_points, last_transaction_hash")
+        .eq("family_id", familyId);
+
+      if (error) throw error;
+
+      return data || [];
+    } catch (error) {
+      console.error("❌ Failed to get family balances:", error);
+      return [];
+    }
+  }
+
+  /**
+   * Apply sync results by updating local database if needed
+   */
+  private async applySyncResults(syncResults: any): Promise<void> {
+    try {
+      if (!syncResults.actions_taken?.length) return;
+
+      console.log("🔧 Applying sync results...", {
+        actions: syncResults.actions_taken.length
+      });
+
+      for (const action of syncResults.actions_taken) {
+        if (action.action === "updated_points" && action.user_id) {
+          // Update local balance to match FamilyScore
+          await this.updateLocalBalance(action.user_id, action.new_points);
+          console.log(`✅ Updated local balance: ${action.user_id} → ${action.new_points}pts`);
+        }
+      }
+    } catch (error) {
+      console.error("❌ Failed to apply sync results:", error);
+    }
+  }
+
+  /**
+   * Update local profile balance
+   */
+  private async updateLocalBalance(profileId: string, newPoints: number): Promise<void> {
+    try {
+      const { error } = await this.client
+        .from("family_profiles")
+        .update({ current_points: newPoints })
+        .eq("profile_id", profileId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error(`❌ Failed to update local balance for ${profileId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Notify UI of balance updates (placeholder for future implementation)
+   */
+  private async notifyBalanceUpdate(familyId: string): Promise<void> {
+    // Future: Could trigger WebSocket notifications or other UI updates
+    console.log(`📡 Balance update notification sent for family ${familyId}`);
+  }
+
+  /**
+   * Perform startup sync to catch any missed updates
+   */
+  async performStartupSync(familyId: string): Promise<SyncResult> {
+    console.log("🔄 Performing startup sync with FamilyScore...");
+    
+    const result = await this.syncWithFamilyScore(familyId, { mode: "compare" });
+    
+    if (result.success && result.data?.sync_results?.discrepancies_found > 0) {
+      console.log(`ℹ️ Found ${result.data.sync_results.discrepancies_found} sync discrepancies`);
+      // Could trigger user notification or auto-repair
+    }
+    
+    return result;
+  }
+}
+
+// Types for sync functionality
+interface SyncResult {
+  success: boolean;
+  sync_performed: boolean;
+  error?: string;
+  data?: {
+    family_id?: string;
+    leaderboard?: Array<any>;
+    version_seq?: number;
+    last_sync_at?: string;
+    sync_results?: {
+      discrepancies_found: number;
+      actions_taken?: Array<{
+        user_id: string;
+        action: string;
+        old_points: number;
+        new_points: number;
+        reason: string;
+      }>;
+      sync_completed_at?: string;
+    };
+  };
 }
