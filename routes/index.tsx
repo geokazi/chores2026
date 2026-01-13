@@ -131,7 +131,7 @@ export default function IndexPage({ data }: PageProps<IndexPageData>) {
             fontWeight: "500",
           }}
         >
-          Parent View →
+          Family Dashboard →
         </a>
       </div>
     </div>

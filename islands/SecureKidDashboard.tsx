@@ -159,7 +159,7 @@ export default function SecureKidDashboard({ family, familyMembers, recentActivi
       <div class="header">
         <div>
           <a href="/" style={{ color: "white", textDecoration: "none" }}>
-            ← Switch Kid
+            ← Switch Profile
           </a>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>

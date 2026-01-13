@@ -142,7 +142,21 @@ export default function ParentDashboard(
     setSyncMessage('');
     
     try {
-      console.log('🔄 Starting FamilyScore sync...');
+      console.log('🔄 Starting FamilyScore sync with force_local mode...');
+      
+      // Prepare local_state payload with current family member data
+      const localState = liveMembers.map(member => ({
+        user_id: member.id,
+        current_points: member.current_points,
+        name: member.name,
+        role: member.role
+      }));
+      
+      console.log('📋 Local state for sync:', { 
+        family_id: family.id, 
+        member_count: localState.length,
+        total_points: localState.reduce((sum, m) => sum + m.current_points, 0)
+      });
       
       const response = await fetch('/api/familyscore/sync', {
         method: 'POST',
@@ -151,13 +165,15 @@ export default function ParentDashboard(
         },
         body: JSON.stringify({
           family_id: family.id,
+          local_state: localState,
           sync_mode: 'force_local', // Trust local data as the source of truth
           dry_run: false
         }),
       });
 
       if (!response.ok) {
-        throw new Error(`Sync failed: ${response.status}`);
+        const errorText = await response.text().catch(() => 'Unknown error');
+        throw new Error(`Sync failed (${response.status}): ${errorText}`);
       }
 
       const result = await response.json();
@@ -167,34 +183,62 @@ export default function ParentDashboard(
         setLastSyncTime(new Date());
         
         if (result.sync_performed) {
-          setSyncMessage(`Sync completed! ${result.data?.sync_results?.discrepancies_found || 0} discrepancies resolved.`);
-          // Refresh the page to show updated data
-          setTimeout(() => window.location.reload(), 1500);
+          const discrepanciesFound = result.data?.sync_results?.discrepancies_found || 0;
+          const actionsCount = result.data?.sync_results?.actions_taken?.length || 0;
+          setSyncMessage(`Sync completed! ${discrepanciesFound} discrepancies found, ${actionsCount} updates applied.`);
+          
+          // Refresh the page to show updated data if changes were made
+          console.log('🔄 Changes detected, refreshing UI in 2 seconds...');
+          setTimeout(() => {
+            console.log('🔄 Refreshing page to show sync updates...');
+            window.location.reload();
+          }, 2000);
         } else {
-          setSyncMessage('Sync completed - no changes needed.');
+          setSyncMessage('Sync completed - no changes needed, data already synchronized.');
         }
         
-        console.log('✅ FamilyScore sync successful:', result);
+        console.log('✅ FamilyScore sync successful:', {
+          sync_performed: result.sync_performed,
+          discrepancies: result.data?.sync_results?.discrepancies_found,
+          actions_taken: result.data?.sync_results?.actions_taken?.length
+        });
       } else {
-        throw new Error(result.error || 'Sync failed');
+        throw new Error(result.error || 'Sync operation failed');
       }
       
-      // Auto-hide success message
-      setTimeout(() => {
-        setSyncStatus('idle');
-        setSyncMessage('');
-      }, 5000);
+      // Auto-hide success message after longer delay if no refresh needed
+      if (!result.sync_performed) {
+        setTimeout(() => {
+          setSyncStatus('idle');
+          setSyncMessage('');
+        }, 4000);
+      }
       
     } catch (error) {
       console.error('❌ FamilyScore sync failed:', error);
       setSyncStatus('error');
-      setSyncMessage(`Sync failed: ${error.message}`);
+      
+      // Provide more helpful error messages
+      let errorMessage = 'Sync failed';
+      if (error.message.includes('401')) {
+        errorMessage = 'Sync failed: Authentication error';
+      } else if (error.message.includes('403')) {
+        errorMessage = 'Sync failed: Permission denied';
+      } else if (error.message.includes('404')) {
+        errorMessage = 'Sync failed: FamilyScore service not found';
+      } else if (error.message.includes('500')) {
+        errorMessage = 'Sync failed: Server error, please try again';
+      } else {
+        errorMessage = `Sync failed: ${error.message}`;
+      }
+      
+      setSyncMessage(errorMessage);
       
       // Auto-hide error message
       setTimeout(() => {
         setSyncStatus('idle');
         setSyncMessage('');
-      }, 5000);
+      }, 7000);
     }
   };
 

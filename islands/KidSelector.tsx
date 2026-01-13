@@ -225,7 +225,7 @@ export default function KidSelector({ family, familyMembers }: Props) {
                   marginTop: "0.5rem",
                 }}
               >
-                {member.role === "parent" ? "Tap for Parent View →" : "Tap to enter →"}
+                {member.role === "parent" ? "Tap for Family Dashboard →" : "Tap to enter →"}
               </div>
             )}
           </div>

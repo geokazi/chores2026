@@ -504,6 +504,12 @@ export class TransactionService {
     options: {
       mode?: "compare" | "force_local" | "force_familyscore";
       dryRun?: boolean;
+      localState?: Array<{
+        user_id: string;
+        current_points: number;
+        name: string;
+        role?: string;
+      }>;
     } = {}
   ): Promise<SyncResult> {
     const familyScoreApiUrl = Deno.env.get("FAMILYSCORE_BASE_URL");
@@ -521,8 +527,28 @@ export class TransactionService {
     try {
       console.log("🔄 Starting FamilyScore sync...", { familyId, options });
 
-      // Get current local balances from Supabase
-      const localBalances = await this.getCurrentFamilyBalances(familyId);
+      // Use provided local state or fetch from database
+      let localBalances;
+      if (options.localState && options.localState.length > 0) {
+        // Use provided local state (from UI)
+        localBalances = options.localState.map(profile => ({
+          profile_id: profile.user_id,
+          name: profile.name,
+          current_points: profile.current_points,
+          role: profile.role
+        }));
+        console.log("📋 Using provided local state for sync:", { 
+          member_count: localBalances.length,
+          total_points: localBalances.reduce((sum, p) => sum + p.current_points, 0)
+        });
+      } else {
+        // Fetch current local balances from Supabase
+        localBalances = await this.getCurrentFamilyBalances(familyId);
+        console.log("📋 Fetched local state from database:", { 
+          member_count: localBalances.length,
+          total_points: localBalances.reduce((sum, p) => sum + p.current_points, 0)
+        });
+      }
       
       const payload = {
         family_id: familyId,
@@ -530,17 +556,19 @@ export class TransactionService {
           user_id: profile.profile_id,
           current_points: profile.current_points || 0,
           name: profile.name || "Unknown",
+          role: profile.role,
           last_transaction_hash: profile.last_transaction_hash
         })),
-        sync_mode: options.mode || "compare",
+        sync_mode: options.mode || "force_local",
         dry_run: options.dryRun || false,
         client_timestamp: new Date().toISOString()
       };
 
-      console.log("📋 Sync payload:", { 
+      console.log("📋 Final sync payload:", { 
         family_id: familyId,
         local_users: payload.local_state.length,
-        mode: payload.sync_mode 
+        mode: payload.sync_mode,
+        total_local_points: payload.local_state.reduce((sum, u) => sum + u.current_points, 0)
       });
 
       const response = await fetch(`${familyScoreApiUrl}/api/sync/leaderboard`, {
@@ -594,12 +622,13 @@ export class TransactionService {
     profile_id: string;
     name: string;
     current_points: number;
+    role?: string;
     last_transaction_hash?: string;
   }>> {
     try {
       const { data, error } = await this.client
         .from("family_profiles")
-        .select("profile_id, name, current_points, last_transaction_hash")
+        .select("profile_id, name, current_points, role, last_transaction_hash")
         .eq("family_id", familyId);
 
       if (error) throw error;
@@ -665,7 +694,7 @@ export class TransactionService {
   async performStartupSync(familyId: string): Promise<SyncResult> {
     console.log("🔄 Performing startup sync with FamilyScore...");
     
-    const result = await this.syncWithFamilyScore(familyId, { mode: "compare" });
+    const result = await this.syncWithFamilyScore(familyId, { mode: "force_local" });
     
     if (result.success && result.data?.sync_results?.discrepancies_found > 0) {
       console.log(`ℹ️ Found ${result.data.sync_results.discrepancies_found} sync discrepancies`);
