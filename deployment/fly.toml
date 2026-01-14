@@ -1,0 +1,58 @@
+app = "choregami"
+primary_region = "sjc"  # San Jose - closest to your location
+
+[build]
+  dockerfile = "deployment/Dockerfile"
+
+[env]
+  DENO_ENV = "production"
+  PORT = "8001"
+
+# Resource allocation for Deno Fresh app
+[[vm]]
+  memory = '512mb'
+  cpu_kind = 'shared'
+  cpus = 1
+
+# HTTP service configuration optimized for WebSocket support
+[http_service]
+  internal_port = 8001
+  force_https = true
+  auto_stop_machines = false  # Keep running for WebSocket persistence
+  auto_start_machines = true
+  min_machines_running = 1    # Always have at least one machine running
+  processes = ["app"]
+
+  # Health check configuration
+  [[http_service.checks]]
+    grace_period = "45s"      # Time to start up
+    interval = "30s"          # Check every 30 seconds
+    timeout = "10s"           # Timeout for health check
+    method = "GET"
+    path = "/health"          # Fresh health endpoint
+    protocol = "http"
+
+  # Connection limits
+  [http_service.concurrency]
+    type = 'connections'
+    hard_limit = 50           # Max concurrent connections
+    soft_limit = 40           # Start scaling at 40 connections
+
+# Port configuration with HTTPS enforcement
+[[http_service.ports]]
+  port = 80
+  handlers = ['http']
+  force_https = true
+
+[[http_service.ports]]
+  port = 443
+  handlers = ['tls', 'http']
+
+# Autoscaling configuration for family usage
+[scaling]
+  min_machines = 1
+  max_machines = 3
+
+# Regional deployment for better performance
+[deploy]
+  strategy = "immediate"    # Deploy immediately without gradual rollout

@@ -6,6 +6,15 @@
 
 import { useState } from "preact/hooks";
 
+// Helper to get local date as YYYY-MM-DD (avoids UTC timezone issues)
+const getLocalDateString = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 interface FamilyMember {
   id: string;
   name: string;
@@ -25,7 +34,7 @@ export default function AddChoreModal({ isOpen, onClose, familyMembers, onSucces
     description: "",
     assignedTo: "",
     points: 5,
-    dueDate: new Date().toISOString().split("T")[0], // Today's date
+    dueDate: getLocalDateString(), // Today's date
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -72,7 +81,7 @@ export default function AddChoreModal({ isOpen, onClose, familyMembers, onSucces
           description: "",
           assignedTo: "",
           points: 5,
-          dueDate: new Date().toISOString().split("T")[0],
+          dueDate: getLocalDateString(),
         });
         
         onSuccess?.();
@@ -236,7 +245,7 @@ export default function AddChoreModal({ isOpen, onClose, familyMembers, onSucces
                 type="date"
                 value={formData.dueDate}
                 onChange={(e) => setFormData({ ...formData, dueDate: e.currentTarget.value })}
-                min={new Date().toISOString().split("T")[0]}
+                min={getLocalDateString()}
                 style={{
                   width: "100%",
                   padding: "0.75rem",

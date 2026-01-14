@@ -1,0 +1,50 @@
+# Git and version control
+.git/
+.gitignore
+
+# Environment files
+.env*
+!.env.example
+
+# Development files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Dependencies that will be cached by Deno
+node_modules/
+
+# Build artifacts
+dist/
+build/
+coverage/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Documentation (not needed in production)
+docs/
+README.md
+*.md
+!CLAUDE.md
+
+# Development scripts
+scripts/
+
+# Test files
+test/
+tests/
+*_test.ts
+*_test.js
+
+# Temporary files
+tmp/
+temp/
