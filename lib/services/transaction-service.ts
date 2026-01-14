@@ -482,7 +482,7 @@ export class TransactionService {
     await this.createTransaction({
       profileId,
       familyId,
-      choreAssignmentId: adjustmentId, // Use adjustment ID as reference
+      // choreAssignmentId omitted - manual adjustments don't have a chore assignment
       transactionType: "manual_adjustment",
       pointsChange,
       description: `Point adjustment: ${reason}`,
