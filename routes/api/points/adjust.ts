@@ -67,9 +67,13 @@ export const handler: Handlers = {
         },
       );
     } catch (error) {
-      console.error("Error adjusting points:", error);
+      console.error("❌ Error adjusting points:", error);
+      console.error("❌ Error stack:", error instanceof Error ? error.stack : "No stack");
       return new Response(
-        JSON.stringify({ error: "Internal server error" }),
+        JSON.stringify({
+          error: "Internal server error",
+          details: error instanceof Error ? error.message : String(error)
+        }),
         {
           status: 500,
           headers: { "Content-Type": "application/json" },

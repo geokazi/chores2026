@@ -20,9 +20,11 @@ interface TransactionRequest {
   transactionType:
     | "chore_completed"
     | "chore_reversed"
-    | "manual_adjustment"
-    | "bonus_award"
-    | "system_correction";
+    | "adjustment"
+    | "bonus_awarded"
+    | "cash_out"
+    | "penalty_applied"
+    | "reward_redemption";
   pointsChange: number;
   description: string;
   adjustedBy?: string; // For manual adjustments
@@ -124,7 +126,7 @@ export class TransactionService {
       const transactionData = {
         family_id: request.familyId,
         profile_id: request.profileId,
-        chore_assignment_id: request.choreAssignmentId,
+        chore_assignment_id: request.choreAssignmentId ?? null,
         transaction_type: request.transactionType,
         points_change: adjustedPointsChange,
         balance_after_transaction: 0,
@@ -178,7 +180,7 @@ export class TransactionService {
     const transactionData = {
       family_id: request.familyId,
       profile_id: request.profileId,
-      chore_assignment_id: request.choreAssignmentId,
+      chore_assignment_id: request.choreAssignmentId ?? null,
       transaction_type: request.transactionType,
       points_change: request.pointsChange,
       balance_after_transaction: balanceAfterTransaction,
@@ -367,9 +369,11 @@ export class TransactionService {
     const reasonMap = {
       "chore_completed": `chore_completion_${request.choreAssignmentId}`,
       "chore_reversed": `chore_reversal_${request.choreAssignmentId}`,
-      "manual_adjustment": "parent_adjustment",
-      "bonus_award": "achievement_bonus",
-      "system_correction": "system_correction",
+      "adjustment": "parent_adjustment",
+      "bonus_awarded": "achievement_bonus",
+      "cash_out": "cash_out",
+      "penalty_applied": "penalty",
+      "reward_redemption": "reward_redemption",
     };
     return reasonMap[request.transactionType as keyof typeof reasonMap] ||
       "unknown_transaction";
@@ -400,7 +404,7 @@ export class TransactionService {
     await this.createTransaction({
       profileId,
       familyId,
-      transactionType: "manual_adjustment",
+      transactionType: "adjustment",
       pointsChange,
       description: `Manual adjustment: ${reason}`,
       adjustedBy,
@@ -427,7 +431,7 @@ export class TransactionService {
     await this.createTransaction({
       profileId,
       familyId,
-      transactionType: "bonus_award",
+      transactionType: "bonus_awarded",
       pointsChange: points,
       description: `Bonus award: ${bonusType} (+${points} pts)`,
       reason: bonusType,
@@ -453,7 +457,7 @@ export class TransactionService {
     await this.createTransaction({
       profileId,
       familyId,
-      transactionType: "system_correction",
+      transactionType: "adjustment",
       pointsChange,
       description: `System correction: ${reason}`,
       reason,
@@ -483,7 +487,7 @@ export class TransactionService {
       profileId,
       familyId,
       // choreAssignmentId omitted - manual adjustments don't have a chore assignment
-      transactionType: "manual_adjustment",
+      transactionType: "adjustment",
       pointsChange,
       description: `Point adjustment: ${reason}`,
       reason,
