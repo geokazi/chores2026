@@ -69,9 +69,17 @@ export default function WebSocketManager({
 
       try {
         const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-        const ws = new WebSocket(
-          `${protocol}//${window.location.host}/api/familyscore/live/${familyId}`,
-        );
+        const hostname = window.location.hostname;
+        
+        // Detect Fly.io deployment and use proper WebSocket URL
+        let websocketUrl;
+        if (hostname.includes('.fly.dev')) {
+          websocketUrl = `${protocol}//${hostname}/api/familyscore/live/${familyId}`;
+        } else {
+          websocketUrl = `${protocol}//${window.location.host}/api/familyscore/live/${familyId}`;
+        }
+        
+        const ws = new WebSocket(websocketUrl);
 
         ws.onopen = () => {
           console.log("🔗 Shared WebSocket connected to FamilyScore");

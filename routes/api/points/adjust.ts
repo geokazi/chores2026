@@ -39,6 +39,7 @@ export const handler: Handlers = {
       }
 
       // Record the point adjustment transaction
+      // Note: recordPointAdjustment already updates the member's balance internally
       const adjustmentId = `adjustment_${Date.now()}_${member_id}`;
       await transactionService.recordPointAdjustment(
         adjustmentId,
@@ -48,13 +49,13 @@ export const handler: Handlers = {
         family_id,
       );
 
-      // Update member's current points
-      await choreService.updateMemberPoints(member_id, amount);
+      // Get updated member balance
+      const updatedMember = await choreService.getFamilyMember(member_id);
 
       return new Response(
         JSON.stringify({
           success: true,
-          new_balance: member.current_points + amount,
+          new_balance: updatedMember?.current_points ?? (member.current_points + amount),
           adjustment: {
             amount,
             reason,

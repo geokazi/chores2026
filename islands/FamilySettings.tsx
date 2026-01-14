@@ -144,6 +144,9 @@ export default function FamilySettings({ family, members, settings }: FamilySett
       return;
     }
 
+    const beforePoints = selectedMember.current_points;
+    const adjustAmount = parseInt(adjustmentAmount);
+
     try {
       const response = await fetch(`/api/points/adjust`, {
         method: "POST",
@@ -151,23 +154,39 @@ export default function FamilySettings({ family, members, settings }: FamilySett
         body: JSON.stringify({
           member_id: selectedMember.id,
           family_id: family.id,
-          amount: parseInt(adjustmentAmount),
+          amount: adjustAmount,
           reason: adjustmentReason,
         }),
       });
 
-      if (response.ok) {
-        console.log("✅ Points adjusted successfully");
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        const afterPoints = result.new_balance;
+        const sign = adjustAmount >= 0 ? "+" : "";
+
+        // Show toast notification
+        alert(`✅ Points adjusted for ${selectedMember.name}!\n\nBefore: ${beforePoints} pts\nAdjustment: ${sign}${adjustAmount} pts\nAfter: ${afterPoints} pts\n\nReason: ${adjustmentReason}`);
+
+        console.log("✅ Points adjusted successfully:", {
+          member: selectedMember.name,
+          before: beforePoints,
+          adjustment: adjustAmount,
+          after: afterPoints,
+        });
+
         setShowPointAdjustment(false);
         setSelectedMember(null);
         setAdjustmentAmount("");
         setAdjustmentReason("");
-        // TODO: Refresh the page or update member data
         window.location.reload();
       } else {
-        console.error("❌ Failed to adjust points");
+        const errorMsg = result.details || result.error || "Unknown error";
+        alert(`❌ Failed to adjust points: ${errorMsg}`);
+        console.error("❌ Failed to adjust points:", result);
       }
     } catch (error) {
+      alert(`❌ Error adjusting points: ${error}`);
       console.error("❌ Error adjusting points:", error);
     }
   };
