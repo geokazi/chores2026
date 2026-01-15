@@ -111,7 +111,7 @@ export default function FamilyReports({ analytics, goalsAchieved, pointsPerDolla
           }}>
             {goalStatus.achieved
               ? `🎉 Goal reached! Everyone gets +$${goalStatus.bonus}!`
-              : `💪 $${goalStatus.target - goalStatus.progress} more → everyone gets +$${goalStatus.bonus}!`
+              : `💪 $${goalStatus.target - goalStatus.progress} more together → everyone gets +$${goalStatus.bonus}!`
             }
           </p>
         </div>
