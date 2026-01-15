@@ -526,7 +526,7 @@ export default function ParentDashboard(
               fontSize: "0.875rem", 
               color: wsConnected ? "var(--color-success)" : "var(--color-text-light)" 
             }}>
-              {wsConnected ? "🎮 Live updates" : "📊 Static view"}
+              {wsConnected ? "🎮 Live updates" : ""}
             </span>
           </div>
           <LiveLeaderboard

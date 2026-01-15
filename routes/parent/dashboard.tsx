@@ -7,6 +7,7 @@ import { Handlers, PageProps } from "$fresh/server.ts";
 import { getAuthenticatedSession } from "../../lib/auth/session.ts";
 import { ChoreService } from "../../lib/services/chore-service.ts";
 import ParentDashboard from "../../islands/ParentDashboard.tsx";
+import AppFooter from "../../components/AppFooter.tsx";
 
 interface ParentDashboardData {
   family: any;
@@ -134,6 +135,7 @@ export default function ParentDashboardPage(
         parentProfileId={parentProfileId}
         recentActivity={recentActivity}
       />
+      <AppFooter />
     </div>
   );
 }

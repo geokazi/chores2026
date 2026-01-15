@@ -5,7 +5,7 @@ export const handler: Handlers = {
   GET(req, ctx) {
     const timestamp = new Date().toISOString();
     const region = Deno.env.get("FLY_REGION") || "local";
-    const version = "1.0.0";
+    const version = Deno.env.get("APP_VERSION") || "dev-local";
     
     return new Response(JSON.stringify({
       status: "healthy",

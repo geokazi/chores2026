@@ -6,6 +6,7 @@
 import { Handlers, PageProps } from "$fresh/server.ts";
 import { ChoreService } from "../lib/services/chore-service.ts";
 import KidSelector from "../islands/KidSelector.tsx";
+import AppFooter from "../components/AppFooter.tsx";
 
 interface IndexPageData {
   family: any;
@@ -134,6 +135,8 @@ export default function IndexPage({ data }: PageProps<IndexPageData>) {
           Family Dashboard →
         </a>
       </div>
+
+      <AppFooter />
     </div>
   );
 }

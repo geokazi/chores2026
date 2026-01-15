@@ -8,6 +8,7 @@ import { Handlers, PageProps } from "$fresh/server.ts";
 import { getAuthenticatedSession } from "../../lib/auth/session.ts";
 import { ChoreService } from "../../lib/services/chore-service.ts";
 import SecureKidDashboard from "../../islands/SecureKidDashboard.tsx";
+import AppFooter from "../../components/AppFooter.tsx";
 
 interface SecureKidDashboardData {
   family: any;
@@ -101,6 +102,7 @@ export default function SecureKidDashboardPage(
         familyMembers={familyMembers}
         recentActivity={recentActivity}
       />
+      <AppFooter />
     </div>
   );
 }

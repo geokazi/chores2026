@@ -6,6 +6,7 @@
 import { Handlers, PageProps } from "$fresh/server.ts";
 import { getAuthenticatedSession } from "../lib/auth/session.ts";
 import { createClient } from "@supabase/supabase-js";
+import AppFooter from "../components/AppFooter.tsx";
 
 interface LoginPageData {
   error?: string;
@@ -154,6 +155,8 @@ export default function LoginPage({ data }: PageProps<LoginPageData>) {
           <p>Don't have an account? Contact your family admin</p>
           <p class="security-note">🔒 Secured with enterprise authentication</p>
         </div>
+
+        <AppFooter />
       </div>
 
       <style jsx>{`

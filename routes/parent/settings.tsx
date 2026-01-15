@@ -7,6 +7,7 @@ import { Handlers, PageProps } from "$fresh/server.ts";
 import { getAuthenticatedSession } from "../../lib/auth/session.ts";
 import { ChoreService } from "../../lib/services/chore-service.ts";
 import FamilySettings from "../../islands/FamilySettings.tsx";
+import AppFooter from "../../components/AppFooter.tsx";
 
 interface ParentSettingsData {
   family: any;
@@ -109,6 +110,7 @@ export default function ParentSettingsPage(
         members={members}
         settings={settings}
       />
+      <AppFooter />
     </div>
   );
 }

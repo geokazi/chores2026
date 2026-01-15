@@ -192,7 +192,14 @@ validate_secrets() {
 # Deploy secrets and application
 deploy_application() {
     log_section "Deployment to Fly.io"
-    
+
+    # Generate deployment version
+    log_step "Generating deployment version..."
+    local git_commit=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+    local deploy_timestamp=$(date +%Y%m%d.%H%M%S)
+    local app_version="prod-v${git_commit}-${deploy_timestamp}"
+    log_success "Version generated: ${app_version}"
+
     # Check if app exists, create if not
     log_step "Checking Fly.io app status..."
     if ! fly status -a "$APP_NAME" &> /dev/null; then
@@ -243,6 +250,10 @@ deploy_application() {
     fly secrets set -a "$APP_NAME" \
         FAMILY_LEADERBOARD_ENABLED="$FAMILY_LEADERBOARD_ENABLED" \
         FAMILYSCORE_WEBSOCKET_ENABLED="$FAMILYSCORE_WEBSOCKET_ENABLED"
+
+    # App version for deployment tracking
+    fly secrets set -a "$APP_NAME" APP_VERSION="$app_version"
+    log_success "Version secret set: $app_version"
     
     # Optional secrets
     if [[ -n "$DENO_KV_ACCESS_TOKEN" ]]; then
