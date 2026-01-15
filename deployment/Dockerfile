@@ -12,6 +12,7 @@ COPY fresh.gen.ts fresh.config.ts ./
 # Copy all source code (needed for fresh.gen.ts imports)
 COPY routes/ routes/
 COPY islands/ islands/
+COPY components/ components/
 COPY lib/ lib/
 COPY static/ static/
 COPY utils/ utils/
