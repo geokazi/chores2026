@@ -1,7 +1,9 @@
 /**
  * SECURE Kid Dashboard Page (Session-Based, NO GUIDs)
  * Uses simple active kid session pattern from original repo
- * Follows /parent/dashboard security model
+ *
+ * OPTIMIZATION: Uses cached session data for family + members
+ * Only queries DB for recent activity (dynamic data)
  */
 
 import { Handlers, PageProps } from "$fresh/server.ts";
@@ -19,9 +21,8 @@ interface SecureKidDashboardData {
 
 export const handler: Handlers<SecureKidDashboardData> = {
   async GET(req, ctx) {
-    // SECURITY: Verify parent session first (same as parent dashboard)
-    const parentSession = await getAuthenticatedSession(req);
-    if (!parentSession.isAuthenticated || !parentSession.family) {
+    const session = await getAuthenticatedSession(req);
+    if (!session.isAuthenticated || !session.family) {
       return new Response(null, {
         status: 303,
         headers: { Location: "/login" },
@@ -30,41 +31,28 @@ export const handler: Handlers<SecureKidDashboardData> = {
 
     try {
       const choreService = new ChoreService();
-      
-      // Get family info (from authenticated session, not URL)
-      const family = await choreService.getFamily(parentSession.family.id);
-      if (!family) {
-        return ctx.render({
-          kid: null,
-          family: null,
-          familyMembers: [],
-          todaysChores: [],
-          recentActivity: [],
-          error: "Family not found",
-        });
-      }
 
-      // Get all family members to find active kid
-      const familyMembers = await choreService.getFamilyMembers(parentSession.family.id);
-      
-      // Get recent family activity
-      const recentActivity = await choreService.getRecentActivity(
-        parentSession.family.id,
-        5,
-      );
+      // OPTIMIZATION: Use cached family + members from session
+      const { family } = session;
 
-      console.log("✅ Secure kid dashboard loaded for family:", family.name);
+      // Only query DB for dynamic data (recent activity)
+      const recentActivity = await choreService.getRecentActivity(family.id, 5);
+
+      console.log("✅ Kid dashboard (cached):", {
+        family: family.name,
+        memberCount: family.members.length,
+      });
 
       return ctx.render({
         family,
-        familyMembers,
+        familyMembers: family.members,
         recentActivity,
       });
     } catch (error) {
       console.error("❌ Error loading kid dashboard:", error);
       return ctx.render({
-        family: null,
-        familyMembers: [],
+        family: session.family,
+        familyMembers: session.family?.members || [],
         recentActivity: [],
         error: "Failed to load dashboard",
       });

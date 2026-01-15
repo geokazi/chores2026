@@ -1,23 +1,34 @@
 /**
  * Kid Selector Page (Post-Login)
  * Main entry point after parent authentication
+ *
+ * OPTIMIZATION: Uses cached session data instead of DB queries
+ * Family data (members, settings) is cached at login in session.ts
  */
 
 import { Handlers, PageProps } from "$fresh/server.ts";
-import { ChoreService } from "../lib/services/chore-service.ts";
+import { getAuthenticatedSession } from "../lib/auth/session.ts";
 import KidSelector from "../islands/KidSelector.tsx";
 import AppFooter from "../components/AppFooter.tsx";
 
 interface IndexPageData {
-  family: any;
-  familyMembers: any[];
+  family: {
+    id: string;
+    name: string;
+    children_pins_enabled: boolean;
+    theme: string;
+  };
+  familyMembers: Array<{
+    id: string;
+    name: string;
+    role: "parent" | "child";
+    current_points: number;
+  }>;
   error?: string;
 }
 
 export const handler: Handlers<IndexPageData> = {
   async GET(req, ctx) {
-    // SECURITY: Check authentication first
-    const { getAuthenticatedSession } = await import("../lib/auth/session.ts");
     const session = await getAuthenticatedSession(req);
 
     // Redirect to login if not authenticated
@@ -28,37 +39,25 @@ export const handler: Handlers<IndexPageData> = {
       });
     }
 
-    // User is authenticated - show kid selector
-    const familyId = session.family.id;
+    // OPTIMIZATION: Use cached session data (no DB queries needed)
+    const { family } = session;
 
-    try {
-      const choreService = new ChoreService();
+    console.log("✅ Kid selector (cached):", {
+      user: session.user?.email,
+      family: family.name,
+      memberCount: family.members.length,
+      pinsEnabled: family.children_pins_enabled,
+    });
 
-      // Get fresh family data with current PIN setting (not stale session data)
-      const [family, familyMembers] = await Promise.all([
-        choreService.getFamily(familyId),
-        choreService.getFamilyMembers(familyId)
-      ]);
-
-      console.log("✅ Authenticated user accessing kid selector:", {
-        user: session.user?.email,
-        family: family?.name || session.family.name,
-        memberCount: familyMembers.length,
-        pinsEnabled: family?.children_pins_enabled
-      });
-
-      return ctx.render({
-        family: family || session.family, // Use fresh family data with current PIN setting
-        familyMembers,
-      });
-    } catch (error) {
-      console.error("❌ Error loading family data:", error);
-      return ctx.render({
-        family: session.family, // Fallback to session data if fresh fetch fails
-        familyMembers: [],
-        error: "Failed to load family data",
-      });
-    }
+    return ctx.render({
+      family: {
+        id: family.id,
+        name: family.name,
+        children_pins_enabled: family.children_pins_enabled,
+        theme: family.theme,
+      },
+      familyMembers: family.members,
+    });
   },
 };
 

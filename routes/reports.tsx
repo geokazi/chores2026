@@ -54,8 +54,10 @@ export const handler: Handlers<ReportsData> = {
     try {
       const choreService = new ChoreService();
 
+      const pointsPerDollar = session.family.points_per_dollar;
+
       const [analytics, goalsAchieved] = await Promise.all([
-        choreService.getFamilyAnalytics(familyId),
+        choreService.getFamilyAnalytics(familyId, pointsPerDollar),
         choreService.getGoalsAchieved(familyId, 5),
       ]);
 

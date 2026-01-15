@@ -6,15 +6,28 @@
 import { getCookies } from "@std/http/cookie";
 import { createClient } from "@supabase/supabase-js";
 
+export interface FamilyMember {
+  id: string;
+  name: string;
+  role: "parent" | "child";
+  current_points: number;
+}
+
 export interface ChoreGamiSession {
   user: {
     id: string;
     email: string;
     role?: string;
+    profileId?: string;  // The logged-in user's family_profile ID
+    profileName?: string;
   } | null;
   family: {
     id: string;
     name: string;
+    points_per_dollar: number;
+    children_pins_enabled: boolean;
+    theme: string;
+    members: FamilyMember[];  // All family members cached
   } | null;
   isAuthenticated: boolean;
   sessionToken?: string;
@@ -67,23 +80,43 @@ export async function getAuthenticatedSession(
       return createAnonymousSession();
     }
 
-    // Get family information separately to avoid join ambiguity
-    const { data: familyInfo, error: familyError } = await supabase
-      .from("families")
-      .select("id, name")
-      .eq("id", profileData.family_id)
-      .single();
+    // Batch fetch: family info + all family members in parallel
+    const [familyResult, membersResult] = await Promise.all([
+      supabase
+        .from("families")
+        .select("id, name, points_per_dollar, children_pins_enabled, theme")
+        .eq("id", profileData.family_id)
+        .single(),
+      supabase
+        .from("family_profiles")
+        .select("id, name, role, current_points")
+        .eq("family_id", profileData.family_id)
+        .eq("is_deleted", false)
+        .order("current_points", { ascending: false }),
+    ]);
+
+    const { data: familyInfo, error: familyError } = familyResult;
+    const { data: membersData, error: membersError } = membersResult;
 
     if (familyError || !familyInfo) {
       console.log("❌ No family found for family_id:", profileData.family_id, familyError?.message);
       return createAnonymousSession();
     }
 
+    // Map members to typed array
+    const members: FamilyMember[] = (membersData || []).map((m: any) => ({
+      id: m.id,
+      name: m.name,
+      role: m.role,
+      current_points: m.current_points || 0,
+    }));
+
     console.log("✅ User authenticated with family access:", {
       user: user.email,
       family: familyInfo.name,
       role: profileData.role,
       profile: profileData.name,
+      membersCount: members.length,
     });
 
     return {
@@ -91,10 +124,16 @@ export async function getAuthenticatedSession(
         id: user.id,
         email: user.email || "",
         role: profileData.role,
+        profileId: profileData.id,
+        profileName: profileData.name,
       },
       family: {
         id: profileData.family_id,
         name: familyInfo.name,
+        points_per_dollar: familyInfo.points_per_dollar || 1,
+        children_pins_enabled: familyInfo.children_pins_enabled || false,
+        theme: familyInfo.theme || "fresh_meadow",
+        members,
       },
       isAuthenticated: true,
       sessionToken: accessToken,

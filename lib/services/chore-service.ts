@@ -910,8 +910,9 @@ export class ChoreService {
   /**
    * Get family analytics (savings + earned by period)
    * Returns all family members with their savings and points earned this week/month/year
+   * @param pointsPerDollar - Conversion rate from session (avoids extra DB query)
    */
-  async getFamilyAnalytics(familyId: string): Promise<{
+  async getFamilyAnalytics(familyId: string, pointsPerDollar: number = 1): Promise<{
     members: Array<{
       id: string;
       name: string;
@@ -933,7 +934,8 @@ export class ChoreService {
     });
 
     // If RPC doesn't exist, fall back to direct query
-    if (error?.code === "42883") {
+    // Error codes: 42883 (PostgreSQL), PGRST202 (PostgREST/Supabase)
+    if (error?.code === "42883" || error?.code === "PGRST202") {
       // Function does not exist - use direct query
       interface MemberRow { id: string; name: string; role: string; current_points: number; }
       interface TxRow { profile_id: string; points_change: number; created_at: string; }
@@ -993,7 +995,7 @@ export class ChoreService {
           name: member.name,
           role: member.role,
           savings: member.current_points || 0,
-          savings_dollars: Math.round((member.current_points || 0) * 0.10 * 100) / 100,
+          savings_dollars: Math.round((member.current_points || 0) / pointsPerDollar * 100) / 100,
           earned_week,
           earned_month,
           earned_year,

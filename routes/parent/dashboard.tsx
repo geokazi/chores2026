@@ -1,6 +1,9 @@
 /**
  * SECURE Parent Dashboard Page
  * Uses session-based family access (NO family_id in URL)
+ *
+ * OPTIMIZATION: Uses cached session data for family + members
+ * Only queries DB for chores and activity (dynamic data)
  */
 
 import { Handlers, PageProps } from "$fresh/server.ts";
@@ -21,7 +24,6 @@ interface ParentDashboardData {
 
 export const handler: Handlers<ParentDashboardData> = {
   async GET(req, ctx) {
-    // SECURITY: Get family_id from authenticated session, not URL
     const session = await getAuthenticatedSession(req);
 
     if (!session.isAuthenticated || !session.family) {
@@ -36,15 +38,12 @@ export const handler: Handlers<ParentDashboardData> = {
     try {
       const choreService = new ChoreService();
 
-      // Get family info (already validated via session)
+      // OPTIMIZATION: Use cached family + members from session
       const family = session.family;
+      const members = family.members;
 
-      // Get family members
-      const members = await choreService.getFamilyMembers(familyId);
-
-      // Get current parent profile ID
-      const currentParent = members.find(m => m.role === "parent" && m.user_id === session.user?.id);
-      const parentProfileId = currentParent?.id;
+      // Parent profile ID is now cached in session
+      const parentProfileId = session.user?.profileId;
 
       // 🚀 AUTO-REGISTRATION: FamilyScore now auto-registers families when first chore is completed
       // No explicit registration needed - happens automatically via TransactionService

@@ -1,6 +1,7 @@
-# Family Reports & Analytics - Simplified Plan
+# Family Reports & Analytics - Implementation
 
 **Date**: January 14, 2026
+**Status**: ✅ Implemented
 
 ## Philosophy
 
@@ -8,84 +9,126 @@
 
 ---
 
-## What We're Building
+## What We Built
 
 A `/reports` page showing:
-1. **Points Earned** by person (week/month/year/all)
-2. **Points Spent** by person (week/month/year/all)
-3. **Quick Stats** (weekly champion, family total, streaks)
+1. **Savings** by person with dollar values
+2. **Points Earned** by person (week/month/year)
+3. **Goals Achieved** (positive framing for redemptions)
+4. **Weekly Champion** badge
 
 ---
 
-## Architecture: Minimal Code
+## Architecture
 
 | Component | Lines | Description |
 |-----------|-------|-------------|
-| `routes/reports.tsx` | ~80 | Server-side route (family-wide, not parent-only) |
-| `islands/FamilyReports.tsx` | ~150 | Simple UI with period toggles |
-| `lib/services/chore-service.ts` | +40 | Add `getFamilyAnalytics()` method |
-| **Total** | **~270** | 2 new files + 1 edit |
+| `routes/reports.tsx` | ~100 | Server-side route (session-based, no GUIDs in URL) |
+| `islands/FamilyReports.tsx` | ~180 | Savings-focused UI, zero clicks needed |
+| `lib/services/chore-service.ts` | +200 | `getFamilyAnalytics()` + `getGoalsAchieved()` |
+| `lib/auth/session.ts` | +3 | Added `points_per_dollar` to session |
 
 **No new services. No new APIs. No bloat.**
 
-**Why `/reports` not `/parent/reports`?** Everyone in the family should see insights - kids seeing their progress is motivating!
+---
+
+## Dollar Conversion
+
+### Source of Truth
+The `points_per_dollar` setting is stored in `public.families` table:
+
+```sql
+SELECT points_per_dollar FROM public.families WHERE id = $1;
+```
+
+### Formula
+```
+dollars = points / points_per_dollar
+```
+
+| points_per_dollar | 100 points = |
+|-------------------|--------------|
+| 1 | $100.00 |
+| 10 | $10.00 |
+| 100 | $1.00 |
+
+### Optimization: Session Caching
+To avoid querying `families` on every page load:
+
+1. **Login** → `session.ts` fetches `points_per_dollar` once
+2. **Session** → Stores it in `session.family.points_per_dollar`
+3. **Routes** → Pass cached value to service methods
+
+```typescript
+// routes/reports.tsx
+const pointsPerDollar = session.family.points_per_dollar;
+const analytics = await choreService.getFamilyAnalytics(familyId, pointsPerDollar);
+```
 
 ---
 
-## SQL Queries
+## Data Queries
 
-### Query 1: Family Stats (Savings + Earned)
+### Query 1: Family Analytics (Savings + Earned)
 
+**Implementation**: `ChoreService.getFamilyAnalytics(familyId, pointsPerDollar)`
+
+The method tries an RPC first, then falls back to JavaScript calculations:
+
+```typescript
+// 1. Try RPC (if exists in DB)
+const { data, error } = await this.client.rpc("get_family_analytics", { p_family_id: familyId });
+
+// 2. Fallback: Direct queries + JS calculation
+if (error?.code === "PGRST202") {
+  // Query family_profiles for current_points
+  // Query chore_transactions for period earnings
+  // Calculate week/month/year in JavaScript
+}
+```
+
+**Equivalent SQL** (for reference):
 ```sql
--- ChoreService.getFamilyAnalytics(familyId)
 SELECT
   fp.id,
   fp.name,
   fp.role,
   fp.current_points as savings,
-  ROUND(fp.current_points * 0.10, 2) as savings_dollars,
-
-  -- Earned This Week/Month/Year
+  ROUND(fp.current_points / f.points_per_dollar, 2) as savings_dollars,
   COALESCE(SUM(CASE WHEN ct.created_at >= date_trunc('week', CURRENT_DATE)
            AND ct.points_change > 0 THEN ct.points_change END), 0)::int as earned_week,
   COALESCE(SUM(CASE WHEN ct.created_at >= date_trunc('month', CURRENT_DATE)
            AND ct.points_change > 0 THEN ct.points_change END), 0)::int as earned_month,
   COALESCE(SUM(CASE WHEN ct.created_at >= date_trunc('year', CURRENT_DATE)
            AND ct.points_change > 0 THEN ct.points_change END), 0)::int as earned_year
-
 FROM public.family_profiles fp
+JOIN public.families f ON f.id = fp.family_id
 LEFT JOIN choretracker.chore_transactions ct
   ON ct.profile_id = fp.id AND ct.family_id = fp.family_id
-WHERE fp.family_id = $1
-GROUP BY fp.id, fp.name, fp.role, fp.current_points
+WHERE fp.family_id = $1 AND fp.is_deleted = false
+GROUP BY fp.id, fp.name, fp.role, fp.current_points, f.points_per_dollar
 ORDER BY fp.current_points DESC;
 ```
 
-### Query 2: Goals Achieved (Recent Redemptions)
+### Query 2: Goals Achieved
 
-```sql
--- ChoreService.getGoalsAchieved(familyId, limit)
-SELECT
-  fp.name,
-  ar.name as reward_name,
-  ar.icon as reward_icon,
-  ABS(ct.points_change)::int as points_used,
-  ct.created_at as achieved_at
+**Implementation**: `ChoreService.getGoalsAchieved(familyId, limit)`
 
-FROM choretracker.chore_transactions ct
-JOIN public.family_profiles fp ON fp.id = ct.profile_id
-LEFT JOIN choretracker.available_rewards ar
-  ON ar.family_id = ct.family_id
-  AND ct.description ILIKE '%' || ar.name || '%'
-WHERE ct.family_id = $1
-  AND ct.transaction_type IN ('reward_redemption', 'cash_out')
-ORDER BY ct.created_at DESC
-LIMIT 5;
+```typescript
+// Query redemption transactions
+const { data: transactions } = await this.client
+  .schema("choretracker")
+  .from("chore_transactions")
+  .select("profile_id, points_change, description, created_at")
+  .eq("family_id", familyId)
+  .in("transaction_type", ["reward_redemption", "cash_out"])
+  .order("created_at", { ascending: false })
+  .limit(limit);
 ```
 
 ---
 
-## UI: Savings-Focused Layout (Zero Clicks)
+## UI Layout
 
 ```
 ┌─────────────────────────────────────────────────┐
@@ -94,10 +137,10 @@ LIMIT 5;
 │                                                 │
 │ 💰 SAVINGS                                      │
 │ ─────────────────────────────────────────────── │
-│ Cikū         107 pts  ($10.70)    ⭐ Top Saver  │
-│ Tonie!        37 pts   ($3.70)                  │
-│ Dad           12 pts   ($1.20)                  │
-│ Mom            5 pts   ($0.50)                  │
+│ Cikū         107 pts  ($107.00)   ⭐ Top Saver  │
+│ Tonie!        37 pts   ($37.00)                 │
+│ Dad           12 pts   ($12.00)                 │
+│ Mom            5 pts    ($5.00)                 │
 │                                                 │
 │ 📈 EARNED THIS    Week  Month  Year             │
 │ ─────────────────────────────────────────────── │
@@ -114,16 +157,10 @@ LIMIT 5;
 │ Cikū    🍕 Pizza Choice (10 pts) ✓ Jan 8       │
 │                                                 │
 │ 🏆 Cikū is this week's Top Earner!              │
-│                                                 │
-│        Family Chores Made Fun                   │
 └─────────────────────────────────────────────────┘
 ```
 
-**Key Features**:
-- Savings shown first with dollar values
-- "Top Saver" badge for highest balance
-- All periods visible at once (no clicks)
-- Goals Achieved = positive framing (not "spent")
+**Note**: Dollar values depend on family's `points_per_dollar` setting.
 
 ---
 
@@ -131,42 +168,30 @@ LIMIT 5;
 
 | File | Change |
 |------|--------|
-| `routes/reports.tsx` | **NEW** - ~80 lines |
-| `islands/FamilyReports.tsx` | **NEW** - ~150 lines |
-| `lib/services/chore-service.ts` | **EDIT** - +40 lines |
+| `routes/reports.tsx` | **NEW** - Session-based route |
+| `islands/FamilyReports.tsx` | **NEW** - Savings-focused UI |
+| `lib/services/chore-service.ts` | **EDIT** - Added analytics methods |
+| `lib/auth/session.ts` | **EDIT** - Added `points_per_dollar` to session |
+| `islands/KidDashboard.tsx` | **EDIT** - Added reports link |
+| `islands/ParentDashboard.tsx` | **EDIT** - Fixed reports link (removed GUID) |
 | `fresh.gen.ts` | Auto-updated |
 
 ---
 
-## Extensibility Hooks (Future)
+## Security
 
-When needed, just add to the SQL query:
-- Savings goals → Add `savings_goal` column to family_profiles
-- Streaks → Add streak calculation CTE
-- Badges → Join to badges table
-- Export → Add API route later
+- **Session-based**: No family_id or user GUIDs in URL
+- **Authentication required**: Redirects to `/login` if not authenticated
+- **Family-scoped**: Only shows data for authenticated user's family
+
+---
+
+## Extensibility (Future)
+
+When needed, extend without refactoring:
+- **Savings goals** → Add `savings_goal` column to `family_profiles`
+- **Streaks** → Add streak calculation to analytics method
+- **Export** → Add `/api/reports/export` route
+- **Date range picker** → Add query params to route
 
 **No premature abstraction. Add when needed.**
-
----
-
-## Implementation Order
-
-1. Add `getFamilyAnalytics()` to ChoreService
-2. Create `routes/reports.tsx`
-3. Create `islands/FamilyReports.tsx`
-4. Add link from kid dashboard + parent dashboard
-5. Deploy
-
----
-
-## Benefits
-
-| Feature | Financial Literacy Value |
-|---------|--------------------------|
-| 💰 Savings First | Reinforces saving as the goal |
-| 💵 Dollar Values | Connects points to real money |
-| ⭐ Top Saver | Celebrates saving, not spending |
-| 🎯 Goals Achieved | Reframes spending as achievement |
-| 📈 Earning History | Shows hard work pays off |
-| 🏆 Weekly Champion | Motivates consistent effort |

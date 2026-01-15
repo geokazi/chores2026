@@ -1,11 +1,13 @@
 /**
  * SECURE Parent Settings Page
  * Uses session-based family access (NO family_id in URL)
+ *
+ * OPTIMIZATION: Uses cached session data for family + members
+ * Settings form submission triggers session refresh
  */
 
 import { Handlers, PageProps } from "$fresh/server.ts";
 import { getAuthenticatedSession } from "../../lib/auth/session.ts";
-import { ChoreService } from "../../lib/services/chore-service.ts";
 import FamilySettings from "../../islands/FamilySettings.tsx";
 import AppFooter from "../../components/AppFooter.tsx";
 
@@ -18,7 +20,6 @@ interface ParentSettingsData {
 
 export const handler: Handlers<ParentSettingsData> = {
   async GET(req, ctx) {
-    // SECURITY: Get family_id from authenticated session, not URL
     const session = await getAuthenticatedSession(req);
 
     if (!session.isAuthenticated || !session.family) {
@@ -28,39 +29,24 @@ export const handler: Handlers<ParentSettingsData> = {
       });
     }
 
-    const familyId = session.family.id;
+    // OPTIMIZATION: Use cached session data (no DB queries needed)
+    const { family } = session;
 
-    try {
-      const choreService = new ChoreService();
+    console.log("✅ Parent settings (cached):", {
+      family: family.name,
+      memberCount: family.members.length,
+      pinsEnabled: family.children_pins_enabled,
+      theme: family.theme,
+    });
 
-      // Get family members
-      const members = await choreService.getFamilyMembers(familyId);
-
-      // Get family settings (PIN enabled, themes, etc.)
-      const settings = await choreService.getFamilySettings(familyId);
-      
-      // Get fresh family data with current PIN setting
-      const family = await choreService.getFamily(familyId);
-
-      console.log("✅ Parent settings loaded for family:", family?.name || session.family.name, {
-        familyPinsEnabled: family?.children_pins_enabled,
-        settingsData: settings
-      });
-
-      return ctx.render({
-        family: family || session.family,
-        members,
-        settings: settings || { children_pins_enabled: false, theme: "fresh_meadow" },
-      });
-    } catch (error) {
-      console.error("❌ Error loading parent settings:", error);
-      return ctx.render({
-        family: session.family,
-        members: [],
-        settings: { children_pins_enabled: false, theme: "fresh_meadow" },
-        error: "Failed to load settings",
-      });
-    }
+    return ctx.render({
+      family,
+      members: family.members,
+      settings: {
+        children_pins_enabled: family.children_pins_enabled,
+        theme: family.theme,
+      },
+    });
   },
 };
 
