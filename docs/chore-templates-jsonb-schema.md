@@ -1,0 +1,708 @@
+# Chore Templates - JSONB Schema Design
+
+**Document Created**: January 15, 2026
+**Status**: Design Complete
+**Architecture**: Zero New Tables - JSONB Only
+
+## Design Philosophy
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     DATA ARCHITECTURE                           │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│   STATIC (TypeScript)              DYNAMIC (JSONB in Supabase) │
+│   ════════════════════             ═══════════════════════════  │
+│                                                                 │
+│   ┌─────────────────┐              ┌─────────────────────────┐ │
+│   │ Preset          │              │ families.settings       │ │
+│   │ Definitions     │              │   .apps.choregami       │ │
+│   │                 │              │     .rotation           │ │
+│   │ • Templates     │              │                         │ │
+│   │ • Chore catalog │   ────────▶  │ • Which preset active   │ │
+│   │ • Schedules     │              │ • Child slot mappings   │ │
+│   │                 │              │ • Start date            │ │
+│   │ (Never changes) │              │ • Customizations        │ │
+│   └─────────────────┘              └─────────────────────────┘ │
+│                                                                 │
+│   lib/data/                        Database                     │
+│   rotation-presets.ts              public.families.settings     │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Key Principles
+
+1. **Static data stays in code** - Template definitions, chore catalogs, schedules
+2. **Dynamic data in JSONB** - Family's chosen template, child mappings, customizations
+3. **Zero new tables** - Extend existing `families.settings` JSONB column
+4. **Sparse storage** - Only store overrides, not full schedules
+
+---
+
+## Database: Extend Existing JSONB
+
+### Current Schema (Already Exists)
+
+```sql
+-- From sql/20260114_jsonb_settings.sql
+public.families.settings JSONB NOT NULL DEFAULT '{}'
+
+-- Current structure:
+{
+  "theme": "fresh_meadow",
+  "apps": {
+    "choregami": {
+      "points_per_dollar": 1,
+      "children_pins_enabled": true,
+      "weekly_bonus_points": 5
+    }
+  },
+  "_version": 1
+}
+```
+
+### Extended Schema (Add `rotation` key)
+
+```sql
+-- NO MIGRATION NEEDED - just write to the JSONB path
+-- families.settings.apps.choregami.rotation
+
+{
+  "theme": "fresh_meadow",
+  "apps": {
+    "choregami": {
+      "points_per_dollar": 1,
+      "children_pins_enabled": true,
+      "weekly_bonus_points": 5,
+
+      "rotation": {                           -- NEW
+        "active_preset": "smart_rotation",    -- Which template is active
+        "start_date": "2026-01-13",           -- For week type calculation
+        "child_slots": [                      -- Map template slots to real kids
+          {
+            "slot": "Child A",
+            "profile_id": "1308d342-86f9-4c27-b185-39bd185c21b9"
+          },
+          {
+            "slot": "Child B",
+            "profile_id": "8349a1b3-b716-4744-91fd-dd2e28e71bc3"
+          }
+        ],
+        "customizations": null                -- Future: sparse overrides
+      }
+    }
+  },
+  "_version": 1
+}
+```
+
+### Size Analysis
+
+| Data | Approx Size | Location |
+|------|-------------|----------|
+| Active preset key | ~20 bytes | JSONB |
+| Start date | ~10 bytes | JSONB |
+| Child mappings (4 kids) | ~300 bytes | JSONB |
+| **Total per family** | **~350 bytes** | JSONB |
+| Full preset definitions | ~50KB | Static TypeScript |
+
+**Result**: Minimal database storage. Heavy lifting in static code.
+
+---
+
+## TypeScript Types
+
+### Family Settings (Extends Existing)
+
+```typescript
+// lib/types/family-settings.ts (extend existing)
+
+interface ChoreGamiAppSettings {
+  points_per_dollar?: number;
+  children_pins_enabled?: boolean;
+  weekly_bonus_points?: number;
+
+  // NEW: Rotation configuration
+  rotation?: RotationConfig;
+}
+
+interface RotationConfig {
+  active_preset: string;           // 'smart_rotation', 'weekend_warrior', etc.
+  start_date: string;              // ISO date string 'YYYY-MM-DD'
+  child_slots: ChildSlotMapping[];
+  customizations?: RotationCustomizations | null;
+}
+
+interface ChildSlotMapping {
+  slot: string;                    // 'Child A', 'Child B', 'Child C', 'Child D'
+  profile_id: string;              // UUID from family_profiles
+}
+
+interface RotationCustomizations {
+  // Sparse overrides - only differences from base preset
+  added?: ScheduleOverride[];      // Chores added to schedule
+  removed?: ScheduleOverride[];    // Chores removed from schedule
+}
+
+interface ScheduleOverride {
+  slot: string;                    // Which child slot
+  day: number;                     // 0-6 (Sunday-Saturday)
+  week_type: string;               // 'cleaning', 'non-cleaning', etc.
+  chore_key: string;               // Reference to chore in preset
+}
+```
+
+### Static Preset Definitions
+
+```typescript
+// lib/data/rotation-presets.ts
+
+// ============================================================
+// PRESET TEMPLATE STRUCTURE
+// ============================================================
+
+export interface RotationPreset {
+  // Identity
+  key: string;                     // Unique identifier
+  name: string;                    // Display name
+  description: string;             // Short description
+  icon: string;                    // Emoji icon
+
+  // Metadata
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  rating: number;                  // 1-5 stars
+  families_using: number;          // Social proof
+  setup_time_minutes: number;
+
+  // Constraints
+  min_children: number;
+  max_children: number;
+  min_age?: number;
+
+  // Schedule structure
+  cycle_type: 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'quarterly';
+  week_types: string[];            // ['cleaning', 'non-cleaning'] or ['standard']
+
+  // Categories for display
+  categories: ChoreCategory[];
+
+  // The actual schedule
+  schedule: RotationSchedule;
+}
+
+export interface ChoreCategory {
+  key: string;
+  name: string;
+  icon: string;
+  chore_count: number;
+  point_range: string;             // "1-3"
+  time_range: string;              // "5-15 min"
+}
+
+// ============================================================
+// CHORE DEFINITION (in preset)
+// ============================================================
+
+export interface ChoreDefinition {
+  key: string;                     // Unique within preset
+  name: string;
+  points: number;
+  minutes: number;
+  category: string;                // References ChoreCategory.key
+  icon: string;
+}
+
+// ============================================================
+// SCHEDULE STRUCTURE
+// ============================================================
+
+// schedule[weekType][slot][dayOfWeek] = choreKeys[]
+export type RotationSchedule = {
+  [weekType: string]: {
+    [slot: string]: {
+      [day: number]: string[];     // Array of chore keys
+    };
+  };
+};
+
+// ============================================================
+// COMPUTED TYPES (derived at runtime)
+// ============================================================
+
+export interface SlotSummary {
+  slot: string;
+  weekly_points: number;
+  weekly_minutes: number;
+  chore_count: number;
+  focus_area: string;              // "Cleaning focus", "Pet focus"
+}
+
+export interface DaySchedule {
+  chores: ChoreDefinition[];
+  total_points: number;
+  total_minutes: number;
+}
+```
+
+---
+
+## Static Preset Data Structure
+
+### Example: Smart Family Rotation
+
+```typescript
+// lib/data/presets/smart-rotation.ts
+
+import { RotationPreset, ChoreDefinition } from '../rotation-presets.ts';
+
+export const SMART_ROTATION_CHORES: ChoreDefinition[] = [
+  // Kitchen & Dining
+  { key: 'dishes', name: 'Dishes', points: 2, minutes: 15, category: 'kitchen', icon: '🍽️' },
+  { key: 'load_dishwasher', name: 'Load dishwasher', points: 2, minutes: 10, category: 'kitchen', icon: '🍽️' },
+  { key: 'unload_dishwasher', name: 'Unload dishwasher', points: 2, minutes: 10, category: 'kitchen', icon: '🍽️' },
+  { key: 'wipe_counters', name: 'Wipe counters', points: 1, minutes: 5, category: 'kitchen', icon: '🍽️' },
+  { key: 'clean_stove', name: 'Clean stove', points: 3, minutes: 12, category: 'kitchen', icon: '🍽️' },
+
+  // Pet Care
+  { key: 'feed_dog', name: 'Feed dog', points: 1, minutes: 3, category: 'pets', icon: '🐕' },
+  { key: 'brush_dog', name: 'Brush dog', points: 2, minutes: 8, category: 'pets', icon: '🐕' },
+  { key: 'walk_dog', name: 'Walk dog', points: 1, minutes: 5, category: 'pets', icon: '🐕' },
+
+  // General Cleaning
+  { key: 'make_bed', name: 'Make bed', points: 1, minutes: 3, category: 'cleaning', icon: '🛏️' },
+  { key: 'organize_room', name: 'Organize room', points: 2, minutes: 15, category: 'cleaning', icon: '🏠' },
+  { key: 'dust_surfaces', name: 'Dust surfaces', points: 2, minutes: 10, category: 'cleaning', icon: '🧹' },
+  { key: 'vacuum_floor', name: 'Vacuum floor', points: 2, minutes: 12, category: 'cleaning', icon: '🧹' },
+
+  // Laundry & More
+  { key: 'sort_laundry', name: 'Sort & start laundry', points: 3, minutes: 10, category: 'laundry', icon: '🧺' },
+  { key: 'fold_laundry', name: 'Fold & put away', points: 4, minutes: 20, category: 'laundry', icon: '🧺' },
+  { key: 'tidy_bathroom', name: 'Tidy bathroom', points: 2, minutes: 10, category: 'bathroom', icon: '🚿' },
+  { key: 'vacuum_car', name: 'Vacuum car', points: 3, minutes: 15, category: 'outdoor', icon: '🚗' },
+  { key: 'vacuum_carpet', name: 'Vacuum carpet', points: 3, minutes: 15, category: 'cleaning', icon: '🧹' },
+];
+
+export const SMART_ROTATION_PRESET: RotationPreset = {
+  key: 'smart_rotation',
+  name: 'Smart Family Rotation',
+  description: 'Two-week cycle balancing cleaning intensity with lighter maintenance weeks.',
+  icon: '🎯',
+
+  difficulty: 'beginner',
+  rating: 4.8,
+  families_using: 1247,
+  setup_time_minutes: 15,
+
+  min_children: 2,
+  max_children: 4,
+  min_age: 8,
+
+  cycle_type: 'biweekly',
+  week_types: ['cleaning', 'non-cleaning'],
+
+  categories: [
+    { key: 'kitchen', name: 'Kitchen & Dining', icon: '🍽️', chore_count: 5, point_range: '1-3', time_range: '5-15 min' },
+    { key: 'pets', name: 'Pet Care', icon: '🐕', chore_count: 3, point_range: '1-2', time_range: '3-8 min' },
+    { key: 'cleaning', name: 'General Cleaning', icon: '🏠', chore_count: 4, point_range: '1-2', time_range: '3-15 min' },
+    { key: 'laundry', name: 'Laundry & More', icon: '🧺', chore_count: 5, point_range: '2-4', time_range: '8-25 min' },
+  ],
+
+  schedule: {
+    cleaning: {
+      'Child A': {
+        1: ['dishes', 'vacuum_car', 'walk_dog'],           // Monday
+        2: ['brush_dog', 'walk_dog'],                       // Tuesday
+        3: ['dishes', 'make_bed', 'organize_room'],         // Wednesday
+        4: ['brush_dog', 'dishes', 'tidy_bathroom'],        // Thursday
+        5: ['dishes', 'sort_laundry', 'walk_dog', 'vacuum_carpet'], // Friday
+        6: ['brush_dog', 'make_bed', 'organize_room'],      // Saturday
+        0: ['dust_surfaces'],                               // Sunday
+      },
+      'Child B': {
+        1: ['brush_dog', 'fold_laundry', 'walk_dog'],
+        2: ['dishes', 'sort_laundry'],
+        3: ['brush_dog', 'dust_surfaces', 'vacuum_floor'],
+        4: ['dishes', 'walk_dog', 'vacuum_carpet'],
+        5: ['brush_dog', 'walk_dog'],
+        6: ['dishes', 'walk_dog'],
+        0: ['tidy_bathroom'],
+      },
+      'Child C': {
+        1: ['dishes', 'make_bed'],
+        2: ['walk_dog', 'dust_surfaces'],
+        3: ['dishes', 'vacuum_floor'],
+        4: ['brush_dog', 'make_bed'],
+        5: ['dishes', 'tidy_bathroom'],
+        6: ['walk_dog', 'organize_room'],
+        0: ['make_bed'],
+      },
+      'Child D': {
+        1: ['walk_dog', 'make_bed'],
+        2: ['dishes', 'make_bed'],
+        3: ['walk_dog', 'make_bed'],
+        4: ['dishes', 'walk_dog'],
+        5: ['make_bed', 'organize_room'],
+        6: ['dishes', 'make_bed'],
+        0: ['walk_dog'],
+      },
+    },
+    'non-cleaning': {
+      'Child A': {
+        1: ['dishes', 'brush_dog', 'dust_surfaces', 'walk_dog'],
+        2: ['dishes', 'sort_laundry', 'vacuum_floor'],
+        3: ['dishes', 'make_bed', 'organize_room'],
+        4: ['brush_dog', 'tidy_bathroom', 'organize_room'],
+        5: ['dishes', 'vacuum_floor', 'make_bed', 'brush_dog'],
+        6: ['wipe_counters', 'walk_dog'],
+        0: ['dust_surfaces'],
+      },
+      'Child B': {
+        1: ['brush_dog', 'vacuum_carpet', 'walk_dog'],
+        2: ['brush_dog', 'tidy_bathroom', 'walk_dog'],
+        3: ['brush_dog', 'clean_stove'],
+        4: ['dishes', 'vacuum_carpet', 'sort_laundry'],
+        5: ['walk_dog'],
+        6: ['make_bed'],
+        0: ['fold_laundry'],
+      },
+      // Child C and D have lighter schedules in non-cleaning week
+      'Child C': {
+        1: ['make_bed', 'walk_dog'],
+        2: ['dishes', 'make_bed'],
+        3: ['walk_dog'],
+        4: ['make_bed'],
+        5: ['dishes'],
+        6: ['walk_dog'],
+        0: ['make_bed'],
+      },
+      'Child D': {
+        1: ['make_bed'],
+        2: ['walk_dog'],
+        3: ['make_bed'],
+        4: ['walk_dog'],
+        5: ['make_bed'],
+        6: ['walk_dog'],
+        0: ['make_bed'],
+      },
+    },
+  },
+};
+```
+
+### Preset Registry
+
+```typescript
+// lib/data/rotation-presets.ts
+
+import { SMART_ROTATION_PRESET, SMART_ROTATION_CHORES } from './presets/smart-rotation.ts';
+// Future imports:
+// import { WEEKEND_WARRIOR_PRESET, WEEKEND_WARRIOR_CHORES } from './presets/weekend-warrior.ts';
+// import { DAILY_BASICS_PRESET, DAILY_BASICS_CHORES } from './presets/daily-basics.ts';
+
+// ============================================================
+// PRESET REGISTRY
+// ============================================================
+
+export const ROTATION_PRESETS: RotationPreset[] = [
+  SMART_ROTATION_PRESET,
+  // WEEKEND_WARRIOR_PRESET,
+  // DAILY_BASICS_PRESET,
+  // TEEN_INDEPENDENCE_PRESET,
+  // SEASONAL_DEEP_CLEAN_PRESET,
+];
+
+// Chore catalog per preset
+export const PRESET_CHORES: Record<string, ChoreDefinition[]> = {
+  smart_rotation: SMART_ROTATION_CHORES,
+  // weekend_warrior: WEEKEND_WARRIOR_CHORES,
+  // daily_basics: DAILY_BASICS_CHORES,
+};
+
+// ============================================================
+// LOOKUP FUNCTIONS
+// ============================================================
+
+export function getPreset(key: string): RotationPreset | undefined {
+  return ROTATION_PRESETS.find(p => p.key === key);
+}
+
+export function getPresetChores(presetKey: string): ChoreDefinition[] {
+  return PRESET_CHORES[presetKey] || [];
+}
+
+export function getChoreByKey(presetKey: string, choreKey: string): ChoreDefinition | undefined {
+  return getPresetChores(presetKey).find(c => c.key === choreKey);
+}
+
+export function getPresetsForFamily(childCount: number): RotationPreset[] {
+  return ROTATION_PRESETS.filter(
+    p => childCount >= p.min_children && childCount <= p.max_children
+  );
+}
+```
+
+---
+
+## Query Patterns
+
+### Read Family's Rotation Config
+
+```typescript
+// In existing service or component
+const { data: family } = await supabase
+  .from('families')
+  .select('settings')
+  .eq('id', familyId)
+  .single();
+
+const rotation = family?.settings?.apps?.choregami?.rotation;
+if (rotation?.active_preset) {
+  const preset = getPreset(rotation.active_preset);
+  // Use preset + rotation.child_slots to compute today's chores
+}
+```
+
+### Apply Template (Update JSONB)
+
+```typescript
+// Set rotation config
+await supabase
+  .from('families')
+  .update({
+    settings: supabase.sql`
+      jsonb_set(
+        COALESCE(settings, '{}'::jsonb),
+        '{apps,choregami,rotation}',
+        ${JSON.stringify({
+          active_preset: presetKey,
+          start_date: new Date().toISOString().split('T')[0],
+          child_slots: childSlots,
+        })}::jsonb
+      )
+    `
+  })
+  .eq('id', familyId);
+```
+
+### Clear Rotation
+
+```typescript
+// Remove rotation config
+await supabase
+  .from('families')
+  .update({
+    settings: supabase.sql`
+      settings #- '{apps,choregami,rotation}'
+    `
+  })
+  .eq('id', familyId);
+```
+
+### Get Today's Rotation Chores for a Profile
+
+```typescript
+function getTodaysRotationChores(
+  settings: FamilySettings,
+  profileId: string
+): ChoreDefinition[] {
+  const rotation = settings?.apps?.choregami?.rotation;
+  if (!rotation?.active_preset) return [];
+
+  const preset = getPreset(rotation.active_preset);
+  if (!preset) return [];
+
+  // Find which slot this profile is assigned to
+  const mapping = rotation.child_slots.find(s => s.profile_id === profileId);
+  if (!mapping) return [];
+
+  // Calculate current week type
+  const weekType = getCurrentWeekType(rotation.start_date, preset.week_types);
+  const dayOfWeek = new Date().getDay();
+
+  // Get chore keys for this slot/day/week
+  const choreKeys = preset.schedule[weekType]?.[mapping.slot]?.[dayOfWeek] || [];
+
+  // Map keys to full chore definitions
+  const chores = getPresetChores(rotation.active_preset);
+  return choreKeys
+    .map(key => chores.find(c => c.key === key))
+    .filter((c): c is ChoreDefinition => c !== undefined);
+}
+
+function getCurrentWeekType(startDate: string, weekTypes: string[]): string {
+  const start = new Date(startDate);
+  const today = new Date();
+  const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+  const weeksSinceStart = Math.floor((today.getTime() - start.getTime()) / msPerWeek);
+  return weekTypes[weeksSinceStart % weekTypes.length];
+}
+```
+
+---
+
+## Data Flow Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                       DATA FLOW                                 │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  1. APPLY TEMPLATE                                              │
+│  ═══════════════════                                            │
+│                                                                 │
+│  Parent taps "Use Template"                                     │
+│       │                                                         │
+│       ▼                                                         │
+│  ┌─────────────────────────────────────────┐                   │
+│  │ POST /api/rotation/apply                │                   │
+│  │ { presetKey, childSlots }               │                   │
+│  └─────────────────────────────────────────┘                   │
+│       │                                                         │
+│       ▼                                                         │
+│  ┌─────────────────────────────────────────┐                   │
+│  │ UPDATE families.settings                │                   │
+│  │ SET rotation = { ... }                  │                   │
+│  └─────────────────────────────────────────┘                   │
+│                                                                 │
+│                                                                 │
+│  2. GET TODAY'S CHORES                                          │
+│  ═══════════════════════                                        │
+│                                                                 │
+│  Kid opens dashboard                                            │
+│       │                                                         │
+│       ▼                                                         │
+│  ┌─────────────────────────────────────────┐                   │
+│  │ Read families.settings.apps             │                   │
+│  │       .choregami.rotation               │                   │
+│  └─────────────────────────────────────────┘                   │
+│       │                                                         │
+│       │ active_preset: "smart_rotation"                         │
+│       │ child_slots: [{slot: "Child A", profile_id: "..."}]    │
+│       │ start_date: "2026-01-13"                               │
+│       │                                                         │
+│       ▼                                                         │
+│  ┌─────────────────────────────────────────┐                   │
+│  │ Load static preset from TypeScript      │                   │
+│  │ getPreset("smart_rotation")             │                   │
+│  └─────────────────────────────────────────┘                   │
+│       │                                                         │
+│       │ preset.schedule["cleaning"]["Child A"][1]              │
+│       │ = ["dishes", "vacuum_car", "walk_dog"]                 │
+│       │                                                         │
+│       ▼                                                         │
+│  ┌─────────────────────────────────────────┐                   │
+│  │ Map chore keys to definitions           │                   │
+│  │ getPresetChores("smart_rotation")       │                   │
+│  └─────────────────────────────────────────┘                   │
+│       │                                                         │
+│       ▼                                                         │
+│  ┌─────────────────────────────────────────┐                   │
+│  │ Return ChoreDefinition[]                │                   │
+│  │ [{ name: "Dishes", points: 2, ... }]    │                   │
+│  └─────────────────────────────────────────┘                   │
+│                                                                 │
+│                                                                 │
+│  3. COMPLETE CHORE (unchanged flow)                             │
+│  ═══════════════════════════════════                            │
+│                                                                 │
+│  Kid taps "I Did This!"                                         │
+│       │                                                         │
+│       ▼                                                         │
+│  ┌─────────────────────────────────────────┐                   │
+│  │ Existing ChoreService.completeChore()   │                   │
+│  │ + TransactionService                    │                   │
+│  │ + FamilyScore sync                      │                   │
+│  └─────────────────────────────────────────┘                   │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Future Extensibility
+
+### Adding a New Template
+
+```typescript
+// 1. Create lib/data/presets/weekend-warrior.ts
+export const WEEKEND_WARRIOR_CHORES: ChoreDefinition[] = [ /* ... */ ];
+export const WEEKEND_WARRIOR_PRESET: RotationPreset = { /* ... */ };
+
+// 2. Add to registry in lib/data/rotation-presets.ts
+import { WEEKEND_WARRIOR_PRESET, WEEKEND_WARRIOR_CHORES } from './presets/weekend-warrior.ts';
+
+export const ROTATION_PRESETS: RotationPreset[] = [
+  SMART_ROTATION_PRESET,
+  WEEKEND_WARRIOR_PRESET,  // ADD
+];
+
+export const PRESET_CHORES: Record<string, ChoreDefinition[]> = {
+  smart_rotation: SMART_ROTATION_CHORES,
+  weekend_warrior: WEEKEND_WARRIOR_CHORES,  // ADD
+};
+
+// That's it! No database changes needed.
+```
+
+### Custom Chore Overrides (Future)
+
+```typescript
+// Family wants to add "Feed fish" to Child A's Monday
+// Store in JSONB customizations:
+
+{
+  "rotation": {
+    "active_preset": "smart_rotation",
+    "start_date": "2026-01-13",
+    "child_slots": [...],
+    "customizations": {
+      "added": [
+        { "slot": "Child A", "day": 1, "week_type": "cleaning", "chore_key": "custom_feed_fish" }
+      ],
+      "custom_chores": [
+        { "key": "custom_feed_fish", "name": "Feed fish", "points": 1, "minutes": 2, "icon": "🐟" }
+      ]
+    }
+  }
+}
+```
+
+### Per-Profile Preferences (Future)
+
+```typescript
+// Store in family_profiles.preferences JSONB:
+{
+  "rotation": {
+    "preferred_time": "after_school",    // When to show reminders
+    "difficulty_level": "standard"        // vs "easy" or "challenge"
+  }
+}
+```
+
+---
+
+## Implementation Checklist
+
+| Task | Lines Est. | File |
+|------|------------|------|
+| TypeScript types | ~80 | `lib/types/rotation.ts` |
+| Smart rotation preset | ~150 | `lib/data/presets/smart-rotation.ts` |
+| Preset registry + helpers | ~50 | `lib/data/rotation-presets.ts` |
+| Rotation service | ~100 | `lib/services/rotation-service.ts` |
+| API: list presets | ~20 | `routes/api/rotation/presets.ts` |
+| API: apply preset | ~40 | `routes/api/rotation/apply.ts` |
+| Island: TemplateGallery | ~150 | `islands/templates/TemplateGallery.tsx` |
+| Island: TemplateCard | ~80 | `islands/templates/TemplateCard.tsx` |
+| Island: ChildMappingModal | ~120 | `islands/templates/ChildMappingModal.tsx` |
+| **Total** | **~790** | Split across 9 files |
+
+All files under 200 lines. No file exceeds 500 line limit.
+
+---
+
+## References
+
+- [UI/UX Mockups](./chore-templates-design.md)
+- [Existing JSONB Settings](./jsonb-settings-architecture.md)
+- [SQL Migration](../sql/20260114_jsonb_settings.sql)
