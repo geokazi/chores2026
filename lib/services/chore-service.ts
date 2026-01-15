@@ -1236,33 +1236,50 @@ export class ChoreService {
     const sixtyDaysAgo = new Date();
     sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
 
-    const { data, error } = await this.client
+    // Query transactions (choretracker schema)
+    const { data: txData, error: txError } = await this.client
       .schema("choretracker")
       .from("chore_transactions")
-      .select(`
-        profile_id,
-        points_change,
-        created_at,
-        family_profiles!inner(name, role)
-      `)
+      .select("profile_id, points_change, created_at")
       .eq("family_id", familyId)
       .eq("transaction_type", "chore_completed")
-      .eq("family_profiles.role", "child")
       .gt("points_change", 0)
       .gte("created_at", sixtyDaysAgo.toISOString());
 
-    if (error || !data || data.length === 0) {
+    if (txError || !txData || txData.length === 0) {
       return { familyBusiestDay: null, familySlowestDays: [], byPerson: [] };
     }
 
+    // Get child profiles separately (public schema)
+    const { data: profiles } = await this.client
+      .from("family_profiles")
+      .select("id, name, role")
+      .eq("family_id", familyId)
+      .eq("role", "child");
+
+    if (!profiles || profiles.length === 0) {
+      return { familyBusiestDay: null, familySlowestDays: [], byPerson: [] };
+    }
+
+    // Create profile map (only children)
+    const childProfileMap = new Map(profiles.map(p => [p.id, p.name]));
+    const childIds = new Set(profiles.map(p => p.id));
+
+    // Filter transactions to only include children
+    const data = txData.filter(tx => childIds.has(tx.profile_id));
+
     const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+    if (data.length === 0) {
+      return { familyBusiestDay: null, familySlowestDays: [], byPerson: [] };
+    }
 
     // Aggregate by person and day
     const personDayMap = new Map<string, Map<number, number>>();
     const familyDayTotals = new Array(7).fill(0);
 
     for (const tx of data) {
-      const name = (tx.family_profiles as any)?.name || "Unknown";
+      const name = childProfileMap.get(tx.profile_id) || "Unknown";
       const dayNum = new Date(tx.created_at).getDay();
 
       if (!personDayMap.has(name)) {
