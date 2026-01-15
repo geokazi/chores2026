@@ -33,7 +33,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-12 | [**Complete Chore Workflow & Theme Access**](./milestones/20260112_complete_chore_workflow_and_theme_access.md) | ✅ Complete | Universal chore completion + kid theme access + security fixes |
 | 2026-01-12 | [**FamilyScore Sync Integration**](./20260112_familyscore_sync_integration.md) | ✅ Complete | Production-ready sync endpoint with data consistency management |
 | 2026-01-13 | [**Sync Fixes & UI Improvements**](./milestones/20260113_sync_fixes_and_ui_improvements.md) | ✅ Complete | Enhanced sync functionality + improved interface labeling |
-| 2026-01-14 | [**Family Reports & Analytics**](./20260114_family_reports_analytics_implementation.md) | ✅ Complete | Savings-focused reports with Week/Month/YTD/All Time earnings |
+| 2026-01-14 | [**Family Reports & Analytics**](./20260114_family_reports_analytics_implementation.md) | ✅ Complete | Savings-focused reports with Week/Month/YTD/All Time earnings + Goals Achieved cards by person |
 | 2026-01-14 | [**Session Caching Optimization**](./20260114_cache_strategy_session_optimization.md) | ✅ Complete | Batch-fetched family data reduces DB queries 20-40% |
 | 2026-01-14 | [**JSONB Settings Architecture**](./20260114_JSONB_settings_architecture.md) | ✅ Complete | Flexible cross-app settings storage with inheritance |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
@@ -171,7 +171,7 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 - ✅ **Consistent UX**: Checkbox completion interface shared between kids and parents
 - ✅ **Mobile Design**: Touch-optimized interface with zero cognitive load design
 - ✅ **Auto-Registration**: Seamless FamilyScore family/user creation on first use
-- ✅ **Family Reports**: Savings-focused analytics with Week/Month/YTD/All Time earnings
+- ✅ **Family Reports**: Savings-focused analytics with Week/Month/YTD/All Time earnings + Goals Achieved aggregated by person (card layout)
 - ✅ **Session Caching**: Batch-fetched family data reduces DB queries 20-40%
 - ✅ **JSONB Settings**: Flexible cross-app configuration storage with inheritance pattern
 

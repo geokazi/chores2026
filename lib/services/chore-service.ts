@@ -1036,38 +1036,47 @@ export class ChoreService {
   }
 
   /**
-   * Get recent goals achieved (reward redemptions)
+   * Get goals achieved (reward redemptions) from the past year
+   * Aggregated by person for card-style display
    * Positive framing for "spending" - shows what kids achieved with their points
    */
-  async getGoalsAchieved(familyId: string, limit: number = 5): Promise<Array<{
-    name: string;
-    reward_name: string;
-    reward_icon: string;
-    points_used: number;
-    achieved_at: string;
-  }>> {
-    // Get redemption transactions
+  async getGoalsAchieved(familyId: string): Promise<{
+    byPerson: Array<{
+      name: string;
+      totalPoints: number;
+      rewardCount: number;
+    }>;
+    familyTotal: {
+      totalPoints: number;
+      rewardCount: number;
+    };
+  }> {
+    // Get redemption transactions from the past year
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
     const { data: transactions, error: txError } = await this.client
       .schema("choretracker")
       .from("chore_transactions")
       .select("profile_id, points_change, description, created_at")
       .eq("family_id", familyId)
       .in("transaction_type", ["reward_redemption", "cash_out"])
-      .order("created_at", { ascending: false })
-      .limit(limit);
+      .gte("created_at", oneYearAgo.toISOString())
+      .order("created_at", { ascending: false });
+
+    const emptyResult = { byPerson: [], familyTotal: { totalPoints: 0, rewardCount: 0 } };
 
     if (txError) {
       console.error("Error fetching goals achieved:", txError);
-      return [];
+      return emptyResult;
     }
 
     if (!transactions || transactions.length === 0) {
-      return [];
+      return emptyResult;
     }
 
-    interface TxRow { profile_id: string; points_change: number; description: string; created_at: string; }
+    interface TxRow { profile_id: string; points_change: number; }
     interface ProfileRow { id: string; name: string; }
-    interface RewardRow { name: string; icon: string; }
 
     const typedTx = transactions as TxRow[];
 
@@ -1081,50 +1090,32 @@ export class ChoreService {
     const typedProfiles = (profiles || []) as ProfileRow[];
     const profileMap = new Map(typedProfiles.map((p: ProfileRow) => [p.id, p.name]));
 
-    // Get available rewards for icon matching
-    const { data: rewards } = await this.client
-      .schema("choretracker")
-      .from("available_rewards")
-      .select("name, icon")
-      .eq("family_id", familyId);
+    // Aggregate by person
+    const personAggregates = new Map<string, { name: string; totalPoints: number; rewardCount: number }>();
 
-    const typedRewards = (rewards || []) as RewardRow[];
-    const rewardMap = new Map(typedRewards.map((r: RewardRow) => [r.name.toLowerCase(), r.icon]));
+    for (const tx of typedTx) {
+      const name = profileMap.get(tx.profile_id) || "Unknown";
+      const points = Math.abs(tx.points_change);
 
-    return typedTx.map((tx: TxRow) => {
-      // Try to extract reward name from description
-      const description = tx.description || "";
-      let reward_name = "Reward";
-      let reward_icon = "🎯";
-
-      // Try to match reward from description
-      for (const [name, icon] of rewardMap) {
-        if (description.toLowerCase().includes(name as string)) {
-          reward_name = (name as string).charAt(0).toUpperCase() + (name as string).slice(1);
-          reward_icon = icon as string;
-          break;
-        }
+      if (personAggregates.has(name)) {
+        const existing = personAggregates.get(name)!;
+        existing.totalPoints += points;
+        existing.rewardCount += 1;
+      } else {
+        personAggregates.set(name, { name, totalPoints: points, rewardCount: 1 });
       }
+    }
 
-      // If no match, extract from description
-      if (reward_name === "Reward" && description) {
-        // Common patterns: "Redeemed: Pizza", "Cash out", etc.
-        const match = description.match(/(?:Redeemed|Reward):\s*(.+)/i);
-        if (match) {
-          reward_name = match[1].trim();
-        } else if (description.toLowerCase().includes("cash")) {
-          reward_name = "Cash Out";
-          reward_icon = "💵";
-        }
-      }
+    // Sort by total points descending
+    const byPerson = Array.from(personAggregates.values())
+      .sort((a, b) => b.totalPoints - a.totalPoints);
 
-      return {
-        name: profileMap.get(tx.profile_id) || "Unknown",
-        reward_name,
-        reward_icon,
-        points_used: Math.abs(tx.points_change),
-        achieved_at: tx.created_at,
-      };
-    });
+    // Calculate family total
+    const familyTotal = {
+      totalPoints: byPerson.reduce((sum, p) => sum + p.totalPoints, 0),
+      rewardCount: byPerson.reduce((sum, p) => sum + p.rewardCount, 0),
+    };
+
+    return { byPerson, familyTotal };
   }
 }

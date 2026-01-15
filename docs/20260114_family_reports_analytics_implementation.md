@@ -112,20 +112,43 @@ GROUP BY fp.id, fp.name, fp.role, fp.current_points, f.points_per_dollar
 ORDER BY fp.current_points DESC;
 ```
 
-### Query 2: Goals Achieved
+### Query 2: Goals Achieved (Aggregated by Person)
 
-**Implementation**: `ChoreService.getGoalsAchieved(familyId, limit)`
+**Implementation**: `ChoreService.getGoalsAchieved(familyId)`
+
+Returns aggregated data by person for the past year (card-style display):
 
 ```typescript
-// Query redemption transactions
+// Query redemption transactions from past year
+const oneYearAgo = new Date();
+oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
 const { data: transactions } = await this.client
   .schema("choretracker")
   .from("chore_transactions")
-  .select("profile_id, points_change, description, created_at")
+  .select("profile_id, points_change")
   .eq("family_id", familyId)
   .in("transaction_type", ["reward_redemption", "cash_out"])
-  .order("created_at", { ascending: false })
-  .limit(limit);
+  .gte("created_at", oneYearAgo.toISOString())
+  .order("created_at", { ascending: false });
+
+// Aggregate by person
+// Returns: { byPerson: [...], familyTotal: { totalPoints, rewardCount } }
+```
+
+**Return Structure**:
+```typescript
+{
+  byPerson: Array<{
+    name: string;
+    totalPoints: number;
+    rewardCount: number;
+  }>;
+  familyTotal: {
+    totalPoints: number;
+    rewardCount: number;
+  };
+}
 ```
 
 ---
@@ -153,10 +176,21 @@ const { data: transactions } = await this.client
 │ ───────────────────────────────────────────────────── │
 │ Family Total      96    283   1115  2190              │
 │                                                       │
-│ 🎯 GOALS ACHIEVED                                     │
+│ 🎯 GOALS ACHIEVED (Past Year)                         │
+│ ┌─────────────────────────────────────────────────┐   │
+│ │ 🏅 Julia                               100 pts  │   │
+│ │                              5 rewards claimed  │   │
+│ └─────────────────────────────────────────────────┘   │
+│ ┌─────────────────────────────────────────────────┐   │
+│ │    Tonie!                               32 pts  │   │
+│ │                             11 rewards claimed  │   │
+│ └─────────────────────────────────────────────────┘   │
+│ ┌─────────────────────────────────────────────────┐   │
+│ │    Cikũ                                 23 pts  │   │
+│ │                              3 rewards claimed  │   │
+│ └─────────────────────────────────────────────────┘   │
 │ ───────────────────────────────────────────────────── │
-│ Tonie!  🎮 Extra Gaming (20 pts) ✓ Jan 10            │
-│ Cikū    🍕 Pizza Choice (10 pts) ✓ Jan 8             │
+│ Family Total                    155 pts (19 rewards)  │
 │                                                       │
 │ 🏆 Cikū is this week's Top Earner!                    │
 └───────────────────────────────────────────────────────┘
@@ -167,6 +201,13 @@ const { data: transactions } = await this.client
 - **Month**: Current calendar month
 - **YTD**: Year to Date (Jan 1 to now)
 - **All**: All time (lifetime total)
+
+**Goals Achieved (Card Layout)**:
+- **Aggregated by person**: Shows total per family member, not individual transactions
+- **Past year filter**: Only redemptions from the past 12 months
+- **Card-style**: Each person in a bordered card
+- **Top achiever badge**: 🏅 and highlighted border for highest total
+- **Family total**: Sum of all points and rewards at bottom
 
 **Note**: Dollar values depend on family's `points_per_dollar` setting (from JSONB `settings.apps.choregami.points_per_dollar`).
 

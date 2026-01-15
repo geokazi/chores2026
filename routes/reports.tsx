@@ -30,13 +30,17 @@ interface ReportsData {
       earned_all_time: number;
     };
   };
-  goalsAchieved: Array<{
-    name: string;
-    reward_name: string;
-    reward_icon: string;
-    points_used: number;
-    achieved_at: string;
-  }>;
+  goalsAchieved: {
+    byPerson: Array<{
+      name: string;
+      totalPoints: number;
+      rewardCount: number;
+    }>;
+    familyTotal: {
+      totalPoints: number;
+      rewardCount: number;
+    };
+  };
   error?: string;
 }
 
@@ -60,7 +64,7 @@ export const handler: Handlers<ReportsData> = {
 
       const [analytics, goalsAchieved] = await Promise.all([
         choreService.getFamilyAnalytics(familyId, pointsPerDollar),
-        choreService.getGoalsAchieved(familyId, 5),
+        choreService.getGoalsAchieved(familyId),
       ]);
 
       console.log("✅ Family reports loaded for:", session.family.name);
@@ -75,7 +79,7 @@ export const handler: Handlers<ReportsData> = {
       return ctx.render({
         family: session.family,
         analytics: { members: [], totals: { earned_week: 0, earned_month: 0, earned_ytd: 0, earned_all_time: 0 } },
-        goalsAchieved: [],
+        goalsAchieved: { byPerson: [], familyTotal: { totalPoints: 0, rewardCount: 0 } },
         error: "Failed to load reports",
       });
     }
