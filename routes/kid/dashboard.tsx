@@ -12,10 +12,19 @@ import { ChoreService } from "../../lib/services/chore-service.ts";
 import SecureKidDashboard from "../../islands/SecureKidDashboard.tsx";
 import AppFooter from "../../components/AppFooter.tsx";
 
+interface GoalStatus {
+  enabled: boolean;
+  target: number;
+  progress: number;
+  bonus: number;
+  achieved: boolean;
+}
+
 interface SecureKidDashboardData {
   family: any;
   familyMembers: any[];
   recentActivity: any[];
+  goalStatus: GoalStatus | null;
   error?: string;
 }
 
@@ -35,18 +44,23 @@ export const handler: Handlers<SecureKidDashboardData> = {
       // OPTIMIZATION: Use cached family + members from session
       const { family } = session;
 
-      // Only query DB for dynamic data (recent activity)
-      const recentActivity = await choreService.getRecentActivity(family.id, 5);
+      // Query DB for dynamic data (recent activity + goal status)
+      const [recentActivity, goalStatus] = await Promise.all([
+        choreService.getRecentActivity(family.id, 5),
+        choreService.getFamilyGoalStatus(family.id),
+      ]);
 
       console.log("✅ Kid dashboard (cached):", {
         family: family.name,
         memberCount: family.members.length,
+        goalEnabled: goalStatus?.enabled || false,
       });
 
       return ctx.render({
         family,
         familyMembers: family.members,
         recentActivity,
+        goalStatus,
       });
     } catch (error) {
       console.error("❌ Error loading kid dashboard:", error);
@@ -54,6 +68,7 @@ export const handler: Handlers<SecureKidDashboardData> = {
         family: session.family,
         familyMembers: session.family?.members || [],
         recentActivity: [],
+        goalStatus: null,
         error: "Failed to load dashboard",
       });
     }
@@ -63,7 +78,7 @@ export const handler: Handlers<SecureKidDashboardData> = {
 export default function SecureKidDashboardPage(
   { data }: PageProps<SecureKidDashboardData>,
 ) {
-  const { family, familyMembers, recentActivity, error } = data;
+  const { family, familyMembers, recentActivity, goalStatus, error } = data;
 
   if (error) {
     return (
@@ -89,6 +104,7 @@ export default function SecureKidDashboardPage(
         family={family}
         familyMembers={familyMembers}
         recentActivity={recentActivity}
+        goalStatus={goalStatus}
       />
       <AppFooter />
     </div>

@@ -8,13 +8,22 @@ import { ActiveKidSessionManager } from "../lib/active-kid-session.ts";
 import KidDashboard from "./KidDashboard.tsx";
 import WebSocketManager from "./WebSocketManager.tsx";
 
+interface GoalStatus {
+  enabled: boolean;
+  target: number;
+  progress: number;
+  bonus: number;
+  achieved: boolean;
+}
+
 interface Props {
   family: any;
   familyMembers: any[];
   recentActivity: any[];
+  goalStatus?: GoalStatus | null;
 }
 
-export default function SecureKidDashboard({ family, familyMembers, recentActivity }: Props) {
+export default function SecureKidDashboard({ family, familyMembers, recentActivity, goalStatus }: Props) {
   const [activeKid, setActiveKid] = useState<any>(null);
   const [todaysChores, setTodaysChores] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -172,8 +181,8 @@ export default function SecureKidDashboard({ family, familyMembers, recentActivi
           {family?.children_pins_enabled && (
             <span style={{ fontSize: "0.75rem", opacity: 0.7 }}>🔐</span>
           )}
-          <span style={{ 
-            fontSize: "0.625rem", 
+          <span style={{
+            fontSize: "0.625rem",
             color: wsConnected ? "var(--color-success)" : "var(--color-text-light)",
             marginLeft: "0.25rem"
           }}>
@@ -189,6 +198,57 @@ export default function SecureKidDashboard({ family, familyMembers, recentActivi
           </a>
         </div>
       </div>
+
+      {/* Family Goal Progress - Motivational display for kids */}
+      {goalStatus?.enabled && (
+        <div class="card" style={{ marginBottom: "1rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.75rem" }}>
+            <span style={{ fontSize: "1.25rem" }}>🎯</span>
+            <span style={{ fontWeight: "600" }}>Family Goal This Week</span>
+          </div>
+
+          {/* Progress Header */}
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem", fontSize: "0.9rem" }}>
+            <span style={{ fontWeight: "500" }}>${goalStatus.progress} of ${goalStatus.target}</span>
+            <span style={{ color: "var(--color-text-light)" }}>
+              {Math.min(Math.round((goalStatus.progress / goalStatus.target) * 100), 100)}%
+            </span>
+          </div>
+
+          {/* Progress Bar */}
+          <div style={{
+            height: "16px",
+            background: "#e5e7eb",
+            borderRadius: "8px",
+            overflow: "hidden"
+          }}>
+            <div style={{
+              height: "100%",
+              width: `${Math.min((goalStatus.progress / goalStatus.target) * 100, 100)}%`,
+              background: goalStatus.achieved
+                ? "var(--color-success)"
+                : "var(--color-primary)",
+              borderRadius: "8px",
+              transition: "width 0.3s ease"
+            }} />
+          </div>
+
+          {/* Motivational Message */}
+          <p style={{
+            textAlign: "center",
+            marginTop: "0.75rem",
+            marginBottom: "0",
+            fontWeight: "500",
+            fontSize: "0.9rem",
+            color: goalStatus.achieved ? "var(--color-success)" : "var(--color-text)"
+          }}>
+            {goalStatus.achieved
+              ? `🎉 Goal reached! Everyone gets +$${goalStatus.bonus}!`
+              : `💪 $${goalStatus.target - goalStatus.progress} more → everyone gets +$${goalStatus.bonus}!`
+            }
+          </p>
+        </div>
+      )}
 
       {/* Kid Dashboard */}
       <KidDashboard
