@@ -172,6 +172,66 @@ Bonus Impact:
 
 ---
 
+## UX Decision: Bonus Display in Savings Section
+
+### Question Considered
+
+Should the Savings section show potential bonus amounts if the family goal is met?
+
+### Options Evaluated
+
+| Option | Description | Verdict |
+|--------|-------------|---------|
+| **Inline Potential** | Show `+$2` faded next to each person's balance | ❌ Too subtle |
+| **Projected Balance** | Show `107 pts → 109 pts` with arrow | ❌ Confusing |
+| **Footer Summary** | Add `🎯 +$2 each when goal reached` below savings | 🔄 If users ask |
+| **Context Header** | Add `→ +$2 each` to Savings header | ❌ Redundant |
+| **No Change** | Keep current separation of concerns | ✅ **Chosen** |
+
+### Decision: No Change
+
+The Family Goal section already communicates the bonus effectively:
+
+```
+🎯 Family Goal This Week
+$16 of $20                                 80%
+████████████████████████████░░░░░░░░░░░░
+💪 $4 more → everyone gets +$2!      ← This is sufficient
+```
+
+### Rationale
+
+1. **Goal section already explains bonus** - Message clearly states `everyone gets +$2!`
+2. **Separation of concerns** - Goals = progress tracking, Savings = current balances
+3. **Cognitive load** - Adding bonus preview to savings creates visual noise
+4. **Kids understand** - The motivational message is clear and actionable
+5. **Less code to maintain** - Zero changes means zero bugs
+6. **20/80 principle** - No additional value from duplicating information
+
+### When to Reconsider
+
+If users report confusion about:
+- What the bonus means
+- Who receives the bonus
+- How bonus affects their balance
+
+Then implement Option 3 (footer summary) as minimal viable addition:
+
+```tsx
+// Only show when goal exists and NOT yet achieved
+{goalStatus && !goalStatus.achieved && goalStatus.bonus > 0 && (
+  <div style={{ fontSize: "0.8rem", color: "var(--color-text-light)" }}>
+    🎯 +${goalStatus.bonus} each when goal reached
+  </div>
+)}
+```
+
+### Decision Date
+
+January 14, 2026
+
+---
+
 ## Testing Scenarios
 
 | Scenario | Expected Behavior |
