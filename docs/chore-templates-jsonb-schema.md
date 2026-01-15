@@ -1,8 +1,21 @@
 # Chore Templates - JSONB Schema Design
 
 **Document Created**: January 15, 2026
+**Updated**: January 15, 2026
 **Status**: Design Complete
 **Architecture**: Zero New Tables - JSONB Only
+
+## MVP Scope: 3 Daily Assignment Templates
+
+| Template | Key | Cycle | Kids | Description |
+|----------|-----|-------|------|-------------|
+| 🎯 Smart Family Rotation | `smart_rotation` | Biweekly | 2-4 | Cleaning week + maintenance week |
+| ⚡ Weekend Warrior | `weekend_warrior` | Weekly | 2-6 | Light weekdays, heavy weekends |
+| 🌱 Daily Basics | `daily_basics` | Daily | 2-3 | Same simple routine every day |
+
+**All three use the same data model**: `schedule[weekType][slot][day] = choreKeys[]`
+
+---
 
 ## Design Philosophy
 
@@ -390,33 +403,200 @@ export const SMART_ROTATION_PRESET: RotationPreset = {
 };
 ```
 
-### Preset Registry
+### Preset 2: Weekend Warrior
+
+```typescript
+// lib/data/presets/weekend-warrior.ts
+
+export const WEEKEND_WARRIOR_CHORES: ChoreDefinition[] = [
+  // Quick daily chores (weekdays)
+  { key: 'make_bed', name: 'Make bed', points: 1, minutes: 3, category: 'bedroom', icon: '🛏️' },
+  { key: 'feed_pet', name: 'Feed pet', points: 1, minutes: 3, category: 'pets', icon: '🐕' },
+
+  // Weekend deep clean chores
+  { key: 'deep_clean_bedroom', name: 'Deep clean bedroom', points: 3, minutes: 25, category: 'bedroom', icon: '🛏️' },
+  { key: 'vacuum_upstairs', name: 'Vacuum upstairs', points: 3, minutes: 20, category: 'cleaning', icon: '🧹' },
+  { key: 'vacuum_downstairs', name: 'Vacuum downstairs', points: 3, minutes: 20, category: 'cleaning', icon: '🧹' },
+  { key: 'sort_laundry', name: 'Sort & start laundry', points: 3, minutes: 10, category: 'laundry', icon: '🧺' },
+  { key: 'fold_laundry', name: 'Fold & put away', points: 3, minutes: 20, category: 'laundry', icon: '🧺' },
+  { key: 'clean_bathroom', name: 'Clean bathroom', points: 4, minutes: 25, category: 'bathroom', icon: '🚿' },
+  { key: 'yard_work', name: 'Yard work', points: 4, minutes: 30, category: 'outdoor', icon: '🌿' },
+  { key: 'organize_playroom', name: 'Organize playroom', points: 3, minutes: 20, category: 'cleaning', icon: '🧸' },
+  { key: 'dust_living_room', name: 'Dust living room', points: 2, minutes: 15, category: 'cleaning', icon: '🧹' },
+  { key: 'vacuum_stairs', name: 'Vacuum stairs', points: 2, minutes: 10, category: 'cleaning', icon: '🧹' },
+];
+
+export const WEEKEND_WARRIOR_PRESET: RotationPreset = {
+  key: 'weekend_warrior',
+  name: 'Weekend Warrior',
+  description: 'Light weekday chores, intensive weekend deep-cleaning.',
+  icon: '⚡',
+
+  difficulty: 'beginner',
+  rating: 4.6,
+  families_using: 892,
+  setup_time_minutes: 10,
+
+  min_children: 2,
+  max_children: 6,
+  min_age: 8,
+
+  cycle_type: 'weekly',
+  week_types: ['standard'],  // Single week type
+
+  categories: [
+    { key: 'bedroom', name: 'Bedroom', icon: '🛏️', chore_count: 2, point_range: '1-3', time_range: '3-25 min' },
+    { key: 'cleaning', name: 'Deep Cleaning', icon: '🧹', chore_count: 5, point_range: '2-3', time_range: '10-20 min' },
+    { key: 'laundry', name: 'Laundry', icon: '🧺', chore_count: 2, point_range: '3', time_range: '10-20 min' },
+    { key: 'outdoor', name: 'Outdoor', icon: '🌿', chore_count: 1, point_range: '4', time_range: '30 min' },
+  ],
+
+  schedule: {
+    standard: {
+      'Child A': {
+        1: ['make_bed', 'feed_pet'],                    // Monday - light
+        2: ['make_bed', 'feed_pet'],                    // Tuesday - light
+        3: ['make_bed', 'feed_pet'],                    // Wednesday - light
+        4: ['make_bed', 'feed_pet'],                    // Thursday - light
+        5: ['make_bed', 'vacuum_downstairs'],           // Friday - transition
+        6: ['deep_clean_bedroom', 'vacuum_upstairs', 'sort_laundry', 'fold_laundry'],  // Saturday - heavy
+        0: ['clean_bathroom', 'yard_work', 'organize_playroom'],  // Sunday - heavy
+      },
+      'Child B': {
+        1: ['make_bed', 'feed_pet'],
+        2: ['make_bed', 'feed_pet'],
+        3: ['make_bed', 'feed_pet'],
+        4: ['make_bed', 'feed_pet'],
+        5: ['make_bed', 'vacuum_upstairs'],
+        6: ['dust_living_room', 'vacuum_stairs', 'vacuum_downstairs'],
+        0: ['deep_clean_bedroom', 'sort_laundry', 'fold_laundry'],
+      },
+      // Lighter schedules for younger kids (Child C-F)
+      'Child C': {
+        1: ['make_bed'],
+        2: ['make_bed'],
+        3: ['make_bed'],
+        4: ['make_bed'],
+        5: ['make_bed'],
+        6: ['make_bed', 'dust_living_room'],
+        0: ['make_bed', 'organize_playroom'],
+      },
+      'Child D': {
+        1: ['feed_pet'],
+        2: ['feed_pet'],
+        3: ['feed_pet'],
+        4: ['feed_pet'],
+        5: ['feed_pet'],
+        6: ['feed_pet', 'vacuum_stairs'],
+        0: ['feed_pet', 'deep_clean_bedroom'],
+      },
+    },
+  },
+};
+```
+
+### Preset 3: Daily Basics
+
+```typescript
+// lib/data/presets/daily-basics.ts
+
+export const DAILY_BASICS_CHORES: ChoreDefinition[] = [
+  // Morning routine
+  { key: 'make_bed', name: 'Make bed', points: 1, minutes: 3, category: 'morning', icon: '🛏️' },
+  { key: 'feed_pet', name: 'Feed pet', points: 1, minutes: 3, category: 'morning', icon: '🐕' },
+
+  // After school routine
+  { key: 'put_away_backpack', name: 'Put away backpack', points: 1, minutes: 5, category: 'afterschool', icon: '🎒' },
+  { key: 'tidy_room', name: 'Tidy room', points: 1, minutes: 5, category: 'afterschool', icon: '🧸' },
+
+  // Evening routine (optional extras)
+  { key: 'set_table', name: 'Set table', points: 1, minutes: 3, category: 'evening', icon: '🍽️' },
+  { key: 'clear_table', name: 'Clear table', points: 1, minutes: 5, category: 'evening', icon: '🍽️' },
+];
+
+export const DAILY_BASICS_PRESET: RotationPreset = {
+  key: 'daily_basics',
+  name: 'Daily Basics',
+  description: 'Simple, consistent daily routine. Same chores every day builds habits.',
+  icon: '🌱',
+
+  difficulty: 'beginner',
+  rating: 4.9,
+  families_using: 1456,
+  setup_time_minutes: 5,
+
+  min_children: 2,
+  max_children: 3,
+  min_age: 6,
+
+  cycle_type: 'daily',
+  week_types: ['standard'],  // Same every day
+
+  categories: [
+    { key: 'morning', name: 'Morning', icon: '☀️', chore_count: 2, point_range: '1', time_range: '3 min' },
+    { key: 'afterschool', name: 'After School', icon: '🏠', chore_count: 2, point_range: '1', time_range: '5 min' },
+    { key: 'evening', name: 'Evening', icon: '🌙', chore_count: 2, point_range: '1', time_range: '3-5 min' },
+  ],
+
+  schedule: {
+    standard: {
+      // Same schedule every day (0-6)
+      'Child A': {
+        0: ['make_bed', 'feed_pet', 'put_away_backpack', 'tidy_room'],
+        1: ['make_bed', 'feed_pet', 'put_away_backpack', 'tidy_room'],
+        2: ['make_bed', 'feed_pet', 'put_away_backpack', 'tidy_room'],
+        3: ['make_bed', 'feed_pet', 'put_away_backpack', 'tidy_room'],
+        4: ['make_bed', 'feed_pet', 'put_away_backpack', 'tidy_room'],
+        5: ['make_bed', 'feed_pet', 'put_away_backpack', 'tidy_room'],
+        6: ['make_bed', 'feed_pet', 'put_away_backpack', 'tidy_room'],
+      },
+      'Child B': {
+        0: ['make_bed', 'set_table', 'clear_table', 'tidy_room'],
+        1: ['make_bed', 'set_table', 'clear_table', 'tidy_room'],
+        2: ['make_bed', 'set_table', 'clear_table', 'tidy_room'],
+        3: ['make_bed', 'set_table', 'clear_table', 'tidy_room'],
+        4: ['make_bed', 'set_table', 'clear_table', 'tidy_room'],
+        5: ['make_bed', 'set_table', 'clear_table', 'tidy_room'],
+        6: ['make_bed', 'set_table', 'clear_table', 'tidy_room'],
+      },
+      'Child C': {
+        0: ['make_bed', 'feed_pet', 'tidy_room'],
+        1: ['make_bed', 'feed_pet', 'tidy_room'],
+        2: ['make_bed', 'feed_pet', 'tidy_room'],
+        3: ['make_bed', 'feed_pet', 'tidy_room'],
+        4: ['make_bed', 'feed_pet', 'tidy_room'],
+        5: ['make_bed', 'feed_pet', 'tidy_room'],
+        6: ['make_bed', 'feed_pet', 'tidy_room'],
+      },
+    },
+  },
+};
+```
+
+### Preset Registry (All 3 Templates)
 
 ```typescript
 // lib/data/rotation-presets.ts
 
 import { SMART_ROTATION_PRESET, SMART_ROTATION_CHORES } from './presets/smart-rotation.ts';
-// Future imports:
-// import { WEEKEND_WARRIOR_PRESET, WEEKEND_WARRIOR_CHORES } from './presets/weekend-warrior.ts';
-// import { DAILY_BASICS_PRESET, DAILY_BASICS_CHORES } from './presets/daily-basics.ts';
+import { WEEKEND_WARRIOR_PRESET, WEEKEND_WARRIOR_CHORES } from './presets/weekend-warrior.ts';
+import { DAILY_BASICS_PRESET, DAILY_BASICS_CHORES } from './presets/daily-basics.ts';
 
 // ============================================================
-// PRESET REGISTRY
+// PRESET REGISTRY - MVP: 3 Daily Assignment Templates
 // ============================================================
 
 export const ROTATION_PRESETS: RotationPreset[] = [
   SMART_ROTATION_PRESET,
-  // WEEKEND_WARRIOR_PRESET,
-  // DAILY_BASICS_PRESET,
-  // TEEN_INDEPENDENCE_PRESET,
-  // SEASONAL_DEEP_CLEAN_PRESET,
+  WEEKEND_WARRIOR_PRESET,
+  DAILY_BASICS_PRESET,
 ];
 
 // Chore catalog per preset
 export const PRESET_CHORES: Record<string, ChoreDefinition[]> = {
   smart_rotation: SMART_ROTATION_CHORES,
-  // weekend_warrior: WEEKEND_WARRIOR_CHORES,
-  // daily_basics: DAILY_BASICS_CHORES,
+  weekend_warrior: WEEKEND_WARRIOR_CHORES,
+  daily_basics: DAILY_BASICS_CHORES,
 };
 
 // ============================================================
