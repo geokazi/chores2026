@@ -107,7 +107,36 @@ export default function KidDashboard({
 
   return (
     <div>
-      {/* Kid's Status Header */}
+      {/* Today's Chores - First, right after Family Goal */}
+      <div style={{ marginBottom: "1.5rem" }}>
+        <h2
+          style={{
+            fontSize: "1.125rem",
+            fontWeight: "600",
+            marginBottom: "1rem",
+            color: "var(--color-text)",
+          }}
+        >
+          Your Chores Today ({completedChores}/{totalChores})
+        </h2>
+
+        <ChoreList
+          chores={chores}
+          onChoreComplete={handleChoreComplete}
+          kidId={kid.id}
+        />
+
+        {chores.length === 0 && (
+          <div class="card" style={{ textAlign: "center", padding: "2rem" }}>
+            <p style={{ color: "var(--color-text-light)" }}>
+              🎉 No chores assigned for today!
+            </p>
+          </div>
+        )}
+
+      </div>
+
+      {/* Kid's Status Card - Above leaderboard */}
       <div class="card" style={{ textAlign: "center", marginBottom: "1.5rem" }}>
         <div
           style={{
@@ -135,35 +164,6 @@ export default function KidDashboard({
             Today's Progress: {completedChores}/{totalChores} chores ⭐
           </div>
         )}
-      </div>
-
-      {/* Today's Chores */}
-      <div style={{ marginBottom: "1.5rem" }}>
-        <h2
-          style={{
-            fontSize: "1.125rem",
-            fontWeight: "600",
-            marginBottom: "1rem",
-            color: "var(--color-text)",
-          }}
-        >
-          Your Chores Today ({completedChores}/{totalChores})
-        </h2>
-
-        <ChoreList
-          chores={chores}
-          onChoreComplete={handleChoreComplete}
-          kidId={kid.id}
-        />
-
-        {chores.length === 0 && (
-          <div class="card" style={{ textAlign: "center", padding: "2rem" }}>
-            <p style={{ color: "var(--color-text-light)" }}>
-              🎉 No chores assigned for today!
-            </p>
-          </div>
-        )}
-
       </div>
 
       {/* Family Leaderboard */}
