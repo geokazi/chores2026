@@ -41,6 +41,13 @@ interface ReportsData {
       rewardCount: number;
     };
   };
+  goalStatus?: {
+    enabled: boolean;
+    target: number;
+    progress: number;
+    bonus: number;
+    achieved: boolean;
+  } | null;
   error?: string;
 }
 
@@ -62,9 +69,10 @@ export const handler: Handlers<ReportsData> = {
 
       const pointsPerDollar = session.family.points_per_dollar;
 
-      const [analytics, goalsAchieved] = await Promise.all([
+      const [analytics, goalsAchieved, goalStatus] = await Promise.all([
         choreService.getFamilyAnalytics(familyId, pointsPerDollar),
         choreService.getGoalsAchieved(familyId),
+        choreService.getFamilyGoalStatus(familyId),
       ]);
 
       console.log("✅ Family reports loaded for:", session.family.name);
@@ -73,6 +81,7 @@ export const handler: Handlers<ReportsData> = {
         family: session.family,
         analytics,
         goalsAchieved,
+        goalStatus,
       });
     } catch (error) {
       console.error("❌ Error loading family reports:", error);
@@ -87,7 +96,7 @@ export const handler: Handlers<ReportsData> = {
 };
 
 export default function ReportsPage({ data }: PageProps<ReportsData>) {
-  const { family, analytics, goalsAchieved, error } = data;
+  const { family, analytics, goalsAchieved, goalStatus, error } = data;
 
   return (
     <div class="container">
@@ -115,6 +124,7 @@ export default function ReportsPage({ data }: PageProps<ReportsData>) {
           analytics={analytics}
           goalsAchieved={goalsAchieved}
           pointsPerDollar={family.points_per_dollar}
+          goalStatus={goalStatus}
         />
       )}
       <AppFooter />

@@ -1036,6 +1036,190 @@ export class ChoreService {
   }
 
   /**
+   * Check if family weekly goal is reached and award bonus
+   * Called after each chore completion
+   */
+  async checkFamilyGoal(familyId: string): Promise<{
+    achieved: boolean;
+    bonus?: number;
+    progress?: number;
+    target?: number;
+    alreadyAwarded?: boolean;
+  }> {
+    // Get family settings from JSONB
+    const { data: family, error: familyError } = await this.client
+      .from("families")
+      .select("settings")
+      .eq("id", familyId)
+      .single();
+
+    if (familyError || !family) {
+      console.error("Error fetching family settings for goal check:", familyError);
+      return { achieved: false };
+    }
+
+    const settings = family.settings?.apps?.choregami || {};
+    const goal = settings.weekly_goal;
+    const bonus = settings.goal_bonus || 2;
+
+    // No goal set = disabled
+    if (!goal) {
+      return { achieved: false };
+    }
+
+    // Get week start (Sunday)
+    const now = new Date();
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - now.getDay());
+    weekStart.setHours(0, 0, 0, 0);
+
+    // Get week earnings from transactions
+    const { data: txns, error: txError } = await this.client
+      .schema("choretracker")
+      .from("chore_transactions")
+      .select("points_change")
+      .eq("family_id", familyId)
+      .eq("transaction_type", "chore_completed")
+      .gte("created_at", weekStart.toISOString())
+      .gt("points_change", 0);
+
+    if (txError) {
+      console.error("Error fetching week transactions:", txError);
+      return { achieved: false };
+    }
+
+    const pointsPerDollar = settings.points_per_dollar || 1;
+    const earnedPoints = txns?.reduce((sum, t) => sum + t.points_change, 0) || 0;
+    const earnedDollars = Math.round(earnedPoints / pointsPerDollar);
+
+    // Check if already awarded this week
+    const { data: awarded, error: awardError } = await this.client
+      .schema("choretracker")
+      .from("chore_transactions")
+      .select("id")
+      .eq("family_id", familyId)
+      .eq("transaction_type", "bonus_awarded")
+      .gte("created_at", weekStart.toISOString())
+      .ilike("description", "%weekly_goal%")
+      .limit(1);
+
+    if (awardError) {
+      console.error("Error checking for existing award:", awardError);
+    }
+
+    // Already awarded this week
+    if (awarded && awarded.length > 0) {
+      return {
+        achieved: true,
+        bonus,
+        progress: earnedDollars,
+        target: goal,
+        alreadyAwarded: true
+      };
+    }
+
+    // Goal reached and not yet awarded - award bonus to all members
+    if (earnedDollars >= goal) {
+      console.log(`🎯 Family goal reached! $${earnedDollars}/$${goal} - awarding $${bonus} bonus to all members`);
+
+      const members = await this.getFamilyMembers(familyId);
+      const bonusPoints = bonus * pointsPerDollar;
+
+      // Import TransactionService dynamically to avoid circular dependency
+      const { TransactionService } = await import("./transaction-service.ts");
+      const transactionService = new TransactionService();
+
+      for (const member of members) {
+        try {
+          await transactionService.recordBonusAward(
+            member.id,
+            bonusPoints,
+            "weekly_goal",
+            familyId
+          );
+          console.log(`✅ Bonus awarded to ${member.name}: +${bonusPoints} pts`);
+        } catch (error) {
+          console.error(`Failed to award bonus to ${member.name}:`, error);
+        }
+      }
+
+      return { achieved: true, bonus, progress: earnedDollars, target: goal };
+    }
+
+    // Goal not yet reached
+    return { achieved: false, progress: earnedDollars, target: goal };
+  }
+
+  /**
+   * Get family goal status (for display in FamilyReports)
+   */
+  async getFamilyGoalStatus(familyId: string): Promise<{
+    enabled: boolean;
+    target: number;
+    progress: number;
+    bonus: number;
+    achieved: boolean;
+  } | null> {
+    // Get family settings
+    const { data: family, error } = await this.client
+      .from("families")
+      .select("settings")
+      .eq("id", familyId)
+      .single();
+
+    if (error || !family) {
+      return null;
+    }
+
+    const settings = family.settings?.apps?.choregami || {};
+    const goal = settings.weekly_goal;
+    const bonus = settings.goal_bonus || 2;
+
+    if (!goal) {
+      return null; // Goal not enabled
+    }
+
+    // Get week start
+    const now = new Date();
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - now.getDay());
+    weekStart.setHours(0, 0, 0, 0);
+
+    // Get week earnings
+    const { data: txns } = await this.client
+      .schema("choretracker")
+      .from("chore_transactions")
+      .select("points_change")
+      .eq("family_id", familyId)
+      .eq("transaction_type", "chore_completed")
+      .gte("created_at", weekStart.toISOString())
+      .gt("points_change", 0);
+
+    const pointsPerDollar = settings.points_per_dollar || 1;
+    const earnedPoints = txns?.reduce((sum, t) => sum + t.points_change, 0) || 0;
+    const progress = Math.round(earnedPoints / pointsPerDollar);
+
+    // Check if already achieved this week
+    const { data: awarded } = await this.client
+      .schema("choretracker")
+      .from("chore_transactions")
+      .select("id")
+      .eq("family_id", familyId)
+      .eq("transaction_type", "bonus_awarded")
+      .gte("created_at", weekStart.toISOString())
+      .ilike("description", "%weekly_goal%")
+      .limit(1);
+
+    return {
+      enabled: true,
+      target: goal,
+      progress,
+      bonus,
+      achieved: (awarded && awarded.length > 0) || progress >= goal,
+    };
+  }
+
+  /**
    * Get goals achieved (reward redemptions) from the past year
    * Aggregated by person for card-style display
    * Positive framing for "spending" - shows what kids achieved with their points

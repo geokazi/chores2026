@@ -36,6 +36,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-14 | [**Family Reports & Analytics**](./20260114_family_reports_analytics_implementation.md) | ✅ Complete | Savings-focused reports with Week/Month/YTD/All Time earnings + Goals Achieved cards by person |
 | 2026-01-14 | [**Session Caching Optimization**](./20260114_cache_strategy_session_optimization.md) | ✅ Complete | Batch-fetched family data reduces DB queries 20-40% |
 | 2026-01-14 | [**JSONB Settings Architecture**](./20260114_JSONB_settings_architecture.md) | ✅ Complete | Flexible cross-app settings storage with inheritance |
+| 2026-01-14 | [**Collaborative Family Goals**](./milestones/20260114_collaborative_family_goals_bonus_system.md) | ✅ Complete | Weekly family goal with auto-bonus - collaboration over competition |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 
@@ -174,6 +175,7 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 - ✅ **Family Reports**: Savings-focused analytics with Week/Month/YTD/All Time earnings + Goals Achieved aggregated by person (card layout)
 - ✅ **Session Caching**: Batch-fetched family data reduces DB queries 20-40%
 - ✅ **JSONB Settings**: Flexible cross-app configuration storage with inheritance pattern
+- ✅ **Collaborative Family Goals**: Weekly goal system with auto-bonus when reached - collaboration over competition
 
 ### Known Limitations
 - **Testing**: Comprehensive test suite not yet implemented

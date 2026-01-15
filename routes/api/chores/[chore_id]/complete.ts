@@ -128,11 +128,21 @@ export const handler: Handlers = {
         // Don't fail the chore completion if FamilyScore sync fails
       }
 
+      // Check if family goal was reached (non-blocking)
+      let goalResult = null;
+      try {
+        goalResult = await choreService.checkFamilyGoal(user.family_id);
+      } catch (error) {
+        console.warn("Failed to check family goal:", error);
+      }
+
       return new Response(
         JSON.stringify({
           success: true,
           chore: result.assignment,
           points_earned: chore.point_value,
+          goal_achieved: goalResult?.achieved || false,
+          goal_bonus: goalResult?.bonus,
         }),
         {
           status: 200,

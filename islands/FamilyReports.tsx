@@ -27,6 +27,14 @@ interface GoalsAchievedData {
   };
 }
 
+interface GoalStatus {
+  enabled: boolean;
+  target: number;
+  progress: number;
+  bonus: number;
+  achieved: boolean;
+}
+
 interface FamilyReportsProps {
   analytics: {
     members: FamilyMember[];
@@ -39,9 +47,10 @@ interface FamilyReportsProps {
   };
   goalsAchieved: GoalsAchievedData;
   pointsPerDollar: number;
+  goalStatus?: GoalStatus | null;
 }
 
-export default function FamilyReports({ analytics, goalsAchieved, pointsPerDollar }: FamilyReportsProps) {
+export default function FamilyReports({ analytics, goalsAchieved, pointsPerDollar, goalStatus }: FamilyReportsProps) {
   const { members, totals } = analytics;
 
   // Find top saver (highest savings)
@@ -59,6 +68,55 @@ export default function FamilyReports({ analytics, goalsAchieved, pointsPerDolla
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+      {/* Family Goal Progress Section */}
+      {goalStatus?.enabled && (
+        <div class="card" style={{ marginBottom: "0" }}>
+          <h2 style={{ margin: "0 0 1rem 0", fontSize: "1.1rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <span>🎯</span> Family Goal This Week
+          </h2>
+
+          {/* Progress Header */}
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem" }}>
+            <span style={{ fontWeight: "500" }}>${goalStatus.progress} of ${goalStatus.target}</span>
+            <span style={{ color: "var(--color-text-light)" }}>
+              {Math.min(Math.round((goalStatus.progress / goalStatus.target) * 100), 100)}%
+            </span>
+          </div>
+
+          {/* Progress Bar */}
+          <div style={{
+            height: "20px",
+            background: "#e5e7eb",
+            borderRadius: "10px",
+            overflow: "hidden"
+          }}>
+            <div style={{
+              height: "100%",
+              width: `${Math.min((goalStatus.progress / goalStatus.target) * 100, 100)}%`,
+              background: goalStatus.achieved
+                ? "var(--color-success)"
+                : "var(--color-primary)",
+              borderRadius: "10px",
+              transition: "width 0.3s ease"
+            }} />
+          </div>
+
+          {/* Message */}
+          <p style={{
+            textAlign: "center",
+            marginTop: "0.75rem",
+            marginBottom: "0",
+            fontWeight: "500",
+            color: goalStatus.achieved ? "var(--color-success)" : "var(--color-text)"
+          }}>
+            {goalStatus.achieved
+              ? `🎉 Goal reached! Everyone gets +$${goalStatus.bonus}!`
+              : `💪 $${goalStatus.target - goalStatus.progress} more → everyone gets +$${goalStatus.bonus}!`
+            }
+          </p>
+        </div>
+      )}
+
       {/* Savings Section */}
       <div class="card">
         <h2 style={{ margin: "0 0 1rem 0", fontSize: "1.1rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>

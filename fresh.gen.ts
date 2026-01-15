@@ -7,6 +7,7 @@ import * as $api_chores_chore_id_complete from "./routes/api/chores/[chore_id]/c
 import * as $api_chores_create from "./routes/api/chores/create.ts";
 import * as $api_debug_session from "./routes/api/debug/session.ts";
 import * as $api_family_family_id_pin_setting from "./routes/api/family/[family_id]/pin-setting.ts";
+import * as $api_family_goal_settings from "./routes/api/family/goal-settings.ts";
 import * as $api_family_pin_setting from "./routes/api/family/pin-setting.ts";
 import * as $api_family_set_kid_pin from "./routes/api/family/set-kid-pin.ts";
 import * as $api_familyscore_live_family_id_ from "./routes/api/familyscore/live/[family_id].ts";
@@ -65,6 +66,7 @@ const manifest = {
     "./routes/api/debug/session.ts": $api_debug_session,
     "./routes/api/family/[family_id]/pin-setting.ts":
       $api_family_family_id_pin_setting,
+    "./routes/api/family/goal-settings.ts": $api_family_goal_settings,
     "./routes/api/family/pin-setting.ts": $api_family_pin_setting,
     "./routes/api/family/set-kid-pin.ts": $api_family_set_kid_pin,
     "./routes/api/familyscore/live/[family_id].ts":
