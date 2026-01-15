@@ -84,7 +84,7 @@ export async function getAuthenticatedSession(
     const [familyResult, membersResult] = await Promise.all([
       supabase
         .from("families")
-        .select("id, name, points_per_dollar, children_pins_enabled, theme")
+        .select("id, name, settings")
         .eq("id", profileData.family_id)
         .single(),
       supabase
@@ -111,12 +111,17 @@ export async function getAuthenticatedSession(
       current_points: m.current_points || 0,
     }));
 
+    // Extract settings from JSONB with defaults
+    const settings = familyInfo.settings || {};
+    const choregamiSettings = settings.apps?.choregami || {};
+
     console.log("✅ User authenticated with family access:", {
       user: user.email,
       family: familyInfo.name,
       role: profileData.role,
       profile: profileData.name,
       membersCount: members.length,
+      settingsVersion: settings._version,
     });
 
     return {
@@ -130,9 +135,9 @@ export async function getAuthenticatedSession(
       family: {
         id: profileData.family_id,
         name: familyInfo.name,
-        points_per_dollar: familyInfo.points_per_dollar || 1,
-        children_pins_enabled: familyInfo.children_pins_enabled || false,
-        theme: familyInfo.theme || "fresh_meadow",
+        points_per_dollar: choregamiSettings.points_per_dollar || 1,
+        children_pins_enabled: choregamiSettings.children_pins_enabled || false,
+        theme: settings.theme || "fresh_meadow",
         members,
       },
       isAuthenticated: true,
