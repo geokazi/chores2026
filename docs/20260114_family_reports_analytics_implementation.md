@@ -13,7 +13,7 @@
 
 A `/reports` page showing:
 1. **Savings** by person with dollar values
-2. **Points Earned** by person (week/month/year)
+2. **Points Earned** by person (Week/Month/YTD/All Time)
 3. **Goals Achieved** (positive framing for redemptions)
 4. **Weekly Champion** badge
 
@@ -83,7 +83,7 @@ const { data, error } = await this.client.rpc("get_family_analytics", { p_family
 if (error?.code === "PGRST202") {
   // Query family_profiles for current_points
   // Query chore_transactions for period earnings
-  // Calculate week/month/year in JavaScript
+  // Calculate week/month/ytd/all_time in JavaScript
 }
 ```
 
@@ -100,7 +100,9 @@ SELECT
   COALESCE(SUM(CASE WHEN ct.created_at >= date_trunc('month', CURRENT_DATE)
            AND ct.points_change > 0 THEN ct.points_change END), 0)::int as earned_month,
   COALESCE(SUM(CASE WHEN ct.created_at >= date_trunc('year', CURRENT_DATE)
-           AND ct.points_change > 0 THEN ct.points_change END), 0)::int as earned_year
+           AND ct.points_change > 0 THEN ct.points_change END), 0)::int as earned_ytd,
+  COALESCE(SUM(CASE WHEN ct.points_change > 0
+           THEN ct.points_change END), 0)::int as earned_all_time
 FROM public.family_profiles fp
 JOIN public.families f ON f.id = fp.family_id
 LEFT JOIN choretracker.chore_transactions ct
@@ -131,36 +133,42 @@ const { data: transactions } = await this.client
 ## UI Layout
 
 ```
-┌─────────────────────────────────────────────────┐
-│ ← Back           Family Progress                │
-├─────────────────────────────────────────────────┤
-│                                                 │
-│ 💰 SAVINGS                                      │
-│ ─────────────────────────────────────────────── │
-│ Cikū         107 pts  ($107.00)   ⭐ Top Saver  │
-│ Tonie!        37 pts   ($37.00)                 │
-│ Dad           12 pts   ($12.00)                 │
-│ Mom            5 pts    ($5.00)                 │
-│                                                 │
-│ 📈 EARNED THIS    Week  Month  Year             │
-│ ─────────────────────────────────────────────── │
-│ Cikū              47    120    450              │
-│ Tonie!            32     98    380              │
-│ Dad               12     45    200              │
-│ Mom                5     20     85              │
-│ ─────────────────────────────────────────────── │
-│ Family Total      96    283   1115              │
-│                                                 │
-│ 🎯 GOALS ACHIEVED                               │
-│ ─────────────────────────────────────────────── │
-│ Tonie!  🎮 Extra Gaming (20 pts) ✓ Jan 10      │
-│ Cikū    🍕 Pizza Choice (10 pts) ✓ Jan 8       │
-│                                                 │
-│ 🏆 Cikū is this week's Top Earner!              │
-└─────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────┐
+│ ← Back              Family Progress                   │
+├───────────────────────────────────────────────────────┤
+│                                                       │
+│ 💰 SAVINGS                                            │
+│ ───────────────────────────────────────────────────── │
+│ ⭐ Cikū        107 pts  ($107.00)                     │
+│    Tonie!       37 pts   ($37.00)                     │
+│    Dad          12 pts   ($12.00)                     │
+│    Mom           5 pts    ($5.00)                     │
+│                                                       │
+│ 📈 EARNED THIS   Week  Month   YTD   All              │
+│ ───────────────────────────────────────────────────── │
+│ Cikū              47    120    450   890              │
+│ Tonie!            32     98    380   720              │
+│ Dad               12     45    200   400              │
+│ Mom                5     20     85   180              │
+│ ───────────────────────────────────────────────────── │
+│ Family Total      96    283   1115  2190              │
+│                                                       │
+│ 🎯 GOALS ACHIEVED                                     │
+│ ───────────────────────────────────────────────────── │
+│ Tonie!  🎮 Extra Gaming (20 pts) ✓ Jan 10            │
+│ Cikū    🍕 Pizza Choice (10 pts) ✓ Jan 8             │
+│                                                       │
+│ 🏆 Cikū is this week's Top Earner!                    │
+└───────────────────────────────────────────────────────┘
 ```
 
-**Note**: Dollar values depend on family's `points_per_dollar` setting.
+**Period Definitions**:
+- **Week**: Current calendar week (Sun-Sat)
+- **Month**: Current calendar month
+- **YTD**: Year to Date (Jan 1 to now)
+- **All**: All time (lifetime total)
+
+**Note**: Dollar values depend on family's `points_per_dollar` setting (from JSONB `settings.apps.choregami.points_per_dollar`).
 
 ---
 

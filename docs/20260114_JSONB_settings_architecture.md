@@ -1,8 +1,8 @@
 # JSONB Settings Architecture
 
 **Date**: January 14, 2026
-**Status**: 📋 Planned
-**Priority**: High (blocking login bug)
+**Status**: ✅ Implemented
+**Migration**: [`sql/20260114_jsonb_settings.sql`](../sql/20260114_jsonb_settings.sql)
 
 ## Problem Statement
 
@@ -654,11 +654,11 @@ theme: "fresh_meadow",  // Hardcoded until JSONB migration
 
 ## Implementation Checklist
 
-- [ ] **Phase 1**: Apply immediate fix (remove `theme` from query)
-- [ ] **Phase 2**: Run migration to add `settings` JSONB column
-- [ ] **Phase 3**: Run migration to add `preferences` JSONB column
-- [ ] **Phase 4**: Update session.ts to read from JSONB
-- [ ] **Phase 5**: Migrate existing column values into JSONB
+- [x] **Phase 1**: Apply immediate fix (remove `theme` from query)
+- [x] **Phase 2**: Run migration to add `settings` JSONB column
+- [x] **Phase 3**: Run migration to add `preferences` JSONB column
+- [x] **Phase 4**: Update session.ts to read from JSONB
+- [x] **Phase 5**: Migrate existing column values into JSONB
 - [ ] **Phase 6**: Update settings UI to write to JSONB
 - [ ] **Phase 7**: Update other apps to use shared settings
 - [ ] **Phase 8**: (Optional) Deprecate old columns
@@ -675,6 +675,7 @@ theme: "fresh_meadow",  // Hardcoded until JSONB migration
 
 | Repo | File | Purpose |
 |------|------|---------|
+| chores2026 | `sql/20260114_jsonb_settings.sql` | Migration script |
 | chores2026 | `lib/auth/session.ts` | Session with settings |
 | chores2026 | `routes/parent/settings.tsx` | Settings UI |
 | fresh-auth | `utils/familyContext.ts` | Cache pattern reference |

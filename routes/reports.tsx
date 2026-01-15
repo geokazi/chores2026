@@ -20,12 +20,14 @@ interface ReportsData {
       savings_dollars: number;
       earned_week: number;
       earned_month: number;
-      earned_year: number;
+      earned_ytd: number;
+      earned_all_time: number;
     }>;
     totals: {
       earned_week: number;
       earned_month: number;
-      earned_year: number;
+      earned_ytd: number;
+      earned_all_time: number;
     };
   };
   goalsAchieved: Array<{
@@ -72,7 +74,7 @@ export const handler: Handlers<ReportsData> = {
       console.error("❌ Error loading family reports:", error);
       return ctx.render({
         family: session.family,
-        analytics: { members: [], totals: { earned_week: 0, earned_month: 0, earned_year: 0 } },
+        analytics: { members: [], totals: { earned_week: 0, earned_month: 0, earned_ytd: 0, earned_all_time: 0 } },
         goalsAchieved: [],
         error: "Failed to load reports",
       });
@@ -108,6 +110,7 @@ export default function ReportsPage({ data }: PageProps<ReportsData>) {
         <FamilyReports
           analytics={analytics}
           goalsAchieved={goalsAchieved}
+          pointsPerDollar={family.points_per_dollar}
         />
       )}
       <AppFooter />

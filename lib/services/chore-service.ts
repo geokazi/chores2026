@@ -909,7 +909,8 @@ export class ChoreService {
 
   /**
    * Get family analytics (savings + earned by period)
-   * Returns all family members with their savings and points earned this week/month/year
+   * Returns all family members with their savings and points earned
+   * Periods: Week, Month, YTD (Year to Date), All Time
    * @param pointsPerDollar - Conversion rate from session (avoids extra DB query)
    */
   async getFamilyAnalytics(familyId: string, pointsPerDollar: number = 1): Promise<{
@@ -921,12 +922,14 @@ export class ChoreService {
       savings_dollars: number;
       earned_week: number;
       earned_month: number;
-      earned_year: number;
+      earned_ytd: number;
+      earned_all_time: number;
     }>;
     totals: {
       earned_week: number;
       earned_month: number;
-      earned_year: number;
+      earned_ytd: number;
+      earned_all_time: number;
     };
   }> {
     const { data, error } = await this.client.rpc("get_family_analytics", {
@@ -949,7 +952,7 @@ export class ChoreService {
 
       if (membersError) {
         console.error("Error fetching family members for analytics:", membersError);
-        return { members: [], totals: { earned_week: 0, earned_month: 0, earned_year: 0 } };
+        return { members: [], totals: { earned_week: 0, earned_month: 0, earned_ytd: 0, earned_all_time: 0 } };
       }
 
       // Get transactions for period calculations
@@ -970,7 +973,7 @@ export class ChoreService {
       weekStart.setHours(0, 0, 0, 0);
 
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      const yearStart = new Date(now.getFullYear(), 0, 1);
+      const ytdStart = new Date(now.getFullYear(), 0, 1); // Jan 1 of current year
 
       const typedMembers = (members || []) as MemberRow[];
       const typedTx = (transactions || []) as TxRow[];
@@ -986,8 +989,11 @@ export class ChoreService {
           .filter((tx: TxRow) => new Date(tx.created_at) >= monthStart)
           .reduce((sum: number, tx: TxRow) => sum + tx.points_change, 0);
 
-        const earned_year = memberTx
-          .filter((tx: TxRow) => new Date(tx.created_at) >= yearStart)
+        const earned_ytd = memberTx
+          .filter((tx: TxRow) => new Date(tx.created_at) >= ytdStart)
+          .reduce((sum: number, tx: TxRow) => sum + tx.points_change, 0);
+
+        const earned_all_time = memberTx
           .reduce((sum: number, tx: TxRow) => sum + tx.points_change, 0);
 
         return {
@@ -998,14 +1004,16 @@ export class ChoreService {
           savings_dollars: Math.round((member.current_points || 0) / pointsPerDollar * 100) / 100,
           earned_week,
           earned_month,
-          earned_year,
+          earned_ytd,
+          earned_all_time,
         };
       });
 
       const totals = {
         earned_week: memberAnalytics.reduce((sum: number, m) => sum + m.earned_week, 0),
         earned_month: memberAnalytics.reduce((sum: number, m) => sum + m.earned_month, 0),
-        earned_year: memberAnalytics.reduce((sum: number, m) => sum + m.earned_year, 0),
+        earned_ytd: memberAnalytics.reduce((sum: number, m) => sum + m.earned_ytd, 0),
+        earned_all_time: memberAnalytics.reduce((sum: number, m) => sum + m.earned_all_time, 0),
       };
 
       return { members: memberAnalytics, totals };
@@ -1013,14 +1021,15 @@ export class ChoreService {
 
     if (error) {
       console.error("Error fetching family analytics:", error);
-      return { members: [], totals: { earned_week: 0, earned_month: 0, earned_year: 0 } };
+      return { members: [], totals: { earned_week: 0, earned_month: 0, earned_ytd: 0, earned_all_time: 0 } };
     }
 
     const members = data || [];
     const totals = {
       earned_week: members.reduce((sum: number, m: any) => sum + (m.earned_week || 0), 0),
       earned_month: members.reduce((sum: number, m: any) => sum + (m.earned_month || 0), 0),
-      earned_year: members.reduce((sum: number, m: any) => sum + (m.earned_year || 0), 0),
+      earned_ytd: members.reduce((sum: number, m: any) => sum + (m.earned_ytd || 0), 0),
+      earned_all_time: members.reduce((sum: number, m: any) => sum + (m.earned_all_time || 0), 0),
     };
 
     return { members, totals };

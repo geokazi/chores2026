@@ -11,7 +11,8 @@ interface FamilyMember {
   savings_dollars: number;
   earned_week: number;
   earned_month: number;
-  earned_year: number;
+  earned_ytd: number;
+  earned_all_time: number;
 }
 
 interface GoalAchieved {
@@ -28,13 +29,15 @@ interface FamilyReportsProps {
     totals: {
       earned_week: number;
       earned_month: number;
-      earned_year: number;
+      earned_ytd: number;
+      earned_all_time: number;
     };
   };
   goalsAchieved: GoalAchieved[];
+  pointsPerDollar: number;
 }
 
-export default function FamilyReports({ analytics, goalsAchieved }: FamilyReportsProps) {
+export default function FamilyReports({ analytics, goalsAchieved, pointsPerDollar }: FamilyReportsProps) {
   const { members, totals } = analytics;
 
   // Find top saver (highest savings)
@@ -78,16 +81,16 @@ export default function FamilyReports({ analytics, goalsAchieved }: FamilyReport
                 }}
               >
                 <span style={{ fontWeight: "500" }}>{member.name}</span>
-                <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-                  <span style={{ fontFamily: "monospace" }}>
-                    {member.savings} pts
-                  </span>
-                  <span style={{ color: "var(--color-success)", fontFamily: "monospace", minWidth: "60px", textAlign: "right" }}>
-                    (${member.savings_dollars.toFixed(2)})
-                  </span>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                   {topSaver && member.id === topSaver.id && member.savings > 0 && (
                     <span title="Top Saver" style={{ fontSize: "1rem" }}>⭐</span>
                   )}
+                  <span style={{ fontFamily: "monospace", minWidth: "70px", textAlign: "right" }}>
+                    {member.savings} pts
+                  </span>
+                  <span style={{ color: "var(--color-success)", fontFamily: "monospace", minWidth: "70px", textAlign: "right" }}>
+                    (${member.savings_dollars.toFixed(2)})
+                  </span>
                 </div>
               </div>
             ))}
@@ -104,18 +107,19 @@ export default function FamilyReports({ analytics, goalsAchieved }: FamilyReport
         {/* Period Headers */}
         <div style={{
           display: "grid",
-          gridTemplateColumns: "1fr repeat(3, 70px)",
+          gridTemplateColumns: "1fr repeat(4, 60px)",
           gap: "0.5rem",
           padding: "0.5rem 0",
           borderBottom: "2px solid var(--color-border, #eee)",
           fontWeight: "600",
-          fontSize: "0.85rem",
+          fontSize: "0.8rem",
           color: "var(--color-text-light)",
         }}>
           <span></span>
           <span style={{ textAlign: "right" }}>Week</span>
           <span style={{ textAlign: "right" }}>Month</span>
-          <span style={{ textAlign: "right" }}>Year</span>
+          <span style={{ textAlign: "right" }}>YTD</span>
+          <span style={{ textAlign: "right" }}>All Time</span>
         </div>
 
         {/* Member Rows */}
@@ -124,32 +128,34 @@ export default function FamilyReports({ analytics, goalsAchieved }: FamilyReport
             key={member.id}
             style={{
               display: "grid",
-              gridTemplateColumns: "1fr repeat(3, 70px)",
+              gridTemplateColumns: "1fr repeat(4, 60px)",
               gap: "0.5rem",
               padding: "0.5rem 0",
               borderBottom: "1px solid var(--color-border, #eee)",
             }}
           >
             <span style={{ fontWeight: "500" }}>{member.name}</span>
-            <span style={{ textAlign: "right", fontFamily: "monospace" }}>{member.earned_week}</span>
-            <span style={{ textAlign: "right", fontFamily: "monospace" }}>{member.earned_month}</span>
-            <span style={{ textAlign: "right", fontFamily: "monospace" }}>{member.earned_year}</span>
+            <span style={{ textAlign: "right", fontFamily: "monospace" }}>${member.earned_week}</span>
+            <span style={{ textAlign: "right", fontFamily: "monospace" }}>${member.earned_month}</span>
+            <span style={{ textAlign: "right", fontFamily: "monospace" }}>${member.earned_ytd}</span>
+            <span style={{ textAlign: "right", fontFamily: "monospace" }}>${member.earned_all_time}</span>
           </div>
         ))}
 
         {/* Family Totals */}
         <div style={{
           display: "grid",
-          gridTemplateColumns: "1fr repeat(3, 70px)",
+          gridTemplateColumns: "1fr repeat(4, 60px)",
           gap: "0.5rem",
           padding: "0.75rem 0 0.5rem 0",
           fontWeight: "600",
           color: "var(--color-primary)",
         }}>
           <span>Family Total</span>
-          <span style={{ textAlign: "right", fontFamily: "monospace" }}>{totals.earned_week}</span>
-          <span style={{ textAlign: "right", fontFamily: "monospace" }}>{totals.earned_month}</span>
-          <span style={{ textAlign: "right", fontFamily: "monospace" }}>{totals.earned_year}</span>
+          <span style={{ textAlign: "right", fontFamily: "monospace" }}>${totals.earned_week}</span>
+          <span style={{ textAlign: "right", fontFamily: "monospace" }}>${totals.earned_month}</span>
+          <span style={{ textAlign: "right", fontFamily: "monospace" }}>${totals.earned_ytd}</span>
+          <span style={{ textAlign: "right", fontFamily: "monospace" }}>${totals.earned_all_time}</span>
         </div>
       </div>
 
@@ -176,8 +182,8 @@ export default function FamilyReports({ analytics, goalsAchieved }: FamilyReport
                   <span style={{ fontWeight: "500" }}>{goal.name}</span>
                   <span>{goal.reward_icon}</span>
                   <span style={{ color: "var(--color-text-light)" }}>{goal.reward_name}</span>
-                  <span style={{ fontSize: "0.85rem", color: "var(--color-text-light)" }}>
-                    ({goal.points_used} pts)
+                  <span style={{ fontSize: "0.85rem", color: "var(--color-success)", fontWeight: "500" }}>
+                    ${(goal.points_used / pointsPerDollar).toFixed(2)}
                   </span>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--color-success)" }}>
