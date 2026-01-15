@@ -35,6 +35,17 @@ interface GoalStatus {
   achieved: boolean;
 }
 
+interface WeeklyPatterns {
+  familyBusiestDay: { day: string; count: number } | null;
+  familySlowestDays: string[];
+  byPerson: Array<{
+    name: string;
+    total: number;
+    topDays: string[];
+    heatmap: number[];
+  }>;
+}
+
 interface FamilyReportsProps {
   analytics: {
     members: FamilyMember[];
@@ -48,9 +59,10 @@ interface FamilyReportsProps {
   goalsAchieved: GoalsAchievedData;
   pointsPerDollar: number;
   goalStatus?: GoalStatus | null;
+  weeklyPatterns?: WeeklyPatterns | null;
 }
 
-export default function FamilyReports({ analytics, goalsAchieved, pointsPerDollar, goalStatus }: FamilyReportsProps) {
+export default function FamilyReports({ analytics, goalsAchieved, pointsPerDollar, goalStatus, weeklyPatterns }: FamilyReportsProps) {
   const { members, totals } = analytics;
 
   // Find top saver (highest savings)
@@ -279,6 +291,64 @@ export default function FamilyReports({ analytics, goalsAchieved, pointsPerDolla
                 ({goalsAchieved.familyTotal.rewardCount} rewards)
               </span>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Weekly Patterns Section */}
+      {weeklyPatterns && weeklyPatterns.byPerson.length > 0 && (
+        <div class="card">
+          <h2 style={{ margin: "0 0 1rem 0", fontSize: "1.1rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <span>📅</span> Weekly Patterns
+            <span style={{ fontSize: "0.75rem", color: "var(--color-text-light)", fontWeight: "normal" }}>
+              (Last 60 Days)
+            </span>
+          </h2>
+
+          {/* Family Insights */}
+          <div style={{ marginBottom: "1rem" }}>
+            {weeklyPatterns.familyBusiestDay && (
+              <p style={{ margin: "0 0 0.25rem 0" }}>
+                🔥 Family's busiest day: <strong>{weeklyPatterns.familyBusiestDay.day}</strong> ({weeklyPatterns.familyBusiestDay.count} chores)
+              </p>
+            )}
+            {weeklyPatterns.familySlowestDays.length > 0 && (
+              <p style={{ margin: "0", color: "var(--color-text-light)" }}>
+                😴 Slowest days: {weeklyPatterns.familySlowestDays.join(" & ")}
+              </p>
+            )}
+          </div>
+
+          {/* Per-Kid Summaries */}
+          <div style={{ marginBottom: "1rem" }}>
+            {weeklyPatterns.byPerson.map((person) => (
+              <p key={person.name} style={{ margin: "0 0 0.25rem 0", fontSize: "0.9rem" }}>
+                <strong>{person.name}</strong>: {person.total < 5 ? "Occasional" : `Most active ${person.topDays.join(" & ")}`} ({person.total} total)
+              </p>
+            ))}
+          </div>
+
+          {/* Heatmap Grid */}
+          <div style={{ fontFamily: "monospace", fontSize: "0.85rem" }}>
+            {/* Day Headers */}
+            <div style={{ display: "grid", gridTemplateColumns: "80px repeat(7, 1fr)", gap: "0.25rem", marginBottom: "0.5rem" }}>
+              <span></span>
+              {["S", "M", "T", "W", "T", "F", "S"].map((day, i) => (
+                <span key={i} style={{ textAlign: "center", color: "var(--color-text-light)", fontWeight: "600" }}>{day}</span>
+              ))}
+            </div>
+
+            {/* Person Rows */}
+            {weeklyPatterns.byPerson.map((person) => (
+              <div key={person.name} style={{ display: "grid", gridTemplateColumns: "80px repeat(7, 1fr)", gap: "0.25rem", marginBottom: "0.25rem" }}>
+                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{person.name}</span>
+                {person.heatmap.map((count, dayIndex) => (
+                  <span key={dayIndex} style={{ textAlign: "center" }}>
+                    {count === 0 ? "·" : count <= 2 ? "█" : count <= 4 ? "██" : "███"}
+                  </span>
+                ))}
+              </div>
+            ))}
           </div>
         </div>
       )}

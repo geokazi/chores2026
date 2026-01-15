@@ -1220,6 +1220,103 @@ export class ChoreService {
   }
 
   /**
+   * Get weekly activity patterns for the family (last 60 days)
+   * Shows which days of the week are most active per kid
+   */
+  async getWeeklyPatterns(familyId: string): Promise<{
+    familyBusiestDay: { day: string; count: number } | null;
+    familySlowestDays: string[];
+    byPerson: Array<{
+      name: string;
+      total: number;
+      topDays: string[];
+      heatmap: number[]; // [Sun, Mon, Tue, Wed, Thu, Fri, Sat]
+    }>;
+  }> {
+    const sixtyDaysAgo = new Date();
+    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+
+    const { data, error } = await this.client
+      .schema("choretracker")
+      .from("chore_transactions")
+      .select(`
+        profile_id,
+        points_change,
+        created_at,
+        family_profiles!inner(name, role)
+      `)
+      .eq("family_id", familyId)
+      .eq("transaction_type", "chore_completed")
+      .eq("family_profiles.role", "child")
+      .gt("points_change", 0)
+      .gte("created_at", sixtyDaysAgo.toISOString());
+
+    if (error || !data || data.length === 0) {
+      return { familyBusiestDay: null, familySlowestDays: [], byPerson: [] };
+    }
+
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+    // Aggregate by person and day
+    const personDayMap = new Map<string, Map<number, number>>();
+    const familyDayTotals = new Array(7).fill(0);
+
+    for (const tx of data) {
+      const name = (tx.family_profiles as any)?.name || "Unknown";
+      const dayNum = new Date(tx.created_at).getDay();
+
+      if (!personDayMap.has(name)) {
+        personDayMap.set(name, new Map());
+      }
+      const dayMap = personDayMap.get(name)!;
+      dayMap.set(dayNum, (dayMap.get(dayNum) || 0) + 1);
+      familyDayTotals[dayNum]++;
+    }
+
+    // Find family busiest day
+    const maxCount = Math.max(...familyDayTotals);
+    const busiestDayNum = familyDayTotals.indexOf(maxCount);
+    const familyBusiestDay = maxCount > 0
+      ? { day: dayNames[busiestDayNum], count: maxCount }
+      : null;
+
+    // Find slowest days (could be multiple if tied)
+    const minCount = Math.min(...familyDayTotals);
+    const familySlowestDays = dayNames.filter((_, i) => familyDayTotals[i] === minCount);
+
+    // Build per-person data
+    const byPerson: Array<{
+      name: string;
+      total: number;
+      topDays: string[];
+      heatmap: number[];
+    }> = [];
+
+    for (const [name, dayMap] of personDayMap) {
+      const heatmap = new Array(7).fill(0);
+      let total = 0;
+
+      for (const [dayNum, count] of dayMap) {
+        heatmap[dayNum] = count;
+        total += count;
+      }
+
+      // Find top 2 days
+      const sortedDays = [...dayMap.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 2)
+        .map(([dayNum]) => dayNames[dayNum]);
+
+      byPerson.push({ name, total, topDays: sortedDays, heatmap });
+    }
+
+    // Sort by total descending
+    byPerson.sort((a, b) => b.total - a.total);
+
+    return { familyBusiestDay, familySlowestDays, byPerson };
+  }
+
+  /**
    * Get goals achieved (reward redemptions) from the past year
    * Aggregated by person for card-style display
    * Positive framing for "spending" - shows what kids achieved with their points

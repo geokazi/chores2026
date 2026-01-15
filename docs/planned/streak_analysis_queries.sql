@@ -3,23 +3,42 @@
 -- Run these in Supabase SQL Editor to understand current activity patterns
 -- ============================================================================
 
+-- SUMMARY QUERY: Quick Overview
+-- Run this first to get a high-level view
+-- ============================================================================
+SELECT 
+  COUNT(DISTINCT fp.id) as total_kids,
+  COUNT(DISTINCT DATE(ct.created_at)) as total_active_days_across_all,
+  COUNT(*) as total_chore_completions,
+  SUM(ct.points_change) as total_points_earned,
+  MIN(DATE(ct.created_at)) as system_first_activity,
+  MAX(DATE(ct.created_at)) as system_last_activity,
+  CURRENT_DATE - MAX(DATE(ct.created_at)) as days_since_last_activity
+FROM public.family_profiles fp
+LEFT JOIN choretracker.chore_transactions ct 
+  ON fp.id = ct.profile_id 
+  AND ct.transaction_type = 'chore_completed'
+  AND ct.points_change > 0
+WHERE fp.role = 'child';
+
+
 -- Query 1: Daily Activity Overview
 -- Shows how many days each family member has completed chores
 -- ============================================================================
 SELECT 
   fp.name,
-  fp.profile_id,
+  fp.id as profile_id,
   COUNT(DISTINCT DATE(ct.created_at)) as total_active_days,
   MIN(DATE(ct.created_at)) as first_activity,
   MAX(DATE(ct.created_at)) as last_activity,
   COUNT(*) as total_completions
-FROM choretracker.family_profiles fp
+FROM public.family_profiles fp
 LEFT JOIN choretracker.chore_transactions ct 
-  ON fp.profile_id = ct.profile_id 
+  ON fp.id = ct.profile_id 
   AND ct.transaction_type = 'chore_completed'
   AND ct.points_change > 0
-WHERE fp.role = 'child'  -- Focus on kids
-GROUP BY fp.name, fp.profile_id
+WHERE fp.role = 'child'
+GROUP BY fp.name, fp.id
 ORDER BY total_active_days DESC;
 
 
@@ -31,9 +50,9 @@ SELECT
   DATE(ct.created_at) as activity_date,
   COUNT(*) as chores_completed,
   SUM(ct.points_change) as points_earned
-FROM choretracker.family_profiles fp
+FROM public.family_profiles fp
 JOIN choretracker.chore_transactions ct 
-  ON fp.profile_id = ct.profile_id
+  ON fp.id = ct.profile_id
 WHERE ct.transaction_type = 'chore_completed'
   AND ct.points_change > 0
   AND ct.created_at >= CURRENT_DATE - INTERVAL '30 days'
@@ -47,16 +66,16 @@ ORDER BY fp.name, activity_date DESC;
 -- ============================================================================
 WITH daily_activity AS (
   SELECT 
-    fp.profile_id,
+    fp.id as profile_id,
     fp.name,
     DATE(ct.created_at) as activity_date
-  FROM choretracker.family_profiles fp
+  FROM public.family_profiles fp
   JOIN choretracker.chore_transactions ct 
-    ON fp.profile_id = ct.profile_id
+    ON fp.id = ct.profile_id
   WHERE ct.transaction_type = 'chore_completed'
     AND ct.points_change > 0
     AND fp.role = 'child'
-  GROUP BY fp.profile_id, fp.name, DATE(ct.created_at)
+  GROUP BY fp.id, fp.name, DATE(ct.created_at)
 ),
 ranked_dates AS (
   SELECT 
@@ -103,16 +122,16 @@ ORDER BY streak_length DESC;
 -- ============================================================================
 WITH daily_activity AS (
   SELECT 
-    fp.profile_id,
+    fp.id as profile_id,
     fp.name,
     DATE(ct.created_at) as activity_date
-  FROM choretracker.family_profiles fp
+  FROM public.family_profiles fp
   JOIN choretracker.chore_transactions ct 
-    ON fp.profile_id = ct.profile_id
+    ON fp.id = ct.profile_id
   WHERE ct.transaction_type = 'chore_completed'
     AND ct.points_change > 0
     AND fp.role = 'child'
-  GROUP BY fp.profile_id, fp.name, DATE(ct.created_at)
+  GROUP BY fp.id, fp.name, DATE(ct.created_at)
 ),
 all_streaks AS (
   SELECT 
@@ -155,19 +174,19 @@ ORDER BY best_streak DESC;
 -- ============================================================================
 WITH user_stats AS (
   SELECT 
-    fp.profile_id,
+    fp.id as profile_id,
     fp.name,
     COUNT(DISTINCT DATE(ct.created_at)) as active_days,
     COUNT(*) as total_chores,
     SUM(ct.points_change) as total_points,
     ROUND(SUM(ct.points_change)::numeric / COUNT(DISTINCT DATE(ct.created_at)), 1) as avg_points_per_day
-  FROM choretracker.family_profiles fp
+  FROM public.family_profiles fp
   JOIN choretracker.chore_transactions ct 
-    ON fp.profile_id = ct.profile_id
+    ON fp.id = ct.profile_id
   WHERE ct.transaction_type = 'chore_completed'
     AND ct.points_change > 0
     AND fp.role = 'child'
-  GROUP BY fp.profile_id, fp.name
+  GROUP BY fp.id, fp.name
 )
 SELECT 
   name,
@@ -189,16 +208,16 @@ ORDER BY active_days DESC;
 -- ============================================================================
 WITH daily_activity AS (
   SELECT 
-    fp.profile_id,
+    fp.id as profile_id,
     fp.name,
     DATE(ct.created_at) as activity_date
-  FROM choretracker.family_profiles fp
+  FROM public.family_profiles fp
   JOIN choretracker.chore_transactions ct 
-    ON fp.profile_id = ct.profile_id
+    ON fp.id = ct.profile_id
   WHERE ct.transaction_type = 'chore_completed'
     AND ct.points_change > 0
     AND fp.role = 'child'
-  GROUP BY fp.profile_id, fp.name, DATE(ct.created_at)
+  GROUP BY fp.id, fp.name, DATE(ct.created_at)
 ),
 gaps AS (
   SELECT 
@@ -222,7 +241,7 @@ GROUP BY name
 ORDER BY consecutive_days DESC;
 
 
--- Query 7: Weekly Pattern Analysis
+-- Query 7: Weekly Pattern Analysis (All Families)
 -- Shows which days of week are most active
 -- ============================================================================
 SELECT 
@@ -230,10 +249,31 @@ SELECT
   TO_CHAR(ct.created_at, 'Day') as day_of_week,
   EXTRACT(DOW FROM ct.created_at) as day_num,
   COUNT(*) as completions
-FROM choretracker.family_profiles fp
+FROM public.family_profiles fp
 JOIN choretracker.chore_transactions ct 
-  ON fp.profile_id = ct.profile_id
+  ON fp.id = ct.profile_id
 WHERE ct.transaction_type = 'chore_completed'
+  AND ct.points_change > 0
+  AND fp.role = 'child'
+  AND ct.created_at >= CURRENT_DATE - INTERVAL '60 days'
+GROUP BY fp.name, TO_CHAR(ct.created_at, 'Day'), EXTRACT(DOW FROM ct.created_at)
+ORDER BY fp.name, day_num;
+
+
+-- Query 7b: Weekly Pattern Analysis (Single Family)
+-- Shows which days of week are most active for a specific family
+-- ============================================================================
+SELECT 
+  fp.name,
+  TO_CHAR(ct.created_at, 'Day') as day_of_week,
+  EXTRACT(DOW FROM ct.created_at) as day_num,
+  COUNT(*) as completions,
+  SUM(ct.points_change) as total_points
+FROM public.family_profiles fp
+JOIN choretracker.chore_transactions ct 
+  ON fp.id = ct.profile_id
+WHERE fp.family_id = '445717ba-0841-4b68-994f-eef77bcf4f87'
+  AND ct.transaction_type = 'chore_completed'
   AND ct.points_change > 0
   AND fp.role = 'child'
   AND ct.created_at >= CURRENT_DATE - INTERVAL '60 days'
@@ -246,17 +286,17 @@ ORDER BY fp.name, day_num;
 -- ============================================================================
 WITH daily_activity AS (
   SELECT 
-    fp.profile_id,
+    fp.id as profile_id,
     fp.name,
     DATE(ct.created_at) as activity_date,
     COUNT(*) as chores_that_day
-  FROM choretracker.family_profiles fp
+  FROM public.family_profiles fp
   JOIN choretracker.chore_transactions ct 
-    ON fp.profile_id = ct.profile_id
+    ON fp.id = ct.profile_id
   WHERE ct.transaction_type = 'chore_completed'
     AND ct.points_change > 0
     AND fp.role = 'child'
-  GROUP BY fp.profile_id, fp.name, DATE(ct.created_at)
+  GROUP BY fp.id, fp.name, DATE(ct.created_at)
 )
 SELECT 
   name,
@@ -272,23 +312,3 @@ SELECT
 FROM daily_activity
 GROUP BY name
 ORDER BY most_recent_day DESC;
-
-
--- ============================================================================
--- SUMMARY QUERY: Quick Overview
--- Run this first to get a high-level view
--- ============================================================================
-SELECT 
-  COUNT(DISTINCT fp.profile_id) as total_kids,
-  COUNT(DISTINCT DATE(ct.created_at)) as total_active_days_across_all,
-  COUNT(*) as total_chore_completions,
-  SUM(ct.points_change) as total_points_earned,
-  MIN(DATE(ct.created_at)) as system_first_activity,
-  MAX(DATE(ct.created_at)) as system_last_activity,
-  CURRENT_DATE - MAX(DATE(ct.created_at)) as days_since_last_activity
-FROM choretracker.family_profiles fp
-LEFT JOIN choretracker.chore_transactions ct 
-  ON fp.profile_id = ct.profile_id 
-  AND ct.transaction_type = 'chore_completed'
-  AND ct.points_change > 0
-WHERE fp.role = 'child';

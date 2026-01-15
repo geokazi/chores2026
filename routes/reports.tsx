@@ -48,6 +48,16 @@ interface ReportsData {
     bonus: number;
     achieved: boolean;
   } | null;
+  weeklyPatterns?: {
+    familyBusiestDay: { day: string; count: number } | null;
+    familySlowestDays: string[];
+    byPerson: Array<{
+      name: string;
+      total: number;
+      topDays: string[];
+      heatmap: number[];
+    }>;
+  } | null;
   error?: string;
 }
 
@@ -69,10 +79,11 @@ export const handler: Handlers<ReportsData> = {
 
       const pointsPerDollar = session.family.points_per_dollar;
 
-      const [analytics, goalsAchieved, goalStatus] = await Promise.all([
+      const [analytics, goalsAchieved, goalStatus, weeklyPatterns] = await Promise.all([
         choreService.getFamilyAnalytics(familyId, pointsPerDollar),
         choreService.getGoalsAchieved(familyId),
         choreService.getFamilyGoalStatus(familyId),
+        choreService.getWeeklyPatterns(familyId),
       ]);
 
       console.log("✅ Family reports loaded for:", session.family.name);
@@ -82,6 +93,7 @@ export const handler: Handlers<ReportsData> = {
         analytics,
         goalsAchieved,
         goalStatus,
+        weeklyPatterns,
       });
     } catch (error) {
       console.error("❌ Error loading family reports:", error);
@@ -89,6 +101,7 @@ export const handler: Handlers<ReportsData> = {
         family: session.family,
         analytics: { members: [], totals: { earned_week: 0, earned_month: 0, earned_ytd: 0, earned_all_time: 0 } },
         goalsAchieved: { byPerson: [], familyTotal: { totalPoints: 0, rewardCount: 0 } },
+        weeklyPatterns: null,
         error: "Failed to load reports",
       });
     }
@@ -96,7 +109,7 @@ export const handler: Handlers<ReportsData> = {
 };
 
 export default function ReportsPage({ data }: PageProps<ReportsData>) {
-  const { family, analytics, goalsAchieved, goalStatus, error } = data;
+  const { family, analytics, goalsAchieved, goalStatus, weeklyPatterns, error } = data;
 
   return (
     <div class="container">
@@ -125,6 +138,7 @@ export default function ReportsPage({ data }: PageProps<ReportsData>) {
           goalsAchieved={goalsAchieved}
           pointsPerDollar={family.points_per_dollar}
           goalStatus={goalStatus}
+          weeklyPatterns={weeklyPatterns}
         />
       )}
       <AppFooter />
