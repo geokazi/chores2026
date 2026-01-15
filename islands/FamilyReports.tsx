@@ -137,10 +137,10 @@ export default function FamilyReports({ analytics, goalsAchieved, pointsPerDolla
             }}
           >
             <span style={{ fontWeight: "500" }}>{member.name}</span>
-            <span style={{ textAlign: "right", fontFamily: "monospace" }}>${member.earned_week}</span>
-            <span style={{ textAlign: "right", fontFamily: "monospace" }}>${member.earned_month}</span>
-            <span style={{ textAlign: "right", fontFamily: "monospace" }}>${member.earned_ytd}</span>
-            <span style={{ textAlign: "right", fontFamily: "monospace" }}>${member.earned_all_time}</span>
+            <span style={{ textAlign: "right", fontFamily: "monospace" }}>{member.earned_week}</span>
+            <span style={{ textAlign: "right", fontFamily: "monospace" }}>{member.earned_month}</span>
+            <span style={{ textAlign: "right", fontFamily: "monospace" }}>{member.earned_ytd}</span>
+            <span style={{ textAlign: "right", fontFamily: "monospace" }}>{member.earned_all_time}</span>
           </div>
         ))}
 
@@ -154,10 +154,10 @@ export default function FamilyReports({ analytics, goalsAchieved, pointsPerDolla
           color: "var(--color-primary)",
         }}>
           <span>Family Total</span>
-          <span style={{ textAlign: "right", fontFamily: "monospace" }}>${totals.earned_week}</span>
-          <span style={{ textAlign: "right", fontFamily: "monospace" }}>${totals.earned_month}</span>
-          <span style={{ textAlign: "right", fontFamily: "monospace" }}>${totals.earned_ytd}</span>
-          <span style={{ textAlign: "right", fontFamily: "monospace" }}>${totals.earned_all_time}</span>
+          <span style={{ textAlign: "right", fontFamily: "monospace" }}>{totals.earned_week}</span>
+          <span style={{ textAlign: "right", fontFamily: "monospace" }}>{totals.earned_month}</span>
+          <span style={{ textAlign: "right", fontFamily: "monospace" }}>{totals.earned_ytd}</span>
+          <span style={{ textAlign: "right", fontFamily: "monospace" }}>{totals.earned_all_time}</span>
         </div>
       </div>
 
