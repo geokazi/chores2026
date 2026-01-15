@@ -158,9 +158,9 @@ Cikū         $1   ← SAVER
 
 ## Implementation
 
-See: **[Collaborative Family Goals & Bonus System](./20260114_collaborative_family_goals_bonus_system.md)**
+See: **[Collaborative Family Goals & Bonus System](../milestones/20260114_collaborative_family_goals_bonus_system.md)**
 
-- ~130 lines total
-- 0 new files
+- ~435 lines actual (robust error handling)
+- 1 new API endpoint
 - 2 JSONB settings
 - Uses existing TransactionService
