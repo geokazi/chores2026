@@ -150,6 +150,39 @@ January 14, 2026
 
 ---
 
+## UX Decision: Message Clarity ("together")
+
+### Question Considered
+
+The original message `💪 $4 more → everyone gets +$2!` was ambiguous - kids might think *they* individually need to earn $4 more, not the family collectively.
+
+### Options Evaluated
+
+| Option | Text | Verdict |
+|--------|------|---------|
+| **A** | `Family needs $4 more → everyone gets +$2!` | ✅ Clear |
+| **B** | `$4 more together → everyone gets +$2!` | ✅ **Chosen** |
+| **C** | `We need $4 more → everyone gets +$2!` | ✅ Clear |
+| **D** | `$4 more as a team → everyone gets +$2!` | ✅ Clear |
+
+### Decision: Option B
+
+```
+💪 $4 more together → everyone gets +$2!
+```
+
+**Rationale:**
+- One word addition ("together")
+- Zero ambiguity - clearly a collective goal
+- Maintains concise message
+- Reinforces collaboration philosophy
+
+### Decision Date
+
+January 14, 2026
+
+---
+
 ## Implementation Details
 
 ### checkFamilyGoal() Logic
