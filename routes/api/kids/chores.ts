@@ -22,13 +22,13 @@ export const handler: Handlers = {
     }
 
     try {
-      // Get kid ID from request body (not URL)
-      const { kidId } = await req.json();
-      
+      // Get kid ID and local date from request body (not URL)
+      const { kidId, localDate } = await req.json();
+
       if (!kidId) {
         return new Response(
           JSON.stringify({ error: "Kid ID required" }),
-          { 
+          {
             status: 400,
             headers: { "Content-Type": "application/json" }
           }
@@ -49,10 +49,11 @@ export const handler: Handlers = {
         );
       }
 
-      // Get today's chores for this kid
+      // Get today's chores for this kid (using client's local date for timezone accuracy)
       const todaysChores = await choreService.getTodaysChores(
         kidId,
         parentSession.family.id,
+        localDate,
       );
 
       return new Response(

@@ -97,13 +97,17 @@ export default function SecureKidDashboard({ family, familyMembers, recentActivi
 
   const loadKidChores = async (kidId: string) => {
     try {
+      // Get local date in YYYY-MM-DD format (avoids UTC timezone issues)
+      const now = new Date();
+      const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
       // Secure API call - kid ID in request body, not URL
       const response = await fetch('/api/kids/chores', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ kidId }),
+        body: JSON.stringify({ kidId, localDate }),
       });
       
       if (response.ok) {

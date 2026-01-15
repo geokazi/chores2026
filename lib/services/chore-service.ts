@@ -119,18 +119,32 @@ export class ChoreService {
 
   /**
    * Get today's chore assignments for a family member
+   * @param localDate - Optional client's local date in YYYY-MM-DD format (for timezone accuracy)
    */
   async getTodaysChores(
     profileId: string,
     familyId: string,
+    localDate?: string,
   ): Promise<ChoreAssignment[]> {
     // Get chores that are available today:
     // - Recurring chores: only if due today
     // - One-time chores: if due today or overdue
-    const today = new Date();
+
+    // Use client's local date if provided, otherwise fall back to server date
+    let today: Date;
+    if (localDate) {
+      // Parse client's local date (YYYY-MM-DD format)
+      const [year, month, day] = localDate.split('-').map(Number);
+      today = new Date(year, month - 1, day);
+      console.log(`📅 Using client local date: ${localDate} -> ${today.toDateString()}`);
+    } else {
+      today = new Date();
+      console.log(`📅 Using server date (no localDate provided): ${today.toDateString()}`);
+    }
+
     const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
-    
+
     const todayStartStr = todayStart.toISOString();
     const todayEndStr = todayEnd.toISOString();
 
