@@ -3,7 +3,7 @@
 **Date**: January 14, 2026
 **Status**: ✅ Complete
 **Milestone**: Family Goal Achievement System
-**Implementation**: ~180 lines across existing files + 1 new API endpoint
+**Implementation**: ~260 lines across existing files + 1 new API endpoint
 
 ---
 
@@ -24,7 +24,7 @@ This replaces competitive rankings with collaboration - no winners/losers, just 
 - Leave goal blank to disable the feature
 
 ### 2. Goal Progress Display
-- Progress bar on Family Reports page
+- Progress bar on **Kid Dashboard** (primary) and **Family Reports** page
 - Shows current earnings vs target
 - Percentage complete with visual indicator
 - Motivational messages:
@@ -46,11 +46,13 @@ This replaces competitive rankings with collaboration - no winners/losers, just 
 | `lib/services/chore-service.ts` | Added `checkFamilyGoal()` and `getFamilyGoalStatus()` | +180 |
 | `islands/FamilySettings.tsx` | Added goal settings UI section | +80 |
 | `islands/FamilyReports.tsx` | Added goal progress bar display | +50 |
+| `islands/SecureKidDashboard.tsx` | Added goal progress bar (primary placement) | +55 |
 | `routes/reports.tsx` | Added goalStatus data fetching | +15 |
+| `routes/kid/dashboard.tsx` | Added goalStatus data fetching | +20 |
 | `routes/api/chores/[chore_id]/complete.ts` | Hook goal check after completion | +10 |
 | `routes/api/family/goal-settings.ts` | **New** - API for saving goal settings | ~100 |
 
-**Total**: ~435 lines (actual implementation more than planned due to robust error handling)
+**Total**: ~510 lines (actual implementation more than planned due to robust error handling + kid dashboard)
 
 ---
 
@@ -94,20 +96,57 @@ This replaces competitive rankings with collaboration - no winners/losers, just 
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### Reports (FamilyReports.tsx)
+### Kid Dashboard (SecureKidDashboard.tsx) - Primary Placement
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ 🎯 Family Goal This Week                                    │
-├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │ $16 of $20                                            80%   │
-│ ████████████████████████████████░░░░░░░░░░░░░░░░░░░░░░░░   │
+│ ████████████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░   │
 │                                                             │
 │ 💪 $4 more → everyone gets +$2!                             │
-│                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+### Reports (FamilyReports.tsx)
+
+Same display as kid dashboard - available for detailed analytics view.
+
+---
+
+## UX Decision: Goal Progress Placement
+
+### Question Considered
+
+Where should the Family Goal progress bar appear?
+
+### Options Evaluated
+
+| Route | Who Sees It | Value | Decision |
+|-------|-------------|-------|----------|
+| **index (/)** | Everyone on login | ⭐⭐ | ❌ Too transient - users quickly tap profile and move on |
+| **/kid/dashboard** | Kids doing chores | ⭐⭐⭐⭐⭐ | ✅ **Primary** - Maximum motivation right when deciding chores |
+| **/parent/dashboard** | Parents managing | ⭐⭐⭐ | ❌ Parents have /reports link |
+| **/reports** | Anyone checking stats | ⭐⭐⭐⭐ | ✅ Already there for detailed analytics |
+
+### Decision: Kid Dashboard + Reports
+
+**Why /kid/dashboard is essential:**
+```
+Kid opens app → Sees goal progress →
+"Oh! Only $4 more and EVERYONE gets $2!" →
+Extra motivated to complete chore →
+Family wins together
+```
+
+**Why NOT index:** Too transient (tap profile → gone), clutters clean selector UI
+
+**Why parent/dashboard is optional:** Parents can click "Reports" for full analytics
+
+### Decision Date
+
+January 14, 2026
 
 ---
 
