@@ -176,11 +176,30 @@ export default function KidDashboard({
       </div>
 
       {/* Recent Activity Feed */}
-      <div>
+      <div style={{ marginBottom: "1.5rem" }}>
         <LiveActivityFeed
           initialActivity={activity}
           familyId={family.id}
         />
+      </div>
+
+      {/* Family Reports Link */}
+      <div style={{ textAlign: "center" }}>
+        <a
+          href="/reports"
+          style={{
+            display: "inline-block",
+            padding: "0.75rem 1.5rem",
+            backgroundColor: "var(--color-secondary)",
+            color: "white",
+            borderRadius: "8px",
+            textDecoration: "none",
+            fontSize: "0.875rem",
+            fontWeight: "500",
+          }}
+        >
+          📊 See Family Progress
+        </a>
       </div>
     </div>
   );

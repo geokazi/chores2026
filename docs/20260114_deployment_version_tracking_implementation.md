@@ -1,5 +1,7 @@
 # Deployment Version Tracking Implementation Plan
 
+**Date**: January 14, 2026
+
 ## Overview
 
 Implement automated deployment version tracking (matching FamilyScore pattern) with a reusable footer component that shows version on hover.

@@ -210,67 +210,16 @@ deploy_application() {
         log_success "App exists: $APP_NAME"
     fi
     
-    # Load environment variables for deployment
-    set -a
-    source "$ENV_FILE"
-    set +a
-    
-    # Deploy secrets to Fly.io
-    log_step "Deploying secrets to Fly.io..."
-    
-    # Database secrets
-    fly secrets set -a "$APP_NAME" \
-        SUPABASE_URL="$SUPABASE_URL" \
-        SUPABASE_SERVICE_ROLE_KEY="$SUPABASE_SERVICE_ROLE_KEY" \
-        SUPABASE_KEY="$SUPABASE_KEY"
-    
-    # FamilyScore integration
-    fly secrets set -a "$APP_NAME" \
-        FAMILYSCORE_API_KEY="$FAMILYSCORE_API_KEY" \
-        FAMILYSCORE_BASE_URL="$FAMILYSCORE_BASE_URL" \
-        FAMILYSCORE_WEBSOCKET_URL="$FAMILYSCORE_WEBSOCKET_URL"
-    
-    # OAuth providers
-    fly secrets set -a "$APP_NAME" \
-        GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID" \
-        GOOGLE_CLIENT_SECRET="$GOOGLE_CLIENT_SECRET" \
-        META_APP_ID="$META_APP_ID" \
-        META_APP_SECRET="$META_APP_SECRET"
-    
-    # SMS/Phone auth (if configured)
-    if [[ -n "$TWILIO_ACCOUNT_SID" ]]; then
-        fly secrets set -a "$APP_NAME" \
-            TWILIO_ACCOUNT_SID="$TWILIO_ACCOUNT_SID" \
-            TWILIO_AUTH_TOKEN="$TWILIO_AUTH_TOKEN" \
-            TWILIO_PHONE_NUMBER="$TWILIO_PHONE_NUMBER" \
-            TWILIO_VERIFY_SERVICE_SID="$TWILIO_VERIFY_SERVICE_SID"
-    fi
-    
-    # Feature flags
-    fly secrets set -a "$APP_NAME" \
-        FAMILY_LEADERBOARD_ENABLED="$FAMILY_LEADERBOARD_ENABLED" \
-        FAMILYSCORE_WEBSOCKET_ENABLED="$FAMILYSCORE_WEBSOCKET_ENABLED"
+    # Deploy secrets atomically (fast - single machine restart)
+    log_step "Deploying secrets atomically to Fly.io..."
 
-    # App version for deployment tracking
+    # Filter out comments and empty lines, then import all at once
+    # This is MUCH faster than multiple `fly secrets set` calls
+    grep -v '^#' "$ENV_FILE" | grep -v '^[[:space:]]*$' | fly secrets import -a "$APP_NAME"
+
+    # Set APP_VERSION separately (not in .env file)
     fly secrets set -a "$APP_NAME" APP_VERSION="$app_version"
-    log_success "Version secret set: $app_version"
-    
-    # Optional secrets
-    if [[ -n "$DENO_KV_ACCESS_TOKEN" ]]; then
-        fly secrets set -a "$APP_NAME" \
-            DENO_KV_ACCESS_TOKEN="$DENO_KV_ACCESS_TOKEN" \
-            DENO_KV_PATH="$DENO_KV_PATH" \
-            DENO_KV_URI="$DENO_KV_URI"
-    fi
-    
-    if [[ -n "$META_PIXEL_ID" ]]; then
-        fly secrets set -a "$APP_NAME" \
-            META_PIXEL_ID="$META_PIXEL_ID" \
-            META_PIXEL_ENABLED="$META_PIXEL_ENABLED" \
-            META_CONVERSIONS_ACCESS_TOKEN="$META_CONVERSIONS_ACCESS_TOKEN"
-    fi
-    
-    log_success "Secrets deployment completed"
+    log_success "Secrets imported atomically + version set: $app_version"
     
     # Deploy application (using config from deployment folder)
     log_step "Deploying application to Fly.io..."

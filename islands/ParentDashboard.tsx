@@ -329,7 +329,7 @@ export default function ParentDashboard(
             ⚙️ Settings
           </a>
           <a
-            href={`/parent/${family.id}/reports`}
+            href="/reports"
             class="btn btn-secondary"
             style={{ fontSize: "0.875rem", textDecoration: "none" }}
           >

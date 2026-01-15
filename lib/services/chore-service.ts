@@ -906,4 +906,214 @@ export class ChoreService {
       return { success: false, error: "Internal error" };
     }
   }
+
+  /**
+   * Get family analytics (savings + earned by period)
+   * Returns all family members with their savings and points earned this week/month/year
+   */
+  async getFamilyAnalytics(familyId: string): Promise<{
+    members: Array<{
+      id: string;
+      name: string;
+      role: string;
+      savings: number;
+      savings_dollars: number;
+      earned_week: number;
+      earned_month: number;
+      earned_year: number;
+    }>;
+    totals: {
+      earned_week: number;
+      earned_month: number;
+      earned_year: number;
+    };
+  }> {
+    const { data, error } = await this.client.rpc("get_family_analytics", {
+      p_family_id: familyId,
+    });
+
+    // If RPC doesn't exist, fall back to direct query
+    if (error?.code === "42883") {
+      // Function does not exist - use direct query
+      interface MemberRow { id: string; name: string; role: string; current_points: number; }
+      interface TxRow { profile_id: string; points_change: number; created_at: string; }
+
+      const { data: members, error: membersError } = await this.client
+        .from("family_profiles")
+        .select("id, name, role, current_points")
+        .eq("family_id", familyId)
+        .eq("is_deleted", false)
+        .order("current_points", { ascending: false });
+
+      if (membersError) {
+        console.error("Error fetching family members for analytics:", membersError);
+        return { members: [], totals: { earned_week: 0, earned_month: 0, earned_year: 0 } };
+      }
+
+      // Get transactions for period calculations
+      const { data: transactions, error: txError } = await this.client
+        .schema("choretracker")
+        .from("chore_transactions")
+        .select("profile_id, points_change, created_at")
+        .eq("family_id", familyId)
+        .gt("points_change", 0);
+
+      if (txError) {
+        console.error("Error fetching transactions for analytics:", txError);
+      }
+
+      const now = new Date();
+      const weekStart = new Date(now);
+      weekStart.setDate(now.getDate() - now.getDay());
+      weekStart.setHours(0, 0, 0, 0);
+
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const yearStart = new Date(now.getFullYear(), 0, 1);
+
+      const typedMembers = (members || []) as MemberRow[];
+      const typedTx = (transactions || []) as TxRow[];
+
+      const memberAnalytics = typedMembers.map((member: MemberRow) => {
+        const memberTx = typedTx.filter((tx: TxRow) => tx.profile_id === member.id);
+
+        const earned_week = memberTx
+          .filter((tx: TxRow) => new Date(tx.created_at) >= weekStart)
+          .reduce((sum: number, tx: TxRow) => sum + tx.points_change, 0);
+
+        const earned_month = memberTx
+          .filter((tx: TxRow) => new Date(tx.created_at) >= monthStart)
+          .reduce((sum: number, tx: TxRow) => sum + tx.points_change, 0);
+
+        const earned_year = memberTx
+          .filter((tx: TxRow) => new Date(tx.created_at) >= yearStart)
+          .reduce((sum: number, tx: TxRow) => sum + tx.points_change, 0);
+
+        return {
+          id: member.id,
+          name: member.name,
+          role: member.role,
+          savings: member.current_points || 0,
+          savings_dollars: Math.round((member.current_points || 0) * 0.10 * 100) / 100,
+          earned_week,
+          earned_month,
+          earned_year,
+        };
+      });
+
+      const totals = {
+        earned_week: memberAnalytics.reduce((sum: number, m) => sum + m.earned_week, 0),
+        earned_month: memberAnalytics.reduce((sum: number, m) => sum + m.earned_month, 0),
+        earned_year: memberAnalytics.reduce((sum: number, m) => sum + m.earned_year, 0),
+      };
+
+      return { members: memberAnalytics, totals };
+    }
+
+    if (error) {
+      console.error("Error fetching family analytics:", error);
+      return { members: [], totals: { earned_week: 0, earned_month: 0, earned_year: 0 } };
+    }
+
+    const members = data || [];
+    const totals = {
+      earned_week: members.reduce((sum: number, m: any) => sum + (m.earned_week || 0), 0),
+      earned_month: members.reduce((sum: number, m: any) => sum + (m.earned_month || 0), 0),
+      earned_year: members.reduce((sum: number, m: any) => sum + (m.earned_year || 0), 0),
+    };
+
+    return { members, totals };
+  }
+
+  /**
+   * Get recent goals achieved (reward redemptions)
+   * Positive framing for "spending" - shows what kids achieved with their points
+   */
+  async getGoalsAchieved(familyId: string, limit: number = 5): Promise<Array<{
+    name: string;
+    reward_name: string;
+    reward_icon: string;
+    points_used: number;
+    achieved_at: string;
+  }>> {
+    // Get redemption transactions
+    const { data: transactions, error: txError } = await this.client
+      .schema("choretracker")
+      .from("chore_transactions")
+      .select("profile_id, points_change, description, created_at")
+      .eq("family_id", familyId)
+      .in("transaction_type", ["reward_redemption", "cash_out"])
+      .order("created_at", { ascending: false })
+      .limit(limit);
+
+    if (txError) {
+      console.error("Error fetching goals achieved:", txError);
+      return [];
+    }
+
+    if (!transactions || transactions.length === 0) {
+      return [];
+    }
+
+    interface TxRow { profile_id: string; points_change: number; description: string; created_at: string; }
+    interface ProfileRow { id: string; name: string; }
+    interface RewardRow { name: string; icon: string; }
+
+    const typedTx = transactions as TxRow[];
+
+    // Get profile names
+    const profileIds = [...new Set(typedTx.map((tx: TxRow) => tx.profile_id))];
+    const { data: profiles } = await this.client
+      .from("family_profiles")
+      .select("id, name")
+      .in("id", profileIds);
+
+    const typedProfiles = (profiles || []) as ProfileRow[];
+    const profileMap = new Map(typedProfiles.map((p: ProfileRow) => [p.id, p.name]));
+
+    // Get available rewards for icon matching
+    const { data: rewards } = await this.client
+      .schema("choretracker")
+      .from("available_rewards")
+      .select("name, icon")
+      .eq("family_id", familyId);
+
+    const typedRewards = (rewards || []) as RewardRow[];
+    const rewardMap = new Map(typedRewards.map((r: RewardRow) => [r.name.toLowerCase(), r.icon]));
+
+    return typedTx.map((tx: TxRow) => {
+      // Try to extract reward name from description
+      const description = tx.description || "";
+      let reward_name = "Reward";
+      let reward_icon = "🎯";
+
+      // Try to match reward from description
+      for (const [name, icon] of rewardMap) {
+        if (description.toLowerCase().includes(name as string)) {
+          reward_name = (name as string).charAt(0).toUpperCase() + (name as string).slice(1);
+          reward_icon = icon as string;
+          break;
+        }
+      }
+
+      // If no match, extract from description
+      if (reward_name === "Reward" && description) {
+        // Common patterns: "Redeemed: Pizza", "Cash out", etc.
+        const match = description.match(/(?:Redeemed|Reward):\s*(.+)/i);
+        if (match) {
+          reward_name = match[1].trim();
+        } else if (description.toLowerCase().includes("cash")) {
+          reward_name = "Cash Out";
+          reward_icon = "💵";
+        }
+      }
+
+      return {
+        name: profileMap.get(tx.profile_id) || "Unknown",
+        reward_name,
+        reward_icon,
+        points_used: Math.abs(tx.points_change),
+        achieved_at: tx.created_at,
+      };
+    });
+  }
 }

@@ -30,9 +30,11 @@ import * as $parent_activity from "./routes/parent/activity.tsx";
 import * as $parent_dashboard from "./routes/parent/dashboard.tsx";
 import * as $parent_my_chores from "./routes/parent/my-chores.tsx";
 import * as $parent_settings from "./routes/parent/settings.tsx";
+import * as $reports from "./routes/reports.tsx";
 import * as $AddChoreModal from "./islands/AddChoreModal.tsx";
 import * as $ChoreDetail from "./islands/ChoreDetail.tsx";
 import * as $ChoreList from "./islands/ChoreList.tsx";
+import * as $FamilyReports from "./islands/FamilyReports.tsx";
 import * as $FamilySettings from "./islands/FamilySettings.tsx";
 import * as $KidDashboard from "./islands/KidDashboard.tsx";
 import * as $KidSelector from "./islands/KidSelector.tsx";
@@ -87,11 +89,13 @@ const manifest = {
     "./routes/parent/dashboard.tsx": $parent_dashboard,
     "./routes/parent/my-chores.tsx": $parent_my_chores,
     "./routes/parent/settings.tsx": $parent_settings,
+    "./routes/reports.tsx": $reports,
   },
   islands: {
     "./islands/AddChoreModal.tsx": $AddChoreModal,
     "./islands/ChoreDetail.tsx": $ChoreDetail,
     "./islands/ChoreList.tsx": $ChoreList,
+    "./islands/FamilyReports.tsx": $FamilyReports,
     "./islands/FamilySettings.tsx": $FamilySettings,
     "./islands/KidDashboard.tsx": $KidDashboard,
     "./islands/KidSelector.tsx": $KidSelector,
