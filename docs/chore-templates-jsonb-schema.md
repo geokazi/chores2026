@@ -191,16 +191,23 @@ interface ChildSlotMapping {
 }
 
 interface RotationCustomizations {
-  // Sparse overrides - only differences from base preset
-  added?: ScheduleOverride[];      // Chores added to schedule
-  removed?: ScheduleOverride[];    // Chores removed from schedule
+  // Override points or disable specific chores
+  chore_overrides?: {
+    [choreKey: string]: {
+      points?: number;             // Override default points
+      enabled?: boolean;           // false = disabled (default true)
+    };
+  };
+
+  // Custom chores added by family (appear daily for all slots)
+  custom_chores?: CustomChore[];
 }
 
-interface ScheduleOverride {
-  slot: string;                    // Which child slot
-  day: number;                     // 0-6 (Sunday-Saturday)
-  week_type: string;               // 'cleaning', 'non-cleaning', etc.
-  chore_key: string;               // Reference to chore in preset
+interface CustomChore {
+  key: string;                     // Unique key (e.g., "custom_feed_fish")
+  name: string;                    // Display name
+  points: number;                  // Point value
+  icon: string;                    // Emoji icon
 }
 ```
 
@@ -855,28 +862,121 @@ export const PRESET_CHORES: Record<string, ChoreDefinition[]> = {
 // That's it! No database changes needed.
 ```
 
-### Custom Chore Overrides (Future)
+### Template Customization (Future Enhancement)
+
+**Design: Override Layer Pattern**
+
+Store only the differences from the base preset, not full templates.
+This enables 80% of customization needs with minimal complexity.
 
 ```typescript
-// Family wants to add "Feed fish" to Child A's Monday
-// Store in JSONB customizations:
-
+// Example: Family tweaks the Smart Rotation template
 {
   "rotation": {
     "active_preset": "smart_rotation",
     "start_date": "2026-01-13",
     "child_slots": [...],
+
+    // NEW: Only stores differences from default
     "customizations": {
-      "added": [
-        { "slot": "Child A", "day": 1, "week_type": "cleaning", "chore_key": "custom_feed_fish" }
-      ],
+      // Override specific chores
+      "chore_overrides": {
+        "make_bed": { "points": 2 },         // Was 1, now 2
+        "vacuum_floor": { "enabled": false }, // Disabled
+        "dishes": { "points": 3 }            // Was 2, now 3
+      },
+
+      // Add family-specific chores (daily for all slots)
       "custom_chores": [
-        { "key": "custom_feed_fish", "name": "Feed fish", "points": 1, "minutes": 2, "icon": "🐟" }
+        { "key": "feed_fish", "name": "Feed the fish", "points": 1, "icon": "🐟" },
+        { "key": "water_plants", "name": "Water plants", "points": 2, "icon": "🌱" }
       ]
     }
   }
 }
 ```
+
+**Runtime Merge Function** (~30 lines):
+
+```typescript
+function getChoresWithCustomizations(
+  preset: RotationPreset,
+  customizations?: RotationCustomizations
+): PresetChore[] {
+  let chores = [...preset.chores];
+
+  // Apply overrides: filter disabled, map point changes
+  chores = chores
+    .filter(c => customizations?.chore_overrides?.[c.key]?.enabled !== false)
+    .map(c => ({
+      ...c,
+      points: customizations?.chore_overrides?.[c.key]?.points ?? c.points
+    }));
+
+  // Append custom chores
+  if (customizations?.custom_chores) {
+    chores.push(...customizations.custom_chores.map(c => ({
+      ...c,
+      minutes: 5,           // Default estimate
+      category: 'custom',
+    })));
+  }
+
+  return chores;
+}
+```
+
+**What Families CAN Customize:**
+- ✅ Change points for any template chore
+- ✅ Disable chores they don't want
+- ✅ Add custom chores (appear daily)
+
+**What Stays Fixed (Keep Simple):**
+- ❌ Schedule/day assignments (pick a different template)
+- ❌ Chore names/icons (add custom chore instead)
+- ❌ Per-day custom chore assignment (always daily)
+
+**UI Mockup:**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ 🎯 Smart Family Rotation - Customize                            │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│ TEMPLATE CHORES:                                                │
+│ ┌─────────────────────────────────────────────────────────────┐ │
+│ │ [✓] 🛏️ Make bed                         [2▼] pts          │ │
+│ │ [✓] 🧹 Vacuum floor                      [3▼] pts          │ │
+│ │ [ ] 🪟 Wash windows                      [3▼] pts  DISABLED │ │
+│ │ [✓] 🍽️ Dishes                            [3▼] pts          │ │
+│ └─────────────────────────────────────────────────────────────┘ │
+│                                                                 │
+│ CUSTOM CHORES (daily):                                          │
+│ ┌─────────────────────────────────────────────────────────────┐ │
+│ │ 🐟 Feed the fish                         [1▼] pts    [×]   │ │
+│ │ 🌱 Water plants                          [2▼] pts    [×]   │ │
+│ │ [+ Add Chore]                                              │ │
+│ └─────────────────────────────────────────────────────────────┘ │
+│                                                                 │
+│ [Save]                                     [Reset to Defaults]  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Implementation Estimate:**
+
+| File | Lines | Purpose |
+|------|-------|---------|
+| `rotation-service.ts` | +30 | `getChoresWithCustomizations()` |
+| `routes/api/rotation/customize.ts` | ~50 | Save customizations endpoint |
+| `islands/TemplateCustomizer.tsx` | ~150 | UI component |
+| JSONB schema doc | +20 | Document new fields |
+| **Total** | **~250** | Well under 500 limit |
+
+**Applies To:**
+- ✅ Smart Family Rotation
+- ✅ Weekend Warrior
+- ✅ Daily Basics
+- N/A Manual (Default) - already has full control via DB tables
 
 ### Per-Profile Preferences (Future)
 

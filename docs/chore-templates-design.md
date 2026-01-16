@@ -1040,6 +1040,30 @@ Template auto-appears in selection modal.
 
 ---
 
+## Future: Template Customization
+
+**Status**: Designed (not yet implemented)
+
+Families may want to tweak templates (adjust points, disable chores, add custom chores). The **Override Layer Pattern** enables this with minimal complexity:
+
+- Store only differences from base preset in JSONB `customizations` field
+- Runtime merge function applies overrides (~30 lines)
+- UI for enable/disable chores and adjust points (~150 lines)
+- **Total implementation: ~250 lines**
+
+**What families CAN customize:**
+- Change points for any template chore
+- Disable chores they don't want
+- Add custom chores (appear daily for all slots)
+
+**What stays fixed (keep simple):**
+- Schedule/day assignments (pick different template instead)
+- Chore names/icons (add custom chore instead)
+
+See **[JSONB Schema Design - Template Customization](./chore-templates-jsonb-schema.md#template-customization-future-enhancement)** for complete implementation details including TypeScript interfaces, runtime merge function, and UI mockup.
+
+---
+
 ## Implementation Status
 
 **Status**: ✅ **COMPLETE** (January 15, 2026)
