@@ -4,6 +4,7 @@
  */
 
 import { createClient } from "@supabase/supabase-js";
+import { notifyGoalAchieved } from "./email-service.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -1142,6 +1143,21 @@ export class ChoreService {
           console.error(`Failed to award bonus to ${member.name}:`, error);
         }
       }
+
+      // Send email notification to parents (non-blocking)
+      const { data: familyData } = await this.client
+        .from("families")
+        .select("name")
+        .eq("id", familyId)
+        .single();
+
+      notifyGoalAchieved(
+        familyId,
+        familyData?.name || "Your Family",
+        goal,
+        bonus,
+        members.map(m => m.name)
+      ).catch(err => console.warn("⚠️ Goal email failed (non-critical):", err));
 
       return { achieved: true, bonus, progress: earnedDollars, target: goal };
     }
