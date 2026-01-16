@@ -1,8 +1,8 @@
 # ChoreGami 2026 Documentation
 
-**Version**: 1.1
+**Version**: 1.2
 **Status**: ✅ Production Ready
-**Last Updated**: January 14, 2026
+**Last Updated**: January 15, 2026
 
 **Project Overview**: A simplified, real-time chore completion system built with Deno Fresh, transforming routine family chores into an engaging, competitive experience with sub-second real-time updates across all family devices.
 
@@ -38,6 +38,9 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-14 | [**JSONB Settings Architecture**](./20260114_JSONB_settings_architecture.md) | ✅ Complete | Flexible cross-app settings storage with inheritance |
 | 2026-01-14 | [**Collaborative Family Goals**](./milestones/20260114_collaborative_family_goals_bonus_system.md) | ✅ Complete | Weekly family goal with auto-bonus - collaboration over competition |
 | 2026-01-14 | [**Weekly Patterns Analysis**](./milestones/20260114_weekly_patterns_analysis.md) | ✅ Complete | Heatmap + insights showing busiest/slowest days per kid |
+| 2026-01-15 | [**Chore Rotation Templates**](./chore-templates-design.md) | ✅ Complete | Pre-built chore schedules (Smart Rotation, Weekend Warrior, Daily Basics) |
+| 2026-01-15 | [↳ Implementation Gaps](./milestones/20260115_chore-templates-gaps.md) | ✅ Complete | Virtual chore pattern + TransactionService integration |
+| 2026-01-15 | [↳ JSONB Schema Design](./milestones/20260115_chore-templates-jsonb-schema.md) | ✅ Complete | Template customization with Override Layer Pattern |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 
@@ -178,10 +181,11 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 - ✅ **JSONB Settings**: Flexible cross-app configuration storage with inheritance pattern
 - ✅ **Collaborative Family Goals**: Weekly goal system with auto-bonus when reached - collaboration over competition
 - ✅ **Weekly Patterns Analysis**: Heatmap + text insights showing busiest/slowest days per kid (last 60 days)
+- ✅ **Chore Rotation Templates**: Pre-built schedules (Smart Rotation, Weekend Warrior, Daily Basics) with Manual (Default) option
 
 ### Known Limitations
 - **Testing**: Comprehensive test suite not yet implemented
-- **Advanced Chore Management**: Recurring chores, chore templates, bulk operations
+- **Advanced Chore Management**: Recurring chores, bulk operations
 - **Offline Support**: PWA capabilities planned but not implemented
 - **Performance Monitoring**: Telemetry and error tracking to be added
 
@@ -223,5 +227,5 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 
 ---
 
-*Last updated: January 14, 2026*
+*Last updated: January 15, 2026*
 *Maintained by: Claude Code AI Assistant*

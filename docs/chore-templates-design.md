@@ -1060,7 +1060,7 @@ Families may want to tweak templates (adjust points, disable chores, add custom 
 - Schedule/day assignments (pick different template instead)
 - Chore names/icons (add custom chore instead)
 
-See **[JSONB Schema Design - Template Customization](./chore-templates-jsonb-schema.md#template-customization-future-enhancement)** for complete implementation details including TypeScript interfaces, runtime merge function, and UI mockup.
+See **[JSONB Schema Design - Template Customization](./milestones/20260115_chore-templates-jsonb-schema.md#template-customization-future-enhancement)** for complete implementation details including TypeScript interfaces, runtime merge function, and UI mockup.
 
 ---
 
@@ -1087,7 +1087,7 @@ See [Implementation Gaps Document](./chore-templates-gaps.md) for detailed imple
 
 ## References
 
-- [Implementation Gaps & Completion](./chore-templates-gaps.md) - Detailed implementation notes
-- [JSONB Schema Design](./chore-templates-jsonb-schema.md)
-- [Existing JSONB Settings](./jsonb-settings-architecture.md)
+- [Implementation Gaps & Completion](./milestones/20260115_chore-templates-gaps.md) - Detailed implementation notes
+- [JSONB Schema Design](./milestones/20260115_chore-templates-jsonb-schema.md) - Database schema and customization design
+- [Existing JSONB Settings](./20260114_JSONB_settings_architecture.md)
 - [SQL Migration](../sql/20260114_jsonb_settings.sql)
