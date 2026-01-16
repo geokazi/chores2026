@@ -59,9 +59,14 @@ export function getChoresForChild(
   const choreKeys = scheduleForSlot[day] || [];
 
   // Map chore keys to full chore objects
-  return choreKeys
+  let chores = choreKeys
     .map(key => preset.chores.find(c => c.key === key))
     .filter((c): c is PresetChore => c !== undefined);
+
+  // Apply customizations (point overrides, disabled chores, custom chores)
+  chores = getChoresWithCustomizations(chores, config.customizations);
+
+  return chores;
 }
 
 // Get week type badge info for display
