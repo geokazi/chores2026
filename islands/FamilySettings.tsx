@@ -1,10 +1,13 @@
 /**
- * Family Settings - PIN management and theme selection
+ * Family Settings - PIN management, theme selection, and chore rotation
  */
 
 import { useState, useEffect } from "preact/hooks";
 import ParentPinGate from "./ParentPinGate.tsx";
 import { getCurrentTheme, changeTheme, themes, type ThemeId } from "../lib/theme-manager.ts";
+import { ROTATION_PRESETS, getPresetByKey, getPresetSlots } from "../lib/data/rotation-presets.ts";
+import { getRotationConfig, getChoresWithCustomizations } from "../lib/services/rotation-service.ts";
+import type { RotationPreset, ChildSlotMapping, RotationCustomizations, CustomChore } from "../lib/types/rotation.ts";
 
 interface FamilySettingsProps {
   family: any;
@@ -55,6 +58,36 @@ export default function FamilySettings({ family, members, settings }: FamilySett
     settings?.goal_bonus?.toString() || "2"
   );
   const [isSavingGoal, setIsSavingGoal] = useState(false);
+
+  // Rotation template state
+  const [showRotationModal, setShowRotationModal] = useState(false);
+  const [selectedPreset, setSelectedPreset] = useState<string>("");
+  const [childSlots, setChildSlots] = useState<Record<string, string>>({});
+  const [isApplyingRotation, setIsApplyingRotation] = useState(false);
+  const activeRotation = getRotationConfig(settings || {});
+
+  // Template customization state
+  const [showCustomize, setShowCustomize] = useState(false);
+  const [choreOverrides, setChoreOverrides] = useState<Record<string, { points?: number; enabled?: boolean }>>({});
+  const [customChores, setCustomChores] = useState<CustomChore[]>([]);
+  const [newChoreName, setNewChoreName] = useState("");
+  const [newChorePoints, setNewChorePoints] = useState("1");
+  const [isSavingCustomizations, setIsSavingCustomizations] = useState(false);
+
+  // State for inline kid slot editing
+  const [inlineChildSlots, setInlineChildSlots] = useState<Record<string, string>>({});
+
+  // Initialize customization state from active rotation
+  useEffect(() => {
+    if (activeRotation) {
+      setChoreOverrides(activeRotation.customizations?.chore_overrides || {});
+      setCustomChores(activeRotation.customizations?.custom_chores || []);
+      // Initialize inline child slots from active rotation
+      const existing: Record<string, string> = {};
+      activeRotation.child_slots?.forEach(s => { existing[s.slot] = s.profile_id; });
+      setInlineChildSlots(existing);
+    }
+  }, [activeRotation?.active_preset]);
 
   const children = members.filter(member => member.role === "child");
 
@@ -202,16 +235,160 @@ export default function FamilySettings({ family, members, settings }: FamilySett
 
   const handleThemeChange = (themeId: ThemeId) => {
     console.log('🎨 Changing theme to:', themeId);
-    
+
     // Update state
     setSelectedTheme(themeId);
-    
+
     // Apply theme using theme manager
     changeTheme(themeId);
-    
+
     console.log('✅ Theme applied and saved:', themeId);
   };
-  
+
+  const openRotationModal = () => {
+    setSelectedPreset(activeRotation?.active_preset || "");
+    // Pre-fill existing mappings if editing
+    if (activeRotation?.child_slots) {
+      const existing: Record<string, string> = {};
+      activeRotation.child_slots.forEach(s => { existing[s.slot] = s.profile_id; });
+      setChildSlots(existing);
+    } else {
+      setChildSlots({});
+    }
+    setShowRotationModal(true);
+  };
+
+  const handleApplyRotation = async () => {
+    if (!selectedPreset) return;
+    const preset = getPresetByKey(selectedPreset);
+    if (!preset) return;
+
+    const slots = getPresetSlots(preset);
+    const mappings: ChildSlotMapping[] = slots.map(slot => ({
+      slot,
+      profile_id: childSlots[slot] || "",
+    }));
+
+    // Validate all slots are filled
+    if (mappings.some(m => !m.profile_id)) {
+      alert("Please assign a child to each slot");
+      return;
+    }
+
+    // Validate no duplicate children
+    const profileIds = mappings.map(m => m.profile_id);
+    const uniqueIds = new Set(profileIds);
+    if (uniqueIds.size !== profileIds.length) {
+      alert("Each slot must have a different child assigned");
+      return;
+    }
+
+    setIsApplyingRotation(true);
+    try {
+      const response = await fetch('/api/rotation/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ preset_key: selectedPreset, child_slots: mappings }),
+      });
+
+      if (response.ok) {
+        alert(`✅ ${preset.name} template activated!`);
+        setShowRotationModal(false);
+        globalThis.location.reload();
+      } else {
+        const result = await response.json();
+        alert(`❌ Failed: ${result.error}`);
+      }
+    } catch (err) {
+      alert(`❌ Error: ${err}`);
+    }
+    setIsApplyingRotation(false);
+  };
+
+  const handleRemoveRotation = async () => {
+    // If no active rotation, nothing to remove
+    if (!activeRotation) return;
+
+    try {
+      const response = await fetch('/api/rotation/apply', { method: 'DELETE' });
+      if (response.ok) {
+        globalThis.location.reload();
+      }
+    } catch (err) {
+      alert(`❌ Error: ${err}`);
+    }
+  };
+
+  const handleAddCustomChore = () => {
+    if (!newChoreName.trim()) return;
+    const key = `custom_${Date.now()}`;
+    const newChore: CustomChore = {
+      key,
+      name: newChoreName.trim(),
+      points: parseInt(newChorePoints) || 1,
+    };
+    setCustomChores([...customChores, newChore]);
+    setNewChoreName("");
+    setNewChorePoints("1");
+  };
+
+  const handleRemoveCustomChore = (key: string) => {
+    setCustomChores(customChores.filter(c => c.key !== key));
+  };
+
+  const handleSaveCustomizations = async () => {
+    if (!activeRotation) return;
+    setIsSavingCustomizations(true);
+
+    const customizations: RotationCustomizations = {};
+    if (Object.keys(choreOverrides).length > 0) {
+      customizations.chore_overrides = choreOverrides;
+    }
+    if (customChores.length > 0) {
+      customizations.custom_chores = customChores;
+    }
+
+    // Build child_slots from inline state
+    const preset = getPresetByKey(activeRotation.active_preset);
+    const slots = preset ? getPresetSlots(preset) : [];
+    const childSlotsToSave = slots.map(slot => ({
+      slot,
+      profile_id: inlineChildSlots[slot] || "",
+    }));
+
+    try {
+      const response = await fetch('/api/rotation/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          preset_key: activeRotation.active_preset,
+          child_slots: childSlotsToSave,
+          customizations: Object.keys(customizations).length > 0 ? customizations : null,
+          start_date: activeRotation.start_date,
+        }),
+      });
+
+      if (response.ok) {
+        alert('✅ Customizations saved!');
+        globalThis.location.reload();
+      } else {
+        const result = await response.json();
+        alert(`❌ Failed: ${result.error}`);
+      }
+    } catch (err) {
+      alert(`❌ Error: ${err}`);
+    }
+    setIsSavingCustomizations(false);
+  };
+
+  const handleResetCustomizations = () => {
+    if (!activeRotation?.customizations) return;
+    if (confirm('Reset all customizations to template defaults?')) {
+      setChoreOverrides({});
+      setCustomChores([]);
+    }
+  };
+
   return (
     <div class="settings-container">
       <div class="settings-section">
@@ -378,6 +555,248 @@ export default function FamilySettings({ family, members, settings }: FamilySett
             {isSavingGoal ? 'Saving...' : 'Save Goal Settings'}
           </button>
         </div>
+      </div>
+
+      <div class="settings-section">
+        <h2>📋 Chore Assignment Mode</h2>
+        <p style={{ fontSize: "0.875rem", color: "var(--color-text-light)", marginBottom: "1rem" }}>
+          Choose how chores are assigned to kids
+        </p>
+
+        <div class="rotation-presets">
+          {/* Manual (Default) Option */}
+          <label
+            class={`rotation-preset-option ${!activeRotation ? 'selected' : ''}`}
+            style={{ borderLeft: '4px solid #6b7280' }}
+          >
+            <input
+              type="radio"
+              name="assignment-mode"
+              value="manual"
+              checked={!activeRotation}
+              onChange={handleRemoveRotation}
+            />
+            <span class="preset-icon">📝</span>
+            <div class="preset-info">
+              <strong>Manual (Default)</strong>
+              <p>You create and assign chores yourself</p>
+              <a
+                href="/parent/dashboard"
+                class="manage-chores-link"
+                onClick={(e) => e.stopPropagation()}
+              >
+                View Dashboard →
+              </a>
+            </div>
+          </label>
+
+          {/* Template Options */}
+          {ROTATION_PRESETS.filter(p => children.length >= p.min_children && children.length <= p.max_children).map((preset) => (
+            <label
+              key={preset.key}
+              class={`rotation-preset-option ${activeRotation?.active_preset === preset.key ? 'selected' : ''}`}
+              style={{ borderLeft: `4px solid ${preset.color || '#ccc'}` }}
+            >
+              <input
+                type="radio"
+                name="assignment-mode"
+                value={preset.key}
+                checked={activeRotation?.active_preset === preset.key}
+                onChange={() => {
+                  setSelectedPreset(preset.key);
+                  // Pre-select kids in order
+                  const slots = getPresetSlots(preset);
+                  const preSelected: Record<string, string> = {};
+                  slots.forEach((slot, i) => {
+                    if (children[i]) {
+                      preSelected[slot] = children[i].id;
+                    }
+                  });
+                  setChildSlots(preSelected);
+                  setShowRotationModal(true);
+                }}
+              />
+              <span class="preset-icon">{preset.icon}</span>
+              <div class="preset-info">
+                <strong>{preset.name}</strong>
+                <p>{preset.description}</p>
+              </div>
+            </label>
+          ))}
+        </div>
+
+        {activeRotation && (
+          <p style={{ fontSize: "0.75rem", color: "var(--color-text-light)", marginTop: "0.5rem" }}>
+            Started {activeRotation.start_date}
+          </p>
+        )}
+
+        {/* Inline Customization Section */}
+        {activeRotation && (
+          <div class="customize-section">
+            <button
+              class="btn btn-outline"
+              onClick={() => setShowCustomize(!showCustomize)}
+              style={{ marginTop: "1rem", width: "100%" }}
+            >
+              {showCustomize
+                ? `▼ Hide ${getPresetByKey(activeRotation.active_preset)?.name || 'Template'} Customization`
+                : `▶ Customize ${getPresetByKey(activeRotation.active_preset)?.name || 'Template'}`}
+            </button>
+
+            {showCustomize && (() => {
+              const preset = getPresetByKey(activeRotation.active_preset);
+              if (!preset) return null;
+
+              const slots = getPresetSlots(preset);
+              const selectedInOtherSlotsInline = (currentSlot: string) => {
+                return Object.entries(inlineChildSlots)
+                  .filter(([slot, _]) => slot !== currentSlot)
+                  .map(([_, profileId]) => profileId);
+              };
+
+              return (
+                <div class="customize-content">
+                  <h4>Kid Assignment</h4>
+                  <div class="inline-slot-mapping">
+                    {slots.map((slot) => {
+                      const usedIds = selectedInOtherSlotsInline(slot);
+                      const currentKidId = inlineChildSlots[slot];
+                      const currentKid = children.find(c => c.id === currentKidId);
+                      return (
+                        <div key={slot} class="inline-slot-row">
+                          <span class="slot-label">{slot}:</span>
+                          <select
+                            value={currentKidId || ""}
+                            onChange={(e) => setInlineChildSlots({ ...inlineChildSlots, [slot]: e.currentTarget.value })}
+                            class="slot-select"
+                          >
+                            <option value="">Select child...</option>
+                            {children.map((child) => (
+                              <option
+                                key={child.id}
+                                value={child.id}
+                                disabled={usedIds.includes(child.id)}
+                              >
+                                {child.name}{usedIds.includes(child.id) ? ' (already assigned)' : ''}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <h4 style={{ marginTop: "1.5rem" }}>Template Chores</h4>
+                  <div class="chore-customize-list">
+                    {preset.chores.map((chore) => {
+                      const override = choreOverrides[chore.key] || {};
+                      const isEnabled = override.enabled !== false;
+                      const points = override.points ?? chore.points;
+
+                      return (
+                        <div key={chore.key} class={`chore-customize-row ${!isEnabled ? 'disabled' : ''}`}>
+                          <label class="chore-enable">
+                            <input
+                              type="checkbox"
+                              checked={isEnabled}
+                              onChange={(e) => {
+                                setChoreOverrides({
+                                  ...choreOverrides,
+                                  [chore.key]: { ...override, enabled: e.currentTarget.checked },
+                                });
+                              }}
+                            />
+                            <span class="chore-icon">{chore.icon}</span>
+                            <span class="chore-name">{chore.name}</span>
+                          </label>
+                          <select
+                            value={points}
+                            onChange={(e) => {
+                              setChoreOverrides({
+                                ...choreOverrides,
+                                [chore.key]: { ...override, points: parseInt(e.currentTarget.value) },
+                              });
+                            }}
+                            disabled={!isEnabled}
+                            class="chore-points-select"
+                          >
+                            {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(p => (
+                              <option key={p} value={p}>{p} pt{p !== 1 ? 's' : ''}</option>
+                            ))}
+                          </select>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <h4 style={{ marginTop: "1.5rem" }}>Custom Chores</h4>
+                  <div class="custom-chores-list">
+                    {customChores.map((chore) => (
+                      <div key={chore.key} class="chore-customize-row">
+                        <span class="chore-icon">{chore.icon || '✨'}</span>
+                        <span class="chore-name">{chore.name}</span>
+                        <span class="chore-points">{chore.points} pt{chore.points > 1 ? 's' : ''}</span>
+                        <button
+                          class="btn-remove"
+                          onClick={() => handleRemoveCustomChore(chore.key)}
+                          title="Remove"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+
+                    <div class="add-chore-row">
+                      <input
+                        type="text"
+                        value={newChoreName}
+                        onChange={(e) => setNewChoreName(e.currentTarget.value)}
+                        placeholder="Chore name"
+                        class="add-chore-input"
+                      />
+                      <select
+                        value={newChorePoints}
+                        onChange={(e) => setNewChorePoints(e.currentTarget.value)}
+                        class="chore-points-select"
+                      >
+                        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(p => (
+                          <option key={p} value={p}>{p} pt{p !== 1 ? 's' : ''}</option>
+                        ))}
+                      </select>
+                      <button
+                        class="btn btn-outline"
+                        onClick={handleAddCustomChore}
+                        disabled={!newChoreName.trim()}
+                      >
+                        + Add
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="customize-actions">
+                    <button
+                      class="btn btn-primary"
+                      onClick={handleSaveCustomizations}
+                      disabled={isSavingCustomizations}
+                    >
+                      {isSavingCustomizations ? 'Saving...' : 'Save Changes'}
+                    </button>
+                    {(Object.keys(choreOverrides).length > 0 || customChores.length > 0) && (
+                      <button
+                        class="btn btn-outline"
+                        onClick={handleResetCustomizations}
+                        disabled={isSavingCustomizations}
+                      >
+                        Reset to Defaults
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        )}
       </div>
 
       <div class="settings-section">
@@ -658,7 +1077,7 @@ export default function FamilySettings({ family, members, settings }: FamilySett
                 <input
                   type="number"
                   value={adjustmentAmount}
-                  onChange={(e) => setAdjustmentAmount(e.target.value)}
+                  onChange={(e) => setAdjustmentAmount((e.target as HTMLInputElement).value)}
                   placeholder="Enter amount"
                 />
                 
@@ -666,7 +1085,7 @@ export default function FamilySettings({ family, members, settings }: FamilySett
                 <input
                   type="text"
                   value={adjustmentReason}
-                  onChange={(e) => setAdjustmentReason(e.target.value)}
+                  onChange={(e) => setAdjustmentReason((e.target as HTMLInputElement).value)}
                   placeholder="Why are you adjusting points?"
                 />
               </div>
@@ -688,6 +1107,74 @@ export default function FamilySettings({ family, members, settings }: FamilySett
                   setAdjustmentReason("");
                 }}
                 class="btn btn-secondary"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rotation Template Modal - Slot Assignment */}
+      {showRotationModal && selectedPreset && (
+        <div class="modal-overlay">
+          <div class="modal">
+            <h3>📋 Set Up {getPresetByKey(selectedPreset)?.name}</h3>
+
+            {(() => {
+              const preset = getPresetByKey(selectedPreset);
+              if (!preset) return null;
+              const slots = getPresetSlots(preset);
+
+              // Get which children are already selected in other slots
+              const selectedInOtherSlots = (currentSlot: string) => {
+                return Object.entries(childSlots)
+                  .filter(([slot, _]) => slot !== currentSlot)
+                  .map(([_, profileId]) => profileId);
+              };
+
+              return (
+                <div class="slot-mapping">
+                  <h4>Assign Kids to Slots</h4>
+                  {slots.map((slot) => {
+                    const usedIds = selectedInOtherSlots(slot);
+                    return (
+                      <div key={slot} class="slot-row">
+                        <span>{slot}</span>
+                        <select
+                          value={childSlots[slot] || ""}
+                          onChange={(e) => setChildSlots({ ...childSlots, [slot]: e.currentTarget.value })}
+                        >
+                          <option value="">Select child...</option>
+                          {children.map((child) => (
+                            <option
+                              key={child.id}
+                              value={child.id}
+                              disabled={usedIds.includes(child.id)}
+                            >
+                              {child.name}{usedIds.includes(child.id) ? ' (already assigned)' : ''}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+
+            <div class="modal-actions">
+              <button
+                onClick={handleApplyRotation}
+                class="btn btn-primary"
+                disabled={!selectedPreset || isApplyingRotation}
+              >
+                {isApplyingRotation ? 'Applying...' : 'Activate Template'}
+              </button>
+              <button
+                onClick={() => setShowRotationModal(false)}
+                class="btn btn-secondary"
+                disabled={isApplyingRotation}
               >
                 Cancel
               </button>
@@ -1224,6 +1711,277 @@ export default function FamilySettings({ family, members, settings }: FamilySett
           opacity: 0.5;
           cursor: not-allowed;
         }
+
+        /* Rotation styles */
+        .rotation-active {
+          padding: 1rem;
+          background: var(--color-bg);
+          border-radius: 8px;
+        }
+
+        .rotation-badge {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          padding: 0.75rem;
+          background: white;
+          border-radius: 8px;
+        }
+
+        .rotation-icon {
+          font-size: 2rem;
+        }
+
+        .rotation-presets {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+          margin-bottom: 1.5rem;
+        }
+
+        .rotation-preset-option {
+          display: flex;
+          align-items: flex-start;
+          gap: 0.75rem;
+          padding: 1rem;
+          background: var(--color-bg);
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .rotation-preset-option:hover {
+          background: #e5e7eb;
+        }
+
+        .rotation-preset-option.selected {
+          background: #dcfce7;
+        }
+
+        .rotation-preset-option input {
+          margin-top: 0.25rem;
+        }
+
+        .preset-icon {
+          font-size: 1.5rem;
+        }
+
+        .preset-info {
+          flex: 1;
+        }
+
+        .preset-info strong {
+          display: block;
+          margin-bottom: 0.25rem;
+        }
+
+        .preset-info p {
+          margin: 0;
+          font-size: 0.8rem;
+          color: var(--color-text-light);
+        }
+
+        .manage-chores-link {
+          display: inline-block;
+          margin-top: 0.5rem;
+          font-size: 0.8rem;
+          color: var(--color-primary);
+          text-decoration: none;
+          font-weight: 500;
+        }
+
+        .manage-chores-link:hover {
+          text-decoration: underline;
+        }
+
+        .slot-mapping {
+          margin-bottom: 1.5rem;
+          padding: 1rem;
+          background: var(--color-bg);
+          border-radius: 8px;
+        }
+
+        .slot-mapping h4 {
+          margin: 0 0 1rem 0;
+          font-size: 0.9rem;
+        }
+
+        .slot-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 1rem;
+          margin-bottom: 0.5rem;
+        }
+
+        .slot-row select {
+          flex: 1;
+          max-width: 200px;
+          padding: 0.5rem;
+          border: 2px solid #e5e7eb;
+          border-radius: 6px;
+          font-size: 0.9rem;
+        }
+
+        /* Customization styles */
+        .customize-section {
+          margin-top: 1rem;
+        }
+
+        .customize-content {
+          margin-top: 1rem;
+          padding: 1rem;
+          background: var(--color-bg);
+          border-radius: 8px;
+        }
+
+        .customize-content h4 {
+          margin: 0 0 0.75rem 0;
+          font-size: 0.9rem;
+          color: var(--color-text);
+        }
+
+        .chore-customize-list,
+        .custom-chores-list {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+
+        .chore-customize-row {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.5rem;
+          background: white;
+          border-radius: 6px;
+        }
+
+        .chore-customize-row.disabled {
+          opacity: 0.5;
+        }
+
+        .chore-enable {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          flex: 1;
+          cursor: pointer;
+        }
+
+        .chore-enable input {
+          width: 18px;
+          height: 18px;
+        }
+
+        .chore-icon {
+          font-size: 1.1rem;
+        }
+
+        .chore-name {
+          flex: 1;
+          font-size: 0.9rem;
+        }
+
+        .chore-points {
+          font-size: 0.85rem;
+          color: var(--color-text-light);
+          min-width: 40px;
+        }
+
+        .chore-points-select {
+          padding: 0.25rem 0.5rem;
+          border: 1px solid #e5e7eb;
+          border-radius: 4px;
+          font-size: 0.85rem;
+          min-width: 70px;
+        }
+
+        .btn-remove {
+          background: none;
+          border: none;
+          color: var(--color-warning);
+          font-size: 1.25rem;
+          cursor: pointer;
+          padding: 0 0.25rem;
+          line-height: 1;
+        }
+
+        .btn-remove:hover {
+          color: #dc2626;
+        }
+
+        .add-chore-row {
+          display: flex;
+          gap: 0.5rem;
+          margin-top: 0.5rem;
+        }
+
+        .add-chore-input {
+          flex: 1;
+          padding: 0.5rem;
+          border: 1px solid #e5e7eb;
+          border-radius: 6px;
+          font-size: 0.9rem;
+        }
+
+        .customize-actions {
+          display: flex;
+          gap: 0.75rem;
+          margin-top: 1.5rem;
+          padding-top: 1rem;
+          border-top: 1px solid #e5e7eb;
+        }
+
+        .btn-outline {
+          background: white;
+          color: var(--color-primary);
+          border: 1px solid var(--color-primary);
+          padding: 0.5rem 1rem;
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 0.875rem;
+          transition: all 0.2s ease;
+        }
+
+        .btn-outline:hover:not(:disabled) {
+          background: var(--color-primary);
+          color: white;
+        }
+
+        .btn-outline:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        /* Inline slot mapping */
+        .inline-slot-mapping {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+
+        .inline-slot-row {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          padding: 0.5rem;
+          background: white;
+          border-radius: 6px;
+        }
+
+        .slot-label {
+          min-width: 60px;
+          font-weight: 500;
+          font-size: 0.9rem;
+        }
+
+        .slot-select {
+          flex: 1;
+          padding: 0.5rem;
+          border: 1px solid #e5e7eb;
+          border-radius: 6px;
+          font-size: 0.9rem;
         }
       `}</style>
     </div>

@@ -29,6 +29,7 @@ interface TransactionRequest {
   description: string;
   adjustedBy?: string; // For manual adjustments
   reason?: string; // Additional context
+  metadata?: Record<string, unknown>; // Custom metadata (e.g., rotation chore info)
 }
 
 export class TransactionService {
@@ -40,28 +41,33 @@ export class TransactionService {
 
   /**
    * Records chore completion transaction (awards points)
+   * @param choreAssignmentId - Assignment ID for manual chores, null for rotation chores
+   * @param metadata - Optional metadata (e.g., rotation_preset, rotation_chore for rotation chores)
    */
   async recordChoreCompletion(
-    choreAssignmentId: string,
+    choreAssignmentId: string | null,
     pointValue: number,
     choreName: string,
     profileId: string,
     familyId: string,
+    metadata?: Record<string, unknown>,
   ): Promise<void> {
     console.log("🏆 Recording chore completion transaction:", {
       choreAssignmentId,
       pointValue,
       choreName,
       profileId,
+      metadata,
     });
 
     await this.createTransaction({
       profileId,
       familyId,
-      choreAssignmentId,
+      choreAssignmentId: choreAssignmentId ?? undefined,
       transactionType: "chore_completed",
       pointsChange: pointValue,
       description: `Chore completed: ${choreName} (+${pointValue} pts)`,
+      metadata,
     });
   }
 
@@ -189,6 +195,7 @@ export class TransactionService {
       metadata: {
         source: "chores2026",
         timestamp: new Date().toISOString(),
+        ...request.metadata, // Merge custom metadata (e.g., rotation info)
       },
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -532,28 +539,35 @@ export class TransactionService {
       console.log("🔄 Starting FamilyScore sync...", { familyId, options });
 
       // Use provided local state or fetch from database
-      let localBalances;
+      let localBalances: Array<{
+        profile_id: string;
+        name: string;
+        current_points: number;
+        role?: string;
+        last_transaction_hash?: string;
+      }>;
       if (options.localState && options.localState.length > 0) {
         // Use provided local state (from UI)
         localBalances = options.localState.map(profile => ({
           profile_id: profile.user_id,
           name: profile.name,
           current_points: profile.current_points,
-          role: profile.role
+          role: profile.role,
+          last_transaction_hash: undefined // Not available from UI state
         }));
-        console.log("📋 Using provided local state for sync:", { 
+        console.log("📋 Using provided local state for sync:", {
           member_count: localBalances.length,
-          total_points: localBalances.reduce((sum, p) => sum + p.current_points, 0)
+          total_points: localBalances.reduce((sum: number, p) => sum + p.current_points, 0)
         });
       } else {
         // Fetch current local balances from Supabase
         localBalances = await this.getCurrentFamilyBalances(familyId);
-        console.log("📋 Fetched local state from database:", { 
+        console.log("📋 Fetched local state from database:", {
           member_count: localBalances.length,
-          total_points: localBalances.reduce((sum, p) => sum + p.current_points, 0)
+          total_points: localBalances.reduce((sum: number, p) => sum + p.current_points, 0)
         });
       }
-      
+
       const payload = {
         family_id: familyId,
         local_state: localBalances.map(profile => ({
@@ -599,22 +613,23 @@ export class TransactionService {
         });
 
         // Apply any recommended local changes if needed
-        if (result.data?.sync_results?.actions_taken?.length > 0) {
+        const actionsTaken = result.data?.sync_results?.actions_taken;
+        if (actionsTaken && actionsTaken.length > 0 && result.data?.sync_results) {
           await this.applySyncResults(result.data.sync_results);
         }
-        
+
         // Trigger UI refresh
         await this.notifyBalanceUpdate(familyId);
       }
-      
+
       return result;
-      
+
     } catch (error) {
       console.warn("⚠️ FamilyScore sync failed (non-critical):", error);
-      return { 
-        success: false, 
-        error: error.message,
-        sync_performed: false 
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+        sync_performed: false
       };
     }
   }
@@ -697,14 +712,15 @@ export class TransactionService {
    */
   async performStartupSync(familyId: string): Promise<SyncResult> {
     console.log("🔄 Performing startup sync with FamilyScore...");
-    
+
     const result = await this.syncWithFamilyScore(familyId, { mode: "force_local" });
-    
-    if (result.success && result.data?.sync_results?.discrepancies_found > 0) {
-      console.log(`ℹ️ Found ${result.data.sync_results.discrepancies_found} sync discrepancies`);
+
+    const discrepancies = result.data?.sync_results?.discrepancies_found ?? 0;
+    if (result.success && discrepancies > 0) {
+      console.log(`ℹ️ Found ${discrepancies} sync discrepancies`);
       // Could trigger user notification or auto-repair
     }
-    
+
     return result;
   }
 }

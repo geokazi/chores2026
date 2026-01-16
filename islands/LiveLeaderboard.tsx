@@ -90,7 +90,7 @@ export default function LiveLeaderboard({
       </div>
 
       {allMembers.map((member, index) => {
-        const isCurrentUser = currentKidId && member.id === currentKidId;
+        const isCurrentUser = Boolean(currentKidId && member.id === currentKidId);
         return (
           <div
             key={member.id}

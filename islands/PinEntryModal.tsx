@@ -116,6 +116,7 @@ export default function PinEntryModal({ kid, onSuccess, onCancel }: Props) {
       // No PIN set - first time setup
       if (!kid.pin_hash && !localHash) {
         // Set up new PIN
+        // @ts-ignore: bcrypt types expect string but number (salt rounds) is correct
         const hash = await bcrypt.hash(enteredPin, 10);
         localStorage.setItem(`kid_pin_${kid.id}`, hash);
 

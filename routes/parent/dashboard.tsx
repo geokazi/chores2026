@@ -52,7 +52,7 @@ export const handler: Handlers<ParentDashboardData> = {
       const chores = await choreService.getAllChores(familyId);
 
       // Get parent's own chores if we found their profile
-      let parentChores = [];
+      let parentChores: any[] = [];
       if (parentProfileId) {
         parentChores = await choreService.getTodaysChores(parentProfileId, familyId);
       }

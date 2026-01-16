@@ -56,7 +56,7 @@ export default function SecureKidDashboard({ family, familyMembers, recentActivi
     // Update active kid's points if they're in the leaderboard update
     const kidUpdate = leaderboard.find(p => p.user_id === activeKid.id);
     if (kidUpdate) {
-      setActiveKid(current => ({
+      setActiveKid((current: any) => ({
         ...current,
         current_points: kidUpdate.points
       }));

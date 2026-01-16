@@ -9,6 +9,10 @@ interface ChoreAssignment {
   id: string;
   status: "pending" | "completed" | "verified" | "rejected";
   point_value: number;
+  source?: "manual" | "rotation";
+  rotation_key?: string;
+  rotation_preset?: string;
+  rotation_date?: string;
   chore_template?: {
     name: string;
     description?: string;
@@ -33,24 +37,45 @@ export default function ChoreList({ chores, onChoreComplete, kidId }: Props) {
     setCompletingChore(chore.id);
 
     try {
-      const response = await fetch(`/api/chores/${chore.id}/complete`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ kid_id: kidId }),
-      });
+      let response: Response;
+
+      if (chore.source === "rotation" && chore.rotation_key && chore.rotation_date) {
+        // Rotation chore - use rotation complete endpoint
+        response = await fetch('/api/rotation/complete', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            chore_key: chore.rotation_key,
+            date: chore.rotation_date,
+          }),
+        });
+      } else {
+        // Manual chore - use regular complete endpoint
+        response = await fetch(`/api/chores/${chore.id}/complete`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ kid_id: kidId }),
+        });
+      }
 
       if (response.ok) {
         const result = await response.json();
         console.log('🎉 Chore completed:', result);
-        
+
         // Call the parent's completion handler to update the UI
         onChoreComplete(chore.id);
       } else {
         const error = await response.json();
         console.error('Failed to complete chore:', error);
-        alert('Failed to complete chore. Please try again.');
+        if (error.already_completed) {
+          alert('This chore was already completed today!');
+        } else {
+          alert('Failed to complete chore. Please try again.');
+        }
       }
     } catch (error) {
       console.error('Error completing chore:', error);
@@ -130,6 +155,9 @@ export default function ChoreList({ chores, onChoreComplete, kidId }: Props) {
               >
                 {completingChore === chore.id ? "⏳" : getStatusIcon(chore.status)}
               </span>
+              {chore.source === "rotation" && (
+                <span style={{ fontSize: "0.875rem" }} title="From rotation template">🔄</span>
+              )}
               <span style={{ fontSize: "1.5rem" }}>
                 {getChoreIcon(chore)}
               </span>
@@ -138,7 +166,7 @@ export default function ChoreList({ chores, onChoreComplete, kidId }: Props) {
                   {chore.chore_template?.name || "Untitled Chore"}
                 </div>
                 {chore.chore_template?.description && (
-                  <div class="chore-description">
+                  <div class="chore-description" style={{ fontSize: "0.75rem", color: "var(--color-text-light)" }}>
                     {chore.chore_template.description}
                   </div>
                 )}

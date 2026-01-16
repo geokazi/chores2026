@@ -37,6 +37,7 @@ export const handler: Handlers = {
 
       if (setup_mode) {
         // Setting up a new PIN
+        // @ts-ignore: bcrypt types expect string but number (salt rounds) is correct
         const hashedPin = await bcrypt.hash(pin, 10);
         const success = await choreService.setKidPin(kid_id, hashedPin);
 

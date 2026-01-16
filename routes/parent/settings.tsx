@@ -39,12 +39,18 @@ export const handler: Handlers<ParentSettingsData> = {
       theme: family.theme,
     });
 
+    // Build settings object: flat fields for backwards compat + full JSONB for rotation
+    const fullSettings = family.settings || {};
+
     return ctx.render({
       family,
       members: family.members,
       settings: {
+        // Flat fields for existing component usage
         children_pins_enabled: family.children_pins_enabled,
         theme: family.theme,
+        // Include nested JSONB structure for rotation config
+        apps: fullSettings.apps,
       },
     });
   },
