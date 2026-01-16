@@ -29,6 +29,7 @@ interface TransactionRequest {
   description: string;
   adjustedBy?: string; // For manual adjustments
   reason?: string; // Additional context
+  metadata?: Record<string, unknown>; // Custom metadata (e.g., rotation chore info)
 }
 
 export class TransactionService {
@@ -40,28 +41,33 @@ export class TransactionService {
 
   /**
    * Records chore completion transaction (awards points)
+   * @param choreAssignmentId - Assignment ID for manual chores, null for rotation chores
+   * @param metadata - Optional metadata (e.g., rotation_preset, rotation_chore for rotation chores)
    */
   async recordChoreCompletion(
-    choreAssignmentId: string,
+    choreAssignmentId: string | null,
     pointValue: number,
     choreName: string,
     profileId: string,
     familyId: string,
+    metadata?: Record<string, unknown>,
   ): Promise<void> {
     console.log("🏆 Recording chore completion transaction:", {
       choreAssignmentId,
       pointValue,
       choreName,
       profileId,
+      metadata,
     });
 
     await this.createTransaction({
       profileId,
       familyId,
-      choreAssignmentId,
+      choreAssignmentId: choreAssignmentId ?? undefined,
       transactionType: "chore_completed",
       pointsChange: pointValue,
       description: `Chore completed: ${choreName} (+${pointValue} pts)`,
+      metadata,
     });
   }
 
@@ -189,6 +195,7 @@ export class TransactionService {
       metadata: {
         source: "chores2026",
         timestamp: new Date().toISOString(),
+        ...request.metadata, // Merge custom metadata (e.g., rotation info)
       },
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
