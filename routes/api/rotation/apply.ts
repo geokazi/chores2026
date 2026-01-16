@@ -5,7 +5,7 @@
 
 import { Handlers } from "$fresh/server.ts";
 import { getSupabaseClient } from "../../../lib/supabase.ts";
-import { getSessionFromRequest } from "../../../lib/auth/session.ts";
+import { getAuthenticatedSession } from "../../../lib/auth/session.ts";
 import { buildRotationConfig, validateChildCount, getRequiredSlotCount } from "../../../lib/services/rotation-service.ts";
 import { getPresetByKey } from "../../../lib/data/rotation-presets.ts";
 import type { ChildSlotMapping } from "../../../lib/types/rotation.ts";
@@ -18,7 +18,7 @@ interface ApplyRequest {
 export const handler: Handlers = {
   async POST(req) {
     try {
-      const session = await getSessionFromRequest(req);
+      const session = await getAuthenticatedSession(req);
       if (!session?.family_id) {
         return Response.json({ error: "Unauthorized" }, { status: 401 });
       }
@@ -96,7 +96,7 @@ export const handler: Handlers = {
 
   async DELETE(req) {
     try {
-      const session = await getSessionFromRequest(req);
+      const session = await getAuthenticatedSession(req);
       if (!session?.family_id) {
         return Response.json({ error: "Unauthorized" }, { status: 401 });
       }

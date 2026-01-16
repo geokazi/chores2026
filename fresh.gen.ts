@@ -22,6 +22,7 @@ import * as $api_parent_verify_pin_simple from "./routes/api/parent/verify-pin-s
 import * as $api_parent_verify_pin from "./routes/api/parent/verify-pin.ts";
 import * as $api_pin_verify from "./routes/api/pin/verify.ts";
 import * as $api_points_adjust from "./routes/api/points/adjust.ts";
+import * as $api_rotation_apply from "./routes/api/rotation/apply.ts";
 import * as $health from "./routes/health.ts";
 import * as $index from "./routes/index.tsx";
 import * as $kid_dashboard from "./routes/kid/dashboard.tsx";
@@ -82,6 +83,7 @@ const manifest = {
     "./routes/api/parent/verify-pin.ts": $api_parent_verify_pin,
     "./routes/api/pin/verify.ts": $api_pin_verify,
     "./routes/api/points/adjust.ts": $api_points_adjust,
+    "./routes/api/rotation/apply.ts": $api_rotation_apply,
     "./routes/health.ts": $health,
     "./routes/index.tsx": $index,
     "./routes/kid/dashboard.tsx": $kid_dashboard,
