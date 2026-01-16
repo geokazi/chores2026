@@ -28,6 +28,7 @@ export const DAILY_BASICS_PRESET: RotationPreset = {
   description: 'Simple, consistent daily routine. Same chores every day builds habits.',
   icon: '🌱',
   color: '#3b82f6',
+  preset_category: 'everyday',
   difficulty: 'beginner',
   min_children: 2,
   max_children: 3,

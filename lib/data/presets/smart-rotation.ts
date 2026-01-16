@@ -31,6 +31,7 @@ export const SMART_ROTATION_PRESET: RotationPreset = {
   description: 'Two-week cycle balancing cleaning intensity with lighter maintenance weeks.',
   icon: '🎯',
   color: '#10b981',
+  preset_category: 'everyday',
   difficulty: 'beginner',
   min_children: 2,
   max_children: 4,

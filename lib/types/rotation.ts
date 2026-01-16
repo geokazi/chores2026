@@ -33,6 +33,7 @@ export interface RotationPreset {
   description: string;
   icon: string;
   color?: string;
+  preset_category: 'everyday' | 'seasonal';  // UI grouping
   difficulty: 'beginner' | 'intermediate' | 'advanced';
   min_children: number;
   max_children: number;
