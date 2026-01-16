@@ -1,10 +1,13 @@
 /**
- * Family Settings - PIN management and theme selection
+ * Family Settings - PIN management, theme selection, and chore rotation
  */
 
 import { useState, useEffect } from "preact/hooks";
 import ParentPinGate from "./ParentPinGate.tsx";
 import { getCurrentTheme, changeTheme, themes, type ThemeId } from "../lib/theme-manager.ts";
+import { ROTATION_PRESETS, getPresetByKey, getPresetSlots } from "../lib/data/rotation-presets.ts";
+import { getRotationConfig } from "../lib/services/rotation-service.ts";
+import type { RotationPreset, ChildSlotMapping } from "../lib/types/rotation.ts";
 
 interface FamilySettingsProps {
   family: any;
@@ -55,6 +58,13 @@ export default function FamilySettings({ family, members, settings }: FamilySett
     settings?.goal_bonus?.toString() || "2"
   );
   const [isSavingGoal, setIsSavingGoal] = useState(false);
+
+  // Rotation template state
+  const [showRotationModal, setShowRotationModal] = useState(false);
+  const [selectedPreset, setSelectedPreset] = useState<string>("");
+  const [childSlots, setChildSlots] = useState<Record<string, string>>({});
+  const [isApplyingRotation, setIsApplyingRotation] = useState(false);
+  const activeRotation = getRotationConfig(settings || {});
 
   const children = members.filter(member => member.role === "child");
 
@@ -202,16 +212,82 @@ export default function FamilySettings({ family, members, settings }: FamilySett
 
   const handleThemeChange = (themeId: ThemeId) => {
     console.log('🎨 Changing theme to:', themeId);
-    
+
     // Update state
     setSelectedTheme(themeId);
-    
+
     // Apply theme using theme manager
     changeTheme(themeId);
-    
+
     console.log('✅ Theme applied and saved:', themeId);
   };
-  
+
+  const openRotationModal = () => {
+    setSelectedPreset(activeRotation?.active_preset || "");
+    // Pre-fill existing mappings if editing
+    if (activeRotation?.child_slots) {
+      const existing: Record<string, string> = {};
+      activeRotation.child_slots.forEach(s => { existing[s.slot] = s.profile_id; });
+      setChildSlots(existing);
+    } else {
+      setChildSlots({});
+    }
+    setShowRotationModal(true);
+  };
+
+  const handleApplyRotation = async () => {
+    if (!selectedPreset) return;
+    const preset = getPresetByKey(selectedPreset);
+    if (!preset) return;
+
+    const slots = getPresetSlots(preset);
+    const mappings: ChildSlotMapping[] = slots.map(slot => ({
+      slot,
+      profile_id: childSlots[slot] || "",
+    }));
+
+    // Validate all slots are filled
+    if (mappings.some(m => !m.profile_id)) {
+      alert("Please assign a child to each slot");
+      return;
+    }
+
+    setIsApplyingRotation(true);
+    try {
+      const response = await fetch('/api/rotation/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ preset_key: selectedPreset, child_slots: mappings }),
+      });
+
+      if (response.ok) {
+        alert(`✅ ${preset.name} template activated!`);
+        setShowRotationModal(false);
+        globalThis.location.reload();
+      } else {
+        const result = await response.json();
+        alert(`❌ Failed: ${result.error}`);
+      }
+    } catch (err) {
+      alert(`❌ Error: ${err}`);
+    }
+    setIsApplyingRotation(false);
+  };
+
+  const handleRemoveRotation = async () => {
+    if (!confirm("Remove chore rotation? Kids will no longer see rotation-based chores.")) return;
+
+    try {
+      const response = await fetch('/api/rotation/apply', { method: 'DELETE' });
+      if (response.ok) {
+        alert("✅ Rotation removed");
+        globalThis.location.reload();
+      }
+    } catch (err) {
+      alert(`❌ Error: ${err}`);
+    }
+  };
+
   return (
     <div class="settings-container">
       <div class="settings-section">
@@ -378,6 +454,46 @@ export default function FamilySettings({ family, members, settings }: FamilySett
             {isSavingGoal ? 'Saving...' : 'Save Goal Settings'}
           </button>
         </div>
+      </div>
+
+      <div class="settings-section">
+        <h2>📋 Chore Rotation</h2>
+        <p style={{ fontSize: "0.875rem", color: "var(--color-text-light)", marginBottom: "1rem" }}>
+          Pick a template to automatically assign daily chores to kids
+        </p>
+
+        {activeRotation ? (
+          <div class="rotation-active">
+            {(() => {
+              const preset = getPresetByKey(activeRotation.active_preset);
+              return preset ? (
+                <>
+                  <div class="rotation-badge" style={{ borderLeft: `4px solid ${preset.color || '#10b981'}` }}>
+                    <span class="rotation-icon">{preset.icon}</span>
+                    <div>
+                      <strong>{preset.name}</strong>
+                      <p style={{ margin: 0, fontSize: "0.8rem", opacity: 0.7 }}>
+                        Started {activeRotation.start_date}
+                      </p>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}>
+                    <button class="btn btn-outline" onClick={openRotationModal}>
+                      Change Template
+                    </button>
+                    <button class="btn btn-outline" style={{ color: "var(--color-warning)" }} onClick={handleRemoveRotation}>
+                      Remove
+                    </button>
+                  </div>
+                </>
+              ) : null;
+            })()}
+          </div>
+        ) : (
+          <button class="btn btn-primary" onClick={openRotationModal}>
+            Set Up Chore Rotation
+          </button>
+        )}
       </div>
 
       <div class="settings-section">
@@ -688,6 +804,84 @@ export default function FamilySettings({ family, members, settings }: FamilySett
                   setAdjustmentReason("");
                 }}
                 class="btn btn-secondary"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rotation Template Modal */}
+      {showRotationModal && (
+        <div class="modal-overlay">
+          <div class="modal">
+            <h3>📋 Choose Chore Template</h3>
+
+            <div class="rotation-presets">
+              {ROTATION_PRESETS.filter(p => children.length >= p.min_children && children.length <= p.max_children).map((preset) => (
+                <label
+                  key={preset.key}
+                  class={`rotation-preset-option ${selectedPreset === preset.key ? 'selected' : ''}`}
+                  style={{ borderLeft: `4px solid ${preset.color || '#ccc'}` }}
+                >
+                  <input
+                    type="radio"
+                    name="preset"
+                    value={preset.key}
+                    checked={selectedPreset === preset.key}
+                    onChange={() => {
+                      setSelectedPreset(preset.key);
+                      setChildSlots({});
+                    }}
+                  />
+                  <span class="preset-icon">{preset.icon}</span>
+                  <div class="preset-info">
+                    <strong>{preset.name}</strong>
+                    <p>{preset.description}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+
+            {selectedPreset && (() => {
+              const preset = getPresetByKey(selectedPreset);
+              if (!preset) return null;
+              const slots = getPresetSlots(preset);
+
+              return (
+                <div class="slot-mapping">
+                  <h4>Assign Kids to Slots</h4>
+                  {slots.map((slot) => (
+                    <div key={slot} class="slot-row">
+                      <span>{slot}</span>
+                      <select
+                        value={childSlots[slot] || ""}
+                        onChange={(e) => setChildSlots({ ...childSlots, [slot]: e.currentTarget.value })}
+                      >
+                        <option value="">Select child...</option>
+                        {children.map((child) => (
+                          <option key={child.id} value={child.id}>{child.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+
+            <div class="modal-actions">
+              <button
+                onClick={handleApplyRotation}
+                class="btn btn-primary"
+                disabled={!selectedPreset || isApplyingRotation}
+              >
+                {isApplyingRotation ? 'Applying...' : 'Activate Template'}
+              </button>
+              <button
+                onClick={() => setShowRotationModal(false)}
+                class="btn btn-secondary"
+                disabled={isApplyingRotation}
               >
                 Cancel
               </button>
@@ -1224,6 +1418,103 @@ export default function FamilySettings({ family, members, settings }: FamilySett
           opacity: 0.5;
           cursor: not-allowed;
         }
+
+        /* Rotation styles */
+        .rotation-active {
+          padding: 1rem;
+          background: var(--color-bg);
+          border-radius: 8px;
+        }
+
+        .rotation-badge {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          padding: 0.75rem;
+          background: white;
+          border-radius: 8px;
+        }
+
+        .rotation-icon {
+          font-size: 2rem;
+        }
+
+        .rotation-presets {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+          margin-bottom: 1.5rem;
+        }
+
+        .rotation-preset-option {
+          display: flex;
+          align-items: flex-start;
+          gap: 0.75rem;
+          padding: 1rem;
+          background: var(--color-bg);
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .rotation-preset-option:hover {
+          background: #e5e7eb;
+        }
+
+        .rotation-preset-option.selected {
+          background: #dcfce7;
+        }
+
+        .rotation-preset-option input {
+          margin-top: 0.25rem;
+        }
+
+        .preset-icon {
+          font-size: 1.5rem;
+        }
+
+        .preset-info {
+          flex: 1;
+        }
+
+        .preset-info strong {
+          display: block;
+          margin-bottom: 0.25rem;
+        }
+
+        .preset-info p {
+          margin: 0;
+          font-size: 0.8rem;
+          color: var(--color-text-light);
+        }
+
+        .slot-mapping {
+          margin-bottom: 1.5rem;
+          padding: 1rem;
+          background: var(--color-bg);
+          border-radius: 8px;
+        }
+
+        .slot-mapping h4 {
+          margin: 0 0 1rem 0;
+          font-size: 0.9rem;
+        }
+
+        .slot-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 1rem;
+          margin-bottom: 0.5rem;
+        }
+
+        .slot-row select {
+          flex: 1;
+          max-width: 200px;
+          padding: 0.5rem;
+          border: 2px solid #e5e7eb;
+          border-radius: 6px;
+          font-size: 0.9rem;
         }
       `}</style>
     </div>
