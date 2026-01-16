@@ -275,12 +275,12 @@ export default function FamilySettings({ family, members, settings }: FamilySett
   };
 
   const handleRemoveRotation = async () => {
-    if (!confirm("Remove chore rotation? Kids will no longer see rotation-based chores.")) return;
+    // If no active rotation, nothing to remove
+    if (!activeRotation) return;
 
     try {
       const response = await fetch('/api/rotation/apply', { method: 'DELETE' });
       if (response.ok) {
-        alert("✅ Rotation removed");
         globalThis.location.reload();
       }
     } catch (err) {
@@ -457,42 +457,69 @@ export default function FamilySettings({ family, members, settings }: FamilySett
       </div>
 
       <div class="settings-section">
-        <h2>📋 Chore Rotation</h2>
+        <h2>📋 Chore Assignment Mode</h2>
         <p style={{ fontSize: "0.875rem", color: "var(--color-text-light)", marginBottom: "1rem" }}>
-          Pick a template to automatically assign daily chores to kids
+          Choose how chores are assigned to kids
         </p>
 
-        {activeRotation ? (
-          <div class="rotation-active">
-            {(() => {
-              const preset = getPresetByKey(activeRotation.active_preset);
-              return preset ? (
-                <>
-                  <div class="rotation-badge" style={{ borderLeft: `4px solid ${preset.color || '#10b981'}` }}>
-                    <span class="rotation-icon">{preset.icon}</span>
-                    <div>
-                      <strong>{preset.name}</strong>
-                      <p style={{ margin: 0, fontSize: "0.8rem", opacity: 0.7 }}>
-                        Started {activeRotation.start_date}
-                      </p>
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}>
-                    <button class="btn btn-outline" onClick={openRotationModal}>
-                      Change Template
-                    </button>
-                    <button class="btn btn-outline" style={{ color: "var(--color-warning)" }} onClick={handleRemoveRotation}>
-                      Remove
-                    </button>
-                  </div>
-                </>
-              ) : null;
-            })()}
-          </div>
-        ) : (
-          <button class="btn btn-primary" onClick={openRotationModal}>
-            Set Up Chore Rotation
-          </button>
+        <div class="rotation-presets">
+          {/* Manual (Default) Option */}
+          <label
+            class={`rotation-preset-option ${!activeRotation ? 'selected' : ''}`}
+            style={{ borderLeft: '4px solid #6b7280' }}
+          >
+            <input
+              type="radio"
+              name="assignment-mode"
+              value="manual"
+              checked={!activeRotation}
+              onChange={handleRemoveRotation}
+            />
+            <span class="preset-icon">📝</span>
+            <div class="preset-info">
+              <strong>Manual (Default)</strong>
+              <p>You create and assign chores yourself</p>
+              <a
+                href="/parent/dashboard"
+                class="manage-chores-link"
+                onClick={(e) => e.stopPropagation()}
+              >
+                View Dashboard →
+              </a>
+            </div>
+          </label>
+
+          {/* Template Options */}
+          {ROTATION_PRESETS.filter(p => children.length >= p.min_children && children.length <= p.max_children).map((preset) => (
+            <label
+              key={preset.key}
+              class={`rotation-preset-option ${activeRotation?.active_preset === preset.key ? 'selected' : ''}`}
+              style={{ borderLeft: `4px solid ${preset.color || '#ccc'}` }}
+            >
+              <input
+                type="radio"
+                name="assignment-mode"
+                value={preset.key}
+                checked={activeRotation?.active_preset === preset.key}
+                onChange={() => {
+                  setSelectedPreset(preset.key);
+                  setChildSlots({});
+                  setShowRotationModal(true);
+                }}
+              />
+              <span class="preset-icon">{preset.icon}</span>
+              <div class="preset-info">
+                <strong>{preset.name}</strong>
+                <p>{preset.description}</p>
+              </div>
+            </label>
+          ))}
+        </div>
+
+        {activeRotation && (
+          <p style={{ fontSize: "0.75rem", color: "var(--color-text-light)", marginTop: "0.5rem" }}>
+            Started {activeRotation.start_date}
+          </p>
         )}
       </div>
 
@@ -812,39 +839,13 @@ export default function FamilySettings({ family, members, settings }: FamilySett
         </div>
       )}
 
-      {/* Rotation Template Modal */}
-      {showRotationModal && (
+      {/* Rotation Template Modal - Slot Assignment */}
+      {showRotationModal && selectedPreset && (
         <div class="modal-overlay">
           <div class="modal">
-            <h3>📋 Choose Chore Template</h3>
+            <h3>📋 Set Up {getPresetByKey(selectedPreset)?.name}</h3>
 
-            <div class="rotation-presets">
-              {ROTATION_PRESETS.filter(p => children.length >= p.min_children && children.length <= p.max_children).map((preset) => (
-                <label
-                  key={preset.key}
-                  class={`rotation-preset-option ${selectedPreset === preset.key ? 'selected' : ''}`}
-                  style={{ borderLeft: `4px solid ${preset.color || '#ccc'}` }}
-                >
-                  <input
-                    type="radio"
-                    name="preset"
-                    value={preset.key}
-                    checked={selectedPreset === preset.key}
-                    onChange={() => {
-                      setSelectedPreset(preset.key);
-                      setChildSlots({});
-                    }}
-                  />
-                  <span class="preset-icon">{preset.icon}</span>
-                  <div class="preset-info">
-                    <strong>{preset.name}</strong>
-                    <p>{preset.description}</p>
-                  </div>
-                </label>
-              ))}
-            </div>
-
-            {selectedPreset && (() => {
+            {(() => {
               const preset = getPresetByKey(selectedPreset);
               if (!preset) return null;
               const slots = getPresetSlots(preset);
@@ -1486,6 +1487,19 @@ export default function FamilySettings({ family, members, settings }: FamilySett
           margin: 0;
           font-size: 0.8rem;
           color: var(--color-text-light);
+        }
+
+        .manage-chores-link {
+          display: inline-block;
+          margin-top: 0.5rem;
+          font-size: 0.8rem;
+          color: var(--color-primary);
+          text-decoration: none;
+          font-weight: 500;
+        }
+
+        .manage-chores-link:hover {
+          text-decoration: underline;
         }
 
         .slot-mapping {
