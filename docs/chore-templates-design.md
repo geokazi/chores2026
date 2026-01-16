@@ -756,6 +756,94 @@ Chore Templates allow families to pick and apply pre-built chore schedules that 
 
 ---
 
+## Kid Dashboard UX: Rotation Chores Integration
+
+### Decision: **Integrated Display** (Not Separate Section)
+
+Rotation chores appear in the same "Today's Chores" list as manually-assigned chores. This maintains simplicity and avoids confusing kids with multiple chore sections.
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    KID DASHBOARD - ROTATION CHORES                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   DISPLAY STRATEGY: Unified Chore List                                      │
+│   ════════════════════════════════════                                      │
+│                                                                             │
+│   ┌─────────────────────────────────────────────────────────────────────┐   │
+│   │  TODAY'S CHORES                                                     │   │
+│   │  ───────────────────────────────────────────────────────────────    │   │
+│   │                                                                     │   │
+│   │  ┌───────────────────────────────────────────────────────────────┐  │   │
+│   │  │  🔄 🍽️ Dishes                                          +2 pts │  │   │
+│   │  │      From: Smart Family Rotation                              │  │   │
+│   │  │  ┌─────────────────────────────────────────────────────────┐  │  │   │
+│   │  │  │              ✨ I Did This!                             │  │  │   │
+│   │  │  └─────────────────────────────────────────────────────────┘  │  │   │
+│   │  └───────────────────────────────────────────────────────────────┘  │   │
+│   │                                                                     │   │
+│   │  ┌───────────────────────────────────────────────────────────────┐  │   │
+│   │  │  🔄 🐕 Walk dog                                         +1 pt │  │   │
+│   │  │      From: Smart Family Rotation                              │  │   │
+│   │  │  ┌─────────────────────────────────────────────────────────┐  │  │   │
+│   │  │  │              ✨ I Did This!                             │  │  │   │
+│   │  │  └─────────────────────────────────────────────────────────┘  │  │   │
+│   │  └───────────────────────────────────────────────────────────────┘  │   │
+│   │                                                                     │   │
+│   │  ┌───────────────────────────────────────────────────────────────┐  │   │
+│   │  │  📝 Take out trash                                      +2 pts │  │   │
+│   │  │      Manually assigned by Dad                                 │  │   │
+│   │  │  ┌─────────────────────────────────────────────────────────┐  │  │   │
+│   │  │  │              ✨ I Did This!                             │  │  │   │
+│   │  │  └─────────────────────────────────────────────────────────┘  │  │   │
+│   │  └───────────────────────────────────────────────────────────────┘  │   │
+│   │                                                                     │   │
+│   └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+│   ───────────────────────────────────────────────────────────────────────   │
+│                                                                             │
+│   VISUAL INDICATORS:                                                        │
+│   ══════════════════                                                        │
+│                                                                             │
+│   🔄  Rotation icon prefix - indicates chore from active template           │
+│   📝  Manual icon prefix - indicates manually assigned chore (optional)     │
+│                                                                             │
+│   "From: Smart Family Rotation" - subtle source label (collapsed by default)│
+│                                                                             │
+│   ───────────────────────────────────────────────────────────────────────   │
+│                                                                             │
+│   ORDERING PRIORITY:                                                        │
+│   ══════════════════                                                        │
+│                                                                             │
+│   1. Manual chores with due time (sorted by time)                           │
+│   2. Rotation chores (sorted by point value, highest first)                 │
+│   3. Manual chores without due time                                         │
+│                                                                             │
+│   WHY: Manual time-sensitive chores take priority, then rotation schedule   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Implementation Notes
+
+| Aspect | Decision |
+|--------|----------|
+| **Source badge** | Optional "🔄" prefix, subtle "From: Template Name" label |
+| **Completion flow** | Same as manual chores - uses existing ChoreService |
+| **Points** | From preset definition, not editable per-instance |
+| **Ordering** | Manual due-time chores first, then rotation by points |
+
+### What We're NOT Doing
+
+```
+❌ Separate "Rotation Chores" section - Adds complexity, confuses kids
+❌ Different completion UI for rotation chores - Inconsistent UX
+❌ Editable points per rotation chore - Defeats purpose of standardized templates
+❌ Color-coded rotation chores - Over-designed, adds visual noise
+```
+
+---
+
 ## Implementation Structure (Minimal)
 
 ```
@@ -789,11 +877,12 @@ Chore Templates allow families to pick and apply pre-built chore schedules that 
 │   API                                                                       │
 │   ═══                                                                       │
 │                                                                             │
-│   routes/api/rotation/apply.ts         ~40 lines   Single endpoint          │
+│   routes/api/rotation/apply.ts         ~100 lines  POST/DELETE endpoints    │
+│   routes/api/rotation/status.ts        ~95 lines   GET current status       │
 │                                                                             │
 │   ───────────────────────────────────────────────────────────────────────   │
 │                                                                             │
-│   TOTAL: ~560 lines across 6 files                                          │
+│   TOTAL: ~650 lines across 7 files                                          │
 │   Largest file: ~150 lines (well under 500 limit)                           │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -808,6 +897,74 @@ Chore Templates allow families to pick and apply pre-built chore schedules that 
 ❌ islands/TemplatePreview.tsx         - No complex preview (just description)
 ❌ islands/ChildMappingModal.tsx       - No new island (inline in Settings)
 ❌ Database table for templates        - Static TypeScript is sufficient
+```
+
+---
+
+## API Reference
+
+### POST /api/rotation/apply
+
+Apply a rotation preset to the family.
+
+**Request Body:**
+```json
+{
+  "preset_key": "smart_rotation",
+  "child_slots": [
+    { "slot": "Child A", "profile_id": "uuid-1" },
+    { "slot": "Child B", "profile_id": "uuid-2" }
+  ]
+}
+```
+
+**Validation Rules:**
+- Preset must exist in `ROTATION_PRESETS`
+- Child count must be within preset's `min_children` - `max_children` range
+- Slot count must match preset's required slots
+- **No duplicate profile_ids** (same child can't fill multiple slots)
+- **All profile_ids must belong to the authenticated family**
+- **Only children can be assigned** (parent profiles rejected)
+
+**Response:** `{ success: true, preset: "...", start_date: "YYYY-MM-DD" }`
+
+### DELETE /api/rotation/apply
+
+Remove the active rotation preset from the family.
+
+**Response:** `{ success: true }`
+
+### GET /api/rotation/status
+
+Get the current rotation configuration for the family.
+
+**Response (active):**
+```json
+{
+  "active": true,
+  "preset": {
+    "key": "smart_rotation",
+    "name": "Smart Family Rotation",
+    "icon": "🔄",
+    "description": "Biweekly rotation...",
+    "cycle_type": "biweekly"
+  },
+  "start_date": "2026-01-15",
+  "current_week_type": "cleaning",
+  "badge": { "badge": "🧹 CLEANING WEEK", "context": "Week 1 of 2" },
+  "child_mappings": [
+    { "slot": "Child A", "profile_id": "...", "name": "Emma" },
+    { "slot": "Child B", "profile_id": "...", "name": "Noah" }
+  ]
+}
+```
+
+**Response (inactive):**
+```json
+{
+  "active": false,
+  "message": "No rotation preset configured"
+}
 ```
 
 ---

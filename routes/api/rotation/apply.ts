@@ -1,6 +1,7 @@
 /**
  * API: Apply Rotation Preset
  * POST /api/rotation/apply
+ * DELETE /api/rotation/apply
  */
 
 import { Handlers } from "$fresh/server.ts";
@@ -19,10 +20,11 @@ export const handler: Handlers = {
   async POST(req) {
     try {
       const session = await getAuthenticatedSession(req);
-      if (!session?.family_id) {
+      if (!session.isAuthenticated || !session.family) {
         return Response.json({ error: "Unauthorized" }, { status: 401 });
       }
 
+      const familyId = session.family.id;
       const body: ApplyRequest = await req.json();
       const { preset_key, child_slots } = body;
 
@@ -47,41 +49,85 @@ export const handler: Handlers = {
         }, { status: 400 });
       }
 
-      // Build config
+      // Validate no duplicate profile_ids
+      const profileIds = child_slots.map(s => s.profile_id);
+      const uniqueProfileIds = new Set(profileIds);
+      if (uniqueProfileIds.size !== profileIds.length) {
+        return Response.json({
+          error: "Each child can only be assigned to one slot"
+        }, { status: 400 });
+      }
+
+      // Validate all profile_ids belong to this family and are children
+      const supabase = getSupabaseClient();
+      const { data: profiles, error: profileError } = await supabase
+        .from('family_profiles')
+        .select('id, role')
+        .eq('family_id', familyId)
+        .in('id', profileIds);
+
+      if (profileError) {
+        console.error('Profile validation error:', profileError);
+        return Response.json({ error: "Failed to validate profiles" }, { status: 500 });
+      }
+
+      // Check all profiles were found and belong to family
+      if (!profiles || profiles.length !== profileIds.length) {
+        return Response.json({
+          error: "One or more profiles do not belong to this family"
+        }, { status: 400 });
+      }
+
+      // Check all profiles are children (not parents)
+      const nonChildren = profiles.filter(p => p.role !== 'child');
+      if (nonChildren.length > 0) {
+        return Response.json({
+          error: "Only children can be assigned to rotation slots"
+        }, { status: 400 });
+      }
+
+      // Build rotation config
       const config = buildRotationConfig(preset_key, child_slots);
 
-      // Save to JSONB using jsonb_set
-      const supabase = getSupabaseClient();
-      const { error } = await supabase.rpc('jsonb_set_nested', {
-        p_table: 'families',
-        p_id: session.family_id,
-        p_path: ['apps', 'choregami', 'rotation'],
-        p_value: config,
-      });
+      // Fetch current settings, merge, then update
+      const { data: family, error: fetchError } = await supabase
+        .from('families')
+        .select('settings')
+        .eq('id', familyId)
+        .single();
 
-      // Fallback: direct update if RPC not available
-      if (error?.message?.includes('function')) {
-        const { error: updateError } = await supabase
-          .from('families')
-          .update({
-            settings: supabase.sql`
-              jsonb_set(
-                COALESCE(settings, '{}'::jsonb),
-                '{apps,choregami,rotation}',
-                ${JSON.stringify(config)}::jsonb
-              )
-            `
-          })
-          .eq('id', session.family_id);
+      if (fetchError) {
+        console.error('Rotation fetch error:', fetchError);
+        return Response.json({ error: "Failed to fetch family settings" }, { status: 500 });
+      }
 
-        if (updateError) {
-          console.error('Rotation apply error:', updateError);
-          return Response.json({ error: "Failed to save rotation config" }, { status: 500 });
-        }
-      } else if (error) {
-        console.error('Rotation apply error:', error);
+      const currentSettings = family?.settings || {};
+      const updatedSettings = {
+        ...currentSettings,
+        apps: {
+          ...currentSettings.apps,
+          choregami: {
+            ...currentSettings.apps?.choregami,
+            rotation: config,
+          },
+        },
+      };
+
+      const { error: updateError } = await supabase
+        .from('families')
+        .update({ settings: updatedSettings })
+        .eq('id', familyId);
+
+      if (updateError) {
+        console.error('Rotation apply error:', updateError);
         return Response.json({ error: "Failed to save rotation config" }, { status: 500 });
       }
+
+      console.log('✅ Rotation preset applied:', {
+        family: session.family.name,
+        preset: preset_key,
+        children: child_slots.length,
+      });
 
       return Response.json({
         success: true,
@@ -97,23 +143,49 @@ export const handler: Handlers = {
   async DELETE(req) {
     try {
       const session = await getAuthenticatedSession(req);
-      if (!session?.family_id) {
+      if (!session.isAuthenticated || !session.family) {
         return Response.json({ error: "Unauthorized" }, { status: 401 });
       }
 
-      // Remove rotation config from JSONB
+      const familyId = session.family.id;
       const supabase = getSupabaseClient();
-      const { error } = await supabase
-        .from('families')
-        .update({
-          settings: supabase.sql`settings #- '{apps,choregami,rotation}'`
-        })
-        .eq('id', session.family_id);
 
-      if (error) {
-        console.error('Rotation remove error:', error);
+      // Fetch current settings
+      const { data: family, error: fetchError } = await supabase
+        .from('families')
+        .select('settings')
+        .eq('id', familyId)
+        .single();
+
+      if (fetchError) {
+        console.error('Rotation fetch error:', fetchError);
+        return Response.json({ error: "Failed to fetch family settings" }, { status: 500 });
+      }
+
+      // Remove rotation from choregami settings
+      const currentSettings = family?.settings || {};
+      const choregamiSettings = { ...currentSettings.apps?.choregami };
+      delete choregamiSettings.rotation;
+
+      const updatedSettings = {
+        ...currentSettings,
+        apps: {
+          ...currentSettings.apps,
+          choregami: choregamiSettings,
+        },
+      };
+
+      const { error: updateError } = await supabase
+        .from('families')
+        .update({ settings: updatedSettings })
+        .eq('id', familyId);
+
+      if (updateError) {
+        console.error('Rotation remove error:', updateError);
         return Response.json({ error: "Failed to remove rotation config" }, { status: 500 });
       }
+
+      console.log('✅ Rotation preset removed:', { family: session.family.name });
 
       return Response.json({ success: true });
     } catch (err) {
