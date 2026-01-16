@@ -208,16 +208,16 @@ Component (islands/FamilySettings.tsx)
 
 ---
 
-## Gap 0: Routing Logic Not Implemented in Kid Dashboard
+## Gap 0: Routing Logic ✅ IMPLEMENTED
 
-### Current State
+### Implementation Status
 
 - ✅ `getRotationConfig()` function exists
 - ✅ `getChoresForChild()` function exists
-- ❌ Kid dashboard/API does NOT call these functions
-- ❌ No code checks `rotation !== null` to merge both chore sources
+- ✅ Kid API calls these functions (`routes/api/kids/chores.ts`)
+- ✅ Code checks `rotation !== null` to merge both chore sources
 
-### Required Implementation
+### Implementation (in `routes/api/kids/chores.ts`)
 
 ```typescript
 // In kid chores API or dashboard data fetching
@@ -318,12 +318,12 @@ Reasons:
 
 ---
 
-## Gap 1: Completion API (Missing)
+## Gap 1: Completion API ✅ IMPLEMENTED
 
-### Current State
-No endpoint exists to complete rotation chores.
+### Implementation Status
+Endpoint implemented at `routes/api/rotation/complete.ts` (137 lines).
 
-### Required: `/api/rotation/complete.ts`
+### Implementation: `/api/rotation/complete.ts`
 
 ```typescript
 // routes/api/rotation/complete.ts (~80 lines)
@@ -388,14 +388,15 @@ if (existingCompletion.data) {
 
 ---
 
-## Gap 2: Kid Dashboard UI Integration (Missing)
+## Gap 2: Kid Dashboard UI Integration ✅ IMPLEMENTED
 
-### Current State
-- `getChoresForChild()` exists in `rotation-service.ts`
-- Kid dashboard does NOT call it
-- Rotation chores are not displayed
+### Implementation Status
+- ✅ `getChoresForChild()` exists in `rotation-service.ts`
+- ✅ Kid API merges rotation chores (`routes/api/kids/chores.ts`)
+- ✅ ChoreList displays rotation chores with 🔄 badge (`islands/ChoreList.tsx`)
+- ✅ Different completion handlers for manual vs rotation chores
 
-### Required Changes
+### Implementation Details
 
 #### 2a. Data Fetching Route
 
@@ -489,12 +490,13 @@ const handleComplete = async (chore) => {
 
 ---
 
-## Gap 3: TransactionService Modification (Minor)
+## Gap 3: TransactionService Modification ✅ IMPLEMENTED
 
-### Current State
-`recordChoreCompletion()` requires `choreAssignmentId` as first parameter.
+### Implementation Status
+`recordChoreCompletion()` now accepts `null` for `choreAssignmentId` and optional `metadata`.
+This change is **backwards compatible** - see detailed analysis in "Backwards Compatibility" section below.
 
-### Required: Support Null Assignment ID
+### Implementation: Support Null Assignment ID
 
 ```typescript
 // In lib/services/transaction-service.ts
@@ -530,12 +532,13 @@ async recordChoreCompletion(
 
 ---
 
-## Gap 4: Completion Status Tracking (Missing)
+## Gap 4: Completion Status Tracking ✅ IMPLEMENTED
 
-### Problem
-How do we know which rotation chores are already completed today?
+### Implementation Status
+Completion status is tracked via transaction metadata queries.
+Implemented in both `routes/api/rotation/today.ts` and `routes/api/kids/chores.ts`.
 
-### Solution: Query Transactions
+### Implementation: Query Transactions
 
 ```typescript
 // In API or rotation-service.ts
