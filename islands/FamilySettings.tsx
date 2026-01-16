@@ -659,8 +659,8 @@ export default function FamilySettings({ family, members, settings }: FamilySett
                             disabled={!isEnabled}
                             class="chore-points-select"
                           >
-                            {[1, 2, 3, 4, 5].map(p => (
-                              <option key={p} value={p}>{p} pt{p > 1 ? 's' : ''}</option>
+                            {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(p => (
+                              <option key={p} value={p}>{p} pt{p !== 1 ? 's' : ''}</option>
                             ))}
                           </select>
                         </div>
@@ -698,8 +698,8 @@ export default function FamilySettings({ family, members, settings }: FamilySett
                         onChange={(e) => setNewChorePoints(e.currentTarget.value)}
                         class="chore-points-select"
                       >
-                        {[1, 2, 3, 4, 5].map(p => (
-                          <option key={p} value={p}>{p} pt{p > 1 ? 's' : ''}</option>
+                        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(p => (
+                          <option key={p} value={p}>{p} pt{p !== 1 ? 's' : ''}</option>
                         ))}
                       </select>
                       <button
@@ -1015,7 +1015,7 @@ export default function FamilySettings({ family, members, settings }: FamilySett
                 <input
                   type="number"
                   value={adjustmentAmount}
-                  onChange={(e) => setAdjustmentAmount(e.target.value)}
+                  onChange={(e) => setAdjustmentAmount((e.target as HTMLInputElement).value)}
                   placeholder="Enter amount"
                 />
                 
@@ -1023,7 +1023,7 @@ export default function FamilySettings({ family, members, settings }: FamilySett
                 <input
                   type="text"
                   value={adjustmentReason}
-                  onChange={(e) => setAdjustmentReason(e.target.value)}
+                  onChange={(e) => setAdjustmentReason((e.target as HTMLInputElement).value)}
                   placeholder="Why are you adjusting points?"
                 />
               </div>

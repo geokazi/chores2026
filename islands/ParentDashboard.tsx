@@ -217,19 +217,20 @@ export default function ParentDashboard(
     } catch (error) {
       console.error('❌ FamilyScore sync failed:', error);
       setSyncStatus('error');
-      
+
       // Provide more helpful error messages
       let errorMessage = 'Sync failed';
-      if (error.message.includes('401')) {
+      const errMsg = error instanceof Error ? error.message : String(error);
+      if (errMsg.includes('401')) {
         errorMessage = 'Sync failed: Authentication error';
-      } else if (error.message.includes('403')) {
+      } else if (errMsg.includes('403')) {
         errorMessage = 'Sync failed: Permission denied';
-      } else if (error.message.includes('404')) {
+      } else if (errMsg.includes('404')) {
         errorMessage = 'Sync failed: FamilyScore service not found';
-      } else if (error.message.includes('500')) {
+      } else if (errMsg.includes('500')) {
         errorMessage = 'Sync failed: Server error, please try again';
       } else {
-        errorMessage = `Sync failed: ${error.message}`;
+        errorMessage = `Sync failed: ${errMsg}`;
       }
       
       setSyncMessage(errorMessage);

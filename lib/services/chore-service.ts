@@ -170,7 +170,7 @@ export class ChoreService {
     }
 
     // Filter chores based on type and due date
-    const filteredChores = (data || []).filter(chore => {
+    const filteredChores = (data || []).filter((chore: any) => {
       if (!chore.due_date) return false;
       
       const dueDate = new Date(chore.due_date);
@@ -524,8 +524,8 @@ export class ChoreService {
 
     // Get family profiles separately
     const profileIds = [...new Set([
-      ...assignments.map(a => a.assigned_to_profile_id).filter(Boolean),
-      ...assignments.map(a => a.completed_by_profile_id).filter(Boolean),
+      ...assignments.map((a: any) => a.assigned_to_profile_id).filter(Boolean),
+      ...assignments.map((a: any) => a.completed_by_profile_id).filter(Boolean),
     ])];
 
     const { data: profiles } = await this.client
@@ -534,9 +534,9 @@ export class ChoreService {
       .in("id", profileIds);
 
     // Map profiles to assignments
-    const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+    const profileMap = new Map(profiles?.map((p: any) => [p.id, p]) || []);
 
-    return assignments.map(assignment => ({
+    return assignments.map((assignment: any) => ({
       ...assignment,
       assigned_to_profile: profileMap.get(assignment.assigned_to_profile_id) || null,
       completed_by_profile: profileMap.get(assignment.completed_by_profile_id) || null,
@@ -570,7 +570,7 @@ export class ChoreService {
     }
 
     // Get family profiles separately
-    const profileIds = [...new Set(assignments.map(a => a.assigned_to_profile_id).filter(Boolean))];
+    const profileIds = [...new Set(assignments.map((a: any) => a.assigned_to_profile_id).filter(Boolean))];
 
     const { data: profiles } = await this.client
       .from("family_profiles")
@@ -578,9 +578,9 @@ export class ChoreService {
       .in("id", profileIds);
 
     // Map profiles to assignments
-    const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+    const profileMap = new Map(profiles?.map((p: any) => [p.id, p]) || []);
 
-    return assignments.map(assignment => ({
+    return assignments.map((assignment: any) => ({
       ...assignment,
       assigned_to_profile: profileMap.get(assignment.assigned_to_profile_id) || null,
     }));
@@ -1089,7 +1089,7 @@ export class ChoreService {
     }
 
     const pointsPerDollar = settings.points_per_dollar || 1;
-    const earnedPoints = txns?.reduce((sum, t) => sum + t.points_change, 0) || 0;
+    const earnedPoints = txns?.reduce((sum: number, t: any) => sum + t.points_change, 0) || 0;
     const earnedDollars = Math.round(earnedPoints / pointsPerDollar);
 
     // Check if already awarded this week
@@ -1196,7 +1196,7 @@ export class ChoreService {
       .gt("points_change", 0);
 
     const pointsPerDollar = settings.points_per_dollar || 1;
-    const earnedPoints = txns?.reduce((sum, t) => sum + t.points_change, 0) || 0;
+    const earnedPoints = txns?.reduce((sum: number, t: any) => sum + t.points_change, 0) || 0;
     const progress = Math.round(earnedPoints / pointsPerDollar);
 
     // Check if already achieved this week
@@ -1262,11 +1262,11 @@ export class ChoreService {
     }
 
     // Create profile map (only children)
-    const childProfileMap = new Map(profiles.map(p => [p.id, p.name]));
-    const childIds = new Set(profiles.map(p => p.id));
+    const childProfileMap = new Map<string, string>(profiles.map((p: any) => [p.id, p.name]));
+    const childIds = new Set<string>(profiles.map((p: any) => p.id));
 
     // Filter transactions to only include children
-    const data = txData.filter(tx => childIds.has(tx.profile_id));
+    const data = txData.filter((tx: any) => childIds.has(tx.profile_id));
 
     const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -1278,7 +1278,7 @@ export class ChoreService {
     const personDayMap = new Map<string, Map<number, number>>();
     const familyDayTotals = new Array(7).fill(0);
 
-    for (const tx of data) {
+    for (const tx of data as any[]) {
       const name = childProfileMap.get(tx.profile_id) || "Unknown";
       const dayNum = new Date(tx.created_at).getDay();
 
