@@ -1034,8 +1034,30 @@ Template auto-appears in selection modal.
 
 ---
 
+## Implementation Status
+
+**Status**: ✅ **COMPLETE** (January 15, 2026)
+
+All rotation chore functionality is fully implemented and tested:
+
+| Component | Status | Location |
+|-----------|--------|----------|
+| Preset definitions | ✅ | `lib/data/rotation-presets.ts` |
+| Rotation service | ✅ | `lib/services/rotation-service.ts` |
+| Apply/Delete preset | ✅ | `routes/api/rotation/apply.ts` |
+| Get status | ✅ | `routes/api/rotation/status.ts` |
+| Complete chore | ✅ | `routes/api/rotation/complete.ts` |
+| Today's chores | ✅ | `routes/api/rotation/today.ts` |
+| Kid dashboard integration | ✅ | `routes/api/kids/chores.ts`, `islands/ChoreList.tsx` |
+| TransactionService | ✅ | Backwards-compatible null support |
+
+See [Implementation Gaps Document](./chore-templates-gaps.md) for detailed implementation notes and backwards compatibility analysis.
+
+---
+
 ## References
 
+- [Implementation Gaps & Completion](./chore-templates-gaps.md) - Detailed implementation notes
 - [JSONB Schema Design](./chore-templates-jsonb-schema.md)
 - [Existing JSONB Settings](./jsonb-settings-architecture.md)
 - [SQL Migration](../sql/20260114_jsonb_settings.sql)

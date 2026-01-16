@@ -1,25 +1,28 @@
 # Chore Templates - Implementation Gaps & Completion Plan
 
 **Document Created**: January 15, 2026
-**Status**: Gaps Identified - Ready for Implementation
+**Status**: ✅ **COMPLETE** - All gaps implemented
 **Architecture Decision**: Virtual (Compute on Load) + Direct Transaction Recording
+**Completed**: January 15, 2026
 
 ---
 
 ## Executive Summary
 
-The chore templates feature is ~70% complete. Core infrastructure is solid:
+The chore templates feature is **100% complete**. All gaps have been implemented:
 
 - ✅ Static preset definitions (3 templates)
 - ✅ Rotation service with schedule lookups
 - ✅ Apply/Delete/Status API endpoints
 - ✅ FamilySettings UI for template selection
+- ✅ Completion API for rotation chores (`/api/rotation/complete`)
+- ✅ Kid dashboard UI integration (merged chore display)
+- ✅ TransactionService connection (backwards-compatible)
 
-**Missing "last mile" work:**
-
-- ❌ Completion API for rotation chores
-- ❌ Kid dashboard UI integration
-- ❌ TransactionService connection
+**Implementation commits:**
+- `198c2be` 📝 Document chore templates gaps & add status endpoint
+- `99d3327` ✅ Add tests for rotation API endpoints
+- `59e8a50` ✨ Implement rotation chores end-to-end (Gap 0-4)
 
 ---
 
@@ -568,45 +571,148 @@ const rotationChores = getChoresForChild(config, profileId).map(chore => ({
 
 ### Summary of All Gaps
 
-| Gap | Description | Status | Effort |
+| Gap | Description | Status | Actual |
 |-----|-------------|--------|--------|
-| **Gap 0** | Routing logic (check `getRotationConfig()` in kid API) | ❌ Missing | ~20 lines |
-| **Gap 1** | Completion API (`/api/rotation/complete`) | ❌ Missing | ~80 lines |
-| **Gap 2** | Kid dashboard UI integration | ❌ Missing | ~50 lines |
-| **Gap 3** | TransactionService null assignment support | ❌ Missing | ~10 lines |
-| **Gap 4** | Completion status tracking query | ❌ Missing | ~30 lines |
+| **Gap 0** | Routing logic (check `getRotationConfig()` in kid API) | ✅ Complete | `routes/api/kids/chores.ts` |
+| **Gap 1** | Completion API (`/api/rotation/complete`) | ✅ Complete | `routes/api/rotation/complete.ts` |
+| **Gap 2** | Kid dashboard UI integration | ✅ Complete | `islands/ChoreList.tsx` |
+| **Gap 3** | TransactionService null assignment support | ✅ Complete | Backwards-compatible change |
+| **Gap 4** | Completion status tracking query | ✅ Complete | `routes/api/rotation/today.ts` |
 
-### New Files Required
+### New Files Created
 
-| File | Lines Est. | Purpose | Gap |
-|------|------------|---------|-----|
-| `routes/api/rotation/complete.ts` | ~80 | Complete rotation chore + idempotency | Gap 1 |
-| `routes/api/rotation/today.ts` | ~60 | Get today's rotation chores with status | Gap 0, 4 |
+| File | Lines | Purpose | Gap |
+|------|-------|---------|-----|
+| `routes/api/rotation/complete.ts` | 137 | Complete rotation chore + idempotency | Gap 1 |
+| `routes/api/rotation/today.ts` | 134 | Get today's rotation chores with status | Gap 0, 4 |
 
-### Existing Files to Modify
+### Existing Files Modified
 
 | File | Changes | Gap |
 |------|---------|-----|
 | `lib/services/transaction-service.ts` | Allow null `choreAssignmentId`, add metadata param | Gap 3 |
-| `islands/KidDashboard.tsx` | Fetch & display rotation chores, wire completion | Gap 2 |
-| `routes/api/kid/chores.ts` | Include rotation chores in response (or use `/api/rotation/today`) | Gap 0 |
+| `islands/ChoreList.tsx` | Handle rotation completion, show 🔄 badge | Gap 2 |
+| `routes/api/kids/chores.ts` | Merge manual + rotation chores in response | Gap 0 |
 
-### Total New Code
+### Actual Code Added
 
 ```
 New files:
-  routes/api/rotation/complete.ts    ~80 lines
-  routes/api/rotation/today.ts       ~60 lines
+  routes/api/rotation/complete.ts    137 lines
+  routes/api/rotation/today.ts       134 lines
                                     ─────────
-                                    ~140 lines
+                                     271 lines
 
 Modifications:
-  transaction-service.ts             ~10 lines
-  KidDashboard.tsx                   ~50 lines
+  transaction-service.ts             +10 lines
+  ChoreList.tsx                      +35 lines
+  routes/api/kids/chores.ts          +70 lines
                                     ─────────
-                                    ~60 lines
+                                    +115 lines
 
-TOTAL: ~200 lines (well under 500 line limit)
+TOTAL: ~416 lines added
+```
+
+---
+
+## Backwards Compatibility: TransactionService (Gap 3)
+
+The `recordChoreCompletion` method was modified to support rotation chores **without breaking existing callers**.
+
+### Change Summary
+
+**Before:**
+```typescript
+async recordChoreCompletion(
+  choreAssignmentId: string,      // Required string
+  pointValue: number,
+  choreName: string,
+  profileId: string,
+  familyId: string,
+): Promise<void>
+```
+
+**After:**
+```typescript
+async recordChoreCompletion(
+  choreAssignmentId: string | null,  // Now accepts null
+  pointValue: number,
+  choreName: string,
+  profileId: string,
+  familyId: string,
+  metadata?: Record<string, unknown>, // NEW: Optional metadata
+): Promise<void>
+```
+
+### Why It's Backwards Compatible
+
+1. **Type Widening**: `string` is assignable to `string | null`
+   - Existing callers passing a UUID string still work
+   - TypeScript allows passing a narrower type where a wider type is expected
+
+2. **Optional Parameter**: `metadata?` uses the `?` suffix
+   - Existing callers don't need to pass it
+   - Defaults to `undefined` which spreads as no-op in the metadata object
+
+3. **Internal Handling Already Existed**:
+   - `createTransaction` already used `choreAssignmentId ?? null`
+   - The database column `chore_assignment_id` already allowed NULL
+
+### Existing Caller (Unchanged)
+
+```typescript
+// routes/api/chores/[chore_id]/complete.ts:119
+await transactionService.recordChoreCompletion(
+  choreId,           // string ✓ (assignable to string | null)
+  chore.point_value,
+  chore.chore_template?.name || "Chore",
+  userId,
+  user.family_id,
+  // no metadata ✓ (parameter is optional)
+);
+```
+
+### New Rotation Caller
+
+```typescript
+// routes/api/rotation/complete.ts:110
+await transactionService.recordChoreCompletion(
+  null,              // null ✓ (rotation chores have no assignment)
+  chore.points,
+  chore.name,
+  profileId,
+  familyId,
+  {                  // metadata ✓ (for idempotency tracking)
+    rotation_preset: config.active_preset,
+    rotation_chore: chore_key,
+    rotation_date: date,
+    source: "rotation_template"
+  }
+);
+```
+
+### Metadata Usage
+
+The optional metadata is merged into the transaction record:
+
+```typescript
+// In createTransaction()
+metadata: {
+  source: "chores2026",
+  timestamp: new Date().toISOString(),
+  ...request.metadata,  // Spread custom metadata (no-op if undefined)
+},
+```
+
+This allows rotation chores to be identified and queried for idempotency:
+
+```typescript
+// Check if rotation chore already completed today
+.contains("metadata", {
+  rotation_preset: preset_key,
+  rotation_chore: chore_key,
+  rotation_date: date
+})
 ```
 
 ---
