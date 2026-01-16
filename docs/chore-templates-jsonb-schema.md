@@ -1,11 +1,11 @@
 # Chore Templates - JSONB Schema Design
 
 **Document Created**: January 15, 2026
-**Updated**: January 15, 2026
+**Updated**: January 16, 2026
 **Status**: Design Complete
-**Architecture**: Zero New Tables - JSONB Only
+**Architecture**: Zero New Tables - Static TypeScript + JSONB Config
 
-## MVP Scope: 3 Daily Assignment Templates
+## MVP Scope: 3-5 Curated Templates (Static TypeScript)
 
 | Template | Key | Cycle | Kids | Description |
 |----------|-----|-------|------|-------------|
@@ -14,6 +14,44 @@
 | 🌱 Daily Basics | `daily_basics` | Daily | 2-3 | Same simple routine every day |
 
 **All three use the same data model**: `schedule[weekType][slot][day] = choreKeys[]`
+
+---
+
+## Scalability Decision
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    WHY STATIC TYPESCRIPT, NOT DATABASE                      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   QUESTION: What if we need 100 templates?                                  │
+│   ANSWER: We don't. 3-5 templates cover 80%+ of families.                   │
+│                                                                             │
+│   ───────────────────────────────────────────────────────────────────────   │
+│                                                                             │
+│   STATIC TYPESCRIPT (Current Approach)        DATABASE (Not Needed)         │
+│   ════════════════════════════════════        ══════════════════════        │
+│                                                                             │
+│   ✅ Zero runtime DB queries for templates    ❌ Query on every page load   │
+│   ✅ Type-safe template definitions           ❌ Runtime type validation    │
+│   ✅ Version controlled (git history)         ❌ Data migration complexity  │
+│   ✅ No bundle size issue with 3-5 templates  ❌ Lazy loading needed        │
+│   ✅ Instant deployment (code push)           ❌ Data seeding scripts       │
+│   ✅ Easy to review/audit template changes    ❌ Admin UI needed            │
+│                                                                             │
+│   ───────────────────────────────────────────────────────────────────────   │
+│                                                                             │
+│   IF CUSTOMIZATION NEEDED (Future):                                         │
+│   • Use JSONB customizations field (already in schema)                      │
+│   • Family tweaks preset, stored in their settings                          │
+│   • No new tables, no template proliferation                                │
+│                                                                             │
+│   IF 50+ TEMPLATES TRULY NEEDED (Unlikely):                                 │
+│   • Move to database + lazy loading                                         │
+│   • Only build if real usage data proves demand                             │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -181,12 +219,10 @@ export interface RotationPreset {
   name: string;                    // Display name
   description: string;             // Short description
   icon: string;                    // Emoji icon
+  color?: string;                  // Optional accent color (e.g., '#10b981')
 
-  // Metadata
+  // Metadata (simplified for MVP)
   difficulty: 'beginner' | 'intermediate' | 'advanced';
-  rating: number;                  // 1-5 stars
-  families_using: number;          // Social proof
-  setup_time_minutes: number;
 
   // Constraints
   min_children: number;
@@ -194,7 +230,7 @@ export interface RotationPreset {
   min_age?: number;
 
   // Schedule structure
-  cycle_type: 'daily' | 'weekly' | 'biweekly' | 'monthly' | 'quarterly';
+  cycle_type: 'daily' | 'weekly' | 'biweekly';
   week_types: string[];            // ['cleaning', 'non-cleaning'] or ['standard']
 
   // Categories for display
@@ -301,11 +337,9 @@ export const SMART_ROTATION_PRESET: RotationPreset = {
   name: 'Smart Family Rotation',
   description: 'Two-week cycle balancing cleaning intensity with lighter maintenance weeks.',
   icon: '🎯',
+  color: '#10b981',                // Emerald green
 
   difficulty: 'beginner',
-  rating: 4.8,
-  families_using: 1247,
-  setup_time_minutes: 15,
 
   min_children: 2,
   max_children: 4,
@@ -431,11 +465,9 @@ export const WEEKEND_WARRIOR_PRESET: RotationPreset = {
   name: 'Weekend Warrior',
   description: 'Light weekday chores, intensive weekend deep-cleaning.',
   icon: '⚡',
+  color: '#f59e0b',                // Amber
 
   difficulty: 'beginner',
-  rating: 4.6,
-  families_using: 892,
-  setup_time_minutes: 10,
 
   min_children: 2,
   max_children: 6,
@@ -519,11 +551,9 @@ export const DAILY_BASICS_PRESET: RotationPreset = {
   name: 'Daily Basics',
   description: 'Simple, consistent daily routine. Same chores every day builds habits.',
   icon: '🌱',
+  color: '#3b82f6',                // Blue
 
   difficulty: 'beginner',
-  rating: 4.9,
-  families_using: 1456,
-  setup_time_minutes: 5,
 
   min_children: 2,
   max_children: 3,
@@ -862,22 +892,31 @@ export const PRESET_CHORES: Record<string, ChoreDefinition[]> = {
 
 ---
 
-## Implementation Checklist
+## Implementation Checklist (Simplified)
 
 | Task | Lines Est. | File |
 |------|------------|------|
-| TypeScript types | ~80 | `lib/types/rotation.ts` |
-| Smart rotation preset | ~150 | `lib/data/presets/smart-rotation.ts` |
-| Preset registry + helpers | ~50 | `lib/data/rotation-presets.ts` |
-| Rotation service | ~100 | `lib/services/rotation-service.ts` |
-| API: list presets | ~20 | `routes/api/rotation/presets.ts` |
+| TypeScript types | ~50 | `lib/types/rotation.ts` |
+| Smart rotation preset | ~100 | `lib/data/presets/smart-rotation.ts` |
+| Weekend warrior preset | ~80 | `lib/data/presets/weekend-warrior.ts` |
+| Daily basics preset | ~60 | `lib/data/presets/daily-basics.ts` |
+| Preset registry + helpers | ~80 | `lib/data/rotation-presets.ts` |
+| Rotation service | ~80 | `lib/services/rotation-service.ts` |
 | API: apply preset | ~40 | `routes/api/rotation/apply.ts` |
-| Island: TemplateGallery | ~150 | `islands/templates/TemplateGallery.tsx` |
-| Island: TemplateCard | ~80 | `islands/templates/TemplateCard.tsx` |
-| Island: ChildMappingModal | ~120 | `islands/templates/ChildMappingModal.tsx` |
-| **Total** | **~790** | Split across 9 files |
+| FamilySettings addition | ~150 | `islands/FamilySettings.tsx` (modify existing) |
+| **Total** | **~640** | 7 files (1 modified, 6 new) |
 
-All files under 200 lines. No file exceeds 500 line limit.
+### What We're NOT Building
+
+```
+❌ routes/api/rotation/presets.ts    - Presets are static, no API needed
+❌ islands/templates/TemplateGallery.tsx  - Inline in FamilySettings
+❌ islands/templates/TemplateCard.tsx     - Inline in FamilySettings
+❌ islands/templates/ChildMappingModal.tsx - Inline in FamilySettings
+❌ Database table for templates            - Static TypeScript sufficient
+```
+
+All files under 150 lines. Total well under 500 line limit per module.
 
 ---
 

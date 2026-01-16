@@ -1,15 +1,15 @@
 # Chore Templates Feature Design
 
 **Document Created**: January 15, 2026
-**Updated**: January 15, 2026
+**Updated**: January 16, 2026
 **Status**: Design Complete - Ready for Implementation
-**Architecture**: JSONB-First, Zero New Tables
+**Architecture**: JSONB-First, Zero New Tables, Settings-Inline
 
 ## Executive Summary
 
-Chore Templates allow families to browse, preview, and apply pre-built chore schedules that automatically assign age-appropriate chores to their kids each day. This feature leverages the existing JSONB settings architecture to avoid table proliferation and code bloat.
+Chore Templates allow families to pick and apply pre-built chore schedules that automatically assign age-appropriate chores to their kids each day. This feature leverages the existing JSONB settings architecture and FamilySettings modal pattern.
 
-### MVP Scope: 3 Daily Assignment Templates
+### MVP Scope: 3-5 Curated Templates (Static TypeScript)
 
 | Template | Description | Kids | Cycle |
 |----------|-------------|------|-------|
@@ -17,48 +17,99 @@ Chore Templates allow families to browse, preview, and apply pre-built chore sch
 | ⚡ Weekend Warrior | Light weekdays, intensive weekends | 2-6 | Weekly |
 | 🌱 Daily Basics | Same simple routine every day | 2-3 | Daily |
 
-**All three templates use the same data model**: `schedule[weekType][slot][day] = choreKeys[]`
+**All templates use the same data model**: `schedule[weekType][slot][day] = choreKeys[]`
 
-### Out of Scope (Future Phases)
+### Scalability Philosophy
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         STAY SMALL - PARETO PRINCIPLE                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   3-5 curated templates cover 80%+ of families.                             │
+│   Don't build 100 templates for edge cases.                                 │
+│                                                                             │
+│   TIER 1: Curated Presets (NOW)                                             │
+│   ══════════════════════════════                                            │
+│   • 3-5 static TypeScript templates                                         │
+│   • Tested, optimized, maintained by us                                     │
+│   • Covers majority of family needs                                         │
+│                                                                             │
+│   TIER 2: Preset + Customize (FUTURE, if data shows need)                   │
+│   ═══════════════════════════════════════════════════════                   │
+│   • Family picks preset, then tweaks                                        │
+│   • Uses JSONB customizations field (already in schema)                     │
+│                                                                             │
+│   TIER 3: Custom Builder (UNLIKELY)                                         │
+│   ══════════════════════════════════                                        │
+│   • Only if Tier 1+2 prove insufficient                                     │
+│   • Build based on real usage data, not speculation                         │
+│                                                                             │
+│   ❌ AVOID: Template marketplace with 100 options = 80% effort, 20% value   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Out of Scope (Different Data Models)
 
 | Template | Reason |
 |----------|--------|
 | 🎓 Teen Independence | Goal-based model (flexible timing) ≠ daily assignments |
 | 🧹 Seasonal Deep Clean | Monthly/quarterly goals ≠ daily assignments |
-| Custom template builder | 20% effort wouldn't yield 80% value |
+| Custom template builder | Build only if usage data proves demand |
+| Database-stored templates | Static TypeScript is simpler, sufficient |
 
 ### Design Principles
 
 | Principle | Application |
 |-----------|-------------|
-| **20% effort, 80% value** | 3 templates, one unified model, ~790 lines total |
-| **No code bloat** | Max 500 lines per module, reuse existing patterns |
-| **Simplicity** | Pick template → map kids → done |
-| **Low cognitive load** | Same UI pattern for all templates, conditional badges |
-| **Architecture flexibility** | New templates = new JSON objects, no migrations |
+| **20% effort, 80% value** | 3 templates, one unified model, ~350 lines total |
+| **No code bloat** | Inline modal in FamilySettings, no new routes |
+| **Reuse existing patterns** | Same modal pattern as PIN/Point adjustment |
+| **Simplicity** | Pick template → map kids → done (set & forget) |
+| **Low cognitive load** | Radio buttons, not complex gallery |
+| **Architecture flexibility** | New templates = new .ts file + 2 lines in registry |
 
 ---
 
-## User Flow
+## User Flow (Settings-Only, Inline Modal)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        USER FLOW                                │
+│                  SIMPLIFIED USER FLOW                           │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
-│  Parent Dashboard                                               │
-│       │                                                         │
-│       ▼                                                         │
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐         │
-│  │  Template   │───▶│  Template   │───▶│    Map      │         │
-│  │  Gallery    │    │   Preview   │    │  Children   │         │
-│  └─────────────┘    └─────────────┘    └─────────────┘         │
-│                                               │                 │
-│                                               ▼                 │
-│                                        ┌─────────────┐         │
-│                                        │  Active!    │         │
-│                                        │  Dashboard  │         │
-│                                        └─────────────┘         │
+│   Parent goes to /parent/settings                               │
+│           │                                                     │
+│           ▼                                                     │
+│   ┌───────────────────────────────────┐                         │
+│   │ 📋 Chore Rotation Section         │                         │
+│   │ [Set Up Rotation] button          │                         │
+│   └───────────────────────────────────┘                         │
+│           │                                                     │
+│           ▼  (opens inline modal - same pattern as PIN modal)   │
+│   ┌───────────────────────────────────────────────────┐         │
+│   │ MODAL:                                            │         │
+│   │ ○ 🎯 Smart Family Rotation                        │         │
+│   │ ○ ⚡ Weekend Warrior                              │         │
+│   │ ● 🌱 Daily Basics (selected)                      │         │
+│   │                                                   │         │
+│   │ Assign kids:                                      │         │
+│   │ Child A → [Emma ▼]                                │         │
+│   │ Child B → [Liam ▼]                                │         │
+│   │                                                   │         │
+│   │ [Cancel]              [✅ Activate Template]      │         │
+│   └───────────────────────────────────────────────────┘         │
+│           │                                                     │
+│           ▼                                                     │
+│   ┌───────────────────────────────────┐                         │
+│   │ Settings shows active template    │                         │
+│   │ Kids see rotation chores daily    │                         │
+│   │                                   │                         │
+│   │ SET & FORGET - runs automatically │                         │
+│   └───────────────────────────────────┘                         │
+│                                                                 │
+│   NO separate routes. NO gallery page. ONE inline modal.        │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -705,19 +756,58 @@ Chore Templates allow families to browse, preview, and apply pre-built chore sch
 
 ---
 
-## Component Structure
+## Implementation Structure (Minimal)
 
 ```
-islands/
-├── templates/
-│   ├── TemplateGallery.tsx       # List 3 templates
-│   ├── TemplateCard.tsx          # Single template preview card
-│   ├── TemplatePreview.tsx       # Full details + sample schedule
-│   ├── ChildMappingModal.tsx     # Map slots to real kids
-│   └── ActiveTemplateCard.tsx    # Dashboard status card
-│
-├── KidDashboard.tsx              # (existing - add template badge)
-└── ParentDashboard.tsx           # (existing - add template section)
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         IMPLEMENTATION FILES                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   STATIC DATA (templates defined as TypeScript)                             │
+│   ═════════════════════════════════════════════                             │
+│                                                                             │
+│   lib/data/                                                                 │
+│   ├── rotation-presets.ts              ~80 lines   Registry + helpers       │
+│   └── presets/                                                              │
+│       ├── smart-rotation.ts            ~100 lines  Template definition      │
+│       ├── weekend-warrior.ts           ~80 lines   Template definition      │
+│       └── daily-basics.ts              ~60 lines   Template definition      │
+│                                                                             │
+│   lib/types/                                                                │
+│   └── rotation.ts                      ~50 lines   TypeScript interfaces    │
+│                                                                             │
+│   ───────────────────────────────────────────────────────────────────────   │
+│                                                                             │
+│   UI (inline in existing FamilySettings - same pattern as PIN modal)        │
+│   ════════════════════════════════════════════════════════════════════      │
+│                                                                             │
+│   islands/FamilySettings.tsx           +150 lines  Add rotation section     │
+│   (NO new islands. Inline modal.)                  + selection modal        │
+│                                                                             │
+│   ───────────────────────────────────────────────────────────────────────   │
+│                                                                             │
+│   API                                                                       │
+│   ═══                                                                       │
+│                                                                             │
+│   routes/api/rotation/apply.ts         ~40 lines   Single endpoint          │
+│                                                                             │
+│   ───────────────────────────────────────────────────────────────────────   │
+│                                                                             │
+│   TOTAL: ~560 lines across 6 files                                          │
+│   Largest file: ~150 lines (well under 500 limit)                           │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### What We're NOT Building
+
+```
+❌ routes/parent/templates.tsx         - No separate gallery route
+❌ islands/TemplateGallery.tsx         - No new island (inline in Settings)
+❌ islands/TemplateCard.tsx            - No new island (inline in Settings)
+❌ islands/TemplatePreview.tsx         - No complex preview (just description)
+❌ islands/ChildMappingModal.tsx       - No new island (inline in Settings)
+❌ Database table for templates        - Static TypeScript is sufficient
 ```
 
 ---
@@ -733,6 +823,57 @@ All three templates use the same kid dashboard UI. Only the badge changes:
 | Daily Basics | `🌟 DAILY ROUTINE` | "Same helpful habits every day!" |
 
 **~10 lines of conditional rendering.**
+
+---
+
+## Template Styling (Minimal)
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         TEMPLATE STYLING                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   MVP: Icon only (already in schema)                                        │
+│   ══════════════════════════════════                                        │
+│                                                                             │
+│   { key: 'daily_basics', icon: '🌱', ... }                                  │
+│                                                                             │
+│   ✅ Zero CSS complexity                                                    │
+│   ✅ Works in all contexts                                                  │
+│                                                                             │
+│   ───────────────────────────────────────────────────────────────────────   │
+│                                                                             │
+│   Optional: Accent color (if visual differentiation needed)                 │
+│   ═════════════════════════════════════════════════════════                 │
+│                                                                             │
+│   { key: 'daily_basics', icon: '🌱', color: '#10b981', ... }                │
+│                                                                             │
+│   Usage: Inline style, no CSS files                                         │
+│   <div style={{ borderLeft: `4px solid ${preset.color}` }}>                 │
+│                                                                             │
+│   ❌ AVOID: Full template themes (over-engineered, conflicts with app theme)│
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Adding New Templates (Developer Flow)
+
+```
+1. Create lib/data/presets/[template-name].ts (~60-100 lines)
+   - Define CHORES array
+   - Define PRESET metadata + schedule
+
+2. Add 2 lines to lib/data/rotation-presets.ts
+   - Import statement
+   - Add to ROTATION_PRESETS array
+
+3. Deploy
+
+NO database changes. NO API changes. NO UI changes.
+Template auto-appears in selection modal.
+```
 
 ---
 
