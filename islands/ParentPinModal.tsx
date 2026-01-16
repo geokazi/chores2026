@@ -22,18 +22,37 @@ interface Props {
   onSuccess: (enteredPin?: string) => void;
   onCancel: () => void;
   parentData: FamilyMember;
+  forceChangePin?: boolean; // Force PIN change mode (for default PIN scenario)
 }
 
-export default function ParentPinModal({ 
-  parentName, 
+export default function ParentPinModal({
+  parentName,
   operation,
-  onSuccess, 
+  onSuccess,
   onCancel,
-  parentData 
+  parentData,
+  forceChangePin = false
 }: Props) {
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
+
+  // First-time setup / PIN change modes
+  const [setupMode, setSetupMode] = useState<'verify' | 'setup_new' | 'confirm_new'>(
+    forceChangePin ? 'setup_new' : 'verify'
+  );
+  const [newPinToConfirm, setNewPinToConfirm] = useState("");
+
+  // Reset mode when forceChangePin prop changes
+  useEffect(() => {
+    if (forceChangePin) {
+      console.log("🔧 forceChangePin detected, switching to setup_new mode");
+      setSetupMode('setup_new');
+      setPin("");
+      setNewPinToConfirm("");
+      setError("");
+    }
+  }, [forceChangePin]);
 
   const handleKeyPress = (digit: string) => {
     if (pin.length < 4) {
@@ -58,19 +77,78 @@ export default function ParentPinModal({
     setError("");
 
     console.log("🔧 Parent PIN validation started for:", parentName);
-    console.log("🔧 Entered PIN:", enteredPin.replace(/./g, '*'));
+    console.log("🔧 Mode:", setupMode);
     console.log("🔧 Parent has pin_hash:", !!parentData.pin_hash);
 
     try {
-      // SIMPLIFIED APPROACH: Use server-side verification to avoid client-side bcrypt hangs
-      console.log("🔧 Using server-side PIN verification to avoid bcrypt issues");
-      
+      // ========== SETUP_NEW MODE: First step of setting new PIN ==========
+      if (setupMode === 'setup_new') {
+        if (enteredPin === "1234") {
+          setError("Cannot use default PIN 1234. Choose a different PIN.");
+          setPin("");
+          setIsVerifying(false);
+          return;
+        }
+        console.log("🔧 New PIN entered, requiring confirmation");
+        setNewPinToConfirm(enteredPin);
+        setSetupMode('confirm_new');
+        setPin("");
+        setIsVerifying(false);
+        return;
+      }
+
+      // ========== CONFIRM_NEW MODE: Confirm the new PIN ==========
+      if (setupMode === 'confirm_new') {
+        if (enteredPin !== newPinToConfirm) {
+          console.log("❌ PIN confirmation mismatch");
+          setError("PINs don't match. Try again.");
+          setSetupMode('setup_new');
+          setNewPinToConfirm("");
+          setPin("");
+          setIsVerifying(false);
+          return;
+        }
+
+        console.log("🔧 PIN confirmed, saving to server");
+        const setupResponse = await fetch('/api/parent/setup-pin-simple', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            parent_id: parentData.id,
+            pin: enteredPin
+          }),
+        });
+
+        if (setupResponse.ok) {
+          const setupResult = await setupResponse.json();
+          if (setupResult.success) {
+            console.log("✅ Parent PIN set up successfully");
+            const parentProfile: ParentProfile = {
+              id: parentData.id,
+              name: parentData.name,
+              role: 'parent',
+              family_id: '',
+              pin_hash: enteredPin,
+            };
+            createParentSession(parentProfile);
+            onSuccess(enteredPin);
+            return;
+          }
+        }
+        setError("Failed to save PIN. Try again.");
+        setPin("");
+        setIsVerifying(false);
+        return;
+      }
+
+      // ========== VERIFY MODE: Normal PIN verification ==========
+      console.log("🔧 Verifying PIN against server");
       const verifyResponse = await fetch('/api/parent/verify-pin-simple', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          parent_id: parentData.id, 
-          pin: enteredPin 
+        body: JSON.stringify({
+          parent_id: parentData.id,
+          pin: enteredPin
         }),
       });
 
@@ -79,89 +157,39 @@ export default function ParentPinModal({
       if (verifyResponse.ok) {
         const result = await verifyResponse.json();
         console.log("🔧 Server verification result:", result);
-        
+
         if (result.success) {
           console.log("✅ Parent PIN verified successfully");
-          
-          // Create parent session for validated access
           const parentProfile: ParentProfile = {
             id: parentData.id,
             name: parentData.name,
             role: 'parent',
-            family_id: '', 
+            family_id: '',
             pin_hash: parentData.pin_hash || 'verified',
           };
           createParentSession(parentProfile);
-          
           onSuccess(enteredPin);
           return;
-        } else if (result.message === 'Invalid PIN' && parentData.pin_hash?.startsWith('$2')) {
-          console.log("🔧 Detected bcrypt hash - converting to plaintext for faster verification");
-          console.log("🔧 Setting up new plaintext PIN to replace bcrypt hash");
-          
-          // Convert existing bcrypt PIN to plaintext by setting up new PIN
-          const setupResponse = await fetch('/api/parent/setup-pin-simple', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              parent_id: parentData.id, 
-              pin: enteredPin 
-            }),
-          });
-
-          if (setupResponse.ok) {
-            const setupResult = await setupResponse.json();
-            if (setupResult.success) {
-              console.log("✅ Converted bcrypt PIN to plaintext successfully");
-              
-              // Create parent session for new PIN setup
-              const parentProfile: ParentProfile = {
-                id: parentData.id,
-                name: parentData.name,
-                role: 'parent',
-                family_id: '',
-                pin_hash: enteredPin, // Now plaintext
-              };
-              createParentSession(parentProfile);
-
-              onSuccess(enteredPin);
-              return;
-            }
-          }
         }
-      }
 
-      // Handle first-time setup if no PIN exists
-      if (!parentData.pin_hash) {
-        console.log("🔧 First-time parent PIN setup via server");
-        
-        const setupResponse = await fetch('/api/parent/setup-pin-simple', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            parent_id: parentData.id, 
-            pin: enteredPin 
-          }),
-        });
+        // SECURITY: Handle "No PIN set" - require setup flow
+        if (result.message === 'No PIN set') {
+          console.log("🔧 No PIN set - switching to setup mode");
+          setError("No PIN set. Please create a new PIN.");
+          setSetupMode('setup_new');
+          setPin("");
+          setIsVerifying(false);
+          return;
+        }
 
-        if (setupResponse.ok) {
-          const setupResult = await setupResponse.json();
-          if (setupResult.success) {
-            console.log("✅ Parent PIN set up successfully");
-            
-            // Create parent session for new PIN setup
-            const parentProfile: ParentProfile = {
-              id: parentData.id,
-              name: parentData.name,
-              role: 'parent',
-              family_id: '',
-              pin_hash: 'verified',
-            };
-            createParentSession(parentProfile);
-
-            onSuccess(enteredPin);
-            return;
-          }
+        // Handle bcrypt hash - needs re-setup
+        if (result.message === 'Invalid PIN' && parentData.pin_hash?.startsWith('$2')) {
+          console.log("🔧 Detected bcrypt hash - needs re-setup");
+          setError("PIN needs to be reset. Enter a new PIN.");
+          setSetupMode('setup_new');
+          setPin("");
+          setIsVerifying(false);
+          return;
         }
       }
 
@@ -226,13 +254,28 @@ export default function ParentPinModal({
     return () => globalThis.removeEventListener("keydown", handleKeyDown);
   }, [pin]);
 
+  // Get header text based on mode
+  const getHeaderText = () => {
+    if (setupMode === 'setup_new') {
+      return forceChangePin
+        ? { title: "🔒 Change Your PIN", subtitle: "Enter a new 4-digit PIN (not 1234)" }
+        : { title: "🔐 Create Your PIN", subtitle: "Enter a new 4-digit PIN (not 1234)" };
+    }
+    if (setupMode === 'confirm_new') {
+      return { title: "🔐 Confirm Your PIN", subtitle: "Enter the same PIN again to confirm" };
+    }
+    return { title: "🔐 Parent PIN Required", subtitle: `Enter your PIN to ${operation}` };
+  };
+
+  const headerText = getHeaderText();
+
   return (
     <div class="modal-overlay">
       <div class="modal">
         <div class="modal-header">
-          <h2>🔐 Parent PIN Required</h2>
+          <h2>{headerText.title}</h2>
           <p style={{ fontSize: "0.875rem", color: "var(--color-text-light)" }}>
-            Enter your PIN to {operation}
+            {headerText.subtitle}
           </p>
         </div>
 

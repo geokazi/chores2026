@@ -141,70 +141,26 @@ export default function ParentPinGate({
     );
   }
 
+  // Show inline PIN change modal when default PIN is detected
   if (hasDefaultPin && currentParent) {
     return (
-      <div style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: 'rgba(0, 0, 0, 0.8)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000
-      }}>
-        <div style={{
-          background: 'white',
-          padding: '2rem',
-          borderRadius: '12px',
-          maxWidth: '400px',
-          textAlign: 'center'
-        }}>
-          <h3 style={{ color: 'var(--color-warning)', marginBottom: '1rem' }}>
-            🔒 Default PIN Detected
-          </h3>
-          <p style={{ marginBottom: '1.5rem', color: 'var(--color-text)' }}>
-            You're using the default PIN (1234). For security, you must change it before accessing parent features.
-          </p>
-          <button
-            onClick={() => {
-              // Redirect to settings to change PIN
-              window.location.href = '/parent/settings';
-            }}
-            style={{
-              background: 'var(--color-primary)',
-              color: 'white',
-              border: 'none',
-              padding: '0.75rem 2rem',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '1rem',
-              marginRight: '1rem'
-            }}
-          >
-            Change PIN Now
-          </button>
-          <button
-            onClick={() => {
-              // For default PIN modal, redirect to family selector
-              console.log('❌ Default PIN change cancelled - redirecting to family selector');
-              window.location.href = '/';
-            }}
-            style={{
-              background: '#e5e7eb',
-              color: 'var(--color-text)',
-              border: 'none',
-              padding: '0.75rem 1.5rem',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '1rem'
-            }}
-          >
-            Cancel
-          </button>
-        </div>
+      <div>
+        <ParentPinModal
+          key="change-pin-modal"
+          parentName={currentParent.name}
+          operation="change your default PIN"
+          onSuccess={(newPin) => {
+            console.log('✅ Default PIN changed successfully');
+            setHasDefaultPin(false);
+            setNeedsPin(false);
+          }}
+          onCancel={() => {
+            console.log('❌ Default PIN change cancelled - redirecting to family selector');
+            window.location.href = '/';
+          }}
+          parentData={currentParent}
+          forceChangePin={true}
+        />
       </div>
     );
   }
@@ -213,6 +169,7 @@ export default function ParentPinGate({
     return (
       <div>
         <ParentPinModal
+          key="verify-pin-modal"
           parentName={currentParent.name}
           operation={operation}
           onSuccess={handlePinSuccess}
