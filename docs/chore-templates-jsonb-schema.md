@@ -892,6 +892,93 @@ export const PRESET_CHORES: Record<string, ChoreDefinition[]> = {
 
 ---
 
+## Database Migrations: NONE REQUIRED
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         NO SQL MIGRATIONS NEEDED                            │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   EXISTING INFRASTRUCTURE (Already in place):                               │
+│   ═══════════════════════════════════════════                               │
+│                                                                             │
+│   public.families.settings JSONB NOT NULL DEFAULT '{}'                      │
+│   Source: sql/20260114_jsonb_settings.sql                                   │
+│                                                                             │
+│   ───────────────────────────────────────────────────────────────────────   │
+│                                                                             │
+│   HOW ROTATION CONFIG GETS STORED:                                          │
+│   ═════════════════════════════════                                         │
+│                                                                             │
+│   We write to a new JSONB path - no schema change needed:                   │
+│                                                                             │
+│   families.settings.apps.choregami.rotation = {                             │
+│     "active_preset": "smart_rotation",                                      │
+│     "start_date": "2026-01-16",                                             │
+│     "child_slots": [                                                        │
+│       { "slot": "Child A", "profile_id": "uuid-here" },                     │
+│       { "slot": "Child B", "profile_id": "uuid-here" }                      │
+│     ]                                                                       │
+│   }                                                                         │
+│                                                                             │
+│   ───────────────────────────────────────────────────────────────────────   │
+│                                                                             │
+│   WHY NO MIGRATION:                                                         │
+│   • JSONB columns accept any valid JSON at any path                         │
+│   • No ALTER TABLE needed                                                   │
+│   • No new columns                                                          │
+│   • No new tables                                                           │
+│   • Just UPDATE with jsonb_set()                                            │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Verification Queries (Optional - Run in Supabase SQL Editor)
+
+```sql
+-- Verify families.settings column exists
+SELECT column_name, data_type, column_default
+FROM information_schema.columns
+WHERE table_name = 'families'
+  AND column_name = 'settings';
+
+-- Check current structure for a family
+SELECT id, name, settings
+FROM public.families
+LIMIT 1;
+```
+
+### API Pattern for Setting Rotation
+
+```sql
+-- How the /api/rotation/apply endpoint will update the config
+UPDATE public.families
+SET settings = jsonb_set(
+  COALESCE(settings, '{}'::jsonb),
+  '{apps,choregami,rotation}',
+  '{
+    "active_preset": "smart_rotation",
+    "start_date": "2026-01-16",
+    "child_slots": [
+      {"slot": "Child A", "profile_id": "uuid-1"},
+      {"slot": "Child B", "profile_id": "uuid-2"}
+    ]
+  }'::jsonb
+)
+WHERE id = 'family-uuid-here';
+```
+
+### API Pattern for Clearing Rotation
+
+```sql
+-- Remove rotation config entirely
+UPDATE public.families
+SET settings = settings #- '{apps,choregami,rotation}'
+WHERE id = 'family-uuid-here';
+```
+
+---
+
 ## Implementation Checklist (Simplified)
 
 | Task | Lines Est. | File |
