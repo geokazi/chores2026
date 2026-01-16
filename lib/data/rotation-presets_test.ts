@@ -74,12 +74,12 @@ Deno.test("getCurrentWeekType - alternates for biweekly preset", () => {
 });
 
 Deno.test("getDayOfWeek - returns correct day", () => {
-  // January 15, 2026 is a Thursday
-  const date = new Date("2026-01-15");
+  // January 15, 2026 is a Thursday (use noon to avoid timezone issues)
+  const date = new Date("2026-01-15T12:00:00");
   assertEquals(getDayOfWeek(date), "thu");
 
   // January 18, 2026 is a Sunday
-  const sunday = new Date("2026-01-18");
+  const sunday = new Date("2026-01-18T12:00:00");
   assertEquals(getDayOfWeek(sunday), "sun");
 });
 

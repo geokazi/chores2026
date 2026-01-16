@@ -8,7 +8,9 @@ import { getPresetByKey, getCurrentWeekType, getDayOfWeek, getPresetSlots } from
 
 // Get rotation config from family settings JSONB
 export function getRotationConfig(familySettings: Record<string, unknown>): RotationConfig | null {
-  const rotation = familySettings?.apps?.choregami?.rotation as RotationConfig | undefined;
+  const apps = familySettings?.apps as Record<string, unknown> | undefined;
+  const choregami = apps?.choregami as Record<string, unknown> | undefined;
+  const rotation = choregami?.rotation as RotationConfig | undefined;
   return rotation ?? null;
 }
 
