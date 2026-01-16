@@ -40,7 +40,7 @@ export const handler: Handlers<SecureParentData> = {
       // Get recent family activity (for context)
       const recentActivity = await choreService.getRecentActivity(familyId, 5);
 
-      console.log(`✅ Secure parent view data loaded for family: ${family.name}`);
+      console.log(`✅ Secure parent view data loaded for family: ${family?.name || 'unknown'}`);
 
       return ctx.render({
         family: family || parentSession.family,

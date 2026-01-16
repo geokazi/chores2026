@@ -49,8 +49,8 @@ export interface FamilyProfile {
 
 export interface Family {
   id: string;
+  name: string;
   children_pins_enabled: boolean;
-  // Add other family fields as needed
 }
 
 export class ChoreService {

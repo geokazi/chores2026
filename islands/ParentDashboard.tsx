@@ -40,11 +40,13 @@ interface Props {
   family: Family;
   members: FamilyMember[];
   chores: ChoreAssignment[];
+  parentChores?: any[];
+  parentProfileId?: string;
   recentActivity: any[];
 }
 
 export default function ParentDashboard(
-  { family, members, chores, recentActivity }: Props,
+  { family, members, chores, parentChores: _parentChores, parentProfileId: _parentProfileId, recentActivity }: Props,
 ) {
   const [showPointAdjustment, setShowPointAdjustment] = useState(false);
   const [selectedMember, setSelectedMember] = useState<FamilyMember | null>(

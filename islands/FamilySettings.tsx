@@ -616,7 +616,9 @@ export default function FamilySettings({ family, members, settings }: FamilySett
               onClick={() => setShowCustomize(!showCustomize)}
               style={{ marginTop: "1rem", width: "100%" }}
             >
-              {showCustomize ? '▼ Hide Customization' : '▶ Customize Template'}
+              {showCustomize
+                ? `▼ Hide ${getPresetByKey(activeRotation.active_preset)?.name || 'Template'} Customization`
+                : `▶ Customize ${getPresetByKey(activeRotation.active_preset)?.name || 'Template'}`}
             </button>
 
             {showCustomize && (() => {
