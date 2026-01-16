@@ -11,18 +11,27 @@
 
 The chore templates feature is **100% complete**. All gaps have been implemented:
 
-- ✅ Static preset definitions (3 templates)
+- ✅ Static preset definitions (3 templates + Manual default)
 - ✅ Rotation service with schedule lookups
 - ✅ Apply/Delete/Status API endpoints
-- ✅ FamilySettings UI for template selection
+- ✅ FamilySettings UI with "Chore Assignment Mode" (4 options)
 - ✅ Completion API for rotation chores (`/api/rotation/complete`)
 - ✅ Kid dashboard UI integration (merged chore display)
 - ✅ TransactionService connection (backwards-compatible)
+- ✅ Session includes full JSONB settings for rotation config
 
 **Implementation commits:**
+
 - `198c2be` 📝 Document chore templates gaps & add status endpoint
 - `99d3327` ✅ Add tests for rotation API endpoints
 - `59e8a50` ✨ Implement rotation chores end-to-end (Gap 0-4)
+- `02ac63c` ✨ Add Manual (Default) option to Chore Assignment Mode
+- `6d3f719` 🐛 Fix rotation config not passed to FamilySettings
+
+**Related docs:**
+
+- [Chore Templates Design](./chore-templates-design.md) - Full design specification
+- [JSONB Schema](./chore-templates-jsonb-schema.md) - Database schema for rotation config
 
 ---
 
@@ -119,85 +128,82 @@ const preset = getPresetByKey("daily_basics");
 
 ### Location: `/parent/settings` → FamilySettings Island
 
-**File**: `islands/FamilySettings.tsx` (lines 459-496, 816-891)
+**File**: `islands/FamilySettings.tsx`
 
-### Current UI Flow
+### Current UI: "Chore Assignment Mode" Section
+
+All 4 options are displayed inline (no modal needed for selection):
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    TEMPLATE SELECTION UI                         │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  Parent navigates to: /parent/settings                          │
-│       │                                                         │
-│       ▼                                                         │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │ "📋 Chore Rotation" section (line 459)                  │   │
-│  │                                                         │   │
-│  │ IF activeRotation exists:                               │   │
-│  │   ┌───────────────────────────────────────────────────┐ │   │
-│  │   │ 🎯 Smart Family Rotation                          │ │   │
-│  │   │ Started 2026-01-15                                │ │   │
-│  │   │ [Change Template] [Remove]                        │ │   │
-│  │   └───────────────────────────────────────────────────┘ │   │
-│  │                                                         │   │
-│  │ IF no activeRotation:                                   │   │
-│  │   [Set Up Chore Rotation] button                        │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│       │                                                         │
-│       │ Click "Set Up" or "Change Template"                     │
-│       ▼                                                         │
-│  ┌─────────────────────────────────────────────────────────┐   │
-│  │ MODAL: "📋 Choose Chore Template" (line 816)            │   │
-│  │                                                         │   │
-│  │ ○ 🎯 Smart Family Rotation                              │   │
-│  │     Two-week cycle balancing cleaning intensity...      │   │
-│  │                                                         │   │
-│  │ ○ ⚡ Weekend Warrior                                     │   │
-│  │     Light weekday chores, intensive weekend...          │   │
-│  │                                                         │   │
-│  │ ○ 🌱 Daily Basics                                       │   │
-│  │     Simple, consistent daily routine...                 │   │
-│  │                                                         │   │
-│  │ ─────────────────────────────────────────────────────   │   │
-│  │ Assign Kids to Slots:                                   │   │
-│  │ Child A → [Emma ▼]                                      │   │
-│  │ Child B → [Noah ▼]                                      │   │
-│  │                                                         │   │
-│  │ [Activate Template] [Cancel]                            │   │
-│  └─────────────────────────────────────────────────────────┘   │
-│       │                                                         │
-│       │ Click "Activate Template"                               │
-│       ▼                                                         │
-│  POST /api/rotation/apply                                       │
-│  { preset_key: "smart_rotation", child_slots: [...] }           │
-│       │                                                         │
-│       ▼                                                         │
-│  Updates families.settings.apps.choregami.rotation              │
-│       │                                                         │
-│       ▼                                                         │
-│  Page reloads → activeRotation now shows selected template      │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
+│  📋 Chore Assignment Mode                                        │
+│                                                                  │
+│  Choose how chores are assigned to kids                          │
+│                                                                  │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │ ● 📝 Manual (Default)              ← SELECTED BY DEFAULT  │  │
+│  │     You create and assign chores yourself                 │  │
+│  │     [View Dashboard →]                                    │  │
+│  └───────────────────────────────────────────────────────────┘  │
+│                                                                  │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │ ○ 🎯 Smart Family Rotation                                │  │
+│  │     Two-week cycle balancing cleaning intensity...        │  │
+│  └───────────────────────────────────────────────────────────┘  │
+│                                                                  │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │ ○ ⚡ Weekend Warrior                                       │  │
+│  │     Light weekday chores, intensive weekend...            │  │
+│  └───────────────────────────────────────────────────────────┘  │
+│                                                                  │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │ ○ 🌱 Daily Basics                                         │  │
+│  │     Simple, consistent daily routine...                   │  │
+│  └───────────────────────────────────────────────────────────┘  │
+│                                                                  │
+│  Started 2026-01-15  (shown if template active)                  │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
-### Key Code References
+### Interaction Flow
 
-| Action | Location | Code |
-|--------|----------|------|
-| Read active rotation | Line 67 | `const activeRotation = getRotationConfig(settings \|\| {});` |
-| Open modal | Line 225-236 | `openRotationModal()` |
-| Apply rotation | Line 238-275 | `handleApplyRotation()` → POST `/api/rotation/apply` |
-| Remove rotation | Line 277-289 | `handleRemoveRotation()` → DELETE `/api/rotation/apply` |
-| Preset radio buttons | Line 821-845 | Radio inputs with `ROTATION_PRESETS` |
-| Child slot mapping | Line 847-871 | Dropdown selects per slot |
+1. **Selecting Manual** → Removes any active rotation (no confirmation)
+2. **Selecting a Template** → Opens modal for child slot assignment
+3. **Modal "Activate Template"** → POST `/api/rotation/apply` → Page reloads
+
+### Key Design Decisions
+
+- **Manual is always first** - makes it clear templates are optional
+- **All options visible** - no hidden button/modal for initial selection
+- **Radio buttons** - instant feedback on current selection
+- **Link to dashboard** - easy access to create custom chores
+
+### Session & Settings Flow
+
+```
+Session (lib/auth/session.ts)
+├── family.settings = full JSONB    ← Includes apps.choregami.rotation
+├── family.children_pins_enabled    ← Extracted for convenience
+└── family.theme                    ← Extracted for convenience
+
+Route (routes/parent/settings.tsx)
+└── settings = {
+      children_pins_enabled,        ← Flat for backwards compat
+      theme,                        ← Flat for backwards compat
+      apps: family.settings.apps    ← Nested for rotation config
+    }
+
+Component (islands/FamilySettings.tsx)
+└── getRotationConfig(settings)     ← Reads settings.apps.choregami.rotation
+```
 
 ### API Endpoints
 
 | Method | Endpoint | Purpose |
 |--------|----------|---------|
 | POST | `/api/rotation/apply` | Set active_preset + child_slots |
-| DELETE | `/api/rotation/apply` | Remove rotation config |
+| DELETE | `/api/rotation/apply` | Remove rotation config (switch to Manual) |
 | GET | `/api/rotation/status` | Get current rotation state |
 
 ---
