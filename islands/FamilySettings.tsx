@@ -252,6 +252,14 @@ export default function FamilySettings({ family, members, settings }: FamilySett
       return;
     }
 
+    // Validate no duplicate children
+    const profileIds = mappings.map(m => m.profile_id);
+    const uniqueIds = new Set(profileIds);
+    if (uniqueIds.size !== profileIds.length) {
+      alert("Each slot must have a different child assigned");
+      return;
+    }
+
     setIsApplyingRotation(true);
     try {
       const response = await fetch('/api/rotation/apply', {
@@ -850,23 +858,39 @@ export default function FamilySettings({ family, members, settings }: FamilySett
               if (!preset) return null;
               const slots = getPresetSlots(preset);
 
+              // Get which children are already selected in other slots
+              const selectedInOtherSlots = (currentSlot: string) => {
+                return Object.entries(childSlots)
+                  .filter(([slot, _]) => slot !== currentSlot)
+                  .map(([_, profileId]) => profileId);
+              };
+
               return (
                 <div class="slot-mapping">
                   <h4>Assign Kids to Slots</h4>
-                  {slots.map((slot) => (
-                    <div key={slot} class="slot-row">
-                      <span>{slot}</span>
-                      <select
-                        value={childSlots[slot] || ""}
-                        onChange={(e) => setChildSlots({ ...childSlots, [slot]: e.currentTarget.value })}
-                      >
-                        <option value="">Select child...</option>
-                        {children.map((child) => (
-                          <option key={child.id} value={child.id}>{child.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                  ))}
+                  {slots.map((slot) => {
+                    const usedIds = selectedInOtherSlots(slot);
+                    return (
+                      <div key={slot} class="slot-row">
+                        <span>{slot}</span>
+                        <select
+                          value={childSlots[slot] || ""}
+                          onChange={(e) => setChildSlots({ ...childSlots, [slot]: e.currentTarget.value })}
+                        >
+                          <option value="">Select child...</option>
+                          {children.map((child) => (
+                            <option
+                              key={child.id}
+                              value={child.id}
+                              disabled={usedIds.includes(child.id)}
+                            >
+                              {child.name}{usedIds.includes(child.id) ? ' (already assigned)' : ''}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    );
+                  })}
                 </div>
               );
             })()}
