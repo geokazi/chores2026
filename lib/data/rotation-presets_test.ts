@@ -38,9 +38,9 @@ Deno.test("getPresetByKey - returns undefined for unknown key", () => {
 });
 
 Deno.test("getPresetsForFamily - filters by child count", () => {
-  // 2 kids should get all 3 presets
+  // 2 kids should get all 5 presets (daily_basics, smart_rotation, weekend_warrior, school_year, summer_break)
   const presetsFor2 = getPresetsForFamily(2);
-  assertEquals(presetsFor2.length, 3);
+  assertEquals(presetsFor2.length, 5);
 
   // 5 kids should only get weekend_warrior (max 6)
   const presetsFor5 = getPresetsForFamily(5);
