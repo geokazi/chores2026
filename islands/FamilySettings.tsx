@@ -6,8 +6,8 @@ import { useState, useEffect } from "preact/hooks";
 import ParentPinGate from "./ParentPinGate.tsx";
 import { getCurrentTheme, changeTheme, themes, type ThemeId } from "../lib/theme-manager.ts";
 import { ROTATION_PRESETS, getPresetByKey, getPresetSlots } from "../lib/data/rotation-presets.ts";
-import { getRotationConfig } from "../lib/services/rotation-service.ts";
-import type { RotationPreset, ChildSlotMapping } from "../lib/types/rotation.ts";
+import { getRotationConfig, getChoresWithCustomizations } from "../lib/services/rotation-service.ts";
+import type { RotationPreset, ChildSlotMapping, RotationCustomizations, CustomChore } from "../lib/types/rotation.ts";
 
 interface FamilySettingsProps {
   family: any;
@@ -65,6 +65,22 @@ export default function FamilySettings({ family, members, settings }: FamilySett
   const [childSlots, setChildSlots] = useState<Record<string, string>>({});
   const [isApplyingRotation, setIsApplyingRotation] = useState(false);
   const activeRotation = getRotationConfig(settings || {});
+
+  // Template customization state
+  const [showCustomize, setShowCustomize] = useState(false);
+  const [choreOverrides, setChoreOverrides] = useState<Record<string, { points?: number; enabled?: boolean }>>({});
+  const [customChores, setCustomChores] = useState<CustomChore[]>([]);
+  const [newChoreName, setNewChoreName] = useState("");
+  const [newChorePoints, setNewChorePoints] = useState("1");
+  const [isSavingCustomizations, setIsSavingCustomizations] = useState(false);
+
+  // Initialize customization state from active rotation
+  useEffect(() => {
+    if (activeRotation?.customizations) {
+      setChoreOverrides(activeRotation.customizations.chore_overrides || {});
+      setCustomChores(activeRotation.customizations.custom_chores || []);
+    }
+  }, [activeRotation?.active_preset]);
 
   const children = members.filter(member => member.role === "child");
 
@@ -293,6 +309,68 @@ export default function FamilySettings({ family, members, settings }: FamilySett
       }
     } catch (err) {
       alert(`❌ Error: ${err}`);
+    }
+  };
+
+  const handleAddCustomChore = () => {
+    if (!newChoreName.trim()) return;
+    const key = `custom_${Date.now()}`;
+    const newChore: CustomChore = {
+      key,
+      name: newChoreName.trim(),
+      points: parseInt(newChorePoints) || 1,
+    };
+    setCustomChores([...customChores, newChore]);
+    setNewChoreName("");
+    setNewChorePoints("1");
+  };
+
+  const handleRemoveCustomChore = (key: string) => {
+    setCustomChores(customChores.filter(c => c.key !== key));
+  };
+
+  const handleSaveCustomizations = async () => {
+    if (!activeRotation) return;
+    setIsSavingCustomizations(true);
+
+    const customizations: RotationCustomizations = {};
+    if (Object.keys(choreOverrides).length > 0) {
+      customizations.chore_overrides = choreOverrides;
+    }
+    if (customChores.length > 0) {
+      customizations.custom_chores = customChores;
+    }
+
+    try {
+      const response = await fetch('/api/rotation/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          preset_key: activeRotation.active_preset,
+          child_slots: activeRotation.child_slots,
+          customizations: Object.keys(customizations).length > 0 ? customizations : null,
+          start_date: activeRotation.start_date,
+        }),
+      });
+
+      if (response.ok) {
+        alert('✅ Customizations saved!');
+        globalThis.location.reload();
+      } else {
+        const result = await response.json();
+        alert(`❌ Failed: ${result.error}`);
+      }
+    } catch (err) {
+      alert(`❌ Error: ${err}`);
+    }
+    setIsSavingCustomizations(false);
+  };
+
+  const handleResetCustomizations = () => {
+    if (!activeRotation?.customizations) return;
+    if (confirm('Reset all customizations to template defaults?')) {
+      setChoreOverrides({});
+      setCustomChores([]);
     }
   };
 
@@ -528,6 +606,134 @@ export default function FamilySettings({ family, members, settings }: FamilySett
           <p style={{ fontSize: "0.75rem", color: "var(--color-text-light)", marginTop: "0.5rem" }}>
             Started {activeRotation.start_date}
           </p>
+        )}
+
+        {/* Inline Customization Section */}
+        {activeRotation && (
+          <div class="customize-section">
+            <button
+              class="btn btn-outline"
+              onClick={() => setShowCustomize(!showCustomize)}
+              style={{ marginTop: "1rem", width: "100%" }}
+            >
+              {showCustomize ? '▼ Hide Customization' : '▶ Customize Template'}
+            </button>
+
+            {showCustomize && (() => {
+              const preset = getPresetByKey(activeRotation.active_preset);
+              if (!preset) return null;
+
+              return (
+                <div class="customize-content">
+                  <h4>Template Chores</h4>
+                  <div class="chore-customize-list">
+                    {preset.chores.map((chore) => {
+                      const override = choreOverrides[chore.key] || {};
+                      const isEnabled = override.enabled !== false;
+                      const points = override.points ?? chore.points;
+
+                      return (
+                        <div key={chore.key} class={`chore-customize-row ${!isEnabled ? 'disabled' : ''}`}>
+                          <label class="chore-enable">
+                            <input
+                              type="checkbox"
+                              checked={isEnabled}
+                              onChange={(e) => {
+                                setChoreOverrides({
+                                  ...choreOverrides,
+                                  [chore.key]: { ...override, enabled: e.currentTarget.checked },
+                                });
+                              }}
+                            />
+                            <span class="chore-icon">{chore.icon}</span>
+                            <span class="chore-name">{chore.name}</span>
+                          </label>
+                          <select
+                            value={points}
+                            onChange={(e) => {
+                              setChoreOverrides({
+                                ...choreOverrides,
+                                [chore.key]: { ...override, points: parseInt(e.currentTarget.value) },
+                              });
+                            }}
+                            disabled={!isEnabled}
+                            class="chore-points-select"
+                          >
+                            {[1, 2, 3, 4, 5].map(p => (
+                              <option key={p} value={p}>{p} pt{p > 1 ? 's' : ''}</option>
+                            ))}
+                          </select>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <h4 style={{ marginTop: "1.5rem" }}>Custom Chores</h4>
+                  <div class="custom-chores-list">
+                    {customChores.map((chore) => (
+                      <div key={chore.key} class="chore-customize-row">
+                        <span class="chore-icon">{chore.icon || '✨'}</span>
+                        <span class="chore-name">{chore.name}</span>
+                        <span class="chore-points">{chore.points} pt{chore.points > 1 ? 's' : ''}</span>
+                        <button
+                          class="btn-remove"
+                          onClick={() => handleRemoveCustomChore(chore.key)}
+                          title="Remove"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+
+                    <div class="add-chore-row">
+                      <input
+                        type="text"
+                        value={newChoreName}
+                        onChange={(e) => setNewChoreName(e.currentTarget.value)}
+                        placeholder="Chore name"
+                        class="add-chore-input"
+                      />
+                      <select
+                        value={newChorePoints}
+                        onChange={(e) => setNewChorePoints(e.currentTarget.value)}
+                        class="chore-points-select"
+                      >
+                        {[1, 2, 3, 4, 5].map(p => (
+                          <option key={p} value={p}>{p} pt{p > 1 ? 's' : ''}</option>
+                        ))}
+                      </select>
+                      <button
+                        class="btn btn-outline"
+                        onClick={handleAddCustomChore}
+                        disabled={!newChoreName.trim()}
+                      >
+                        + Add
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="customize-actions">
+                    <button
+                      class="btn btn-primary"
+                      onClick={handleSaveCustomizations}
+                      disabled={isSavingCustomizations}
+                    >
+                      {isSavingCustomizations ? 'Saving...' : 'Save Changes'}
+                    </button>
+                    {(Object.keys(choreOverrides).length > 0 || customChores.length > 0) && (
+                      <button
+                        class="btn btn-outline"
+                        onClick={handleResetCustomizations}
+                        disabled={isSavingCustomizations}
+                      >
+                        Reset to Defaults
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
         )}
       </div>
 
@@ -1553,6 +1759,137 @@ export default function FamilySettings({ family, members, settings }: FamilySett
           border: 2px solid #e5e7eb;
           border-radius: 6px;
           font-size: 0.9rem;
+        }
+
+        /* Customization styles */
+        .customize-section {
+          margin-top: 1rem;
+        }
+
+        .customize-content {
+          margin-top: 1rem;
+          padding: 1rem;
+          background: var(--color-bg);
+          border-radius: 8px;
+        }
+
+        .customize-content h4 {
+          margin: 0 0 0.75rem 0;
+          font-size: 0.9rem;
+          color: var(--color-text);
+        }
+
+        .chore-customize-list,
+        .custom-chores-list {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+
+        .chore-customize-row {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.5rem;
+          background: white;
+          border-radius: 6px;
+        }
+
+        .chore-customize-row.disabled {
+          opacity: 0.5;
+        }
+
+        .chore-enable {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          flex: 1;
+          cursor: pointer;
+        }
+
+        .chore-enable input {
+          width: 18px;
+          height: 18px;
+        }
+
+        .chore-icon {
+          font-size: 1.1rem;
+        }
+
+        .chore-name {
+          flex: 1;
+          font-size: 0.9rem;
+        }
+
+        .chore-points {
+          font-size: 0.85rem;
+          color: var(--color-text-light);
+          min-width: 40px;
+        }
+
+        .chore-points-select {
+          padding: 0.25rem 0.5rem;
+          border: 1px solid #e5e7eb;
+          border-radius: 4px;
+          font-size: 0.85rem;
+          min-width: 70px;
+        }
+
+        .btn-remove {
+          background: none;
+          border: none;
+          color: var(--color-warning);
+          font-size: 1.25rem;
+          cursor: pointer;
+          padding: 0 0.25rem;
+          line-height: 1;
+        }
+
+        .btn-remove:hover {
+          color: #dc2626;
+        }
+
+        .add-chore-row {
+          display: flex;
+          gap: 0.5rem;
+          margin-top: 0.5rem;
+        }
+
+        .add-chore-input {
+          flex: 1;
+          padding: 0.5rem;
+          border: 1px solid #e5e7eb;
+          border-radius: 6px;
+          font-size: 0.9rem;
+        }
+
+        .customize-actions {
+          display: flex;
+          gap: 0.75rem;
+          margin-top: 1.5rem;
+          padding-top: 1rem;
+          border-top: 1px solid #e5e7eb;
+        }
+
+        .btn-outline {
+          background: white;
+          color: var(--color-primary);
+          border: 1px solid var(--color-primary);
+          padding: 0.5rem 1rem;
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 0.875rem;
+          transition: all 0.2s ease;
+        }
+
+        .btn-outline:hover:not(:disabled) {
+          background: var(--color-primary);
+          color: white;
+        }
+
+        .btn-outline:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
         }
       `}</style>
     </div>

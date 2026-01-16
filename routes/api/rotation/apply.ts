@@ -9,11 +9,13 @@ import { getSupabaseClient } from "../../../lib/supabase.ts";
 import { getAuthenticatedSession } from "../../../lib/auth/session.ts";
 import { buildRotationConfig, validateChildCount, getRequiredSlotCount } from "../../../lib/services/rotation-service.ts";
 import { getPresetByKey } from "../../../lib/data/rotation-presets.ts";
-import type { ChildSlotMapping } from "../../../lib/types/rotation.ts";
+import type { ChildSlotMapping, RotationCustomizations } from "../../../lib/types/rotation.ts";
 
 interface ApplyRequest {
   preset_key: string;
   child_slots: ChildSlotMapping[];
+  customizations?: RotationCustomizations | null;
+  start_date?: string;  // Preserve existing start date on customization updates
 }
 
 export const handler: Handlers = {
@@ -26,7 +28,7 @@ export const handler: Handlers = {
 
       const familyId = session.family.id;
       const body: ApplyRequest = await req.json();
-      const { preset_key, child_slots } = body;
+      const { preset_key, child_slots, customizations, start_date } = body;
 
       // Validate preset exists
       const preset = getPresetByKey(preset_key);
@@ -86,8 +88,8 @@ export const handler: Handlers = {
         }, { status: 400 });
       }
 
-      // Build rotation config
-      const config = buildRotationConfig(preset_key, child_slots);
+      // Build rotation config (preserve start_date on customization updates)
+      const config = buildRotationConfig(preset_key, child_slots, customizations || undefined, start_date);
 
       // Fetch current settings, merge, then update
       const { data: family, error: fetchError } = await supabase

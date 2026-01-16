@@ -44,12 +44,31 @@ export interface RotationPreset {
   schedule: RotationSchedule;
 }
 
+// Custom chore added by family
+export interface CustomChore {
+  key: string;         // Unique key (e.g., "custom_feed_fish")
+  name: string;        // Display name
+  points: number;      // Point value
+  icon?: string;       // Emoji icon (defaults to ✨)
+}
+
+// Family customizations to a preset
+export interface RotationCustomizations {
+  // Override points or disable specific chores
+  chore_overrides?: Record<string, {
+    points?: number;    // Override default points
+    enabled?: boolean;  // false = disabled (default true)
+  }>;
+  // Custom chores added by family (appear daily)
+  custom_chores?: CustomChore[];
+}
+
 // Dynamic family config (JSONB in Supabase)
 export interface RotationConfig {
   active_preset: string;
   start_date: string;  // ISO date string
   child_slots: ChildSlotMapping[];
-  customizations?: Record<string, unknown>;  // Future: family tweaks
+  customizations?: RotationCustomizations;
 }
 
 // Child slot mapping

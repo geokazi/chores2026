@@ -28,6 +28,7 @@ export interface ChoreGamiSession {
     children_pins_enabled: boolean;
     theme: string;
     members: FamilyMember[];  // All family members cached
+    settings: Record<string, unknown>;  // Full JSONB settings for rotation config access
   } | null;
   isAuthenticated: boolean;
   sessionToken?: string;

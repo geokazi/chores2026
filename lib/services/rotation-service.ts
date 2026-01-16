@@ -3,7 +3,7 @@
  * Handles rotation config read/write and chore lookups
  */
 
-import type { RotationConfig, ChildSlotMapping, PresetChore, DayOfWeek } from "../types/rotation.ts";
+import type { RotationConfig, ChildSlotMapping, PresetChore, DayOfWeek, RotationCustomizations, CustomChore } from "../types/rotation.ts";
 import { getPresetByKey, getCurrentWeekType, getDayOfWeek, getPresetSlots } from "../data/rotation-presets.ts";
 
 // Get rotation config from family settings JSONB
@@ -17,13 +17,19 @@ export function getRotationConfig(familySettings: Record<string, unknown>): Rota
 // Build rotation config for saving to JSONB
 export function buildRotationConfig(
   presetKey: string,
-  childSlots: ChildSlotMapping[]
+  childSlots: ChildSlotMapping[],
+  customizations?: RotationCustomizations,
+  startDate?: string
 ): RotationConfig {
-  return {
+  const config: RotationConfig = {
     active_preset: presetKey,
-    start_date: new Date().toISOString().split('T')[0],
+    start_date: startDate || new Date().toISOString().split('T')[0],
     child_slots: childSlots,
   };
+  if (customizations) {
+    config.customizations = customizations;
+  }
+  return config;
 }
 
 // Get chores for a specific child on a given date
@@ -99,4 +105,35 @@ export function getRequiredSlotCount(presetKey: string): number {
   const preset = getPresetByKey(presetKey);
   if (!preset) return 0;
   return getPresetSlots(preset).length;
+}
+
+// Apply customizations to preset chores (override layer pattern)
+export function getChoresWithCustomizations(
+  presetChores: PresetChore[],
+  customizations?: RotationCustomizations
+): PresetChore[] {
+  if (!customizations) return presetChores;
+
+  // Filter disabled and apply point overrides
+  let chores = presetChores
+    .filter(c => customizations.chore_overrides?.[c.key]?.enabled !== false)
+    .map(c => ({
+      ...c,
+      points: customizations.chore_overrides?.[c.key]?.points ?? c.points,
+    }));
+
+  // Append custom chores
+  if (customizations.custom_chores?.length) {
+    const customPresetChores: PresetChore[] = customizations.custom_chores.map(c => ({
+      key: c.key,
+      name: c.name,
+      points: c.points,
+      icon: c.icon || '✨',
+      minutes: 5,        // Default estimate
+      category: 'custom',
+    }));
+    chores = [...chores, ...customPresetChores];
+  }
+
+  return chores;
 }

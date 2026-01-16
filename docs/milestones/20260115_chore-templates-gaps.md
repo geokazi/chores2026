@@ -19,6 +19,7 @@ The chore templates feature is **100% complete**. All gaps have been implemented
 - ✅ Kid dashboard UI integration (merged chore display)
 - ✅ TransactionService connection (backwards-compatible)
 - ✅ Session includes full JSONB settings for rotation config
+- ✅ **Template customization** (adjust points, disable chores, add custom chores)
 
 **Implementation commits:**
 

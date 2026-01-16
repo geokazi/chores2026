@@ -862,7 +862,9 @@ export const PRESET_CHORES: Record<string, ChoreDefinition[]> = {
 // That's it! No database changes needed.
 ```
 
-### Template Customization (Future Enhancement)
+### Template Customization (Implemented)
+
+**Status**: ✅ **COMPLETE** (January 15, 2026)
 
 **Design: Override Layer Pattern**
 

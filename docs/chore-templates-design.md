@@ -1040,9 +1040,9 @@ Template auto-appears in selection modal.
 
 ---
 
-## Future: Template Customization
+## Template Customization
 
-**Status**: Designed (not yet implemented)
+**Status**: ✅ **COMPLETE** (January 15, 2026)
 
 Families may want to tweak templates (adjust points, disable chores, add custom chores). The **Override Layer Pattern** enables this with minimal complexity:
 
