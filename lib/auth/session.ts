@@ -139,6 +139,8 @@ export async function getAuthenticatedSession(
         children_pins_enabled: choregamiSettings.children_pins_enabled || false,
         theme: settings.theme || "fresh_meadow",
         members,
+        // Include full JSONB settings for rotation config access
+        settings: settings,
       },
       isAuthenticated: true,
       sessionToken: accessToken,
