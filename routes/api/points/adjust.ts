@@ -1,17 +1,54 @@
 /**
  * Point Adjustment API Route
  * Handles parent point adjustments with FamilyScore sync
+ *
+ * SECURITY: Requires authenticated parent role
  */
 
 import { Handlers } from "$fresh/server.ts";
 import { TransactionService } from "../../../lib/services/transaction-service.ts";
 import { ChoreService } from "../../../lib/services/chore-service.ts";
+import { getAuthenticatedSession } from "../../../lib/auth/session.ts";
 
 export const handler: Handlers = {
   async POST(req) {
     try {
+      // SECURITY: Verify caller is an authenticated parent
+      const session = await getAuthenticatedSession(req);
+
+      if (!session.isAuthenticated) {
+        return new Response(
+          JSON.stringify({ error: "Authentication required" }),
+          {
+            status: 401,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+      }
+
+      if (session.user?.role !== "parent") {
+        return new Response(
+          JSON.stringify({ error: "Parent authorization required" }),
+          {
+            status: 403,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+      }
+
       const body = await req.json();
       const { member_id, family_id, amount, reason } = body;
+
+      // SECURITY: Verify family_id matches session
+      if (session.family?.id !== family_id) {
+        return new Response(
+          JSON.stringify({ error: "Family access denied" }),
+          {
+            status: 403,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+      }
 
       if (!member_id || !family_id || !amount || !reason) {
         return new Response(

@@ -201,12 +201,13 @@ function getKidSessionFromStorage(kidId: string): KidSession | null {
 }
 
 /**
- * Generate a simple device identifier for session tracking
+ * Generate a cryptographically secure device identifier for session tracking
+ * Uses Web Crypto API (crypto.randomUUID) for secure random generation
  */
 function getDeviceId(): string {
   let deviceId = localStorage.getItem('device_id');
   if (!deviceId) {
-    deviceId = `device_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    deviceId = `device_${crypto.randomUUID()}`;
     localStorage.setItem('device_id', deviceId);
   }
   return deviceId;
