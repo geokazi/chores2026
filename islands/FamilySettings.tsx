@@ -74,11 +74,18 @@ export default function FamilySettings({ family, members, settings }: FamilySett
   const [newChorePoints, setNewChorePoints] = useState("1");
   const [isSavingCustomizations, setIsSavingCustomizations] = useState(false);
 
+  // State for inline kid slot editing
+  const [inlineChildSlots, setInlineChildSlots] = useState<Record<string, string>>({});
+
   // Initialize customization state from active rotation
   useEffect(() => {
-    if (activeRotation?.customizations) {
-      setChoreOverrides(activeRotation.customizations.chore_overrides || {});
-      setCustomChores(activeRotation.customizations.custom_chores || []);
+    if (activeRotation) {
+      setChoreOverrides(activeRotation.customizations?.chore_overrides || {});
+      setCustomChores(activeRotation.customizations?.custom_chores || []);
+      // Initialize inline child slots from active rotation
+      const existing: Record<string, string> = {};
+      activeRotation.child_slots?.forEach(s => { existing[s.slot] = s.profile_id; });
+      setInlineChildSlots(existing);
     }
   }, [activeRotation?.active_preset]);
 
@@ -341,13 +348,21 @@ export default function FamilySettings({ family, members, settings }: FamilySett
       customizations.custom_chores = customChores;
     }
 
+    // Build child_slots from inline state
+    const preset = getPresetByKey(activeRotation.active_preset);
+    const slots = preset ? getPresetSlots(preset) : [];
+    const childSlotsToSave = slots.map(slot => ({
+      slot,
+      profile_id: inlineChildSlots[slot] || "",
+    }));
+
     try {
       const response = await fetch('/api/rotation/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           preset_key: activeRotation.active_preset,
-          child_slots: activeRotation.child_slots,
+          child_slots: childSlotsToSave,
           customizations: Object.keys(customizations).length > 0 ? customizations : null,
           start_date: activeRotation.start_date,
         }),
@@ -589,7 +604,15 @@ export default function FamilySettings({ family, members, settings }: FamilySett
                 checked={activeRotation?.active_preset === preset.key}
                 onChange={() => {
                   setSelectedPreset(preset.key);
-                  setChildSlots({});
+                  // Pre-select kids in order
+                  const slots = getPresetSlots(preset);
+                  const preSelected: Record<string, string> = {};
+                  slots.forEach((slot, i) => {
+                    if (children[i]) {
+                      preSelected[slot] = children[i].id;
+                    }
+                  });
+                  setChildSlots(preSelected);
                   setShowRotationModal(true);
                 }}
               />
@@ -625,9 +648,46 @@ export default function FamilySettings({ family, members, settings }: FamilySett
               const preset = getPresetByKey(activeRotation.active_preset);
               if (!preset) return null;
 
+              const slots = getPresetSlots(preset);
+              const selectedInOtherSlotsInline = (currentSlot: string) => {
+                return Object.entries(inlineChildSlots)
+                  .filter(([slot, _]) => slot !== currentSlot)
+                  .map(([_, profileId]) => profileId);
+              };
+
               return (
                 <div class="customize-content">
-                  <h4>Template Chores</h4>
+                  <h4>Kid Assignment</h4>
+                  <div class="inline-slot-mapping">
+                    {slots.map((slot) => {
+                      const usedIds = selectedInOtherSlotsInline(slot);
+                      const currentKidId = inlineChildSlots[slot];
+                      const currentKid = children.find(c => c.id === currentKidId);
+                      return (
+                        <div key={slot} class="inline-slot-row">
+                          <span class="slot-label">{slot}:</span>
+                          <select
+                            value={currentKidId || ""}
+                            onChange={(e) => setInlineChildSlots({ ...inlineChildSlots, [slot]: e.currentTarget.value })}
+                            class="slot-select"
+                          >
+                            <option value="">Select child...</option>
+                            {children.map((child) => (
+                              <option
+                                key={child.id}
+                                value={child.id}
+                                disabled={usedIds.includes(child.id)}
+                              >
+                                {child.name}{usedIds.includes(child.id) ? ' (already assigned)' : ''}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <h4 style={{ marginTop: "1.5rem" }}>Template Chores</h4>
                   <div class="chore-customize-list">
                     {preset.chores.map((chore) => {
                       const override = choreOverrides[chore.key] || {};
@@ -1892,6 +1952,36 @@ export default function FamilySettings({ family, members, settings }: FamilySett
         .btn-outline:disabled {
           opacity: 0.5;
           cursor: not-allowed;
+        }
+
+        /* Inline slot mapping */
+        .inline-slot-mapping {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+
+        .inline-slot-row {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          padding: 0.5rem;
+          background: white;
+          border-radius: 6px;
+        }
+
+        .slot-label {
+          min-width: 60px;
+          font-weight: 500;
+          font-size: 0.9rem;
+        }
+
+        .slot-select {
+          flex: 1;
+          padding: 0.5rem;
+          border: 1px solid #e5e7eb;
+          border-radius: 6px;
+          font-size: 0.9rem;
         }
       `}</style>
     </div>
