@@ -82,7 +82,6 @@ export default function FamilySettings({ family, members, settings }: FamilySett
   const [kidNameInput, setKidNameInput] = useState("");
   const [isManagingKid, setIsManagingKid] = useState(false);
   const [pendingRemoveKid, setPendingRemoveKid] = useState<any>(null);
-  const kidCount = children.length;
 
   // Initialize customization state from active rotation
   useEffect(() => {
@@ -97,6 +96,7 @@ export default function FamilySettings({ family, members, settings }: FamilySett
   }, [activeRotation?.active_preset]);
 
   const children = members.filter(member => member.role === "child");
+  const kidCount = children.length;
 
   // Apply theme on component mount
   useEffect(() => {
