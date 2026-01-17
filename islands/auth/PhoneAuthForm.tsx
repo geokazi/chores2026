@@ -191,7 +191,7 @@ export default function PhoneAuthForm({
         </div>
       )}
 
-      {/* OTP Verification */}
+      {/* OTP Verification - Simple single input */}
       {otpSent && (
         <div style={{ marginBottom: "1.5rem" }}>
           <label
@@ -201,97 +201,44 @@ export default function PhoneAuthForm({
               fontWeight: "500",
               color: "#374151",
               marginBottom: "8px",
-              textAlign: "center",
             }}
           >
             Enter 6-digit code
           </label>
-
-          {/* Single input with visual digit display */}
-          <div style={{ position: "relative", marginBottom: "12px" }}>
-            {/* Visual boxes behind the input */}
-            <div
-              style={{
-                display: "flex",
-                gap: "8px",
-                justifyContent: "center",
-                pointerEvents: "none",
-              }}
-            >
-              {[0, 1, 2, 3, 4, 5].map((index) => (
-                <div
-                  key={index}
-                  style={{
-                    width: "48px",
-                    height: "56px",
-                    border: `2px solid ${otpValue[index] ? "#3b82f6" : "#d1d5db"}`,
-                    borderRadius: "8px",
-                    fontSize: "24px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontFamily: "monospace",
-                    fontWeight: "600",
-                    backgroundColor: otpValue[index] ? "#f0f9ff" : "white",
-                    transition: "border-color 0.2s, background-color 0.2s",
-                  }}
-                >
-                  {otpValue[index] || ""}
-                </div>
-              ))}
-            </div>
-            {/* Invisible input that captures all typing/pasting */}
-            <input
-              type="text"
-              value={otpValue}
-              onChange={handleOtpChange}
-              maxLength={6}
-              disabled={disabled || loading}
-              inputMode="numeric"
-              pattern="[0-9]*"
-              autoComplete="one-time-code"
-              autoFocus
-              aria-label="6-digit verification code"
-              style={{
-                position: "absolute",
-                top: 0,
-                left: "50%",
-                transform: "translateX(-50%)",
-                width: "320px",
-                height: "56px",
-                opacity: 0,
-                fontSize: "24px",
-                caretColor: "transparent",
-              }}
-            />
-          </div>
-
-          <div style={{ textAlign: "center" }}>
-            <p
-              style={{
-                fontSize: "14px",
-                color: "#6b7280",
-                margin: "0 0 4px 0",
-              }}
-            >
+          <input
+            type="text"
+            value={otpValue}
+            onInput={handleOtpChange}
+            maxLength={6}
+            disabled={disabled || loading}
+            inputMode="numeric"
+            pattern="[0-9]*"
+            autoComplete="one-time-code"
+            autoFocus
+            placeholder="123456"
+            style={{
+              width: "100%",
+              padding: "16px",
+              border: "2px solid #d1d5db",
+              borderRadius: "12px",
+              fontSize: "28px",
+              outline: "none",
+              boxSizing: "border-box",
+              minHeight: "56px",
+              fontFamily: "monospace",
+              textAlign: "center",
+              letterSpacing: "0.5em",
+            }}
+          />
+          <div style={{ textAlign: "center", marginTop: "12px" }}>
+            <p style={{ fontSize: "14px", color: "#6b7280", margin: "0 0 4px 0" }}>
               Code sent to {maskPhoneForDisplay(phoneValue)}
-            </p>
-            <p
-              style={{
-                fontSize: "12px",
-                color: "#9ca3af",
-                margin: "0 0 8px 0",
-              }}
-            >
-              Type or paste your code
             </p>
             <button
               type="button"
               onClick={() => {
                 clearSecurePhoneNumber();
-                globalThis.location.href = `${
-                  variant === "login" ? "/login" : "/signup"
-                }?mode=phone`;
+                globalThis.location.href = `${variant === "login" ? "/login" : "/signup"}?mode=phone`;
               }}
               style={{
                 background: "none",
