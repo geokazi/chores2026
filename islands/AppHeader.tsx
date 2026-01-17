@@ -5,6 +5,7 @@
  */
 
 import { useState } from "preact/hooks";
+import { changeTheme, type ThemeId } from "../lib/theme-manager.ts";
 
 interface FamilyMember {
   id: string;
@@ -45,12 +46,10 @@ export default function AppHeader({
   const kids = familyMembers.filter((m) => m.role === "child");
 
   const handleThemeChange = (theme: string) => {
+    // Use centralized theme manager (same as /parent/settings)
+    changeTheme(theme as ThemeId);
     if (onThemeChange) {
       onThemeChange(theme);
-    } else {
-      // Fallback: store in localStorage and reload
-      localStorage.setItem("theme", theme);
-      document.documentElement.setAttribute("data-theme", theme);
     }
   };
 
