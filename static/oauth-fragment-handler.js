@@ -153,25 +153,10 @@
             const cleanUrl = window.location.origin + window.location.pathname;
             window.history.replaceState({}, "", cleanUrl);
 
-            // Give the cookies time to be set, then reload/redirect to ensure server sees auth state
+            // Give the cookies time to be set, then redirect to ensure server sees auth state
             setTimeout(() => {
-              // For fragment flow, always redirect to welcome for new users
-              // Check if user has completed onboarding (in case this is a returning user)
-              const hasOnboarded = userData.user_metadata
-                ?.chores2026_preferences?.onboarded_at;
-
-              if (hasOnboarded) {
-                console.log(
-                  "🔐 User already onboarded, redirecting to main app...",
-                );
-                window.location.href = "/";
-              } else {
-                console.log(
-                  "🔐 New user detected, redirecting to welcome screen for onboarding...",
-                );
-                // Use replace to avoid back button issues
-                window.location.replace("/welcome");
-              }
+              console.log("🔐 Redirecting to main app...");
+              window.location.href = "/";
             }, 100); // Small delay to ensure cookies are set
           } else {
             console.error("❌ Invalid JWT token format");

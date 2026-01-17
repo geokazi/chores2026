@@ -25,25 +25,7 @@ export const handler: Handlers<LoginPageData> = {
     const url = new URL(req.url);
     const mode = (url.searchParams.get("mode") || "email") as AuthMode;
 
-    // Phone OTP mode
-    if (mode === "phone") {
-      const phone = formData.get("phone") as string;
-      if (!phone) {
-        return ctx.render({ mode, error: "Phone number required" });
-      }
-
-      try {
-        const { TwilioVerifyClient } = await import("../lib/twilio-client.ts");
-        const twilioClient = new TwilioVerifyClient();
-        await twilioClient.sendVerificationCode(phone);
-        return ctx.render({ mode, otpSent: true });
-      } catch (error) {
-        console.error("❌ SMS error:", error);
-        return ctx.render({ mode, error: "Failed to send code. Try again." });
-      }
-    }
-
-    // Phone OTP verification
+    // Phone OTP verification (check this first since it has "otp" field)
     if (formData.has("otp")) {
       const phone = formData.get("phone") as string;
       const otp = formData.get("otp") as string;
@@ -51,10 +33,10 @@ export const handler: Handlers<LoginPageData> = {
       try {
         const { TwilioVerifyClient } = await import("../lib/twilio-client.ts");
         const twilioClient = new TwilioVerifyClient();
-        const verified = await twilioClient.verifyCode(phone, otp);
+        const result = await twilioClient.verifyCode(phone, otp);
 
-        if (!verified) {
-          return ctx.render({ mode: "phone", error: "Invalid code", otpSent: true });
+        if (!result.success || !result.valid) {
+          return ctx.render({ mode: "phone", error: result.error || "Invalid code", otpSent: true });
         }
 
         // Create or get user by phone
@@ -90,6 +72,29 @@ export const handler: Handlers<LoginPageData> = {
       } catch (error) {
         console.error("❌ OTP verify error:", error);
         return ctx.render({ mode: "phone", error: "Verification failed", otpSent: true });
+      }
+    }
+
+    // Phone OTP send mode (no "otp" field means requesting a code)
+    if (mode === "phone") {
+      const phone = formData.get("phone") as string;
+      if (!phone) {
+        return ctx.render({ mode, error: "Phone number required" });
+      }
+
+      try {
+        const { TwilioVerifyClient } = await import("../lib/twilio-client.ts");
+        const twilioClient = new TwilioVerifyClient();
+        const result = await twilioClient.sendVerification(phone);
+
+        if (!result.success) {
+          return ctx.render({ mode, error: result.error || "Failed to send code. Try again." });
+        }
+
+        return ctx.render({ mode, otpSent: true });
+      } catch (error) {
+        console.error("❌ SMS error:", error);
+        return ctx.render({ mode, error: "Failed to send code. Try again." });
       }
     }
 
@@ -155,8 +160,12 @@ export default function LoginPage({ data }: PageProps<LoginPageData>) {
   const supabaseKey = Deno.env.get("SUPABASE_KEY") || "";
 
   return (
-    <div class="login-container">
-      <div class="login-card">
+    <>
+      {/* OAuth fragment handler - processes #access_token=... from OAuth redirects */}
+      <script src="/oauth-fragment-handler.js"></script>
+
+      <div class="login-container">
+        <div class="login-card">
         <div class="login-header">
           <h1>ChoreGami 2026</h1>
           <p>Sign in to manage your family's chores</p>
@@ -293,6 +302,7 @@ export default function LoginPage({ data }: PageProps<LoginPageData>) {
           font-size: 0.875rem;
         }
       `}</style>
-    </div>
+      </div>
+    </>
   );
 }
