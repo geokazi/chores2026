@@ -12,7 +12,6 @@ export interface FamilyMember {
   role: "parent" | "child";
   current_points: number;
   has_pin: boolean;  // Whether member has a PIN set (don't expose actual hash)
-  avatar_emoji?: string;
 }
 
 export interface ChoreGamiSession {
@@ -92,7 +91,7 @@ export async function getAuthenticatedSession(
         .single(),
       supabase
         .from("family_profiles")
-        .select("id, name, role, current_points, pin_hash, avatar_emoji")
+        .select("id, name, role, current_points, pin_hash")
         .eq("family_id", profileData.family_id)
         .eq("is_deleted", false)
         .order("current_points", { ascending: false }),
@@ -113,7 +112,6 @@ export async function getAuthenticatedSession(
       role: m.role,
       current_points: m.current_points || 0,
       has_pin: !!m.pin_hash,  // Convert to boolean - don't expose actual hash
-      avatar_emoji: m.avatar_emoji || undefined,
     }));
 
     // Extract settings from JSONB with defaults
