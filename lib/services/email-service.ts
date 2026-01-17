@@ -6,7 +6,18 @@
 import { Resend } from "npm:resend";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+// Lazy initialization to avoid build-time errors (env vars not available during docker build)
+let _resend: Resend | null = null;
+function getResend(): Resend {
+  if (!_resend) {
+    const apiKey = Deno.env.get("RESEND_API_KEY");
+    if (!apiKey) {
+      throw new Error("RESEND_API_KEY environment variable is not set");
+    }
+    _resend = new Resend(apiKey);
+  }
+  return _resend;
+}
 
 const EMAIL_FROM = "Choregami Support <noreply@choregami.com>";
 
@@ -65,7 +76,7 @@ export async function sendGoalAchievedEmail(
   }
 
   try {
-    const { data: result, error } = await resend.emails.send({
+    const { data: result, error } = await getResend().emails.send({
       from: EMAIL_FROM,
       to: toEmails,
       subject: `🎉 ${data.familyName} hit the weekly goal!`,
