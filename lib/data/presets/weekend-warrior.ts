@@ -31,6 +31,7 @@ export const WEEKEND_WARRIOR_PRESET: RotationPreset = {
   description: 'Light weekday chores, intensive weekend deep-cleaning.',
   icon: '⚡',
   color: '#f59e0b',
+  preset_category: 'everyday',
   difficulty: 'beginner',
   min_children: 2,
   max_children: 6,

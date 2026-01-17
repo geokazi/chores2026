@@ -10,6 +10,7 @@ import { Handlers, PageProps } from "$fresh/server.ts";
 import { getAuthenticatedSession } from "../../lib/auth/session.ts";
 import { ChoreService } from "../../lib/services/chore-service.ts";
 import ParentDashboard from "../../islands/ParentDashboard.tsx";
+import AppHeader from "../../islands/AppHeader.tsx";
 import AppFooter from "../../components/AppFooter.tsx";
 
 interface ParentDashboardData {
@@ -114,17 +115,18 @@ export default function ParentDashboardPage(
     );
   }
 
+  // Find current parent from members
+  const currentUser = members.find(m => m.id === parentProfileId) || null;
+
   return (
     <div class="container">
-      <div class="header">
-        <div>
-          <a href="/" style={{ color: "white", textDecoration: "none" }}>
-            ← Back
-          </a>
-        </div>
-        <h1>Family Dashboard</h1>
-        <div></div>
-      </div>
+      <AppHeader
+        currentPage="dashboard"
+        pageTitle="Family Dashboard"
+        familyMembers={members}
+        currentUser={currentUser}
+        userRole="parent"
+      />
 
       <ParentDashboard
         family={family}

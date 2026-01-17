@@ -7,6 +7,7 @@ import { Handlers, PageProps } from "$fresh/server.ts";
 import { getAuthenticatedSession } from "../lib/auth/session.ts";
 import { ChoreService } from "../lib/services/chore-service.ts";
 import FamilyReports from "../islands/FamilyReports.tsx";
+import AppHeader from "../islands/AppHeader.tsx";
 import AppFooter from "../components/AppFooter.tsx";
 
 interface ReportsData {
@@ -113,15 +114,13 @@ export default function ReportsPage({ data }: PageProps<ReportsData>) {
 
   return (
     <div class="container">
-      <div class="header">
-        <div>
-          <a href="/" style={{ color: "white", textDecoration: "none" }}>
-            ← Back
-          </a>
-        </div>
-        <h1>Family Progress</h1>
-        <div></div>
-      </div>
+      <AppHeader
+        currentPage="reports"
+        pageTitle="Family Progress"
+        familyMembers={family.members || []}
+        currentUser={null}
+        userRole="parent"
+      />
 
       {error ? (
         <div class="card">

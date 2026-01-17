@@ -9,12 +9,15 @@
 import { Handlers, PageProps } from "$fresh/server.ts";
 import { getAuthenticatedSession } from "../../lib/auth/session.ts";
 import FamilySettings from "../../islands/FamilySettings.tsx";
+import ParentPinGate from "../../islands/ParentPinGate.tsx";
+import AppHeader from "../../islands/AppHeader.tsx";
 import AppFooter from "../../components/AppFooter.tsx";
 
 interface ParentSettingsData {
   family: any;
   members: any[];
   settings: any;
+  parentProfileId?: string;
   error?: string;
 }
 
@@ -52,6 +55,7 @@ export const handler: Handlers<ParentSettingsData> = {
         // Include nested JSONB structure for rotation config
         apps: fullSettings.apps,
       },
+      parentProfileId: session.user?.profileId,
     });
   },
 };
@@ -59,7 +63,8 @@ export const handler: Handlers<ParentSettingsData> = {
 export default function ParentSettingsPage(
   { data }: PageProps<ParentSettingsData>,
 ) {
-  const { family, members, settings, error } = data;
+  const { family, members, settings, parentProfileId, error } = data;
+  const currentUser = members.find(m => m.id === parentProfileId) || null;
 
   if (error) {
     return (
@@ -87,21 +92,24 @@ export default function ParentSettingsPage(
 
   return (
     <div class="container">
-      <div class="header">
-        <div>
-          <a href="/parent/dashboard" style={{ color: "white", textDecoration: "none" }}>
-            ← Dashboard
-          </a>
-        </div>
-        <h1>Family Settings</h1>
-        <div></div>
-      </div>
-
-      <FamilySettings
-        family={family}
-        members={members}
-        settings={settings}
+      <AppHeader
+        currentPage="settings"
+        pageTitle="Family Settings"
+        familyMembers={members}
+        currentUser={currentUser}
+        userRole="parent"
       />
+
+      <ParentPinGate
+        operation="access family settings"
+        familyMembers={members}
+      >
+        <FamilySettings
+          family={family}
+          members={members}
+          settings={settings}
+        />
+      </ParentPinGate>
       <AppFooter />
     </div>
   );

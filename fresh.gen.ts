@@ -37,6 +37,7 @@ import * as $parent_my_chores from "./routes/parent/my-chores.tsx";
 import * as $parent_settings from "./routes/parent/settings.tsx";
 import * as $reports from "./routes/reports.tsx";
 import * as $AddChoreModal from "./islands/AddChoreModal.tsx";
+import * as $AppHeader from "./islands/AppHeader.tsx";
 import * as $ChoreDetail from "./islands/ChoreDetail.tsx";
 import * as $ChoreList from "./islands/ChoreList.tsx";
 import * as $FamilyReports from "./islands/FamilyReports.tsx";
@@ -103,6 +104,7 @@ const manifest = {
   },
   islands: {
     "./islands/AddChoreModal.tsx": $AddChoreModal,
+    "./islands/AppHeader.tsx": $AppHeader,
     "./islands/ChoreDetail.tsx": $ChoreDetail,
     "./islands/ChoreList.tsx": $ChoreList,
     "./islands/FamilyReports.tsx": $FamilyReports,

@@ -3,9 +3,8 @@
  */
 
 import { useState, useEffect } from "preact/hooks";
-import ParentPinGate from "./ParentPinGate.tsx";
 import { getCurrentTheme, changeTheme, themes, type ThemeId } from "../lib/theme-manager.ts";
-import { ROTATION_PRESETS, getPresetByKey, getPresetSlots } from "../lib/data/rotation-presets.ts";
+import { ROTATION_PRESETS, getPresetByKey, getPresetSlots, getPresetsByCategory } from "../lib/data/rotation-presets.ts";
 import { getRotationConfig, getChoresWithCustomizations } from "../lib/services/rotation-service.ts";
 import type { RotationPreset, ChildSlotMapping, RotationCustomizations, CustomChore } from "../lib/types/rotation.ts";
 
@@ -590,39 +589,59 @@ export default function FamilySettings({ family, members, settings }: FamilySett
             </div>
           </label>
 
-          {/* Template Options */}
-          {ROTATION_PRESETS.filter(p => children.length >= p.min_children && children.length <= p.max_children).map((preset) => (
-            <label
-              key={preset.key}
-              class={`rotation-preset-option ${activeRotation?.active_preset === preset.key ? 'selected' : ''}`}
-              style={{ borderLeft: `4px solid ${preset.color || '#ccc'}` }}
-            >
-              <input
-                type="radio"
-                name="assignment-mode"
-                value={preset.key}
-                checked={activeRotation?.active_preset === preset.key}
-                onChange={() => {
-                  setSelectedPreset(preset.key);
-                  // Pre-select kids in order
-                  const slots = getPresetSlots(preset);
-                  const preSelected: Record<string, string> = {};
-                  slots.forEach((slot, i) => {
-                    if (children[i]) {
-                      preSelected[slot] = children[i].id;
-                    }
-                  });
-                  setChildSlots(preSelected);
-                  setShowRotationModal(true);
-                }}
-              />
-              <span class="preset-icon">{preset.icon}</span>
-              <div class="preset-info">
-                <strong>{preset.name}</strong>
-                <p>{preset.description}</p>
-              </div>
-            </label>
-          ))}
+          {/* Template Options - Grouped by Category */}
+          {(() => {
+            const { everyday, seasonal } = getPresetsByCategory(children.length);
+            const renderPreset = (preset: RotationPreset) => (
+              <label
+                key={preset.key}
+                class={`rotation-preset-option ${activeRotation?.active_preset === preset.key ? 'selected' : ''}`}
+                style={{ borderLeft: `4px solid ${preset.color || '#ccc'}` }}
+              >
+                <input
+                  type="radio"
+                  name="assignment-mode"
+                  value={preset.key}
+                  checked={activeRotation?.active_preset === preset.key}
+                  onChange={() => {
+                    setSelectedPreset(preset.key);
+                    // Pre-select kids in order
+                    const slots = getPresetSlots(preset);
+                    const preSelected: Record<string, string> = {};
+                    slots.forEach((slot, i) => {
+                      if (children[i]) {
+                        preSelected[slot] = children[i].id;
+                      }
+                    });
+                    setChildSlots(preSelected);
+                    setShowRotationModal(true);
+                  }}
+                />
+                <span class="preset-icon">{preset.icon}</span>
+                <div class="preset-info">
+                  <strong>{preset.name}</strong>
+                  <p>{preset.description}</p>
+                </div>
+              </label>
+            );
+
+            return (
+              <>
+                {everyday.length > 0 && (
+                  <>
+                    <div class="preset-category-header">Everyday Routines</div>
+                    {everyday.map(renderPreset)}
+                  </>
+                )}
+                {seasonal.length > 0 && (
+                  <>
+                    <div class="preset-category-header">Seasonal</div>
+                    {seasonal.map(renderPreset)}
+                  </>
+                )}
+              </>
+            );
+          })()}
         </div>
 
         {activeRotation && (
@@ -859,60 +878,31 @@ export default function FamilySettings({ family, members, settings }: FamilySett
         <p style={{ fontSize: "0.875rem", color: "var(--color-text-light)", marginBottom: "1rem" }}>
           Adjust family member points with quick presets or custom amounts
         </p>
-        
-        <ParentPinGate 
-          operation="adjust family points"
-          familyMembers={members}
-        >
-          <div class="point-management">
-            {members.map((member) => (
-              <div key={member.id} class="member-item">
-                <div class="member-info">
-                  <span class="member-name">{member.name}</span>
-                  <span class={`member-role ${member.role}`}>
-                    {member.role === 'parent' ? '👨‍👩‍👧‍👦 Parent' : '🧒 Kid'}
-                  </span>
-                  <span class="member-points">{member.current_points} points</span>
-                </div>
-                <div class="member-actions">
-                  <button 
-                    class="btn btn-outline" 
-                    onClick={() => handleMemberPointAdjustment(member)}
-                    style={{ fontSize: "0.75rem" }}
-                  >
-                    ⚡ Adjust Points
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </ParentPinGate>
-      </div>
 
-      <div class="settings-section">
-        <h2>⚠️ Danger Zone</h2>
-        <p style={{ fontSize: "0.875rem", color: "var(--color-warning)", marginBottom: "1rem" }}>
-          These actions require parent PIN verification and cannot be undone
-        </p>
-        <div class="danger-actions">
-          <ParentPinGate 
-            operation="reset all family points"
-            familyMembers={members}
-          >
-            <button class="btn-danger" onClick={handleResetAllPoints}>
-              Reset All Points
-            </button>
-          </ParentPinGate>
-          <ParentPinGate 
-            operation="clear all kid PINs"
-            familyMembers={members}
-          >
-            <button class="btn-danger" onClick={handleClearAllPins}>
-              Clear All Kid PINs
-            </button>
-          </ParentPinGate>
+        <div class="point-management">
+          {members.map((member) => (
+            <div key={member.id} class="member-item">
+              <div class="member-info">
+                <span class="member-name">{member.name}</span>
+                <span class={`member-role ${member.role}`}>
+                  {member.role === 'parent' ? '👨‍👩‍👧‍👦 Parent' : '🧒 Kid'}
+                </span>
+                <span class="member-points">{member.current_points} points</span>
+              </div>
+              <div class="member-actions">
+                <button
+                  class="btn btn-outline"
+                  onClick={() => handleMemberPointAdjustment(member)}
+                  style={{ fontSize: "0.75rem" }}
+                >
+                  ⚡ Adjust Points
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
+
 
       {/* PIN Setting Modal */}
       {showPinModal && currentKid && (
@@ -1781,6 +1771,21 @@ export default function FamilySettings({ family, members, settings }: FamilySett
           color: var(--color-text-light);
         }
 
+        .preset-category-header {
+          font-size: 0.75rem;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          color: var(--color-text-light);
+          margin: 1rem 0 0.5rem 0;
+          padding-bottom: 0.25rem;
+          border-bottom: 1px solid #e5e7eb;
+        }
+
+        .preset-category-header:first-of-type {
+          margin-top: 0.5rem;
+        }
+
         .manage-chores-link {
           display: inline-block;
           margin-top: 0.5rem;
@@ -2017,16 +2022,3 @@ async function updatePinSetting(enabled: boolean): Promise<boolean> {
 }
 
 
-function handleResetAllPoints() {
-  if (confirm('Are you sure you want to reset all family member points to 0? This cannot be undone.')) {
-    // TODO: Call API to reset points
-    console.log('Reset all points');
-  }
-}
-
-function handleClearAllPins() {
-  if (confirm('Are you sure you want to clear all kid PINs? Kids will no longer need PINs to access their accounts.')) {
-    // TODO: Call API to clear pins
-    console.log('Clear all PINs');
-  }
-}

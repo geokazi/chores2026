@@ -7,6 +7,7 @@ import { useEffect, useState } from "preact/hooks";
 import { ActiveKidSessionManager } from "../lib/active-kid-session.ts";
 import KidDashboard from "./KidDashboard.tsx";
 import WebSocketManager from "./WebSocketManager.tsx";
+import AppHeader from "./AppHeader.tsx";
 
 interface GoalStatus {
   enabled: boolean;
@@ -168,36 +169,14 @@ export default function SecureKidDashboard({ family, familyMembers, recentActivi
       onLeaderboardUpdate={handleLeaderboardUpdate}
       onMessage={handleWebSocketMessage}
     >
-      {/* Header with kid info */}
-      <div class="header">
-        <div>
-          <a href="/" style={{ color: "white", textDecoration: "none" }}>
-            ← Switch Profile
-          </a>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <span>👧</span>
-          <span>{activeKid.name}</span>
-          {family?.children_pins_enabled && (
-            <span style={{ fontSize: "0.75rem", opacity: 0.7 }}>🔐</span>
-          )}
-          <span style={{
-            fontSize: "0.625rem",
-            color: wsConnected ? "var(--color-success)" : "var(--color-text-light)",
-            marginLeft: "0.25rem"
-          }}>
-            {wsConnected ? "🎮" : "📊"}
-          </span>
-        </div>
-        <div>
-          <a
-            href="/parent/dashboard"
-            style={{ color: "white", textDecoration: "none" }}
-          >
-            ≡
-          </a>
-        </div>
-      </div>
+      {/* Mobile-friendly header */}
+      <AppHeader
+        currentPage="dashboard"
+        pageTitle={`${activeKid.name}'s Dashboard`}
+        familyMembers={familyMembers}
+        currentUser={activeKid}
+        userRole="child"
+      />
 
       {/* Family Goal Progress - Motivational display for kids */}
       {goalStatus?.enabled && (

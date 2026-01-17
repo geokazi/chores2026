@@ -7,12 +7,18 @@ import type { RotationPreset, DayOfWeek } from "../types/rotation.ts";
 import { SMART_ROTATION_PRESET } from "./presets/smart-rotation.ts";
 import { WEEKEND_WARRIOR_PRESET } from "./presets/weekend-warrior.ts";
 import { DAILY_BASICS_PRESET } from "./presets/daily-basics.ts";
+import { SUMMER_BREAK_PRESET } from "./presets/summer-break.ts";
+import { SCHOOL_YEAR_PRESET } from "./presets/school-year.ts";
 
 // All available presets
 export const ROTATION_PRESETS: RotationPreset[] = [
+  // Everyday templates
   SMART_ROTATION_PRESET,
   WEEKEND_WARRIOR_PRESET,
   DAILY_BASICS_PRESET,
+  // Seasonal templates
+  SUMMER_BREAK_PRESET,
+  SCHOOL_YEAR_PRESET,
 ];
 
 // Get preset by key
@@ -54,5 +60,23 @@ export function getDayOfWeek(date: Date): DayOfWeek {
   return days[date.getDay()];
 }
 
+// Get presets grouped by category
+export function getPresetsByCategory(childCount: number): {
+  everyday: RotationPreset[];
+  seasonal: RotationPreset[];
+} {
+  const suitable = getPresetsForFamily(childCount);
+  return {
+    everyday: suitable.filter(p => p.preset_category === 'everyday'),
+    seasonal: suitable.filter(p => p.preset_category === 'seasonal'),
+  };
+}
+
 // Re-export presets for direct import
-export { SMART_ROTATION_PRESET, WEEKEND_WARRIOR_PRESET, DAILY_BASICS_PRESET };
+export {
+  SMART_ROTATION_PRESET,
+  WEEKEND_WARRIOR_PRESET,
+  DAILY_BASICS_PRESET,
+  SUMMER_BREAK_PRESET,
+  SCHOOL_YEAR_PRESET,
+};

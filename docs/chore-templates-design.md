@@ -9,15 +9,19 @@
 
 Chore Templates allow families to pick and apply pre-built chore schedules that automatically assign age-appropriate chores to their kids each day. This feature leverages the existing JSONB settings architecture and FamilySettings modal pattern.
 
-### MVP Scope: 3-5 Curated Templates (Static TypeScript)
+### MVP Scope: 5 Curated Templates (Static TypeScript)
 
-| Template | Description | Kids | Cycle |
-|----------|-------------|------|-------|
-| 🎯 Smart Family Rotation | Two-week cleaning/maintenance cycle | 2-4 | Biweekly |
-| ⚡ Weekend Warrior | Light weekdays, intensive weekends | 2-6 | Weekly |
-| 🌱 Daily Basics | Same simple routine every day | 2-3 | Daily |
+| Category | Template | Description | Kids | Cycle |
+|----------|----------|-------------|------|-------|
+| Everyday | 🎯 Smart Family Rotation | Two-week cleaning/maintenance cycle | 2-4 | Biweekly |
+| Everyday | ⚡ Weekend Warrior | Light weekdays, intensive weekends | 2-6 | Weekly |
+| Everyday | 🌱 Daily Basics | Same simple routine every day | 2-3 | Daily |
+| Seasonal | ☀️ Summer Break | Outdoor-focused, more chores when kids have time | 2-4 | Weekly |
+| Seasonal | 📚 School Year | Light weekdays respecting homework, more on weekends | 2-4 | Weekly |
 
 **All templates use the same data model**: `schedule[weekType][slot][day] = choreKeys[]`
+
+Templates are grouped by `preset_category` field in the UI. See [Seasonal Templates Implementation](./milestones/20260116_seasonal-templates-implementation.md) for details.
 
 ### Scalability Philosophy
 
@@ -863,9 +867,11 @@ Rotation chores appear in the same "Today's Chores" list as manually-assigned ch
 │   lib/data/                                                                 │
 │   ├── rotation-presets.ts              ~80 lines   Registry + helpers       │
 │   └── presets/                                                              │
-│       ├── smart-rotation.ts            ~100 lines  Template definition      │
-│       ├── weekend-warrior.ts           ~80 lines   Template definition      │
-│       └── daily-basics.ts              ~60 lines   Template definition      │
+│       ├── smart-rotation.ts            ~100 lines  Everyday template        │
+│       ├── weekend-warrior.ts           ~80 lines   Everyday template        │
+│       ├── daily-basics.ts              ~60 lines   Everyday template        │
+│       ├── summer-break.ts              ~70 lines   Seasonal template        │
+│       └── school-year.ts               ~70 lines   Seasonal template        │
 │                                                                             │
 │   lib/types/                                                                │
 │   └── rotation.ts                      ~50 lines   TypeScript interfaces    │
@@ -888,7 +894,7 @@ Rotation chores appear in the same "Today's Chores" list as manually-assigned ch
 │                                                                             │
 │   ───────────────────────────────────────────────────────────────────────   │
 │                                                                             │
-│   TOTAL: ~650 lines across 7 files                                          │
+│   TOTAL: ~790 lines across 9 files                                          │
 │   Largest file: ~150 lines (well under 500 limit)                           │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
@@ -1087,6 +1093,7 @@ See [Implementation Gaps Document](./chore-templates-gaps.md) for detailed imple
 
 ## References
 
+- [Seasonal Templates Implementation](./milestones/20260116_seasonal-templates-implementation.md) - Summer Break + School Year templates
 - [Implementation Gaps & Completion](./milestones/20260115_chore-templates-gaps.md) - Detailed implementation notes
 - [JSONB Schema Design](./milestones/20260115_chore-templates-jsonb-schema.md) - Database schema and customization design
 - [Existing JSONB Settings](./20260114_JSONB_settings_architecture.md)

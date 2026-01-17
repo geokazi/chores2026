@@ -9,6 +9,7 @@
 import { Handlers, PageProps } from "$fresh/server.ts";
 import { getAuthenticatedSession } from "../lib/auth/session.ts";
 import KidSelector from "../islands/KidSelector.tsx";
+import AppHeader from "../islands/AppHeader.tsx";
 import AppFooter from "../components/AppFooter.tsx";
 
 interface IndexPageData {
@@ -88,24 +89,15 @@ export default function IndexPage({ data }: PageProps<IndexPageData>) {
 
   return (
     <div class="container">
-      <div class="header">
-        <div>
-          <a href="/logout" style={{ color: "white", textDecoration: "none" }}>
-            ← Logout
-          </a>
-        </div>
-        <h1>ChoreGami 2026</h1>
-        <div>
-          <a
-            href="/parent/dashboard"
-            style={{ color: "white", textDecoration: "none" }}
-          >
-            ⚙️
-          </a>
-        </div>
-      </div>
+      <AppHeader
+        currentPage="selector"
+        pageTitle="ChoreGami 2026"
+        familyMembers={familyMembers}
+        currentUser={null}
+        userRole="parent"
+      />
 
-      <div style={{ marginBottom: "1rem" }}>
+      <div style={{ marginBottom: "1rem", marginTop: "1rem" }}>
         <h2
           style={{
             fontSize: "1.25rem",
