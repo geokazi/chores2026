@@ -55,21 +55,26 @@ export const handler: Handlers<LoginPageData> = {
         );
 
         if (user) {
-          // Generate session for existing user
-          const { data: session } = await supabase.auth.admin.generateLink({
+          // Generate magic link and redirect user to it
+          const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
             type: "magiclink",
-            email: user.email || `${phone.replace(/\D/g, "")}@phone.choregami.local`,
+            email: user.email!,
+            options: {
+              redirectTo: new URL("/", req.url).toString(),
+            },
           });
 
-          if (session?.properties?.hashed_token) {
-            const { data: authData } = await supabase.auth.verifyOtp({
-              token_hash: session.properties.hashed_token,
-              type: "magiclink",
-            });
+          if (linkError) {
+            console.error("❌ Generate link error:", linkError);
+            return ctx.render({ mode: "phone", error: "Login failed. Try again.", otpSent: true });
+          }
 
-            if (authData?.session) {
-              return createSessionResponse(req, authData.session);
-            }
+          if (linkData?.properties?.action_link) {
+            // Redirect to the magic link which will establish the session
+            return new Response(null, {
+              status: 303,
+              headers: { Location: linkData.properties.action_link },
+            });
           }
         }
 
