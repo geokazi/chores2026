@@ -160,9 +160,37 @@ export const handler: Handlers<LoginPageData> = {
   },
 
   async GET(req, ctx) {
+    // First check if user has full session (authenticated + family profile)
     const session = await getAuthenticatedSession(req);
     if (session.isAuthenticated) {
       return new Response(null, { status: 303, headers: { Location: "/" } });
+    }
+
+    // Check if user is authenticated with Supabase but lacks a family profile
+    const cookies = req.headers.get("cookie") || "";
+    const accessToken = cookies.match(/sb-access-token=([^;]+)/)?.[1];
+
+    if (accessToken) {
+      try {
+        const supabase = createClient(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+        );
+        const { data: { user } } = await supabase.auth.getUser(accessToken);
+
+        if (user) {
+          // User is authenticated but has no family profile
+          console.log("⚠️ User authenticated but no family profile:", user.email);
+          const url = new URL(req.url);
+          const mode = (url.searchParams.get("mode") || "email") as AuthMode;
+          return ctx.render({
+            mode,
+            error: `Account "${user.email}" is not set up for ChoreGami. Please contact your family admin or use a different account.`,
+          });
+        }
+      } catch (e) {
+        console.log("⚠️ Token validation error:", e);
+      }
     }
 
     const url = new URL(req.url);
