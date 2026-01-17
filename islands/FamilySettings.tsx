@@ -435,12 +435,12 @@ export default function FamilySettings({ family, members, settings }: FamilySett
             {children.map((child) => (
               <div key={child.id} class="pin-child-item">
                 <span class="child-name">{child.name}</span>
-                <button 
+                <button
                   type="button"
                   class="btn-secondary"
                   onClick={() => handleSetPin(child.id, child.name)}
                 >
-                  {child.pin_hash ? 'Change PIN' : 'Set PIN'}
+                  {child.has_pin ? 'Change PIN' : 'Set PIN'}
                 </button>
               </div>
             ))}
@@ -850,24 +850,13 @@ export default function FamilySettings({ family, members, settings }: FamilySett
               <span class="member-role parent">👨‍👩‍👧‍👦 Parent</span>
             </div>
             <div class="member-actions">
-              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                <button 
-                  class="btn btn-outline" 
-                  onClick={() => handleSetParentPin(parent.id, parent.name)}
-                  style={{ fontSize: "0.75rem" }}
-                >
-                  {parent.pin_hash ? "Change PIN" : "Set PIN"}
-                </button>
-                {parent.pin_hash === "1234" && (
-                  <span style={{ 
-                    fontSize: "0.75rem", 
-                    color: "var(--color-warning)",
-                    fontWeight: "500"
-                  }}>
-                    ⚠️ Using default PIN (change required)
-                  </span>
-                )}
-              </div>
+              <button
+                class="btn btn-outline"
+                onClick={() => handleSetParentPin(parent.id, parent.name)}
+                style={{ fontSize: "0.75rem" }}
+              >
+                {parent.has_pin ? "Change PIN" : "Set PIN"}
+              </button>
             </div>
           </div>
         ))}
