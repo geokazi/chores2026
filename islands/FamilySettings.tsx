@@ -3,7 +3,6 @@
  */
 
 import { useState, useEffect } from "preact/hooks";
-import ParentPinGate from "./ParentPinGate.tsx";
 import { getCurrentTheme, changeTheme, themes, type ThemeId } from "../lib/theme-manager.ts";
 import { ROTATION_PRESETS, getPresetByKey, getPresetSlots, getPresetsByCategory } from "../lib/data/rotation-presets.ts";
 import { getRotationConfig, getChoresWithCustomizations } from "../lib/services/rotation-service.ts";
@@ -879,60 +878,31 @@ export default function FamilySettings({ family, members, settings }: FamilySett
         <p style={{ fontSize: "0.875rem", color: "var(--color-text-light)", marginBottom: "1rem" }}>
           Adjust family member points with quick presets or custom amounts
         </p>
-        
-        <ParentPinGate 
-          operation="adjust family points"
-          familyMembers={members}
-        >
-          <div class="point-management">
-            {members.map((member) => (
-              <div key={member.id} class="member-item">
-                <div class="member-info">
-                  <span class="member-name">{member.name}</span>
-                  <span class={`member-role ${member.role}`}>
-                    {member.role === 'parent' ? '👨‍👩‍👧‍👦 Parent' : '🧒 Kid'}
-                  </span>
-                  <span class="member-points">{member.current_points} points</span>
-                </div>
-                <div class="member-actions">
-                  <button 
-                    class="btn btn-outline" 
-                    onClick={() => handleMemberPointAdjustment(member)}
-                    style={{ fontSize: "0.75rem" }}
-                  >
-                    ⚡ Adjust Points
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </ParentPinGate>
-      </div>
 
-      <div class="settings-section">
-        <h2>⚠️ Danger Zone</h2>
-        <p style={{ fontSize: "0.875rem", color: "var(--color-warning)", marginBottom: "1rem" }}>
-          These actions require parent PIN verification and cannot be undone
-        </p>
-        <div class="danger-actions">
-          <ParentPinGate 
-            operation="reset all family points"
-            familyMembers={members}
-          >
-            <button class="btn-danger" onClick={handleResetAllPoints}>
-              Reset All Points
-            </button>
-          </ParentPinGate>
-          <ParentPinGate 
-            operation="clear all kid PINs"
-            familyMembers={members}
-          >
-            <button class="btn-danger" onClick={handleClearAllPins}>
-              Clear All Kid PINs
-            </button>
-          </ParentPinGate>
+        <div class="point-management">
+          {members.map((member) => (
+            <div key={member.id} class="member-item">
+              <div class="member-info">
+                <span class="member-name">{member.name}</span>
+                <span class={`member-role ${member.role}`}>
+                  {member.role === 'parent' ? '👨‍👩‍👧‍👦 Parent' : '🧒 Kid'}
+                </span>
+                <span class="member-points">{member.current_points} points</span>
+              </div>
+              <div class="member-actions">
+                <button
+                  class="btn btn-outline"
+                  onClick={() => handleMemberPointAdjustment(member)}
+                  style={{ fontSize: "0.75rem" }}
+                >
+                  ⚡ Adjust Points
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
+
 
       {/* PIN Setting Modal */}
       {showPinModal && currentKid && (
@@ -2052,16 +2022,3 @@ async function updatePinSetting(enabled: boolean): Promise<boolean> {
 }
 
 
-function handleResetAllPoints() {
-  if (confirm('Are you sure you want to reset all family member points to 0? This cannot be undone.')) {
-    // TODO: Call API to reset points
-    console.log('Reset all points');
-  }
-}
-
-function handleClearAllPins() {
-  if (confirm('Are you sure you want to clear all kid PINs? Kids will no longer need PINs to access their accounts.')) {
-    // TODO: Call API to clear pins
-    console.log('Clear all PINs');
-  }
-}

@@ -8,11 +8,13 @@ import { Handlers, PageProps } from "$fresh/server.ts";
 import { getAuthenticatedSession } from "../../lib/auth/session.ts";
 import { ChoreService } from "../../lib/services/chore-service.ts";
 import SecureParentDashboard from "../../islands/SecureParentDashboard.tsx";
+import AppHeader from "../../islands/AppHeader.tsx";
 
 interface SecureParentData {
   family: any;
   familyMembers: any[];
   recentActivity: any[];
+  parentProfileId?: string;
   error?: string;
 }
 
@@ -46,6 +48,7 @@ export const handler: Handlers<SecureParentData> = {
         family: family || parentSession.family,
         familyMembers,
         recentActivity,
+        parentProfileId: parentSession.user?.profileId,
       });
     } catch (error) {
       console.error("❌ Error loading secure parent view:", error);
@@ -60,7 +63,8 @@ export const handler: Handlers<SecureParentData> = {
 };
 
 export default function SecurePersonalParentPage({ data }: PageProps<SecureParentData>) {
-  const { family, familyMembers, recentActivity, error } = data;
+  const { family, familyMembers, recentActivity, parentProfileId, error } = data;
+  const currentUser = familyMembers.find(m => m.id === parentProfileId) || null;
 
   if (error) {
     return (

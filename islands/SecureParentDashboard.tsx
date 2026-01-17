@@ -5,6 +5,7 @@
 
 import { useEffect, useState } from "preact/hooks";
 import { ActiveKidSessionManager } from "../lib/active-kid-session.ts";
+import AppHeader from "./AppHeader.tsx";
 
 interface Props {
   family: any;
@@ -141,27 +142,14 @@ export default function SecureParentDashboard({ family, familyMembers, recentAct
 
   return (
     <>
-      {/* Header */}
-      <div class="header">
-        <div>
-          <a href="/" style={{ color: "white", textDecoration: "none" }}>
-            ← Switch User
-          </a>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <span>👨‍💼</span>
-          <span>{activeParent.name}</span>
-          <span style={{ fontSize: "0.75rem", opacity: 0.7 }}>(Parent)</span>
-        </div>
-        <div>
-          <a
-            href="/parent/dashboard"
-            style={{ color: "white", textDecoration: "none" }}
-          >
-            👨‍👩‍👧‍👦
-          </a>
-        </div>
-      </div>
+      {/* Mobile-friendly header */}
+      <AppHeader
+        currentPage="my-chores"
+        pageTitle="My Chores"
+        familyMembers={familyMembers}
+        currentUser={activeParent}
+        userRole="parent"
+      />
 
       {/* Parent Stats */}
       <div class="card" style={{ marginBottom: "1.5rem", textAlign: "center" }}>
