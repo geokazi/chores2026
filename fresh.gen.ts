@@ -3,11 +3,13 @@
 // This file is automatically updated during development when running `dev.ts`.
 
 import * as $_app from "./routes/_app.tsx";
+import * as $api_auth_validate_oauth from "./routes/api/auth/validate-oauth.ts";
 import * as $api_chores_chore_id_complete from "./routes/api/chores/[chore_id]/complete.ts";
 import * as $api_chores_create from "./routes/api/chores/create.ts";
 import * as $api_debug_session from "./routes/api/debug/session.ts";
 import * as $api_family_family_id_pin_setting from "./routes/api/family/[family_id]/pin-setting.ts";
 import * as $api_family_goal_settings from "./routes/api/family/goal-settings.ts";
+import * as $api_family_manage_kid from "./routes/api/family/manage-kid.ts";
 import * as $api_family_pin_setting from "./routes/api/family/pin-setting.ts";
 import * as $api_family_set_kid_pin from "./routes/api/family/set-kid-pin.ts";
 import * as $api_familyscore_live_family_id_ from "./routes/api/familyscore/live/[family_id].ts";
@@ -61,17 +63,20 @@ import * as $auth_AuthModeSelector from "./islands/auth/AuthModeSelector.tsx";
 import * as $auth_AuthPageLayout from "./islands/auth/AuthPageLayout.tsx";
 import * as $auth_EmailAuthForm from "./islands/auth/EmailAuthForm.tsx";
 import * as $auth_PhoneAuthForm from "./islands/auth/PhoneAuthForm.tsx";
+import * as $auth_SocialAuthButtons from "./islands/auth/SocialAuthButtons.tsx";
 import type { Manifest } from "$fresh/server.ts";
 
 const manifest = {
   routes: {
     "./routes/_app.tsx": $_app,
+    "./routes/api/auth/validate-oauth.ts": $api_auth_validate_oauth,
     "./routes/api/chores/[chore_id]/complete.ts": $api_chores_chore_id_complete,
     "./routes/api/chores/create.ts": $api_chores_create,
     "./routes/api/debug/session.ts": $api_debug_session,
     "./routes/api/family/[family_id]/pin-setting.ts":
       $api_family_family_id_pin_setting,
     "./routes/api/family/goal-settings.ts": $api_family_goal_settings,
+    "./routes/api/family/manage-kid.ts": $api_family_manage_kid,
     "./routes/api/family/pin-setting.ts": $api_family_pin_setting,
     "./routes/api/family/set-kid-pin.ts": $api_family_set_kid_pin,
     "./routes/api/familyscore/live/[family_id].ts":
@@ -128,6 +133,7 @@ const manifest = {
     "./islands/auth/AuthPageLayout.tsx": $auth_AuthPageLayout,
     "./islands/auth/EmailAuthForm.tsx": $auth_EmailAuthForm,
     "./islands/auth/PhoneAuthForm.tsx": $auth_PhoneAuthForm,
+    "./islands/auth/SocialAuthButtons.tsx": $auth_SocialAuthButtons,
   },
   baseUrl: import.meta.url,
 } satisfies Manifest;
