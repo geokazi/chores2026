@@ -60,9 +60,9 @@ export default function AppHeader({
     window.location.href = "/";
   };
 
-  const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
-    window.location.href = "/login";
+  const handleLogout = () => {
+    // Navigate to /logout which handles cookie clearing and redirects
+    window.location.href = "/logout";
   };
 
   return (
