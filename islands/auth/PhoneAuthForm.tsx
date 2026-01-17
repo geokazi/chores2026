@@ -59,7 +59,7 @@ export default function PhoneAuthForm({
   };
 
   const [phoneValue, setPhoneValue] = useState(getSecurePhoneNumber());
-  const [otpDigits, setOtpDigits] = useState(["", "", "", "", "", ""]);
+  const [otpValue, setOtpValue] = useState("");
 
   // Store phone number securely when it changes
   useEffect(() => {
@@ -103,57 +103,11 @@ export default function PhoneAuthForm({
     input.value = formatted;
   };
 
-  const handleOtpChange = (index: number, value: string) => {
-    if (!/^\d?$/.test(value)) return; // Only allow digits
-
-    const newDigits = [...otpDigits];
-    newDigits[index] = value;
-    setOtpDigits(newDigits);
-
-    // Auto-focus next field after a tiny delay to ensure state is updated
-    if (value && index < 5) {
-      setTimeout(() => {
-        const nextInput = document.querySelector(
-          `input[data-otp-index="${index + 1}"]`,
-        ) as HTMLInputElement;
-        if (nextInput) {
-          nextInput.focus();
-        }
-      }, 10);
-    }
-  };
-
-  const handleOtpKeyDown = (index: number, e: KeyboardEvent) => {
-    // Backspace: clear current and focus previous
-    if (e.key === "Backspace" && !otpDigits[index] && index > 0) {
-      const prevInput = document.querySelector(
-        `input[data-otp-index="${index - 1}"]`,
-      ) as HTMLInputElement;
-      if (prevInput) prevInput.focus();
-    }
-  };
-
-  const handlePaste = (e: ClipboardEvent, startIndex: number) => {
-    e.preventDefault();
-    const paste = e.clipboardData?.getData("text") || "";
-    const digits = paste.replace(/\D/g, "").slice(0, 6);
-
-    if (digits.length > 0) {
-      const newDigits = [...otpDigits];
-      for (let i = 0; i < digits.length && (startIndex + i) < 6; i++) {
-        newDigits[startIndex + i] = digits[i];
-      }
-      setOtpDigits(newDigits);
-
-      // Focus the next empty field or the last filled field
-      const nextIndex = Math.min(startIndex + digits.length, 5);
-      setTimeout(() => {
-        const nextInput = document.querySelector(
-          `input[data-otp-index="${nextIndex}"]`,
-        ) as HTMLInputElement;
-        if (nextInput) nextInput.focus();
-      }, 10);
-    }
+  // Simple OTP handler - accepts typing or paste, strips non-digits
+  const handleOtpChange = (e: Event) => {
+    const input = e.target as HTMLInputElement;
+    const digits = input.value.replace(/\D/g, "").slice(0, 6);
+    setOtpValue(digits);
   };
 
   const handleSubmit = (e: Event) => {
@@ -180,7 +134,7 @@ export default function PhoneAuthForm({
       const otpInput = document.createElement("input");
       otpInput.type = "hidden";
       otpInput.name = "otp";
-      otpInput.value = otpDigits.join("");
+      otpInput.value = otpValue;
       submitForm.appendChild(otpInput);
     }
 
@@ -253,47 +207,63 @@ export default function PhoneAuthForm({
             Enter 6-digit code
           </label>
 
-          {/* Individual digit inputs */}
-          <div
-            style={{
-              display: "flex",
-              gap: "8px",
-              justifyContent: "center",
-              marginBottom: "12px",
-            }}
-          >
-            {otpDigits.map((digit, index) => (
-              <input
-                key={index}
-                type="text"
-                data-otp-index={index}
-                value={digit}
-                onChange={(e) => handleOtpChange(index, e.currentTarget.value)}
-                onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                onPaste={(e) => handlePaste(e, index)}
-                maxLength={1}
-                disabled={disabled || loading}
-                inputMode="numeric"
-                pattern="[0-9]"
-                autoFocus={index === 0}
-                aria-label={`Digit ${index + 1} of 6`}
-                style={{
-                  width: "48px",
-                  height: "56px",
-                  border: `2px solid ${digit ? "#3b82f6" : "#d1d5db"}`,
-                  borderRadius: "8px",
-                  fontSize: "24px",
-                  textAlign: "center",
-                  outline: "none",
-                  WebkitAppearance: "none",
-                  boxSizing: "border-box",
-                  fontFamily: "monospace",
-                  fontWeight: "600",
-                  backgroundColor: digit ? "#f0f9ff" : "white",
-                  transition: "border-color 0.2s, background-color 0.2s",
-                }}
-              />
-            ))}
+          {/* Single input with visual digit display */}
+          <div style={{ position: "relative", marginBottom: "12px" }}>
+            {/* Visual boxes behind the input */}
+            <div
+              style={{
+                display: "flex",
+                gap: "8px",
+                justifyContent: "center",
+                pointerEvents: "none",
+              }}
+            >
+              {[0, 1, 2, 3, 4, 5].map((index) => (
+                <div
+                  key={index}
+                  style={{
+                    width: "48px",
+                    height: "56px",
+                    border: `2px solid ${otpValue[index] ? "#3b82f6" : "#d1d5db"}`,
+                    borderRadius: "8px",
+                    fontSize: "24px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontFamily: "monospace",
+                    fontWeight: "600",
+                    backgroundColor: otpValue[index] ? "#f0f9ff" : "white",
+                    transition: "border-color 0.2s, background-color 0.2s",
+                  }}
+                >
+                  {otpValue[index] || ""}
+                </div>
+              ))}
+            </div>
+            {/* Invisible input that captures all typing/pasting */}
+            <input
+              type="text"
+              value={otpValue}
+              onChange={handleOtpChange}
+              maxLength={6}
+              disabled={disabled || loading}
+              inputMode="numeric"
+              pattern="[0-9]*"
+              autoComplete="one-time-code"
+              autoFocus
+              aria-label="6-digit verification code"
+              style={{
+                position: "absolute",
+                top: 0,
+                left: "50%",
+                transform: "translateX(-50%)",
+                width: "320px",
+                height: "56px",
+                opacity: 0,
+                fontSize: "24px",
+                caretColor: "transparent",
+              }}
+            />
           </div>
 
           <div style={{ textAlign: "center" }}>
@@ -313,7 +283,7 @@ export default function PhoneAuthForm({
                 margin: "0 0 8px 0",
               }}
             >
-              Code valid for 10 minutes
+              Type or paste your code
             </p>
             <button
               type="button"
