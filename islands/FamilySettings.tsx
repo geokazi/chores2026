@@ -76,6 +76,14 @@ export default function FamilySettings({ family, members, settings }: FamilySett
   // State for inline kid slot editing
   const [inlineChildSlots, setInlineChildSlots] = useState<Record<string, string>>({});
 
+  // Kid management state
+  const [showKidModal, setShowKidModal] = useState(false);
+  const [editingKid, setEditingKid] = useState<any>(null); // null = adding new kid
+  const [kidNameInput, setKidNameInput] = useState("");
+  const [isManagingKid, setIsManagingKid] = useState(false);
+  const [pendingRemoveKid, setPendingRemoveKid] = useState<any>(null);
+  const kidCount = children.length;
+
   // Initialize customization state from active rotation
   useEffect(() => {
     if (activeRotation) {
@@ -386,6 +394,86 @@ export default function FamilySettings({ family, members, settings }: FamilySett
       setChoreOverrides({});
       setCustomChores([]);
     }
+  };
+
+  // ===== Kid Management Handlers =====
+  const openAddKidModal = () => {
+    setEditingKid(null);
+    setKidNameInput("");
+    setShowKidModal(true);
+  };
+
+  const openEditKidModal = (kid: any) => {
+    setEditingKid(kid);
+    setKidNameInput(kid.name);
+    setShowKidModal(true);
+  };
+
+  const handleSaveKid = async () => {
+    if (!kidNameInput.trim()) return;
+    setIsManagingKid(true);
+
+    try {
+      const action = editingKid ? "edit" : "add";
+      const response = await fetch("/api/family/manage-kid", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action,
+          kid_id: editingKid?.id,
+          name: kidNameInput.trim(),
+        }),
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        setShowKidModal(false);
+        globalThis.location.reload();
+      } else {
+        alert(`❌ ${result.error}`);
+      }
+    } catch (err) {
+      alert(`❌ Error: ${err}`);
+    }
+    setIsManagingKid(false);
+  };
+
+  const handleRemoveKid = async (kid: any) => {
+    // If kid has points, show confirmation
+    if (kid.current_points > 0) {
+      if (!confirm(`Remove ${kid.name}? They have ${kid.current_points} points that will be archived.`)) {
+        return;
+      }
+    }
+    // Set pending and trigger PIN verification
+    setPendingRemoveKid(kid);
+  };
+
+  const confirmRemoveKid = async () => {
+    if (!pendingRemoveKid) return;
+    setIsManagingKid(true);
+
+    try {
+      const response = await fetch("/api/family/manage-kid", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "remove",
+          kid_id: pendingRemoveKid.id,
+        }),
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        setPendingRemoveKid(null);
+        globalThis.location.reload();
+      } else {
+        alert(`❌ ${result.error}`);
+      }
+    } catch (err) {
+      alert(`❌ Error: ${err}`);
+    }
+    setIsManagingKid(false);
   };
 
   return (
@@ -819,7 +907,7 @@ export default function FamilySettings({ family, members, settings }: FamilySett
       </div>
 
       <div class="settings-section">
-        <h2>👨‍👩‍👧‍👦 Family Members</h2>
+        <h2>👨‍👩‍👧‍👦 Family Members <span style={{ fontSize: "0.875rem", fontWeight: "normal", color: "var(--color-text-light)" }}>({kidCount}/8 kids)</span></h2>
         <div class="members-list">
           {members.map((member) => (
             <div key={member.id} class="member-item">
@@ -829,12 +917,39 @@ export default function FamilySettings({ family, members, settings }: FamilySett
                   {member.role === 'parent' ? '👨‍👩‍👧‍👦 Parent' : '🧒 Kid'}
                 </span>
               </div>
-              <div class="member-stats">
+              <div class="member-actions-row">
                 <span class="points">{member.current_points || 0} points</span>
+                {member.role === 'child' && (
+                  <>
+                    <button
+                      class="btn-icon"
+                      onClick={() => openEditKidModal(member)}
+                      title="Edit name"
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      class="btn-icon btn-icon-danger"
+                      onClick={() => handleRemoveKid(member)}
+                      title="Remove kid"
+                    >
+                      🗑️
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           ))}
         </div>
+        {kidCount < 8 && (
+          <button
+            class="btn btn-outline"
+            onClick={openAddKidModal}
+            style={{ marginTop: "1rem", width: "100%" }}
+          >
+            + Add Kid
+          </button>
+        )}
       </div>
 
       <div class="settings-section">
@@ -1154,6 +1269,107 @@ export default function FamilySettings({ family, members, settings }: FamilySett
                 onClick={() => setShowRotationModal(false)}
                 class="btn btn-secondary"
                 disabled={isApplyingRotation}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add/Edit Kid Modal */}
+      {showKidModal && (
+        <div class="modal-overlay">
+          <div class="modal">
+            <h3>{editingKid ? `✏️ Edit ${editingKid.name}` : '➕ Add Kid'}</h3>
+            <div style={{ marginTop: "1rem" }}>
+              <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
+                Name
+              </label>
+              <input
+                type="text"
+                value={kidNameInput}
+                onInput={(e) => setKidNameInput((e.target as HTMLInputElement).value)}
+                placeholder="Enter kid's name"
+                style={{
+                  width: "100%",
+                  padding: "0.75rem",
+                  borderRadius: "6px",
+                  border: "2px solid #e5e7eb",
+                  fontSize: "1rem",
+                }}
+                autoFocus
+              />
+            </div>
+            <div class="modal-actions">
+              <button
+                onClick={handleSaveKid}
+                class="btn btn-primary"
+                disabled={!kidNameInput.trim() || isManagingKid}
+              >
+                {isManagingKid ? 'Saving...' : 'Save'}
+              </button>
+              <button
+                onClick={() => setShowKidModal(false)}
+                class="btn btn-secondary"
+                disabled={isManagingKid}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Remove Kid PIN Verification Modal */}
+      {pendingRemoveKid && (
+        <div class="modal-overlay">
+          <div class="modal">
+            <h3>🔐 Verify Parent PIN</h3>
+            <p style={{ marginBottom: "1rem" }}>
+              Enter your PIN to remove <strong>{pendingRemoveKid.name}</strong>
+            </p>
+            <div style={{ marginBottom: "1rem" }}>
+              <input
+                type="password"
+                maxLength={4}
+                placeholder="Enter 4-digit PIN"
+                id="remove-pin-input"
+                style={{
+                  width: "100%",
+                  padding: "0.75rem",
+                  borderRadius: "6px",
+                  border: "2px solid #e5e7eb",
+                  fontSize: "1.25rem",
+                  textAlign: "center",
+                  letterSpacing: "0.5rem",
+                }}
+                autoFocus
+                onInput={async (e) => {
+                  const pin = (e.target as HTMLInputElement).value;
+                  if (pin.length === 4) {
+                    // Verify PIN
+                    const res = await fetch("/api/parent/verify-pin-simple", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ pin }),
+                    });
+                    const result = await res.json();
+                    if (result.success) {
+                      confirmRemoveKid();
+                    } else {
+                      alert("❌ Incorrect PIN");
+                      (e.target as HTMLInputElement).value = "";
+                    }
+                  }
+                }}
+              />
+            </div>
+            <div class="modal-actions">
+              <button
+                onClick={() => setPendingRemoveKid(null)}
+                class="btn btn-secondary"
+                disabled={isManagingKid}
               >
                 Cancel
               </button>
@@ -1522,6 +1738,30 @@ export default function FamilySettings({ family, members, settings }: FamilySett
         .points {
           font-weight: 600;
           color: var(--color-success);
+        }
+
+        .member-actions-row {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+
+        .btn-icon {
+          background: none;
+          border: none;
+          cursor: pointer;
+          font-size: 1rem;
+          padding: 0.25rem;
+          border-radius: 4px;
+          transition: background 0.2s;
+        }
+
+        .btn-icon:hover {
+          background: rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-icon-danger:hover {
+          background: rgba(239, 68, 68, 0.2);
         }
 
         .danger-actions {

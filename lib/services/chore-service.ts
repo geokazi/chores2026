@@ -1432,4 +1432,88 @@ export class ChoreService {
 
     return { byPerson, familyTotal };
   }
+
+  // ===== Kid Management Methods =====
+
+  /**
+   * Count active (non-deleted) kids in a family
+   */
+  async getKidCount(familyId: string): Promise<number> {
+    const { count, error } = await this.client
+      .from("family_profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("family_id", familyId)
+      .eq("role", "child")
+      .eq("is_deleted", false);
+
+    if (error) {
+      console.error("Error counting kids:", error);
+      return 0;
+    }
+    return count || 0;
+  }
+
+  /**
+   * Add a new kid to a family (max 8)
+   */
+  async addKid(familyId: string, name: string): Promise<FamilyProfile | null> {
+    const count = await this.getKidCount(familyId);
+    if (count >= 8) {
+      console.error("Family already has maximum 8 kids");
+      return null;
+    }
+
+    const { data, error } = await this.client
+      .from("family_profiles")
+      .insert({
+        family_id: familyId,
+        name: name.trim(),
+        role: "child",
+        current_points: 0,
+        is_deleted: false,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error adding kid:", error);
+      return null;
+    }
+    return data;
+  }
+
+  /**
+   * Update a kid's name
+   */
+  async updateKidName(kidId: string, name: string): Promise<boolean> {
+    const { error } = await this.client
+      .from("family_profiles")
+      .update({ name: name.trim() })
+      .eq("id", kidId)
+      .eq("role", "child")
+      .eq("is_deleted", false);
+
+    if (error) {
+      console.error("Error updating kid name:", error);
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * Soft delete a kid (mark as deleted, preserve data)
+   */
+  async softDeleteKid(kidId: string): Promise<boolean> {
+    const { error } = await this.client
+      .from("family_profiles")
+      .update({ is_deleted: true })
+      .eq("id", kidId)
+      .eq("role", "child");
+
+    if (error) {
+      console.error("Error soft deleting kid:", error);
+      return false;
+    }
+    return true;
+  }
 }
