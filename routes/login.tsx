@@ -45,9 +45,14 @@ export const handler: Handlers<LoginPageData> = {
           Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
         );
 
-        // Look up user by phone or create temp session
+        // Look up user by phone field OR by phone-as-email pattern (mealplanner legacy)
         const { data: users } = await supabase.auth.admin.listUsers();
-        const user = users?.users?.find(u => u.phone === phone);
+        const phoneDigits = phone.replace(/\D/g, "");
+        const user = users?.users?.find(u =>
+          u.phone === phone ||
+          u.email?.includes(`+1${phoneDigits}@phone.`) ||
+          u.email?.includes(`${phoneDigits}@phone.`)
+        );
 
         if (user) {
           // Generate session for existing user
