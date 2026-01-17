@@ -29,15 +29,20 @@ export const handler: Handlers<LoginPageData> = {
     if (formData.has("otp")) {
       const phone = formData.get("phone") as string;
       const otp = formData.get("otp") as string;
+      console.log("📱 Phone OTP verification started:", { phone, otpLength: otp?.length });
 
       try {
         const { TwilioVerifyClient } = await import("../lib/twilio-client.ts");
         const twilioClient = new TwilioVerifyClient();
         const result = await twilioClient.verifyCode(phone, otp);
+        console.log("📱 Twilio verify result:", result);
 
         if (!result.success || !result.valid) {
+          console.log("❌ Twilio verification failed");
           return ctx.render({ mode: "phone", error: result.error || "Invalid code", otpSent: true });
         }
+
+        console.log("✅ Twilio verification succeeded, looking up user...");
 
         // Create or get user by phone
         const supabase = createClient(
@@ -48,13 +53,21 @@ export const handler: Handlers<LoginPageData> = {
         // Look up user by phone field OR by phone-as-email pattern (mealplanner legacy)
         const { data: users } = await supabase.auth.admin.listUsers();
         const phoneDigits = phone.replace(/\D/g, "");
-        const user = users?.users?.find(u =>
-          u.phone === phone ||
-          u.email?.includes(`+1${phoneDigits}@phone.`) ||
-          u.email?.includes(`${phoneDigits}@phone.`)
-        );
+        console.log("📱 Looking for phone digits:", phoneDigits, "Total users:", users?.users?.length);
+
+        const user = users?.users?.find(u => {
+          const matchPhone = u.phone === phone;
+          const matchEmail1 = u.email?.includes(`+1${phoneDigits}@phone.`);
+          const matchEmail2 = u.email?.includes(`${phoneDigits}@phone.`);
+          if (matchPhone || matchEmail1 || matchEmail2) {
+            console.log("📱 Found matching user:", { id: u.id, email: u.email, phone: u.phone });
+          }
+          return matchPhone || matchEmail1 || matchEmail2;
+        });
 
         if (user) {
+          console.log("✅ User found:", { id: user.id, email: user.email });
+
           // Generate magic link and redirect user to it
           const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
             type: "magiclink",
@@ -64,18 +77,29 @@ export const handler: Handlers<LoginPageData> = {
             },
           });
 
+          console.log("📱 Generate link result:", {
+            error: linkError,
+            hasActionLink: !!linkData?.properties?.action_link,
+            actionLink: linkData?.properties?.action_link?.substring(0, 100) + "...",
+          });
+
           if (linkError) {
             console.error("❌ Generate link error:", linkError);
             return ctx.render({ mode: "phone", error: "Login failed. Try again.", otpSent: true });
           }
 
           if (linkData?.properties?.action_link) {
+            console.log("✅ Redirecting to magic link...");
             // Redirect to the magic link which will establish the session
             return new Response(null, {
               status: 303,
               headers: { Location: linkData.properties.action_link },
             });
+          } else {
+            console.error("❌ No action_link in response");
           }
+        } else {
+          console.log("❌ No user found for phone:", phone);
         }
 
         return ctx.render({ mode: "phone", error: "No account found for this phone", otpSent: true });
