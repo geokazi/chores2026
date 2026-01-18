@@ -341,21 +341,55 @@ export const handler: Handlers = {
   async GET(req, ctx) {
     // 1. Verify user has access to this family
     const session = await getAuthenticatedSession(req);
-    
+
     // 2. Upgrade client WebSocket connection
     const { socket: clientSocket, response } = Deno.upgradeWebSocket(req);
-    
+
     // 3. Connect to FamilyScore with API key (server-side only)
     const familyScoreWs = new WebSocket(familyScoreUrl, {
       headers: { "X-API-Key": Deno.env.get("FAMILYSCORE_API_KEY") }
     });
-    
+
     // 4. Proxy messages with validation
     familyScoreWs.onmessage = (event) => clientSocket.send(event.data);
     clientSocket.onmessage = (event) => familyScoreWs.send(event.data);
   }
 };
 ```
+
+#### 6. Rate Limiting & Bot Protection
+```typescript
+// Deno KV-based rate limiting middleware (routes/_middleware.ts)
+const PROTECTED_ROUTES: Record<string, RateLimitKey> = {
+  "/login": "login",           // 5 requests/minute
+  "/register": "register",     // 3 requests/minute
+  "/api/pin/verify": "pinVerify", // 5 requests/5 minutes
+  "/api/parent/verify-pin": "pinVerify",
+};
+
+export async function handler(req: Request, ctx: FreshContext) {
+  if (req.method !== "POST") return ctx.next();
+
+  const ip = getClientIp(req);  // Handles x-forwarded-for, fly-client-ip
+  const result = await checkRateLimit(ip, RATE_LIMITS[limitKey]);
+
+  if (!result.allowed) {
+    return new Response(JSON.stringify({
+      error: "Too many requests. Please try again later.",
+      retryAfter: Math.ceil((result.resetAt - Date.now()) / 1000)
+    }), {
+      status: 429,
+      headers: { "Retry-After": String(retryAfter) }
+    });
+  }
+}
+```
+
+**Security Layers**:
+- **Enumeration Protection**: Generic error messages prevent email/phone discovery
+- **Rate Limiting**: Deno KV-based per-IP throttling for auth routes
+- **Honeypot Fields**: Hidden form fields detect automated bot submissions
+- **See**: [Authentication Security Hardening](./milestones/20260119_authentication_security_hardening.md)
 
 ## Component Architecture
 

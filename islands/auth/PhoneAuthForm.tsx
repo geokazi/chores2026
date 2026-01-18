@@ -145,6 +145,13 @@ export default function PhoneAuthForm({
     modeInput.value = "phone";
     submitForm.appendChild(modeInput);
 
+    // Honeypot field - always empty for real users
+    const honeypotInput = document.createElement("input");
+    honeypotInput.type = "hidden";
+    honeypotInput.name = "website";
+    honeypotInput.value = "";
+    submitForm.appendChild(honeypotInput);
+
     document.body.appendChild(submitForm);
     submitForm.submit();
   };

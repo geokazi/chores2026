@@ -25,6 +25,17 @@ export const handler: Handlers<RegisterPageData> = {
     const url = new URL(req.url);
     const mode = (url.searchParams.get("mode") || "email") as AuthMode;
 
+    // Honeypot check - bots fill hidden fields, humans don't
+    const honeypot = formData.get("website");
+    if (honeypot) {
+      console.warn("🤖 Honeypot triggered on register:", {
+        ip: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip"),
+        timestamp: new Date().toISOString()
+      });
+      // Return generic error to not tip off bots
+      return ctx.render({ mode, error: "Registration failed. Please try again." });
+    }
+
     // Phone OTP verification (same as login - creates user if needed)
     if (formData.has("otp")) {
       const phone = formData.get("phone") as string;
@@ -154,7 +165,8 @@ export const handler: Handlers<RegisterPageData> = {
 
       if (error) {
         if (error.message.includes("already registered")) {
-          return ctx.render({ mode: "email", error: "Account exists. Try signing in." });
+          // Generic message to prevent email enumeration attacks
+          return ctx.render({ mode: "email", error: "Unable to create account. Please try signing in or use a different email." });
         }
         return ctx.render({ mode: "email", error: error.message });
       }
@@ -217,6 +229,10 @@ export default function RegisterPage({ data }: PageProps<RegisterPageData>) {
 
           {mode === "email" && (
             <form method="POST" class="register-form">
+              {/* Honeypot field - invisible to humans, bots fill it */}
+              <div style={{ position: "absolute", left: "-9999px", opacity: 0 }} aria-hidden="true">
+                <input type="text" name="website" tabIndex={-1} autoComplete="off" />
+              </div>
               <div class="form-group">
                 <label for="email">Email</label>
                 <input type="email" id="email" name="email" required class="form-input" placeholder="parent@example.com" />

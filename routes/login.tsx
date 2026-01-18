@@ -25,6 +25,17 @@ export const handler: Handlers<LoginPageData> = {
     const url = new URL(req.url);
     const mode = (url.searchParams.get("mode") || "email") as AuthMode;
 
+    // Honeypot check - bots fill hidden fields, humans don't
+    const honeypot = formData.get("website");
+    if (honeypot) {
+      console.warn("🤖 Honeypot triggered on login:", {
+        ip: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip"),
+        timestamp: new Date().toISOString()
+      });
+      // Return generic error to not tip off bots
+      return ctx.render({ mode, error: "Login failed. Please try again." });
+    }
+
     // Phone OTP verification (check this first since it has "otp" field)
     if (formData.has("otp")) {
       const phone = formData.get("phone") as string;
@@ -102,7 +113,8 @@ export const handler: Handlers<LoginPageData> = {
           console.log("❌ No user found for phone:", phone);
         }
 
-        return ctx.render({ mode: "phone", error: "No account found for this phone", otpSent: true });
+        // Generic message to prevent phone enumeration attacks
+        return ctx.render({ mode: "phone", error: "Unable to verify this phone number. Please check and try again.", otpSent: true });
       } catch (error) {
         console.error("❌ OTP verify error:", error);
         return ctx.render({ mode: "phone", error: "Verification failed", otpSent: true });
@@ -234,6 +246,10 @@ export default function LoginPage({ data }: PageProps<LoginPageData>) {
 
         {mode === "email" && (
           <form method="POST" class="login-form">
+            {/* Honeypot field - invisible to humans, bots fill it */}
+            <div style={{ position: "absolute", left: "-9999px", opacity: 0 }} aria-hidden="true">
+              <input type="text" name="website" tabIndex={-1} autoComplete="off" />
+            </div>
             <div class="form-group">
               <label for="email">Email</label>
               <input type="email" id="email" name="email" required class="form-input" placeholder="parent@example.com" />

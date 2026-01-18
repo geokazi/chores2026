@@ -158,6 +158,13 @@ export default function EmailAuthForm({
       modeInput.value = "email";
       form.appendChild(modeInput);
 
+      // Honeypot field - always empty for real users
+      const honeypotInput = document.createElement("input");
+      honeypotInput.type = "hidden";
+      honeypotInput.name = "website";
+      honeypotInput.value = "";
+      form.appendChild(honeypotInput);
+
       document.body.appendChild(form);
       form.submit();
     }

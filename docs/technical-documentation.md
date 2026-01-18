@@ -846,8 +846,13 @@ const loadTest = async () => {
 - **Edge Caching**: CDN integration for static assets
 - **Database Indexing**: Optimize frequently queried columns
 
-#### Security Hardening
-- **Rate Limiting**: API endpoint protection
+#### Security Hardening ✅ **Implemented Jan 19, 2026**
+- **Rate Limiting**: Deno KV-based middleware for auth endpoints (5 req/min login, 3 req/min register)
+- **Enumeration Protection**: Generic error messages prevent email/phone discovery attacks
+- **Honeypot Bot Detection**: Hidden form fields detect automated submissions (~70% simple bots)
+- **See**: [Authentication Security Hardening](./milestones/20260119_authentication_security_hardening.md)
+
+#### Future Security Enhancements
 - **CSRF Protection**: Cross-site request forgery prevention
 - **Content Security Policy**: XSS attack mitigation
 - **Security Headers**: Comprehensive security header implementation
