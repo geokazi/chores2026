@@ -271,14 +271,17 @@ export default function FamilySettings({ family, members, settings }: FamilySett
     if (!preset) return;
 
     const slots = getPresetSlots(preset);
-    const mappings: ChildSlotMapping[] = slots.map(slot => ({
-      slot,
-      profile_id: childSlots[slot] || "",
-    }));
+    // Only include slots that have a child assigned (allow partial assignment)
+    const mappings: ChildSlotMapping[] = slots
+      .filter(slot => childSlots[slot]) // Only filled slots
+      .map(slot => ({
+        slot,
+        profile_id: childSlots[slot],
+      }));
 
-    // Validate all slots are filled
-    if (mappings.some(m => !m.profile_id)) {
-      alert("Please assign a child to each slot");
+    // Validate at least one slot is filled
+    if (mappings.length === 0) {
+      alert("Please assign at least one child to a slot");
       return;
     }
 
@@ -1219,6 +1222,8 @@ export default function FamilySettings({ family, members, settings }: FamilySett
               const preset = getPresetByKey(selectedPreset);
               if (!preset) return null;
               const slots = getPresetSlots(preset);
+              const assignedKidIds = Object.values(childSlots).filter(id => id);
+              const unassignedKids = children.filter(c => !assignedKidIds.includes(c.id));
 
               // Get which children are already selected in other slots
               const selectedInOtherSlots = (currentSlot: string) => {
@@ -1230,6 +1235,16 @@ export default function FamilySettings({ family, members, settings }: FamilySett
               return (
                 <div class="slot-mapping">
                   <h4>Assign Kids to Slots</h4>
+                  <p class="slot-hint">
+                    This template has {slots.length} slots.
+                    {children.length > slots.length
+                      ? ` You have ${children.length} kids - select which ${slots.length} will use this rotation.`
+                      : children.length < slots.length
+                        ? ` You can leave slots empty if needed.`
+                        : ''
+                    }
+                  </p>
+
                   {slots.map((slot) => {
                     const usedIds = selectedInOtherSlots(slot);
                     return (
@@ -1239,7 +1254,7 @@ export default function FamilySettings({ family, members, settings }: FamilySett
                           value={childSlots[slot] || ""}
                           onChange={(e) => setChildSlots({ ...childSlots, [slot]: e.currentTarget.value })}
                         >
-                          <option value="">Select child...</option>
+                          <option value="">(Not assigned)</option>
                           {children.map((child) => (
                             <option
                               key={child.id}
@@ -1253,6 +1268,19 @@ export default function FamilySettings({ family, members, settings }: FamilySett
                       </div>
                     );
                   })}
+
+                  {/* Show which kids won't get rotation chores */}
+                  {unassignedKids.length > 0 && (
+                    <div class="unassigned-notice">
+                      <p>
+                        <strong>Manual chores only:</strong>{" "}
+                        {unassignedKids.map(k => k.name).join(", ")}
+                      </p>
+                      <p class="unassigned-hint">
+                        These kids won't get rotation chores. You can assign them chores manually from the dashboard.
+                      </p>
+                    </div>
+                  )}
                 </div>
               );
             })()}
@@ -2055,6 +2083,33 @@ export default function FamilySettings({ family, members, settings }: FamilySett
           border: 2px solid #e5e7eb;
           border-radius: 6px;
           font-size: 0.9rem;
+        }
+
+        .slot-hint {
+          font-size: 0.85rem;
+          color: var(--color-text-light);
+          margin: 0 0 1rem 0;
+          line-height: 1.4;
+        }
+
+        .unassigned-notice {
+          margin-top: 1rem;
+          padding: 0.75rem;
+          background: #fef3c7;
+          border: 1px solid #fbbf24;
+          border-radius: 8px;
+        }
+
+        .unassigned-notice p {
+          margin: 0;
+          font-size: 0.85rem;
+          color: #92400e;
+        }
+
+        .unassigned-hint {
+          margin-top: 0.25rem !important;
+          font-size: 0.75rem !important;
+          color: #b45309 !important;
         }
 
         /* Customization styles */

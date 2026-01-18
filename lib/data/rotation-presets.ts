@@ -29,10 +29,9 @@ export function getPresetByKey(key: string): RotationPreset | undefined {
 }
 
 // Get all presets suitable for a family
-export function getPresetsForFamily(childCount: number): RotationPreset[] {
-  return ROTATION_PRESETS.filter(
-    p => childCount >= p.min_children && childCount <= p.max_children
-  );
+// Note: Show all presets - let users pick based on their needs, slot assignment handles validation
+export function getPresetsForFamily(_childCount: number): RotationPreset[] {
+  return ROTATION_PRESETS;
 }
 
 // Get slot names from a preset (e.g., ["Child A", "Child B"])
@@ -79,6 +78,7 @@ export {
   SMART_ROTATION_PRESET,
   WEEKEND_WARRIOR_PRESET,
   DAILY_BASICS_PRESET,
+  LARGE_FAMILY_PRESET,
   SUMMER_BREAK_PRESET,
   SCHOOL_YEAR_PRESET,
 };
