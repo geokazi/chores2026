@@ -31,7 +31,7 @@ export const DAILY_BASICS_PRESET: RotationPreset = {
   preset_category: 'everyday',
   difficulty: 'beginner',
   min_children: 2,
-  max_children: 3,
+  max_children: 2,  // Only 2 slots defined (Child A, B)
   min_age: 6,
   cycle_type: 'daily',
   week_types: ['standard'],

@@ -34,7 +34,7 @@ export const SMART_ROTATION_PRESET: RotationPreset = {
   preset_category: 'everyday',
   difficulty: 'beginner',
   min_children: 2,
-  max_children: 4,
+  max_children: 2,  // Only 2 slots defined (Child A, B)
   min_age: 8,
   cycle_type: 'biweekly',
   week_types: ['cleaning', 'non-cleaning'],

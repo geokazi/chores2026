@@ -260,7 +260,11 @@ export default function LoginPage({ data }: PageProps<LoginPageData>) {
 
         <div class="login-footer">
           <p>Don't have an account? <a href="/register" class="register-link">Create Account</a></p>
-          <p class="security-note">🔒 Secured with enterprise authentication</p>
+          <p class="legal-note">
+            By signing in, you agree to our{" "}
+            <a href="/terms" class="legal-link">Terms</a> and{" "}
+            <a href="/privacy" class="legal-link">Privacy Policy</a>
+          </p>
         </div>
         <AppFooter />
       </div>
@@ -353,18 +357,24 @@ export default function LoginPage({ data }: PageProps<LoginPageData>) {
           padding-top: 1rem;
           border-top: 1px solid #e5e5e5;
         }
-        .security-note {
-          color: var(--color-success);
-          font-weight: 500;
-          margin: 0.5rem 0 0 0;
-          font-size: 0.875rem;
-        }
         .register-link {
           color: var(--color-primary);
           text-decoration: none;
           font-weight: 600;
         }
         .register-link:hover {
+          text-decoration: underline;
+        }
+        .legal-note {
+          color: #666;
+          font-size: 0.75rem;
+          margin: 0.5rem 0 0 0;
+        }
+        .legal-link {
+          color: var(--color-primary);
+          text-decoration: none;
+        }
+        .legal-link:hover {
           text-decoration: underline;
         }
       `}</style>

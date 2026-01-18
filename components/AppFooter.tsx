@@ -32,6 +32,12 @@ export default function AppFooter({ style = "light" }: AppFooterProps) {
       >
         Family Chores Made Fun
         <br />
+        <span class="legal-links" style={{ fontSize: "11px", color: versionColor }}>
+          <a href="/terms" style={{ color: versionColor, textDecoration: "none" }}>Terms</a>
+          {" · "}
+          <a href="/privacy" style={{ color: versionColor, textDecoration: "none" }}>Privacy</a>
+        </span>
+        <br />
         <span
           class="version-text"
           style={{

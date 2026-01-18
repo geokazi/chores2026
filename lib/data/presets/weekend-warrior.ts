@@ -34,7 +34,7 @@ export const WEEKEND_WARRIOR_PRESET: RotationPreset = {
   preset_category: 'everyday',
   difficulty: 'beginner',
   min_children: 2,
-  max_children: 6,
+  max_children: 2,  // Only 2 slots defined (Child A, B)
   min_age: 8,
   cycle_type: 'weekly',
   week_types: ['standard'],

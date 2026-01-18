@@ -247,7 +247,11 @@ export default function RegisterPage({ data }: PageProps<RegisterPageData>) {
 
           <div class="register-footer">
             <p>Already have an account? <a href="/login">Sign In</a></p>
-            <p class="security-note">Secured with enterprise authentication</p>
+            <p class="legal-note">
+              By creating an account, you agree to our{" "}
+              <a href="/terms" class="legal-link">Terms</a> and{" "}
+              <a href="/privacy" class="legal-link">Privacy Policy</a>
+            </p>
           </div>
           <AppFooter />
         </div>
@@ -348,11 +352,17 @@ export default function RegisterPage({ data }: PageProps<RegisterPageData>) {
           .register-footer a:hover {
             text-decoration: underline;
           }
-          .security-note {
-            color: var(--color-success, #22c55e);
-            font-weight: 500;
+          .legal-note {
+            color: #666;
+            font-size: 0.75rem;
             margin: 0.5rem 0 0 0;
-            font-size: 0.875rem;
+          }
+          .legal-link {
+            color: var(--color-primary, #10b981);
+            text-decoration: none;
+          }
+          .legal-link:hover {
+            text-decoration: underline;
           }
         `}</style>
       </div>

@@ -38,9 +38,11 @@ import * as $parent_activity from "./routes/parent/activity.tsx";
 import * as $parent_dashboard from "./routes/parent/dashboard.tsx";
 import * as $parent_my_chores from "./routes/parent/my-chores.tsx";
 import * as $parent_settings from "./routes/parent/settings.tsx";
+import * as $privacy from "./routes/privacy.tsx";
 import * as $register from "./routes/register.tsx";
 import * as $reports from "./routes/reports.tsx";
 import * as $setup from "./routes/setup.tsx";
+import * as $terms from "./routes/terms.tsx";
 import * as $AddChoreModal from "./islands/AddChoreModal.tsx";
 import * as $AppHeader from "./islands/AppHeader.tsx";
 import * as $ChoreDetail from "./islands/ChoreDetail.tsx";
@@ -109,9 +111,11 @@ const manifest = {
     "./routes/parent/dashboard.tsx": $parent_dashboard,
     "./routes/parent/my-chores.tsx": $parent_my_chores,
     "./routes/parent/settings.tsx": $parent_settings,
+    "./routes/privacy.tsx": $privacy,
     "./routes/register.tsx": $register,
     "./routes/reports.tsx": $reports,
     "./routes/setup.tsx": $setup,
+    "./routes/terms.tsx": $terms,
   },
   islands: {
     "./islands/AddChoreModal.tsx": $AddChoreModal,

@@ -41,7 +41,7 @@ export const SUMMER_BREAK_PRESET: RotationPreset = {
   preset_category: 'seasonal',
   difficulty: 'beginner',
   min_children: 2,
-  max_children: 4,
+  max_children: 2,  // Only 2 slots defined (Child A, B)
   min_age: 6,
   cycle_type: 'weekly',
   week_types: ['standard'],

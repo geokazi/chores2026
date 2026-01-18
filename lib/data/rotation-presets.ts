@@ -9,6 +9,7 @@ import { WEEKEND_WARRIOR_PRESET } from "./presets/weekend-warrior.ts";
 import { DAILY_BASICS_PRESET } from "./presets/daily-basics.ts";
 import { SUMMER_BREAK_PRESET } from "./presets/summer-break.ts";
 import { SCHOOL_YEAR_PRESET } from "./presets/school-year.ts";
+import { LARGE_FAMILY_PRESET } from "./presets/large-family.ts";
 
 // All available presets
 export const ROTATION_PRESETS: RotationPreset[] = [
@@ -16,6 +17,7 @@ export const ROTATION_PRESETS: RotationPreset[] = [
   SMART_ROTATION_PRESET,
   WEEKEND_WARRIOR_PRESET,
   DAILY_BASICS_PRESET,
+  LARGE_FAMILY_PRESET,  // For 3-8 kids with 4 slots
   // Seasonal templates
   SUMMER_BREAK_PRESET,
   SCHOOL_YEAR_PRESET,
