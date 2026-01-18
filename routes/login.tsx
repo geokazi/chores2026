@@ -89,11 +89,16 @@ export const handler: Handlers<LoginPageData> = {
           }
 
           if (linkData?.properties?.action_link) {
-            console.log("✅ Redirecting to magic link...");
-            // Redirect to the magic link which will establish the session
+            // Fix: Replace Supabase's Site URL with current host to avoid redirect to wrong domain
+            const actionUrl = new URL(linkData.properties.action_link);
+            const currentHost = new URL(req.url);
+            actionUrl.host = currentHost.host;
+            actionUrl.protocol = currentHost.protocol;
+
+            console.log("✅ Redirecting to magic link (host-corrected):", actionUrl.toString().substring(0, 100) + "...");
             return new Response(null, {
               status: 303,
-              headers: { Location: linkData.properties.action_link },
+              headers: { Location: actionUrl.toString() },
             });
           } else {
             console.error("❌ No action_link in response");
