@@ -7,14 +7,14 @@ import type { RotationPreset, PresetChore, ChoreCategory } from "../../types/rot
 
 const CHORES: PresetChore[] = [
   // Morning routine
-  { key: 'make_bed', name: 'Make bed', points: 1, minutes: 3, category: 'morning', icon: '🛏️' },
-  { key: 'brush_teeth_am', name: 'Brush teeth (morning)', points: 1, minutes: 3, category: 'morning', icon: '🦷' },
-  { key: 'get_dressed', name: 'Get dressed', points: 1, minutes: 5, category: 'morning', icon: '👕' },
+  { key: 'make_bed', name: 'Make bed', points: 0, minutes: 3, category: 'morning', icon: '🛏️' },
+  { key: 'brush_teeth_am', name: 'Brush teeth (morning)', points: 0, minutes: 3, category: 'morning', icon: '🦷' },
+  { key: 'get_dressed', name: 'Get dressed', points: 0, minutes: 5, category: 'morning', icon: '👕' },
   // Evening routine
   { key: 'clear_table', name: 'Clear table', points: 1, minutes: 5, category: 'evening', icon: '🍽️' },
-  { key: 'brush_teeth_pm', name: 'Brush teeth (evening)', points: 1, minutes: 3, category: 'evening', icon: '🦷' },
-  { key: 'pajamas', name: 'Put on pajamas', points: 1, minutes: 3, category: 'evening', icon: '🌙' },
-  { key: 'tidy_toys', name: 'Tidy toys', points: 1, minutes: 5, category: 'evening', icon: '🧸' },
+  { key: 'brush_teeth_pm', name: 'Brush teeth (evening)', points: 0, minutes: 3, category: 'evening', icon: '🦷' },
+  { key: 'pajamas', name: 'Put on pajamas', points: 0, minutes: 3, category: 'evening', icon: '🌙' },
+  { key: 'tidy_toys', name: 'Tidy toys', points: 0, minutes: 5, category: 'evening', icon: '🧸' },
 ];
 
 const CATEGORIES: ChoreCategory[] = [

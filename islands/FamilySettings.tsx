@@ -270,27 +270,40 @@ export default function FamilySettings({ family, members, settings }: FamilySett
     const preset = getPresetByKey(selectedPreset);
     if (!preset) return;
 
-    const slots = getPresetSlots(preset);
-    // Only include slots that have a child assigned (allow partial assignment)
-    const mappings: ChildSlotMapping[] = slots
-      .filter(slot => childSlots[slot]) // Only filled slots
-      .map(slot => ({
-        slot,
-        profile_id: childSlots[slot],
-      }));
+    let mappings: ChildSlotMapping[];
 
-    // Validate at least one slot is filled
-    if (mappings.length === 0) {
-      alert("Please assign at least one child to a slot");
-      return;
-    }
+    if (preset.is_dynamic) {
+      // Dynamic templates: use childSlots values directly (keyed as participant_N)
+      mappings = Object.entries(childSlots)
+        .filter(([_, profileId]) => profileId)
+        .map(([slot, profileId]) => ({ slot, profile_id: profileId }));
 
-    // Validate no duplicate children
-    const profileIds = mappings.map(m => m.profile_id);
-    const uniqueIds = new Set(profileIds);
-    if (uniqueIds.size !== profileIds.length) {
-      alert("Each slot must have a different child assigned");
-      return;
+      if (mappings.length === 0) {
+        alert("Please select at least one child to participate");
+        return;
+      }
+    } else {
+      // Slot-based templates: existing logic
+      const slots = getPresetSlots(preset);
+      mappings = slots
+        .filter(slot => childSlots[slot])
+        .map(slot => ({
+          slot,
+          profile_id: childSlots[slot],
+        }));
+
+      if (mappings.length === 0) {
+        alert("Please assign at least one child to a slot");
+        return;
+      }
+
+      // Validate no duplicate children (only for slot-based)
+      const profileIds = mappings.map(m => m.profile_id);
+      const uniqueIds = new Set(profileIds);
+      if (uniqueIds.size !== profileIds.length) {
+        alert("Each slot must have a different child assigned");
+        return;
+      }
     }
 
     setIsApplyingRotation(true);
@@ -1221,6 +1234,56 @@ export default function FamilySettings({ family, members, settings }: FamilySett
             {(() => {
               const preset = getPresetByKey(selectedPreset);
               if (!preset) return null;
+
+              // Dynamic templates: show checkboxes
+              if (preset.is_dynamic) {
+                const selectedKidIds = Object.values(childSlots).filter(id => id);
+                return (
+                  <div class="slot-mapping">
+                    <h4>Select Kids to Include</h4>
+                    <p class="slot-hint">
+                      All selected kids will get personal chores daily.
+                      Shared chores rotate through them automatically.
+                    </p>
+
+                    <div class="dynamic-kid-list">
+                      {children.map((child) => {
+                        const isSelected = selectedKidIds.includes(child.id);
+                        return (
+                          <label key={child.id} class="dynamic-kid-checkbox">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={(e) => {
+                                if (e.currentTarget.checked) {
+                                  // Add kid - use index as slot key
+                                  const nextIndex = Object.keys(childSlots).length;
+                                  setChildSlots({ ...childSlots, [`participant_${nextIndex}`]: child.id });
+                                } else {
+                                  // Remove kid - rebuild slots without this kid
+                                  const remaining = Object.values(childSlots).filter(id => id !== child.id);
+                                  const newSlots: Record<string, string> = {};
+                                  remaining.forEach((id, i) => { newSlots[`participant_${i}`] = id; });
+                                  setChildSlots(newSlots);
+                                }
+                              }}
+                            />
+                            <span>{child.name}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+
+                    {selectedKidIds.length > 0 && (
+                      <p class="dynamic-summary">
+                        ✓ {selectedKidIds.length} kid{selectedKidIds.length > 1 ? 's' : ''} will participate in the rotation
+                      </p>
+                    )}
+                  </div>
+                );
+              }
+
+              // Slot-based templates: show dropdowns
               const slots = getPresetSlots(preset);
               const assignedKidIds = Object.values(childSlots).filter(id => id);
               const unassignedKids = children.filter(c => !assignedKidIds.includes(c.id));
@@ -2110,6 +2173,51 @@ export default function FamilySettings({ family, members, settings }: FamilySett
           margin-top: 0.25rem !important;
           font-size: 0.75rem !important;
           color: #b45309 !important;
+        }
+
+        /* Dynamic template checkbox styles */
+        .dynamic-kid-list {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+          margin-top: 0.5rem;
+        }
+
+        .dynamic-kid-checkbox {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          padding: 0.75rem;
+          background: white;
+          border: 2px solid #e5e7eb;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.15s;
+        }
+
+        .dynamic-kid-checkbox:hover {
+          border-color: var(--color-primary);
+          background: var(--color-bg);
+        }
+
+        .dynamic-kid-checkbox input[type="checkbox"] {
+          width: 1.25rem;
+          height: 1.25rem;
+          accent-color: var(--color-primary);
+        }
+
+        .dynamic-kid-checkbox span {
+          font-size: 1rem;
+          font-weight: 500;
+        }
+
+        .dynamic-summary {
+          margin-top: 1rem;
+          padding: 0.5rem 0.75rem;
+          background: #dcfce7;
+          border-radius: 6px;
+          font-size: 0.9rem;
+          color: #166534;
         }
 
         /* Customization styles */

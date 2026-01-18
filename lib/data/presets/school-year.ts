@@ -7,21 +7,21 @@ import type { RotationPreset, PresetChore, ChoreCategory } from "../../types/rot
 
 const CHORES: PresetChore[] = [
   // Morning routine (quick)
-  { key: 'make_bed', name: 'Make bed', points: 1, minutes: 3, category: 'morning', icon: '🛏️' },
+  { key: 'make_bed', name: 'Make bed', points: 0, minutes: 3, category: 'morning', icon: '🛏️' },
   { key: 'pack_lunch', name: 'Pack lunch', points: 1, minutes: 5, category: 'morning', icon: '🥪' },
   // After school (quick)
-  { key: 'unpack_bag', name: 'Unpack school bag', points: 1, minutes: 5, category: 'afterschool', icon: '🎒' },
-  { key: 'snack_cleanup', name: 'Clean up snack', points: 1, minutes: 3, category: 'afterschool', icon: '🍎' },
+  { key: 'unpack_bag', name: 'Unpack school bag', points: 0, minutes: 5, category: 'afterschool', icon: '🎒' },
+  { key: 'snack_cleanup', name: 'Clean up snack', points: 0, minutes: 3, category: 'afterschool', icon: '🍎' },
   // Evening (quick)
   { key: 'set_table', name: 'Set table', points: 1, minutes: 5, category: 'evening', icon: '🍽️' },
   { key: 'clear_table', name: 'Clear table', points: 1, minutes: 5, category: 'evening', icon: '🍽️' },
   { key: 'feed_pet', name: 'Feed pet', points: 1, minutes: 5, category: 'evening', icon: '🐕' },
-  { key: 'tidy_room', name: 'Quick tidy room', points: 1, minutes: 5, category: 'evening', icon: '🧸' },
+  { key: 'tidy_room', name: 'Quick tidy room', points: 0, minutes: 5, category: 'evening', icon: '🧸' },
   // Weekend (more substantial)
   { key: 'vacuum_room', name: 'Vacuum room', points: 2, minutes: 15, category: 'weekend', icon: '🧹' },
   { key: 'fold_laundry', name: 'Fold laundry', points: 2, minutes: 15, category: 'weekend', icon: '👕' },
   { key: 'clean_bathroom', name: 'Clean bathroom', points: 3, minutes: 20, category: 'weekend', icon: '🚿' },
-  { key: 'help_groceries', name: 'Help with groceries', points: 2, minutes: 15, category: 'weekend', icon: '🛒' },
+  { key: 'help_groceries', name: 'Help with groceries', points: 1, minutes: 15, category: 'weekend', icon: '🛒' },
 ];
 
 const CATEGORIES: ChoreCategory[] = [

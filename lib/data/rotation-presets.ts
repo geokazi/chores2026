@@ -10,10 +10,13 @@ import { DAILY_BASICS_PRESET } from "./presets/daily-basics.ts";
 import { SUMMER_BREAK_PRESET } from "./presets/summer-break.ts";
 import { SCHOOL_YEAR_PRESET } from "./presets/school-year.ts";
 import { LARGE_FAMILY_PRESET } from "./presets/large-family.ts";
+import { DYNAMIC_DAILY_PRESET } from "./presets/dynamic-daily.ts";
 
 // All available presets
 export const ROTATION_PRESETS: RotationPreset[] = [
-  // Everyday templates
+  // Dynamic templates (scale to any family size)
+  DYNAMIC_DAILY_PRESET,
+  // Everyday templates (fixed slots)
   SMART_ROTATION_PRESET,
   WEEKEND_WARRIOR_PRESET,
   DAILY_BASICS_PRESET,
@@ -75,6 +78,7 @@ export function getPresetsByCategory(childCount: number): {
 
 // Re-export presets for direct import
 export {
+  DYNAMIC_DAILY_PRESET,
   SMART_ROTATION_PRESET,
   WEEKEND_WARRIOR_PRESET,
   DAILY_BASICS_PRESET,

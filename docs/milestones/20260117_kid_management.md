@@ -1,7 +1,10 @@
 # Kid Management Feature
 
 **Date**: January 17, 2026
-**Status**: Complete
+**Status**: ✅ Complete
+**Related**:
+- [Large Family Template](./20260117_large_family_template_partial_assignment.md) - Slot-based template for 3-8 kids
+- [Dynamic Template Expansion](./20260117_dynamic_template_expansion.md) - Distribution-based scaling for 1-8 kids
 
 ## Overview
 

@@ -7,17 +7,17 @@ import type { RotationPreset, PresetChore, ChoreCategory } from "../../types/rot
 
 const CHORES: PresetChore[] = [
   // Cleaning chores
-  { key: 'vacuum_living', name: 'Vacuum living room', points: 3, minutes: 15, category: 'cleaning', icon: '🧹' },
+  { key: 'vacuum_living', name: 'Vacuum living room', points: 2, minutes: 15, category: 'cleaning', icon: '🧹' },
   { key: 'vacuum_bedroom', name: 'Vacuum bedroom', points: 2, minutes: 10, category: 'cleaning', icon: '🧹' },
-  { key: 'mop_kitchen', name: 'Mop kitchen floor', points: 3, minutes: 15, category: 'cleaning', icon: '🧽' },
-  { key: 'clean_bathroom', name: 'Clean bathroom', points: 4, minutes: 20, category: 'cleaning', icon: '🚿' },
-  { key: 'dust_surfaces', name: 'Dust surfaces', points: 2, minutes: 10, category: 'cleaning', icon: '✨' },
+  { key: 'mop_kitchen', name: 'Mop kitchen floor', points: 2, minutes: 15, category: 'cleaning', icon: '🧽' },
+  { key: 'clean_bathroom', name: 'Clean bathroom', points: 2, minutes: 20, category: 'cleaning', icon: '🚿' },
+  { key: 'dust_surfaces', name: 'Dust surfaces', points: 1, minutes: 10, category: 'cleaning', icon: '✨' },
   // Maintenance chores
   { key: 'take_trash', name: 'Take out trash', points: 1, minutes: 5, category: 'maintenance', icon: '🗑️' },
   { key: 'water_plants', name: 'Water plants', points: 1, minutes: 5, category: 'maintenance', icon: '🌱' },
   { key: 'feed_pet', name: 'Feed pet', points: 1, minutes: 5, category: 'maintenance', icon: '🐕' },
-  { key: 'tidy_room', name: 'Tidy bedroom', points: 2, minutes: 10, category: 'maintenance', icon: '🛏️' },
-  { key: 'sort_laundry', name: 'Sort laundry', points: 2, minutes: 10, category: 'maintenance', icon: '👕' },
+  { key: 'tidy_room', name: 'Tidy bedroom', points: 0, minutes: 10, category: 'maintenance', icon: '🛏️' },
+  { key: 'sort_laundry', name: 'Sort laundry', points: 1, minutes: 10, category: 'maintenance', icon: '👕' },
 ];
 
 const CATEGORIES: ChoreCategory[] = [

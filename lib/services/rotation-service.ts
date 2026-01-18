@@ -4,7 +4,51 @@
  */
 
 import type { RotationConfig, ChildSlotMapping, PresetChore, DayOfWeek, RotationCustomizations, CustomChore } from "../types/rotation.ts";
+import type { RotationPreset } from "../types/rotation.ts";
 import { getPresetByKey, getCurrentWeekType, getDayOfWeek, getPresetSlots } from "../data/rotation-presets.ts";
+
+// Get day of year (1-366) for rotation calculations
+export function getDayOfYear(date: Date): number {
+  const start = new Date(date.getFullYear(), 0, 0);
+  const diff = date.getTime() - start.getTime();
+  const oneDay = 1000 * 60 * 60 * 24;
+  return Math.floor(diff / oneDay);
+}
+
+/**
+ * Generate chores for a child in a dynamic (non-slot) template
+ * Uses distribution tags: 'all' = everyone, 'rotate' = round-robin
+ */
+export function getDynamicChoresForChild(
+  preset: RotationPreset,
+  participantIds: string[],
+  childProfileId: string,
+  date: Date
+): PresetChore[] {
+  const childIndex = participantIds.indexOf(childProfileId);
+  if (childIndex === -1) return [];
+
+  const dayOfYear = getDayOfYear(date);
+  const numKids = participantIds.length;
+
+  // Get rotating chores once for index calculation
+  const rotatingChores = preset.chores.filter(c => c.distribution === 'rotate');
+
+  return preset.chores.filter(chore => {
+    if (chore.distribution === 'all') {
+      // Everyone does this chore every day
+      return true;
+    }
+    if (chore.distribution === 'rotate') {
+      // Round-robin: each rotating chore shifts through kids daily
+      const choreIndex = rotatingChores.indexOf(chore);
+      const assignedKidIndex = (dayOfYear + choreIndex) % numKids;
+      return assignedKidIndex === childIndex;
+    }
+    // Untagged chores are ignored in dynamic mode
+    return false;
+  });
+}
 
 // Get rotation config from family settings JSONB
 export function getRotationConfig(familySettings: Record<string, unknown>): RotationConfig | null {
@@ -41,6 +85,16 @@ export function getChoresForChild(
   const preset = getPresetByKey(config.active_preset);
   if (!preset) return [];
 
+  // Dynamic templates: use distribution-based generation
+  if (preset.is_dynamic) {
+    const participantIds = config.child_slots.map(s => s.profile_id);
+    let chores = getDynamicChoresForChild(preset, participantIds, childProfileId, date);
+    // Apply customizations to dynamic chores too
+    chores = getChoresWithCustomizations(chores, config.customizations);
+    return chores;
+  }
+
+  // Slot-based templates: existing logic
   // Find which slot this child is assigned to
   const slotMapping = config.child_slots.find(s => s.profile_id === childProfileId);
   if (!slotMapping) return [];

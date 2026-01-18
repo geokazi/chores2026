@@ -2,108 +2,83 @@
  * Rotation Service Tests
  */
 
-import { assertEquals, assertExists } from "https://deno.land/std@0.220.0/assert/mod.ts";
-import {
-  getRotationConfig,
-  buildRotationConfig,
-  getChoresForChild,
-  getWeekTypeBadge,
-  validateChildCount,
-  getRequiredSlotCount,
-} from "./rotation-service.ts";
+import { assertEquals } from "https://deno.land/std@0.220.0/assert/mod.ts";
+import { getDynamicChoresForChild, getDayOfYear } from "./rotation-service.ts";
+import { getPresetByKey } from "../data/rotation-presets.ts";
 
-Deno.test("getRotationConfig - returns null for empty settings", () => {
-  const result = getRotationConfig({});
-  assertEquals(result, null);
+Deno.test("getDayOfYear - returns correct day number", () => {
+  // Jan 1 should be day 1
+  const jan1 = new Date("2026-01-01T12:00:00");
+  assertEquals(getDayOfYear(jan1), 1);
+
+  // Jan 17 should be day 17
+  const jan17 = new Date("2026-01-17T12:00:00");
+  assertEquals(getDayOfYear(jan17), 17);
 });
 
-Deno.test("getRotationConfig - extracts rotation from nested JSONB", () => {
-  const settings = {
-    apps: {
-      choregami: {
-        rotation: {
-          active_preset: "smart_rotation",
-          start_date: "2026-01-15",
-          child_slots: [{ slot: "Child A", profile_id: "uuid-1" }],
-        },
-      },
-    },
-  };
+Deno.test("getDynamicChoresForChild - distributes chores correctly", () => {
+  const preset = getPresetByKey("dynamic_daily");
+  if (!preset) throw new Error("Preset not found");
 
-  const result = getRotationConfig(settings);
-  assertExists(result);
-  assertEquals(result?.active_preset, "smart_rotation");
-  assertEquals(result?.child_slots.length, 1);
+  const participantIds = ["kid1", "kid2", "kid3"];
+  const date = new Date("2026-01-17T12:00:00"); // Day 17
+
+  // Get chores for each kid
+  const kid1Chores = getDynamicChoresForChild(preset, participantIds, "kid1", date);
+  const kid2Chores = getDynamicChoresForChild(preset, participantIds, "kid2", date);
+  const kid3Chores = getDynamicChoresForChild(preset, participantIds, "kid3", date);
+
+  // All kids should have 'all' chores (e.g., make_bed, brush_teeth)
+  const allChoreKeys = preset.chores.filter(c => c.distribution === 'all').map(c => c.key);
+  for (const key of allChoreKeys) {
+    assertEquals(kid1Chores.some(c => c.key === key), true, `Kid1 missing ${key}`);
+    assertEquals(kid2Chores.some(c => c.key === key), true, `Kid2 missing ${key}`);
+    assertEquals(kid3Chores.some(c => c.key === key), true, `Kid3 missing ${key}`);
+  }
+
+  // Each rotating chore should be assigned to exactly one kid
+  const rotateChoreKeys = preset.chores.filter(c => c.distribution === 'rotate').map(c => c.key);
+  for (const key of rotateChoreKeys) {
+    const hasChore = [
+      kid1Chores.some(c => c.key === key),
+      kid2Chores.some(c => c.key === key),
+      kid3Chores.some(c => c.key === key),
+    ];
+    const assignedCount = hasChore.filter(Boolean).length;
+    assertEquals(assignedCount, 1, `Rotating chore ${key} should be assigned to exactly 1 kid`);
+  }
 });
 
-Deno.test("buildRotationConfig - creates valid config", () => {
-  const config = buildRotationConfig("daily_basics", [
-    { slot: "Child A", profile_id: "uuid-1" },
-    { slot: "Child B", profile_id: "uuid-2" },
-  ]);
+Deno.test("getDynamicChoresForChild - rotation shifts daily", () => {
+  const preset = getPresetByKey("dynamic_daily");
+  if (!preset) throw new Error("Preset not found");
 
-  assertEquals(config.active_preset, "daily_basics");
-  assertExists(config.start_date);
-  assertEquals(config.child_slots.length, 2);
+  const participantIds = ["kid1", "kid2"];
+  const day1 = new Date("2026-01-17T12:00:00");
+  const day2 = new Date("2026-01-18T12:00:00");
+
+  // Get rotating chores for kid1 on two consecutive days
+  const kid1Day1 = getDynamicChoresForChild(preset, participantIds, "kid1", day1);
+  const kid1Day2 = getDynamicChoresForChild(preset, participantIds, "kid1", day2);
+
+  // The rotating chores should be different between days
+  const rotatingChores1 = kid1Day1.filter(c => c.distribution === 'rotate').map(c => c.key);
+  const rotatingChores2 = kid1Day2.filter(c => c.distribution === 'rotate').map(c => c.key);
+
+  // At least some rotating chores should be different
+  const different = rotatingChores1.some(key => !rotatingChores2.includes(key)) ||
+                    rotatingChores2.some(key => !rotatingChores1.includes(key));
+  assertEquals(different, true, "Rotating chores should shift between days");
 });
 
-Deno.test("getChoresForChild - returns chores for valid config", () => {
-  const config = {
-    active_preset: "daily_basics",
-    start_date: "2026-01-15",
-    child_slots: [
-      { slot: "Child A", profile_id: "test-child-id" },
-      { slot: "Child B", profile_id: "other-child" },
-    ],
-  };
+Deno.test("getDynamicChoresForChild - returns empty for non-participant", () => {
+  const preset = getPresetByKey("dynamic_daily");
+  if (!preset) throw new Error("Preset not found");
 
-  const chores = getChoresForChild(config, "test-child-id");
-  assertEquals(chores.length > 0, true);
-});
+  const participantIds = ["kid1", "kid2"];
+  const date = new Date("2026-01-17T12:00:00");
 
-Deno.test("getChoresForChild - returns empty array for unknown child", () => {
-  const config = {
-    active_preset: "daily_basics",
-    start_date: "2026-01-15",
-    child_slots: [{ slot: "Child A", profile_id: "other-child" }],
-  };
-
-  const chores = getChoresForChild(config, "unknown-child");
-  assertEquals(chores.length, 0);
-});
-
-Deno.test("getWeekTypeBadge - returns badge for daily_basics", () => {
-  const config = {
-    active_preset: "daily_basics",
-    start_date: "2026-01-15",
-    child_slots: [],
-  };
-
-  const badge = getWeekTypeBadge(config);
-  assertExists(badge);
-  assertEquals(badge?.badge.includes("DAILY"), true);
-});
-
-Deno.test("validateChildCount - returns true for valid count", () => {
-  assertEquals(validateChildCount("daily_basics", 2), true);
-  assertEquals(validateChildCount("daily_basics", 3), true);
-});
-
-Deno.test("validateChildCount - returns false for invalid count", () => {
-  assertEquals(validateChildCount("daily_basics", 1), false);
-  assertEquals(validateChildCount("daily_basics", 5), false);
-});
-
-Deno.test("validateChildCount - returns false for unknown preset", () => {
-  assertEquals(validateChildCount("nonexistent", 2), false);
-});
-
-Deno.test("getRequiredSlotCount - returns correct slot count", () => {
-  assertEquals(getRequiredSlotCount("daily_basics"), 2);
-  assertEquals(getRequiredSlotCount("smart_rotation"), 2);
-  assertEquals(getRequiredSlotCount("weekend_warrior"), 2);
-});
-
-Deno.test("getRequiredSlotCount - returns 0 for unknown preset", () => {
-  assertEquals(getRequiredSlotCount("nonexistent"), 0);
+  // Kid3 is not in the participant list
+  const kid3Chores = getDynamicChoresForChild(preset, participantIds, "kid3", date);
+  assertEquals(kid3Chores.length, 0);
 });

@@ -8,12 +8,12 @@ import type { RotationPreset, PresetChore, ChoreCategory } from "../../types/rot
 
 const CHORES: PresetChore[] = [
   // Quick daily chores (everyone does these)
-  { key: 'make_bed', name: 'Make bed', points: 1, minutes: 3, category: 'daily', icon: '🛏️' },
-  { key: 'tidy_room', name: 'Tidy room', points: 1, minutes: 5, category: 'daily', icon: '🧸' },
+  { key: 'make_bed', name: 'Make bed', points: 0, minutes: 3, category: 'daily', icon: '🛏️' },
+  { key: 'tidy_room', name: 'Tidy room', points: 0, minutes: 5, category: 'daily', icon: '🧸' },
   // Rotating kitchen duties
   { key: 'set_table', name: 'Set table', points: 1, minutes: 5, category: 'kitchen', icon: '🍽️' },
   { key: 'clear_table', name: 'Clear table', points: 1, minutes: 5, category: 'kitchen', icon: '🍽️' },
-  { key: 'load_dishwasher', name: 'Load dishwasher', points: 2, minutes: 10, category: 'kitchen', icon: '🫧' },
+  { key: 'load_dishwasher', name: 'Load dishwasher', points: 1, minutes: 10, category: 'kitchen', icon: '🫧' },
   { key: 'wipe_counters', name: 'Wipe counters', points: 1, minutes: 5, category: 'kitchen', icon: '✨' },
   // Rotating house chores
   { key: 'vacuum_floor', name: 'Vacuum one room', points: 2, minutes: 10, category: 'house', icon: '🧹' },

@@ -2,7 +2,9 @@
 
 **Document Created**: January 17, 2026
 **Status**: ✅ Complete
+**Superseded By**: [Dynamic Template Expansion](./20260117_dynamic_template_expansion.md) - For families wanting automatic scaling without fixed slots
 **Related**:
+- [Dynamic Template Expansion](./20260117_dynamic_template_expansion.md) - Distribution-based alternative (recommended for 5+ kids)
 - [Seasonal Templates Implementation](./20260116_seasonal-templates-implementation.md)
 - [Chore Templates Design](../chore-templates-design.md)
 - [JSONB Schema Design](./20260115_chore-templates-jsonb-schema.md)
@@ -326,25 +328,36 @@ Templates now grouped correctly with Large Family in Everyday:
 
 ## Future Considerations
 
-### Potential Enhancements
+### Now Available: Dynamic Templates
 
-1. **Shared Slots**: Allow 2 kids to share a slot (alternating days)
-2. **Team Mode**: Group kids into teams (Team A vs Team B)
-3. **Age-Specific Templates**: Different chore loads for younger vs older kids
-4. **Custom Slot Count**: Let parents define how many slots they want
+The limitations of the slot-based approach have been addressed by [Dynamic Template Expansion](./20260117_dynamic_template_expansion.md):
+
+| Problem | Slot-Based Solution | Dynamic Solution |
+|---------|-------------------|------------------|
+| 5+ kids with 4 slots | Partial assignment (some kids excluded) | All kids automatically included |
+| 1-2 kids | Can't use Large Family template | Works with any family size |
+| Fairness concern | Manual slot selection | Automatic round-robin rotation |
+
+**Recommendation**: For families with 1, 3, or 5+ kids, use "Daily Routines (Any Size)" instead.
+
+### Remaining Slot-Based Use Cases
+
+1. **Hand-crafted schedules**: When parents want specific kids on specific days
+2. **Team rotation**: Child A & C do Monday chores, Child B & D do Tuesday
+3. **Age-based grouping**: Older kids in slots with harder chores
 
 ### Not Implemented (Intentionally)
 
 | Feature | Reason |
 |---------|--------|
 | Templates for 9+ kids | Diminishing returns; very rare family size |
-| Auto-rotation between unmapped kids | Complexity vs value; manual is fine |
-| Slot sharing | Current model is clear; avoid confusion |
+| Slot sharing (2 kids per slot) | Dynamic templates solve this better |
 
 ---
 
 ## Cross-References
 
+- **Dynamic Templates**: [20260117_dynamic_template_expansion.md](./20260117_dynamic_template_expansion.md) - Distribution-based scaling (recommended alternative)
 - **Seasonal Templates**: [20260116_seasonal-templates-implementation.md](./20260116_seasonal-templates-implementation.md) - Category grouping pattern reused
 - **Template Design**: [chore-templates-design.md](../chore-templates-design.md) - Core template architecture
 - **JSONB Schema**: [20260115_chore-templates-jsonb-schema.md](./20260115_chore-templates-jsonb-schema.md) - Override Layer Pattern

@@ -1,6 +1,6 @@
 # ChoreGami 2026 Documentation
 
-**Version**: 1.3
+**Version**: 1.4
 **Status**: ✅ Production Ready
 **Last Updated**: January 17, 2026
 
@@ -43,6 +43,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-15 | [↳ JSONB Schema Design](./milestones/20260115_chore-templates-jsonb-schema.md) | ✅ Complete | Template customization with Override Layer Pattern |
 | 2026-01-16 | [↳ Seasonal Templates](./milestones/20260116_seasonal-templates-implementation.md) | ✅ Complete | Summer Break + School Year templates with category grouping |
 | 2026-01-17 | [↳ Large Family & Partial Assignment](./milestones/20260117_large_family_template_partial_assignment.md) | ✅ Complete | 4-slot template for 3-8 kids + partial slot assignment |
+| 2026-01-17 | [↳ **Dynamic Template Expansion**](./milestones/20260117_dynamic_template_expansion.md) | ✅ Complete | Distribution-based chores scale to any family size (1-8 kids) |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 
@@ -183,7 +184,7 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 - ✅ **JSONB Settings**: Flexible cross-app configuration storage with inheritance pattern
 - ✅ **Collaborative Family Goals**: Weekly goal system with auto-bonus when reached - collaboration over competition
 - ✅ **Weekly Patterns Analysis**: Heatmap + text insights showing busiest/slowest days per kid (last 60 days)
-- ✅ **Chore Rotation Templates**: 6 pre-built schedules (Everyday: Smart Rotation, Weekend Warrior, Daily Basics, Large Family; Seasonal: Summer Break, School Year) with Manual (Default) option + partial slot assignment
+- ✅ **Chore Rotation Templates**: 7 pre-built schedules including **Dynamic Daily Routines** (scales to any family size 1-8 kids) + slot-based templates (Smart Rotation, Weekend Warrior, Daily Basics, Large Family, Summer Break, School Year) with Manual (Default) option + partial slot assignment
 
 ### Known Limitations
 - **Testing**: Comprehensive test suite not yet implemented

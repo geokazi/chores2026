@@ -13,9 +13,11 @@ import {
   getPresetsByCategory,
 } from "./rotation-presets.ts";
 
-Deno.test("ROTATION_PRESETS - contains all 6 presets", () => {
-  assertEquals(ROTATION_PRESETS.length, 6);
+Deno.test("ROTATION_PRESETS - contains all 7 presets", () => {
+  assertEquals(ROTATION_PRESETS.length, 7);
   const keys = ROTATION_PRESETS.map(p => p.key);
+  // Dynamic presets
+  assertEquals(keys.includes("dynamic_daily"), true);
   // Everyday presets
   assertEquals(keys.includes("smart_rotation"), true);
   assertEquals(keys.includes("weekend_warrior"), true);
@@ -38,33 +40,16 @@ Deno.test("getPresetByKey - returns undefined for unknown key", () => {
   assertEquals(preset, undefined);
 });
 
-Deno.test("getPresetsForFamily - filters by child count", () => {
-  // 2 kids should get 5 presets (all except large_family which requires min 3)
+Deno.test("getPresetsForFamily - returns all presets", () => {
+  // Now shows all presets regardless of child count (UI handles validation)
   const presetsFor2 = getPresetsForFamily(2);
-  assertEquals(presetsFor2.length, 5);
+  assertEquals(presetsFor2.length, 7);
 
-  // 3 kids should only get large_family (3-8 kids) since other presets max at 2
-  const presetsFor3 = getPresetsForFamily(3);
-  assertEquals(presetsFor3.length, 1);
-  assertEquals(presetsFor3[0].key, "large_family");
-
-  // 5 kids should only get large_family (3-8 kids)
   const presetsFor5 = getPresetsForFamily(5);
-  assertEquals(presetsFor5.length, 1);
-  assertEquals(presetsFor5[0].key, "large_family");
+  assertEquals(presetsFor5.length, 7);
 
-  // 8 kids should get large_family (max 8)
-  const presetsFor8 = getPresetsForFamily(8);
-  assertEquals(presetsFor8.length, 1);
-  assertEquals(presetsFor8[0].key, "large_family");
-
-  // 9 kids should get nothing (large_family max is 8)
-  const presetsFor9 = getPresetsForFamily(9);
-  assertEquals(presetsFor9.length, 0);
-
-  // 1 kid should get none (all require min 2)
   const presetsFor1 = getPresetsForFamily(1);
-  assertEquals(presetsFor1.length, 0);
+  assertEquals(presetsFor1.length, 7);
 });
 
 Deno.test("getPresetSlots - returns slot names", () => {
@@ -120,9 +105,11 @@ Deno.test("all presets have valid structure", () => {
     assertEquals(preset.week_types.length > 0, true);
     assertEquals(['everyday', 'seasonal'].includes(preset.preset_category), true);
 
-    // Schedule structure
-    for (const weekType of preset.week_types) {
-      assertExists(preset.schedule[weekType], `Missing schedule for ${weekType}`);
+    // Schedule structure (dynamic templates have empty schedule)
+    if (!preset.is_dynamic) {
+      for (const weekType of preset.week_types) {
+        assertExists(preset.schedule[weekType], `Missing schedule for ${weekType}`);
+      }
     }
   }
 });
@@ -130,12 +117,14 @@ Deno.test("all presets have valid structure", () => {
 Deno.test("getPresetsByCategory - groups presets correctly", () => {
   const { everyday, seasonal } = getPresetsByCategory(2);
 
-  // Should have 3 everyday presets (large_family requires min 3)
-  assertEquals(everyday.length, 3);
+  // Should have 5 everyday presets (dynamic_daily + smart_rotation + weekend_warrior + daily_basics + large_family)
+  assertEquals(everyday.length, 5);
   const everydayKeys = everyday.map(p => p.key);
+  assertEquals(everydayKeys.includes("dynamic_daily"), true);
   assertEquals(everydayKeys.includes("smart_rotation"), true);
   assertEquals(everydayKeys.includes("weekend_warrior"), true);
   assertEquals(everydayKeys.includes("daily_basics"), true);
+  assertEquals(everydayKeys.includes("large_family"), true);
 
   // Should have 2 seasonal presets
   assertEquals(seasonal.length, 2);
@@ -144,12 +133,11 @@ Deno.test("getPresetsByCategory - groups presets correctly", () => {
   assertEquals(seasonalKeys.includes("school_year"), true);
 });
 
-Deno.test("getPresetsByCategory - respects child count filter", () => {
-  // 5 kids should only get large_family (everyday) and nothing seasonal
+Deno.test("getPresetsByCategory - returns all presets regardless of count", () => {
+  // Now shows all presets regardless of child count
   const { everyday, seasonal } = getPresetsByCategory(5);
-  assertEquals(everyday.length, 1);
-  assertEquals(everyday[0].key, "large_family");
-  assertEquals(seasonal.length, 0);
+  assertEquals(everyday.length, 5);
+  assertEquals(seasonal.length, 2);
 });
 
 Deno.test("large_family preset - supports 3-8 kids with 4 slots", () => {
@@ -165,4 +153,22 @@ Deno.test("large_family preset - supports 3-8 kids with 4 slots", () => {
   assertEquals(slots.includes("Child B"), true);
   assertEquals(slots.includes("Child C"), true);
   assertEquals(slots.includes("Child D"), true);
+});
+
+Deno.test("dynamic_daily preset - supports 1-8 kids with distribution tags", () => {
+  const preset = getPresetByKey("dynamic_daily");
+  assertExists(preset);
+  assertEquals(preset?.min_children, 1);
+  assertEquals(preset?.max_children, 8);
+  assertEquals(preset?.is_dynamic, true);
+
+  // Should have no slots (dynamic)
+  const slots = getPresetSlots(preset!);
+  assertEquals(slots.length, 0);
+
+  // Should have chores with distribution tags
+  const allChores = preset!.chores.filter(c => c.distribution === 'all');
+  const rotateChores = preset!.chores.filter(c => c.distribution === 'rotate');
+  assertEquals(allChores.length > 0, true);
+  assertEquals(rotateChores.length > 0, true);
 });

@@ -6,6 +6,9 @@
 // Days of the week
 export type DayOfWeek = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 
+// Distribution type for dynamic templates
+export type ChoreDistribution = 'all' | 'rotate';
+
 // Chore definition within a preset
 export interface PresetChore {
   key: string;
@@ -14,6 +17,7 @@ export interface PresetChore {
   minutes: number;
   category: string;
   icon: string;
+  distribution?: ChoreDistribution;  // For dynamic templates: 'all' = everyone, 'rotate' = round-robin
 }
 
 // Category metadata for UI grouping
@@ -43,6 +47,7 @@ export interface RotationPreset {
   categories: ChoreCategory[];
   chores: PresetChore[];
   schedule: RotationSchedule;
+  is_dynamic?: boolean;  // True = uses distribution tags, no fixed slots
 }
 
 // Custom chore added by family
