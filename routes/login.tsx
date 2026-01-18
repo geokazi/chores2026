@@ -179,14 +179,9 @@ export const handler: Handlers<LoginPageData> = {
         const { data: { user } } = await supabase.auth.getUser(accessToken);
 
         if (user) {
-          // User is authenticated but has no family profile
-          console.log("⚠️ User authenticated but no family profile:", user.email);
-          const url = new URL(req.url);
-          const mode = (url.searchParams.get("mode") || "email") as AuthMode;
-          return ctx.render({
-            mode,
-            error: `Account "${user.email}" is not set up for ChoreGami. Please contact your family admin or use a different account.`,
-          });
+          // User is authenticated but has no family profile -> redirect to setup
+          console.log("⚠️ User authenticated but no family profile, redirecting to /setup:", user.email);
+          return new Response(null, { status: 303, headers: { Location: "/setup" } });
         }
       } catch (e) {
         console.log("⚠️ Token validation error:", e);
@@ -264,6 +259,7 @@ export default function LoginPage({ data }: PageProps<LoginPageData>) {
         )}
 
         <div class="login-footer">
+          <p>Don't have an account? <a href="/register" class="register-link">Create Account</a></p>
           <p class="security-note">🔒 Secured with enterprise authentication</p>
         </div>
         <AppFooter />
@@ -360,8 +356,16 @@ export default function LoginPage({ data }: PageProps<LoginPageData>) {
         .security-note {
           color: var(--color-success);
           font-weight: 500;
-          margin: 0;
+          margin: 0.5rem 0 0 0;
           font-size: 0.875rem;
+        }
+        .register-link {
+          color: var(--color-primary);
+          text-decoration: none;
+          font-weight: 600;
+        }
+        .register-link:hover {
+          text-decoration: underline;
         }
       `}</style>
       </div>

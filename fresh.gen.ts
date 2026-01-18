@@ -8,6 +8,7 @@ import * as $api_chores_chore_id_complete from "./routes/api/chores/[chore_id]/c
 import * as $api_chores_create from "./routes/api/chores/create.ts";
 import * as $api_debug_session from "./routes/api/debug/session.ts";
 import * as $api_family_family_id_pin_setting from "./routes/api/family/[family_id]/pin-setting.ts";
+import * as $api_family_create from "./routes/api/family/create.ts";
 import * as $api_family_goal_settings from "./routes/api/family/goal-settings.ts";
 import * as $api_family_manage_kid from "./routes/api/family/manage-kid.ts";
 import * as $api_family_pin_setting from "./routes/api/family/pin-setting.ts";
@@ -37,7 +38,9 @@ import * as $parent_activity from "./routes/parent/activity.tsx";
 import * as $parent_dashboard from "./routes/parent/dashboard.tsx";
 import * as $parent_my_chores from "./routes/parent/my-chores.tsx";
 import * as $parent_settings from "./routes/parent/settings.tsx";
+import * as $register from "./routes/register.tsx";
 import * as $reports from "./routes/reports.tsx";
+import * as $setup from "./routes/setup.tsx";
 import * as $AddChoreModal from "./islands/AddChoreModal.tsx";
 import * as $AppHeader from "./islands/AppHeader.tsx";
 import * as $ChoreDetail from "./islands/ChoreDetail.tsx";
@@ -75,6 +78,7 @@ const manifest = {
     "./routes/api/debug/session.ts": $api_debug_session,
     "./routes/api/family/[family_id]/pin-setting.ts":
       $api_family_family_id_pin_setting,
+    "./routes/api/family/create.ts": $api_family_create,
     "./routes/api/family/goal-settings.ts": $api_family_goal_settings,
     "./routes/api/family/manage-kid.ts": $api_family_manage_kid,
     "./routes/api/family/pin-setting.ts": $api_family_pin_setting,
@@ -105,7 +109,9 @@ const manifest = {
     "./routes/parent/dashboard.tsx": $parent_dashboard,
     "./routes/parent/my-chores.tsx": $parent_my_chores,
     "./routes/parent/settings.tsx": $parent_settings,
+    "./routes/register.tsx": $register,
     "./routes/reports.tsx": $reports,
+    "./routes/setup.tsx": $setup,
   },
   islands: {
     "./islands/AddChoreModal.tsx": $AddChoreModal,
