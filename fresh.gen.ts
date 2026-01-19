@@ -16,6 +16,7 @@ import * as $api_family_pin_setting from "./routes/api/family/pin-setting.ts";
 import * as $api_family_set_kid_pin from "./routes/api/family/set-kid-pin.ts";
 import * as $api_familyscore_live_family_id_ from "./routes/api/familyscore/live/[family_id].ts";
 import * as $api_familyscore_sync from "./routes/api/familyscore/sync.ts";
+import * as $api_gift_redeem from "./routes/api/gift/redeem.ts";
 import * as $api_kids_kid_id_pin from "./routes/api/kids/[kid_id]/pin.ts";
 import * as $api_kids_chores from "./routes/api/kids/chores.ts";
 import * as $api_parent_session from "./routes/api/parent/session.ts";
@@ -40,6 +41,7 @@ import * as $parent_dashboard from "./routes/parent/dashboard.tsx";
 import * as $parent_my_chores from "./routes/parent/my-chores.tsx";
 import * as $parent_settings from "./routes/parent/settings.tsx";
 import * as $privacy from "./routes/privacy.tsx";
+import * as $redeem from "./routes/redeem.tsx";
 import * as $register from "./routes/register.tsx";
 import * as $reports from "./routes/reports.tsx";
 import * as $setup from "./routes/setup.tsx";
@@ -60,9 +62,11 @@ import * as $ParentDashboard from "./islands/ParentDashboard.tsx";
 import * as $ParentPinGate from "./islands/ParentPinGate.tsx";
 import * as $ParentPinModal from "./islands/ParentPinModal.tsx";
 import * as $PinEntryModal from "./islands/PinEntryModal.tsx";
+import * as $RedeemForm from "./islands/RedeemForm.tsx";
 import * as $SecureKidDashboard from "./islands/SecureKidDashboard.tsx";
 import * as $SecureParentDashboard from "./islands/SecureParentDashboard.tsx";
 import * as $SocialAuthButtons from "./islands/SocialAuthButtons.tsx";
+import * as $TemplateSelector from "./islands/TemplateSelector.tsx";
 import * as $ThemeInitializer from "./islands/ThemeInitializer.tsx";
 import * as $WebSocketManager from "./islands/WebSocketManager.tsx";
 import * as $auth_AuthModeSelector from "./islands/auth/AuthModeSelector.tsx";
@@ -90,6 +94,7 @@ const manifest = {
     "./routes/api/familyscore/live/[family_id].ts":
       $api_familyscore_live_family_id_,
     "./routes/api/familyscore/sync.ts": $api_familyscore_sync,
+    "./routes/api/gift/redeem.ts": $api_gift_redeem,
     "./routes/api/kids/[kid_id]/pin.ts": $api_kids_kid_id_pin,
     "./routes/api/kids/chores.ts": $api_kids_chores,
     "./routes/api/parent/session.ts": $api_parent_session,
@@ -114,6 +119,7 @@ const manifest = {
     "./routes/parent/my-chores.tsx": $parent_my_chores,
     "./routes/parent/settings.tsx": $parent_settings,
     "./routes/privacy.tsx": $privacy,
+    "./routes/redeem.tsx": $redeem,
     "./routes/register.tsx": $register,
     "./routes/reports.tsx": $reports,
     "./routes/setup.tsx": $setup,
@@ -136,9 +142,11 @@ const manifest = {
     "./islands/ParentPinGate.tsx": $ParentPinGate,
     "./islands/ParentPinModal.tsx": $ParentPinModal,
     "./islands/PinEntryModal.tsx": $PinEntryModal,
+    "./islands/RedeemForm.tsx": $RedeemForm,
     "./islands/SecureKidDashboard.tsx": $SecureKidDashboard,
     "./islands/SecureParentDashboard.tsx": $SecureParentDashboard,
     "./islands/SocialAuthButtons.tsx": $SocialAuthButtons,
+    "./islands/TemplateSelector.tsx": $TemplateSelector,
     "./islands/ThemeInitializer.tsx": $ThemeInitializer,
     "./islands/WebSocketManager.tsx": $WebSocketManager,
     "./islands/auth/AuthModeSelector.tsx": $auth_AuthModeSelector,
