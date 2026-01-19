@@ -190,7 +190,11 @@ Extracted from FamilySettings.tsx (~2400 lines → ~1800 lines after extraction)
 
 **Features:**
 - Visual lock icons (🔒) on gated templates
-- Plan status banner (paid/free with days remaining)
+- **ACTIVE badge**: Blue badge showing currently active template
+- **FREE badge**: Green badge on always-free templates
+- Plan status banner with helpful context:
+  - Free Plan: "🎁 Free Plan - 3 templates included · Unlock 5 more with Family Plan"
+  - Family Plan: "📚 Family Plan - ends in X days"
 - Upgrade modal when locked template tapped
 - Slot assignment modal for template activation
 - Customization panel for active templates

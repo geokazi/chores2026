@@ -99,8 +99,9 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
    - Add chores and assign to any family member (including other parents) 
    - **Theme customization accessible to all family members** (no PIN required)
    - Links to PIN-protected settings and point adjustments
-4. **PIN-Protected Operations**: Sensitive actions (point adjustments, settings) require parent PIN
-   - **5-minute elevation window** for authenticated parent access
+4. **PIN-Protected Operations**: Sensitive actions require parent PIN verification
+   - **Point adjustments**: PIN required before applying any point changes
+   - **Member removal**: PIN required to remove family members
    - **Profile-switch clearing**: PIN required when switching from kid profiles back to parent
    - **Instant verification**: Sub-second PIN validation for seamless UX
 5. **Real-Time Updates**: Live leaderboard and activity feed via WebSocket
@@ -190,7 +191,8 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 - ✅ **Collaborative Family Goals**: Weekly goal system with auto-bonus when reached - collaboration over competition
 - ✅ **Weekly Patterns Analysis**: Heatmap + text insights showing busiest/slowest days per kid (last 60 days)
 - ✅ **Chore Rotation Templates**: 7 pre-built schedules including **Dynamic Daily Routines** (scales to any family size 1-8 kids) + slot-based templates (Smart Rotation, Weekend Warrior, Daily Basics, Large Family, Summer Break, School Year) with Manual (Default) option + partial slot assignment
-- ✅ **Template Gating & Gift Codes**: Prepaid plan tiers (Free vs Family Plan), gift code redemption (`/redeem`), JSONB-based plan storage, TemplateSelector component extraction
+- ✅ **Template Gating & Gift Codes**: Prepaid plan tiers (Free vs Family Plan), gift code redemption (`/redeem`), JSONB-based plan storage, TemplateSelector component extraction, ACTIVE badge on templates, improved Free Plan UX
+- ✅ **Point Adjustment Security**: Parent PIN verification required before applying any point adjustments
 
 ### Known Limitations
 - **Testing**: Comprehensive test suite not yet implemented

@@ -109,7 +109,7 @@ ChoreGami 2026 is a streamlined family chore management application designed to 
 **Business Value:** Provides oversight without micromanagement
 
 #### Story 2.2: Point Management
-**As a parent**, I want to award bonus points or make adjustments  
+**As a parent**, I want to award bonus points or make adjustments
 **So that** I can recognize extra effort or correct mistakes
 
 **Acceptance Criteria:**
@@ -118,11 +118,12 @@ ChoreGami 2026 is a streamlined family chore management application designed to 
 - ✅ Transaction history and audit trail
 - ✅ Immediate sync with FamilyScore platform
 - ✅ Notification to affected family member
+- ✅ Parent PIN verification required before applying adjustments
 
-**Business Value:** Maintains fairness and allows reward customization
+**Business Value:** Maintains fairness and allows reward customization while preventing unauthorized changes
 
 #### Story 2.3: Security Controls
-**As a parent**, I want to control access to the system with PIN requirements  
+**As a parent**, I want to control access to the system with PIN requirements
 **So that** I can ensure appropriate usage by children
 
 **Acceptance Criteria:**
@@ -131,8 +132,12 @@ ChoreGami 2026 is a streamlined family chore management application designed to 
 - ✅ Secure storage with encryption
 - ✅ PIN verification before dashboard access
 - ✅ PIN reset capability for parents
+- ✅ Parent PIN required for sensitive operations:
+  - Point adjustments
+  - Removing family members
+  - Settings changes
 
-**Business Value:** Ensures security and prevents unauthorized access
+**Business Value:** Ensures security and prevents unauthorized access to sensitive family operations
 
 ### Epic 3: Real-Time Integration
 
