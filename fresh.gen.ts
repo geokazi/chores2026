@@ -10,6 +10,7 @@ import * as $api_chores_create from "./routes/api/chores/create.ts";
 import * as $api_debug_session from "./routes/api/debug/session.ts";
 import * as $api_family_family_id_pin_setting from "./routes/api/family/[family_id]/pin-setting.ts";
 import * as $api_family_create from "./routes/api/family/create.ts";
+import * as $api_family_custom_chores from "./routes/api/family/custom-chores.ts";
 import * as $api_family_goal_settings from "./routes/api/family/goal-settings.ts";
 import * as $api_family_manage_kid from "./routes/api/family/manage-kid.ts";
 import * as $api_family_pin_setting from "./routes/api/family/pin-setting.ts";
@@ -94,6 +95,7 @@ const manifest = {
     "./routes/api/family/[family_id]/pin-setting.ts":
       $api_family_family_id_pin_setting,
     "./routes/api/family/create.ts": $api_family_create,
+    "./routes/api/family/custom-chores.ts": $api_family_custom_chores,
     "./routes/api/family/goal-settings.ts": $api_family_goal_settings,
     "./routes/api/family/manage-kid.ts": $api_family_manage_kid,
     "./routes/api/family/pin-setting.ts": $api_family_pin_setting,

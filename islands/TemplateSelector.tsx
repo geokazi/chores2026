@@ -39,11 +39,16 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
   const [isSavingCustomizations, setIsSavingCustomizations] = useState(false);
   const [inlineChildSlots, setInlineChildSlots] = useState<Record<string, string>>({});
 
-  // Initialize customization state from active rotation
+  // Initialize custom chores from family-level settings (available for ALL templates)
+  useEffect(() => {
+    const familyCustomChores = settings?.apps?.choregami?.custom_chores || [];
+    setCustomChores(familyCustomChores);
+  }, [settings?.apps?.choregami?.custom_chores]);
+
+  // Initialize template-specific state from active rotation
   useEffect(() => {
     if (activeRotation) {
       setChoreOverrides(activeRotation.customizations?.chore_overrides || {});
-      setCustomChores(activeRotation.customizations?.custom_chores || []);
 
       // Build inlineChildSlots from activeRotation.child_slots
       const existing: Record<string, string> = {};
@@ -154,28 +159,45 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
   };
 
   const handleAddCustomChore = () => {
-    console.log('🔧 handleAddCustomChore called:', { newChoreName, newChorePoints, currentCustomChores: customChores });
-    if (!newChoreName.trim()) {
-      console.log('🔧 Empty name, returning');
-      return;
-    }
+    if (!newChoreName.trim()) return;
     const key = `custom_${Date.now()}`;
     const parsedPoints = parseInt(newChorePoints);
     const newChore = { key, name: newChoreName.trim(), points: isNaN(parsedPoints) ? 1 : parsedPoints };
-    console.log('🔧 Adding custom chore:', newChore);
     setCustomChores([...customChores, newChore]);
     setNewChoreName("");
     setNewChorePoints("1");
-    console.log('🔧 Custom chores after add:', [...customChores, newChore]);
+  };
+
+  // Save custom chores independently (for Manual mode or standalone use)
+  const handleSaveCustomChoresOnly = async () => {
+    setIsSavingCustomizations(true);
+    try {
+      const response = await fetch('/api/family/custom-chores', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ custom_chores: customChores }),
+      });
+
+      if (response.ok) {
+        alert('✅ Custom chores saved!');
+        globalThis.location.reload();
+      } else {
+        const result = await response.json();
+        alert(`❌ Failed: ${result.error}`);
+      }
+    } catch (err) {
+      alert(`❌ Error: ${err}`);
+    }
+    setIsSavingCustomizations(false);
   };
 
   const handleSaveCustomizations = async () => {
     if (!activeRotation) return;
     setIsSavingCustomizations(true);
 
+    // Template-specific customizations (chore overrides only - custom chores are family-level)
     const customizations: RotationCustomizations = {};
     if (Object.keys(choreOverrides).length > 0) customizations.chore_overrides = choreOverrides;
-    if (customChores.length > 0) customizations.custom_chores = customChores;
 
     const preset = getPresetByKey(activeRotation.active_preset);
     let childSlotsToSave: { slot: string; profile_id: string }[];
@@ -192,6 +214,21 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
     }
 
     try {
+      // Save family-level custom chores (available for ALL templates)
+      const customChoresResponse = await fetch('/api/family/custom-chores', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ custom_chores: customChores }),
+      });
+
+      if (!customChoresResponse.ok) {
+        const result = await customChoresResponse.json();
+        alert(`❌ Failed to save custom chores: ${result.error}`);
+        setIsSavingCustomizations(false);
+        return;
+      }
+
+      // Save template-specific customizations (chore overrides, child slots)
       const response = await fetch('/api/rotation/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -202,6 +239,7 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
           start_date: activeRotation.start_date,
         }),
       });
+
       if (response.ok) {
         alert('✅ Customizations saved!');
         globalThis.location.reload();
@@ -283,7 +321,7 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
         );
       })()}
 
-      {/* Inline Customization */}
+      {/* Template-Specific Customization (chore overrides, kid assignments) */}
       {activeRotation && (() => {
         const activePreset = getPresetByKey(activeRotation.active_preset);
         return (
@@ -292,15 +330,64 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
               {showCustomize ? `▼ Hide ${activePreset?.name || 'Template'} Customization` : `▶ Customize ${activePreset?.name || 'Template'}`}
             </button>
 
-          {showCustomize && renderCustomizePanel(
+          {showCustomize && renderTemplateCustomizePanel(
             activeRotation, children, inlineChildSlots, setInlineChildSlots,
-            choreOverrides, setChoreOverrides, customChores, setCustomChores,
-            newChoreName, setNewChoreName, newChorePoints, setNewChorePoints,
-            handleAddCustomChore, handleSaveCustomizations, isSavingCustomizations
+            choreOverrides, setChoreOverrides,
+            handleSaveCustomizations, isSavingCustomizations
           )}
           </div>
         );
       })()}
+
+      {/* Family Custom Chores - Always visible, applies to ALL templates */}
+      <div class="custom-chores-section">
+        <h3>✨ Family Custom Chores</h3>
+        <p class="section-desc">These chores appear in all templates and manual mode</p>
+
+        <div class="custom-chores-list">
+          {customChores.map(chore => (
+            <div key={chore.key} class="chore-customize-row">
+              <span class="chore-icon">{chore.icon || '✨'}</span>
+              <span class="chore-name">{chore.name}</span>
+              <span class="chore-points">{chore.points} pt{chore.points !== 1 ? 's' : ''}</span>
+              <button class="btn-remove" onClick={() => setCustomChores(customChores.filter(c => c.key !== chore.key))}>×</button>
+            </div>
+          ))}
+
+          <div class="add-chore-row">
+            <input
+              type="text"
+              value={newChoreName}
+              onInput={(e) => setNewChoreName((e.target as HTMLInputElement).value)}
+              placeholder="New chore name"
+              class="add-chore-input"
+            />
+            <select
+              value={newChorePoints}
+              onChange={(e) => setNewChorePoints(e.currentTarget.value)}
+              class="chore-points-select"
+            >
+              {[0,1,2,3,4,5,6,7,8,9,10].map(p => <option key={p} value={p}>{p} pt{p !== 1 ? 's' : ''}</option>)}
+            </select>
+            <button
+              class="btn btn-outline"
+              onClick={handleAddCustomChore}
+              disabled={!newChoreName.trim()}
+            >
+              + Add
+            </button>
+          </div>
+        </div>
+
+        <button
+          class="btn btn-primary"
+          onClick={handleSaveCustomChoresOnly}
+          disabled={isSavingCustomizations}
+          style={{ marginTop: "1rem" }}
+        >
+          {isSavingCustomizations ? 'Saving...' : 'Save Custom Chores'}
+        </button>
+      </div>
 
       {/* Slot Assignment Modal */}
       {showRotationModal && selectedPreset && (
@@ -446,14 +533,13 @@ function renderSlotMapping(
   );
 }
 
-function renderCustomizePanel(
+// Template-specific customization panel (kid assignments + chore overrides only)
+// Custom chores are now family-level and shown separately
+function renderTemplateCustomizePanel(
   activeRotation: any, children: any[], inlineChildSlots: Record<string, string>,
   setInlineChildSlots: (s: Record<string, string>) => void,
   choreOverrides: Record<string, any>, setChoreOverrides: (o: Record<string, any>) => void,
-  customChores: CustomChore[], setCustomChores: (c: CustomChore[]) => void,
-  newChoreName: string, setNewChoreName: (n: string) => void,
-  newChorePoints: string, setNewChorePoints: (p: string) => void,
-  handleAddCustomChore: () => void, handleSaveCustomizations: () => Promise<void>,
+  handleSaveCustomizations: () => Promise<void>,
   isSaving: boolean
 ) {
   const preset = getPresetByKey(activeRotation.active_preset);
@@ -461,11 +547,6 @@ function renderCustomizePanel(
 
   const slots = getPresetSlots(preset);
   const isDynamic = preset.is_dynamic;
-
-  // For dynamic templates, get participant IDs from activeRotation.child_slots
-  const participantIds = isDynamic
-    ? (activeRotation.child_slots || []).map((s: any) => s.profile_id).filter(Boolean)
-    : [];
 
   // For slot-based templates, track which kids are already assigned to other slots
   const getUsedIdsExcludingSlot = (currentSlot: string) =>
@@ -483,7 +564,6 @@ function renderCustomizePanel(
           <p class="slot-hint">Select which kids participate in this template:</p>
           <div class="dynamic-kid-list">
             {children.map(child => {
-              // Only check inlineChildSlots for current selection state
               const isSelected = Object.values(inlineChildSlots).includes(child.id);
               return (
                 <label key={child.id} class={`dynamic-kid-checkbox ${isSelected ? 'selected' : ''}`}>
@@ -540,6 +620,7 @@ function renderCustomizePanel(
       )}
 
       <h4 style={{ marginTop: "1.5rem" }}>Template Chores</h4>
+      <p class="slot-hint">Enable/disable or adjust point values for this template's chores</p>
       <div class="chore-customize-list">
         {preset.chores.map(chore => {
           const override = choreOverrides[chore.key] || {};
@@ -569,29 +650,9 @@ function renderCustomizePanel(
         })}
       </div>
 
-      <h4 style={{ marginTop: "1.5rem" }}>Custom Chores ({customChores.length})</h4>
-      <div class="custom-chores-list">
-        {console.log('🔧 Rendering custom chores:', customChores)}
-        {customChores.map(chore => (
-          <div key={chore.key} class="chore-customize-row">
-            <span class="chore-icon">{chore.icon || '✨'}</span>
-            <span class="chore-name">{chore.name}</span>
-            <span class="chore-points">{chore.points} pt{chore.points > 1 ? 's' : ''}</span>
-            <button class="btn-remove" onClick={() => setCustomChores(customChores.filter(c => c.key !== chore.key))}>×</button>
-          </div>
-        ))}
-        <div class="add-chore-row">
-          <input type="text" value={newChoreName} onInput={(e) => setNewChoreName((e.target as HTMLInputElement).value)} placeholder="Chore name" class="add-chore-input" />
-          <select value={newChorePoints} onChange={(e) => setNewChorePoints(e.currentTarget.value)} class="chore-points-select">
-            {[0,1,2,3,4,5,6,7,8,9,10].map(p => <option key={p} value={p}>{p} pt{p !== 1 ? 's' : ''}</option>)}
-          </select>
-          <button class="btn btn-outline" onClick={() => { console.log('🔧 Add button clicked'); handleAddCustomChore(); }} disabled={!newChoreName.trim()}>+ Add</button>
-        </div>
-      </div>
-
       <div class="customize-actions">
         <button class="btn btn-primary" onClick={handleSaveCustomizations} disabled={isSaving}>
-          {isSaving ? 'Saving...' : 'Save Changes'}
+          {isSaving ? 'Saving...' : 'Save Template Settings'}
         </button>
       </div>
     </div>
@@ -672,4 +733,9 @@ const styles = `
   .add-chore-row { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
   .add-chore-input { flex: 1; padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 6px; }
   .customize-actions { display: flex; gap: 0.75rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; }
+  .custom-chores-section { margin-top: 1.5rem; padding: 1.25rem; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 12px; border: 2px solid #f59e0b; }
+  .custom-chores-section h3 { margin: 0 0 0.25rem; font-size: 1.1rem; color: #92400e; }
+  .custom-chores-section .section-desc { margin-bottom: 1rem; color: #a16207; }
+  .custom-chores-section .custom-chores-list { background: white; padding: 1rem; border-radius: 8px; }
+  .custom-chores-section .add-chore-row { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e5e7eb; }
 `;

@@ -77,10 +77,12 @@ export function buildRotationConfig(
 }
 
 // Get chores for a specific child on a given date
+// familyCustomChores: optional family-level custom chores (appear in ALL templates)
 export function getChoresForChild(
   config: RotationConfig,
   childProfileId: string,
-  date: Date = new Date()
+  date: Date = new Date(),
+  familyCustomChores?: CustomChore[]
 ): PresetChore[] {
   const preset = getPresetByKey(config.active_preset);
   if (!preset) return [];
@@ -89,8 +91,8 @@ export function getChoresForChild(
   if (preset.is_dynamic) {
     const participantIds = config.child_slots.map(s => s.profile_id);
     let chores = getDynamicChoresForChild(preset, participantIds, childProfileId, date);
-    // Apply customizations to dynamic chores too
-    chores = getChoresWithCustomizations(chores, config.customizations);
+    // Apply customizations + family custom chores
+    chores = getChoresWithCustomizations(chores, config.customizations, familyCustomChores);
     return chores;
   }
 
@@ -117,8 +119,8 @@ export function getChoresForChild(
     .map(key => preset.chores.find(c => c.key === key))
     .filter((c): c is PresetChore => c !== undefined);
 
-  // Apply customizations (point overrides, disabled chores, custom chores)
-  chores = getChoresWithCustomizations(chores, config.customizations);
+  // Apply customizations + family custom chores
+  chores = getChoresWithCustomizations(chores, config.customizations, familyCustomChores);
 
   return chores;
 }
@@ -166,24 +168,34 @@ export function getRequiredSlotCount(presetKey: string): number {
   return getPresetSlots(preset).length;
 }
 
+// Get family-level custom chores from settings (available for ALL templates)
+export function getFamilyCustomChores(settings: any): CustomChore[] {
+  return settings?.apps?.choregami?.custom_chores || [];
+}
+
 // Apply customizations to preset chores (override layer pattern)
+// familyCustomChores: family-level custom chores (available for ALL templates)
 export function getChoresWithCustomizations(
   presetChores: PresetChore[],
-  customizations?: RotationCustomizations
+  customizations?: RotationCustomizations,
+  familyCustomChores?: CustomChore[]
 ): PresetChore[] {
-  if (!customizations) return presetChores;
+  // Start with preset chores
+  let chores = [...presetChores];
 
-  // Filter disabled and apply point overrides
-  let chores = presetChores
-    .filter(c => customizations.chore_overrides?.[c.key]?.enabled !== false)
-    .map(c => ({
-      ...c,
-      points: customizations.chore_overrides?.[c.key]?.points ?? c.points,
-    }));
+  // Apply template-specific customizations (chore overrides)
+  if (customizations?.chore_overrides) {
+    chores = chores
+      .filter(c => customizations.chore_overrides?.[c.key]?.enabled !== false)
+      .map(c => ({
+        ...c,
+        points: customizations.chore_overrides?.[c.key]?.points ?? c.points,
+      }));
+  }
 
-  // Append custom chores
-  if (customizations.custom_chores?.length) {
-    const customPresetChores: PresetChore[] = customizations.custom_chores.map(c => ({
+  // Append family-level custom chores (available for ALL templates)
+  if (familyCustomChores?.length) {
+    const familyChoresAsPreset: PresetChore[] = familyCustomChores.map(c => ({
       key: c.key,
       name: c.name,
       points: c.points,
@@ -191,7 +203,7 @@ export function getChoresWithCustomizations(
       minutes: 5,        // Default estimate
       category: 'custom',
     }));
-    chores = [...chores, ...customPresetChores];
+    chores = [...chores, ...familyChoresAsPreset];
   }
 
   return chores;
