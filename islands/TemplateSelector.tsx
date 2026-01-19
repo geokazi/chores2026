@@ -354,18 +354,18 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
             </div>
           ))}
 
-          <div class="add-chore-row">
+          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #e5e7eb', alignItems: 'center' }}>
             <input
               type="text"
               value={newChoreName}
               onInput={(e) => setNewChoreName((e.target as HTMLInputElement).value)}
               placeholder="New chore name"
-              class="add-chore-input"
+              style={{ flex: 1, padding: '0.5rem', border: '1px solid #e5e7eb', borderRadius: '6px', minWidth: '80px' }}
             />
             <select
               value={newChorePoints}
               onChange={(e) => setNewChorePoints(e.currentTarget.value)}
-              class="chore-points-select"
+              style={{ padding: '0.25rem 0.5rem', border: '1px solid #e5e7eb', borderRadius: '4px', fontSize: '0.85rem' }}
             >
               {[0,1,2,3,4,5,6,7,8,9,10].map(p => <option key={p} value={p}>{p} pt{p !== 1 ? 's' : ''}</option>)}
             </select>
@@ -373,6 +373,7 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
               class="btn btn-outline"
               onClick={handleAddCustomChore}
               disabled={!newChoreName.trim()}
+              style={{ whiteSpace: 'nowrap', padding: '0.5rem 0.75rem' }}
             >
               + Add
             </button>
@@ -728,14 +729,13 @@ const styles = `
   .chore-icon { font-size: 1.1rem; }
   .chore-name { flex: 1; font-size: 0.9rem; }
   .chore-points { font-size: 0.85rem; color: var(--color-text-light); min-width: 40px; }
-  .chore-points-select { padding: 0.25rem 0.5rem; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 0.85rem; min-width: 70px; }
+  .chore-points-select { padding: 0.25rem 0.5rem; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 0.85rem; min-width: 70px; flex-shrink: 0; }
   .btn-remove { background: none; border: none; color: var(--color-warning); font-size: 1.25rem; cursor: pointer; padding: 0 0.25rem; }
-  .add-chore-row { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+  .add-chore-row { display: flex; gap: 0.5rem; margin-top: 0.5rem; align-items: center; }
   .add-chore-input { flex: 1; padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 6px; }
   .customize-actions { display: flex; gap: 0.75rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; }
   .custom-chores-section { margin-top: 1.5rem; padding: 1.25rem; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 12px; border: 2px solid #f59e0b; }
   .custom-chores-section h3 { margin: 0 0 0.25rem; font-size: 1.1rem; color: #92400e; }
   .custom-chores-section .section-desc { margin-bottom: 1rem; color: #a16207; }
   .custom-chores-section .custom-chores-list { background: white; padding: 1rem; border-radius: 8px; }
-  .custom-chores-section .add-chore-row { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid #e5e7eb; }
 `;
