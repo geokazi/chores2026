@@ -167,6 +167,11 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
 
   const { everyday, seasonal } = getPresetsByCategory(children.length);
 
+  // Group templates by free vs paid
+  const allTemplates = [...everyday, ...seasonal];
+  const freeTemplates = allTemplates.filter(p => FREE_TEMPLATES.includes(p.key));
+  const paidTemplates = allTemplates.filter(p => !FREE_TEMPLATES.includes(p.key));
+
   return (
     <div class="template-selector">
       {/* Plan Status Banner */}
@@ -200,13 +205,13 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
           </div>
         </label>
 
-        {/* Everyday Templates */}
-        {everyday.length > 0 && <div class="preset-category-header">Everyday Routines</div>}
-        {everyday.map(preset => renderPresetOption(preset, activeRotation, settings, handleTemplateClick))}
+        {/* Free Templates */}
+        {freeTemplates.length > 0 && <div class="preset-category-header free-header">Free Templates</div>}
+        {freeTemplates.map(preset => renderPresetOption(preset, activeRotation, settings, handleTemplateClick))}
 
-        {/* Seasonal Templates */}
-        {seasonal.length > 0 && <div class="preset-category-header">Seasonal</div>}
-        {seasonal.map(preset => renderPresetOption(preset, activeRotation, settings, handleTemplateClick))}
+        {/* Family Plan Templates */}
+        {paidTemplates.length > 0 && <div class="preset-category-header paid-header">Family Plan</div>}
+        {paidTemplates.map(preset => renderPresetOption(preset, activeRotation, settings, handleTemplateClick))}
       </div>
 
       {activeRotation && (() => {
