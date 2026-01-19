@@ -209,16 +209,27 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
         {seasonal.map(preset => renderPresetOption(preset, activeRotation, settings, handleTemplateClick))}
       </div>
 
-      {activeRotation && (
-        <p class="rotation-start">Started {activeRotation.start_date}</p>
-      )}
+      {activeRotation && (() => {
+        const activePreset = getPresetByKey(activeRotation.active_preset);
+        return (
+          <div class="active-template-banner">
+            <div class="active-template-name">
+              <span class="active-icon">{activePreset?.icon || '📋'}</span>
+              <strong>{activePreset?.name || 'Custom Template'}</strong>
+            </div>
+            <p class="rotation-start">Started {activeRotation.start_date}</p>
+          </div>
+        );
+      })()}
 
       {/* Inline Customization */}
-      {activeRotation && (
-        <div class="customize-section">
-          <button class="btn btn-outline" onClick={() => setShowCustomize(!showCustomize)} style={{ marginTop: "1rem", width: "100%" }}>
-            {showCustomize ? `▼ Hide Customization` : `▶ Customize Template`}
-          </button>
+      {activeRotation && (() => {
+        const activePreset = getPresetByKey(activeRotation.active_preset);
+        return (
+          <div class="customize-section">
+            <button class="btn btn-outline" onClick={() => setShowCustomize(!showCustomize)} style={{ marginTop: "1rem", width: "100%" }}>
+              {showCustomize ? `▼ Hide ${activePreset?.name || 'Template'} Customization` : `▶ Customize ${activePreset?.name || 'Template'}`}
+            </button>
 
           {showCustomize && renderCustomizePanel(
             activeRotation, children, inlineChildSlots, setInlineChildSlots,
@@ -226,8 +237,9 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
             newChoreName, setNewChoreName, newChorePoints, setNewChorePoints,
             handleAddCustomChore, handleSaveCustomizations, isSavingCustomizations
           )}
-        </div>
-      )}
+          </div>
+        );
+      })()}
 
       {/* Slot Assignment Modal */}
       {showRotationModal && selectedPreset && (
@@ -485,7 +497,10 @@ const styles = `
   .free-badge { font-size: 0.65rem; background: var(--color-primary); color: white; padding: 0.1rem 0.4rem; border-radius: 4px; margin-left: 0.5rem; font-weight: 600; }
   .preset-category-header { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-light); margin: 1rem 0 0.5rem; padding-bottom: 0.25rem; border-bottom: 1px solid #e5e7eb; }
   .manage-link { display: inline-block; margin-top: 0.5rem; font-size: 0.8rem; color: var(--color-primary); text-decoration: none; }
-  .rotation-start { font-size: 0.75rem; color: var(--color-text-light); margin-top: 0.5rem; }
+  .rotation-start { font-size: 0.75rem; color: var(--color-text-light); margin: 0; }
+  .active-template-banner { background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); padding: 1rem; border-radius: 8px; margin-top: 1rem; border: 2px solid #22c55e; }
+  .active-template-name { display: flex; align-items: center; gap: 0.5rem; font-size: 1.1rem; color: #166534; margin-bottom: 0.25rem; }
+  .active-icon { font-size: 1.25rem; }
   .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
   .modal { background: white; padding: 2rem; border-radius: 12px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto; }
   .modal h3 { margin: 0 0 1rem; }
