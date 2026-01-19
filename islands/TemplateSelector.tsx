@@ -44,8 +44,14 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
     if (activeRotation) {
       setChoreOverrides(activeRotation.customizations?.chore_overrides || {});
       setCustomChores(activeRotation.customizations?.custom_chores || []);
+
+      // Build inlineChildSlots from activeRotation.child_slots
       const existing: Record<string, string> = {};
-      activeRotation.child_slots?.forEach(s => { existing[s.slot] = s.profile_id; });
+      activeRotation.child_slots?.forEach((s: { slot: string; profile_id: string }) => {
+        if (s.profile_id) {
+          existing[s.slot] = s.profile_id;
+        }
+      });
       setInlineChildSlots(existing);
     }
   }, [activeRotation?.active_preset]);
@@ -138,8 +144,18 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
     if (customChores.length > 0) customizations.custom_chores = customChores;
 
     const preset = getPresetByKey(activeRotation.active_preset);
-    const slots = preset ? getPresetSlots(preset) : [];
-    const childSlotsToSave = slots.map(slot => ({ slot, profile_id: inlineChildSlots[slot] || "" }));
+    let childSlotsToSave: { slot: string; profile_id: string }[];
+
+    if (preset?.is_dynamic) {
+      // For dynamic templates, use participant_N slots from inlineChildSlots
+      childSlotsToSave = Object.entries(inlineChildSlots)
+        .filter(([_, profileId]) => profileId)
+        .map(([slot, profileId]) => ({ slot, profile_id: profileId }));
+    } else {
+      // For slot-based templates, map slots to child assignments
+      const slots = preset ? getPresetSlots(preset) : [];
+      childSlotsToSave = slots.map(slot => ({ slot, profile_id: inlineChildSlots[slot] || "" }));
+    }
 
     try {
       const response = await fetch('/api/rotation/apply', {
@@ -401,25 +417,69 @@ function renderCustomizePanel(
   if (!preset) return null;
 
   const slots = getPresetSlots(preset);
+  const isDynamic = preset.is_dynamic;
+
+  // For dynamic templates, get participant IDs from activeRotation.child_slots
+  const participantIds = isDynamic
+    ? (activeRotation.child_slots || []).map((s: any) => s.profile_id).filter(Boolean)
+    : [];
 
   return (
     <div class="customize-content">
       <h4>Kid Assignment</h4>
-      <div class="inline-slot-mapping">
-        {slots.map(slot => (
-          <div key={slot} class="inline-slot-row">
-            <span class="slot-label">{slot}:</span>
-            <select
-              value={inlineChildSlots[slot] || ""}
-              onChange={(e) => setInlineChildSlots({ ...inlineChildSlots, [slot]: e.currentTarget.value })}
-              class="slot-select"
-            >
-              <option value="">Select child...</option>
-              {children.map(child => <option key={child.id} value={child.id}>{child.name}</option>)}
-            </select>
+      {isDynamic ? (
+        // Dynamic templates: show checkboxes for kid selection
+        <div class="dynamic-kid-customize">
+          <p class="slot-hint">Select which kids participate in this template:</p>
+          <div class="dynamic-kid-list">
+            {children.map(child => {
+              const isSelected = participantIds.includes(child.id) || Object.values(inlineChildSlots).includes(child.id);
+              return (
+                <label key={child.id} class="dynamic-kid-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={(e) => {
+                      if (e.currentTarget.checked) {
+                        const nextIndex = Object.keys(inlineChildSlots).length;
+                        setInlineChildSlots({ ...inlineChildSlots, [`participant_${nextIndex}`]: child.id });
+                      } else {
+                        const remaining = Object.entries(inlineChildSlots)
+                          .filter(([_, id]) => id !== child.id)
+                          .map(([_, id]) => id);
+                        const newSlots: Record<string, string> = {};
+                        remaining.forEach((id, i) => { newSlots[`participant_${i}`] = id; });
+                        setInlineChildSlots(newSlots);
+                      }
+                    }}
+                  />
+                  <span>{child.name}</span>
+                </label>
+              );
+            })}
           </div>
-        ))}
-      </div>
+          {Object.keys(inlineChildSlots).length > 0 && (
+            <p class="dynamic-summary">✓ {Object.keys(inlineChildSlots).length} kid{Object.keys(inlineChildSlots).length > 1 ? 's' : ''} participating</p>
+          )}
+        </div>
+      ) : (
+        // Slot-based templates: show dropdowns
+        <div class="inline-slot-mapping">
+          {slots.map(slot => (
+            <div key={slot} class="inline-slot-row">
+              <span class="slot-label">{slot}:</span>
+              <select
+                value={inlineChildSlots[slot] || ""}
+                onChange={(e) => setInlineChildSlots({ ...inlineChildSlots, [slot]: e.currentTarget.value })}
+                class="slot-select"
+              >
+                <option value="">Select child...</option>
+                {children.map(child => <option key={child.id} value={child.id}>{child.name}</option>)}
+              </select>
+            </div>
+          ))}
+        </div>
+      )}
 
       <h4 style={{ marginTop: "1.5rem" }}>Template Chores</h4>
       <div class="chore-customize-list">
