@@ -154,11 +154,18 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
   };
 
   const handleAddCustomChore = () => {
-    if (!newChoreName.trim()) return;
+    console.log('🔧 handleAddCustomChore called:', { newChoreName, newChorePoints, currentCustomChores: customChores });
+    if (!newChoreName.trim()) {
+      console.log('🔧 Empty name, returning');
+      return;
+    }
     const key = `custom_${Date.now()}`;
-    setCustomChores([...customChores, { key, name: newChoreName.trim(), points: parseInt(newChorePoints) || 1 }]);
+    const newChore = { key, name: newChoreName.trim(), points: parseInt(newChorePoints) || 1 };
+    console.log('🔧 Adding custom chore:', newChore);
+    setCustomChores([...customChores, newChore]);
     setNewChoreName("");
     setNewChorePoints("1");
+    console.log('🔧 Custom chores after add:', [...customChores, newChore]);
   };
 
   const handleSaveCustomizations = async () => {
@@ -225,10 +232,16 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
             <span class="plan-expiry">ends in {plan.daysRemaining} days</span>
           </>
         ) : (
-          <>
-            <span>Free Plan</span>
-            <a href="/redeem" class="redeem-link">Have a gift code?</a>
-          </>
+          <div class="free-plan-info">
+            <div class="free-plan-main">
+              <span class="plan-icon">🎁</span>
+              <div class="free-plan-text">
+                <span class="free-plan-title">Free Plan</span>
+                <span class="free-plan-desc">3 templates included · Unlock 5 more with Family Plan</span>
+              </div>
+            </div>
+            <a href="/redeem" class="redeem-link">Redeem gift code →</a>
+          </div>
         )}
       </div>
 
@@ -555,8 +568,9 @@ function renderCustomizePanel(
         })}
       </div>
 
-      <h4 style={{ marginTop: "1.5rem" }}>Custom Chores</h4>
+      <h4 style={{ marginTop: "1.5rem" }}>Custom Chores ({customChores.length})</h4>
       <div class="custom-chores-list">
+        {console.log('🔧 Rendering custom chores:', customChores)}
         {customChores.map(chore => (
           <div key={chore.key} class="chore-customize-row">
             <span class="chore-icon">{chore.icon || '✨'}</span>
@@ -570,7 +584,7 @@ function renderCustomizePanel(
           <select value={newChorePoints} onChange={(e) => setNewChorePoints(e.currentTarget.value)} class="chore-points-select">
             {[0,1,2,3,4,5,6,7,8,9,10].map(p => <option key={p} value={p}>{p} pt{p !== 1 ? 's' : ''}</option>)}
           </select>
-          <button class="btn btn-outline" onClick={handleAddCustomChore} disabled={!newChoreName.trim()}>+ Add</button>
+          <button class="btn btn-outline" onClick={() => { console.log('🔧 Add button clicked'); handleAddCustomChore(); }} disabled={!newChoreName.trim()}>+ Add</button>
         </div>
       </div>
 
@@ -587,10 +601,15 @@ const styles = `
   .template-selector { margin-bottom: 1rem; }
   .plan-banner { display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.875rem; }
   .plan-banner.paid { background: #dcfce7; color: #166534; }
-  .plan-banner.free { background: #f3f4f6; color: #4b5563; }
+  .plan-banner.free { background: #f0fdf4; color: #4b5563; border: 1px solid #d1fae5; }
   .plan-icon { font-size: 1rem; }
   .plan-expiry { margin-left: auto; opacity: 0.7; }
-  .redeem-link { margin-left: auto; color: var(--color-primary); text-decoration: none; }
+  .free-plan-info { display: flex; align-items: center; justify-content: space-between; width: 100%; flex-wrap: wrap; gap: 0.5rem; }
+  .free-plan-main { display: flex; align-items: center; gap: 0.5rem; }
+  .free-plan-text { display: flex; flex-direction: column; gap: 0.125rem; }
+  .free-plan-title { font-weight: 600; color: #374151; }
+  .free-plan-desc { font-size: 0.75rem; color: #6b7280; }
+  .redeem-link { color: var(--color-primary); text-decoration: none; font-weight: 500; white-space: nowrap; }
   .section-desc { font-size: 0.875rem; color: var(--color-text-light); margin-bottom: 1rem; }
   .rotation-presets { display: flex; flex-direction: column; gap: 0.75rem; }
   .rotation-preset-option { display: flex; align-items: flex-start; gap: 0.75rem; padding: 1rem; background: var(--color-bg); border-radius: 8px; cursor: pointer; transition: all 0.2s; }
