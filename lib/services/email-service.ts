@@ -140,6 +140,92 @@ export async function sendGoalAchievedEmail(
 }
 
 /**
+ * Send welcome email to newly registered users
+ */
+export async function sendWelcomeEmail(
+  toEmail: string,
+  setupUrl: string
+): Promise<{ success: boolean; error?: string }> {
+  console.log("📧 sendWelcomeEmail called for:", toEmail);
+
+  try {
+    const resend = getResend();
+    console.log("📧 Resend client initialized, sending to:", toEmail);
+
+    const { data: result, error } = await resend.emails.send({
+      from: EMAIL_FROM,
+      to: toEmail,
+      subject: "Welcome to ChoreGami! 🎉",
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 500px; margin: 0 auto; padding: 20px; }
+            .header { text-align: center; padding: 20px 0; }
+            .emoji { font-size: 48px; }
+            h1 { color: #10b981; margin: 10px 0; }
+            .cta-button {
+              display: inline-block;
+              background: #10b981;
+              color: white !important;
+              padding: 12px 24px;
+              border-radius: 8px;
+              text-decoration: none;
+              font-weight: 600;
+              margin: 20px 0;
+            }
+            .cta-container { text-align: center; }
+            .footer { text-align: center; color: #888; font-size: 12px; margin-top: 30px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <div class="emoji">🎉</div>
+              <h1>Welcome to ChoreGami!</h1>
+            </div>
+
+            <p>Thanks for signing up! You're one step away from making family chores fun and rewarding.</p>
+
+            <p>Here's what you can do with ChoreGami:</p>
+            <ul>
+              <li>Create chore schedules for your kids</li>
+              <li>Track completions and award points</li>
+              <li>Set family goals and bonuses</li>
+              <li>Make chores into a fun game!</li>
+            </ul>
+
+            <div class="cta-container">
+              <a href="${setupUrl}" class="cta-button">Complete Your Setup</a>
+            </div>
+
+            <p style="color: #666; font-size: 14px;">If you didn't create this account, you can ignore this email.</p>
+
+            <div class="footer">
+              <p>ChoreGami - Making chores fun for families</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+    });
+
+    if (error) {
+      console.error("❌ Resend welcome email error:", error);
+      return { success: false, error: error.message };
+    }
+
+    console.log("✅ Welcome email sent to:", toEmail, result);
+    return { success: true };
+  } catch (err) {
+    console.error("❌ Welcome email send failed:", err);
+    return { success: false, error: String(err) };
+  }
+}
+
+/**
  * Notify parents when family goal is achieved (convenience wrapper)
  */
 export async function notifyGoalAchieved(

@@ -3,6 +3,7 @@
 // This file is automatically updated during development when running `dev.ts`.
 
 import * as $_app from "./routes/_app.tsx";
+import * as $_middleware from "./routes/_middleware.ts";
 import * as $api_auth_validate_oauth from "./routes/api/auth/validate-oauth.ts";
 import * as $api_chores_chore_id_complete from "./routes/api/chores/[chore_id]/complete.ts";
 import * as $api_chores_create from "./routes/api/chores/create.ts";
@@ -74,6 +75,7 @@ import type { Manifest } from "$fresh/server.ts";
 const manifest = {
   routes: {
     "./routes/_app.tsx": $_app,
+    "./routes/_middleware.ts": $_middleware,
     "./routes/api/auth/validate-oauth.ts": $api_auth_validate_oauth,
     "./routes/api/chores/[chore_id]/complete.ts": $api_chores_chore_id_complete,
     "./routes/api/chores/create.ts": $api_chores_create,

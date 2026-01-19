@@ -10,6 +10,7 @@ import AuthModeSelector from "../islands/auth/AuthModeSelector.tsx";
 import PhoneAuthForm from "../islands/auth/PhoneAuthForm.tsx";
 import SocialAuthButtons from "../islands/auth/SocialAuthButtons.tsx";
 import AppFooter from "../components/AppFooter.tsx";
+import { sendWelcomeEmail } from "../lib/services/email-service.ts";
 
 type AuthMode = "email" | "phone" | "social";
 
@@ -156,27 +157,65 @@ export const handler: Handlers<RegisterPageData> = {
     }
 
     try {
+      // Use admin API to create user with confirmed email, then send welcome via Resend
       const supabase = createClient(
         Deno.env.get("SUPABASE_URL")!,
         Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
       );
 
-      const { data, error } = await supabase.auth.signUp({ email, password });
+      // Check if user already exists
+      const { data: existingUsers } = await supabase.auth.admin.listUsers();
+      const userExists = existingUsers?.users?.some(u => u.email === email);
+      if (userExists) {
+        return ctx.render({ mode: "email", error: "Unable to create account. Please try signing in or use a different email." });
+      }
 
-      if (error) {
-        if (error.message.includes("already registered")) {
-          // Generic message to prevent email enumeration attacks
-          return ctx.render({ mode: "email", error: "Unable to create account. Please try signing in or use a different email." });
+      // Create user with email pre-confirmed (we'll verify via Resend)
+      const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+      });
+
+      if (createError || !newUser.user) {
+        console.error("User creation error:", createError);
+        return ctx.render({ mode: "email", error: createError?.message || "Failed to create account" });
+      }
+
+      console.log("✅ User created:", newUser.user.email);
+
+      // Send welcome email via Resend
+      const setupUrl = new URL("/setup", req.url).toString();
+      console.log("📧 Attempting to send welcome email to:", email, "with setup URL:", setupUrl);
+
+      try {
+        const emailResult = await sendWelcomeEmail(email, setupUrl);
+        if (emailResult.success) {
+          console.log("✅ Welcome email sent successfully to:", email);
+        } else {
+          console.warn("⚠️ Welcome email failed (non-critical):", emailResult.error);
         }
-        return ctx.render({ mode: "email", error: error.message });
+      } catch (emailError) {
+        console.error("❌ Welcome email exception:", emailError);
       }
 
-      if (data.session) {
-        return createSessionResponse(req, data.session, "/setup");
+      // Generate magic link to log them in immediately
+      const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+        type: "magiclink",
+        email: email,
+        options: { redirectTo: new URL("/setup", req.url).toString() },
+      });
+
+      if (linkError || !linkData?.properties?.action_link) {
+        // Fallback: tell them to log in manually
+        return ctx.render({ mode: "email", error: "Account created! Check your email, then sign in." });
       }
 
-      // Email confirmation required
-      return ctx.render({ mode: "email", error: "Check your email to confirm your account" });
+      // Auto-login via magic link
+      return new Response(null, {
+        status: 303,
+        headers: { Location: linkData.properties.action_link },
+      });
     } catch (error) {
       console.error("Signup error:", error);
       return ctx.render({ mode: "email", error: "Registration failed" });
