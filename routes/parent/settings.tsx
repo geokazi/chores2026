@@ -7,6 +7,7 @@
  */
 
 import { Handlers, PageProps } from "$fresh/server.ts";
+import { Head } from "$fresh/runtime.ts";
 import { getAuthenticatedSession } from "../../lib/auth/session.ts";
 import FamilySettings from "../../islands/FamilySettings.tsx";
 import ParentPinGate from "../../islands/ParentPinGate.tsx";
@@ -91,14 +92,18 @@ export default function ParentSettingsPage(
   }
 
   return (
-    <div class="container">
-      <AppHeader
-        currentPage="settings"
-        pageTitle="Family Settings"
-        familyMembers={members}
-        currentUser={currentUser}
-        userRole="parent"
-      />
+    <>
+      <Head>
+        <link rel="stylesheet" href="/settings.css" />
+      </Head>
+      <div class="container">
+        <AppHeader
+          currentPage="settings"
+          pageTitle="Family Settings"
+          familyMembers={members}
+          currentUser={currentUser}
+          userRole="parent"
+        />
 
       <ParentPinGate
         operation="access family settings"
@@ -110,7 +115,8 @@ export default function ParentSettingsPage(
           settings={settings}
         />
       </ParentPinGate>
-      <AppFooter />
-    </div>
+        <AppFooter />
+      </div>
+    </>
   );
 }

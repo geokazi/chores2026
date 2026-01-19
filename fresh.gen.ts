@@ -74,6 +74,13 @@ import * as $auth_AuthPageLayout from "./islands/auth/AuthPageLayout.tsx";
 import * as $auth_EmailAuthForm from "./islands/auth/EmailAuthForm.tsx";
 import * as $auth_PhoneAuthForm from "./islands/auth/PhoneAuthForm.tsx";
 import * as $auth_SocialAuthButtons from "./islands/auth/SocialAuthButtons.tsx";
+import * as $settings_FamilyMembersSection from "./islands/settings/FamilyMembersSection.tsx";
+import * as $settings_KidPinSection from "./islands/settings/KidPinSection.tsx";
+import * as $settings_ParentPinSection from "./islands/settings/ParentPinSection.tsx";
+import * as $settings_PinSetupModal from "./islands/settings/PinSetupModal.tsx";
+import * as $settings_PointManagementSection from "./islands/settings/PointManagementSection.tsx";
+import * as $settings_ThemeSection from "./islands/settings/ThemeSection.tsx";
+import * as $settings_WeeklyGoalSection from "./islands/settings/WeeklyGoalSection.tsx";
 import type { Manifest } from "$fresh/server.ts";
 
 const manifest = {
@@ -154,6 +161,15 @@ const manifest = {
     "./islands/auth/EmailAuthForm.tsx": $auth_EmailAuthForm,
     "./islands/auth/PhoneAuthForm.tsx": $auth_PhoneAuthForm,
     "./islands/auth/SocialAuthButtons.tsx": $auth_SocialAuthButtons,
+    "./islands/settings/FamilyMembersSection.tsx":
+      $settings_FamilyMembersSection,
+    "./islands/settings/KidPinSection.tsx": $settings_KidPinSection,
+    "./islands/settings/ParentPinSection.tsx": $settings_ParentPinSection,
+    "./islands/settings/PinSetupModal.tsx": $settings_PinSetupModal,
+    "./islands/settings/PointManagementSection.tsx":
+      $settings_PointManagementSection,
+    "./islands/settings/ThemeSection.tsx": $settings_ThemeSection,
+    "./islands/settings/WeeklyGoalSection.tsx": $settings_WeeklyGoalSection,
   },
   baseUrl: import.meta.url,
 } satisfies Manifest;
