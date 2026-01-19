@@ -98,3 +98,22 @@ $$ LANGUAGE plpgsql;
 -- FROM gift_codes
 -- WHERE redeemed_by IS NOT NULL
 -- ORDER BY redeemed_at DESC;
+
+/*
+The YOUR-ADMIN-USER-UUID should be your user ID from Supabase. You can get it from:
+
+  Option 1: From auth.users table (your login user)
+  SELECT id, email FROM auth.users WHERE email = 'your-email@example.com';
+
+  Option 2: From family_profiles table (parent profile with user_id)
+  SELECT fp.user_id, fp.name, u.email
+  FROM family_profiles fp
+  JOIN auth.users u ON u.id = fp.user_id
+  WHERE fp.role = 'parent' AND fp.user_id IS NOT NULL;
+
+  Option 3: Check your current session in Supabase Dashboard
+  Go to Authentication → Users in the Supabase dashboard to see your user UUID.
+
+  Once you have it, you can generate gift codes like:
+  SELECT create_gift_code('school_year', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Welcome gift!');
+*/

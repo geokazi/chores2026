@@ -1,8 +1,8 @@
 # ChoreGami 2026 Documentation
 
-**Version**: 1.5
+**Version**: 1.6
 **Status**: ✅ Production Ready
-**Last Updated**: January 18, 2026
+**Last Updated**: January 19, 2026
 
 **Project Overview**: A simplified, real-time chore completion system built with Deno Fresh, transforming routine family chores into an engaging, competitive experience with sub-second real-time updates across all family devices.
 
@@ -46,7 +46,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-17 | [↳ **Dynamic Template Expansion**](./milestones/20260117_dynamic_template_expansion.md) | ✅ Complete | Distribution-based chores scale to any family size (1-8 kids) |
 | 2026-01-18 | [**Legal Pages & Auth Flow Fixes**](./milestones/20260118_legal_pages_auth_flow_fixes.md) | ✅ Complete | Parent-friendly Terms, COPPA-aware Privacy, phone OTP redirect fix |
 | 2026-01-18 | [**Authentication Security Hardening**](./milestones/20260118_authentication_security_hardening.md) | ✅ Complete | Rate limiting, enumeration protection, honeypot bot detection |
-| 2026-01-18 | [**Template Gating & Gift Codes**](./planned/20260118_template_gating_gift_codes.md) | 📋 Planned | Prepaid plan tiers, gift code redemption, template access control |
+| 2026-01-19 | [**Template Gating & Gift Codes**](./planned/20260118_template_gating_gift_codes.md) | ✅ Complete | Prepaid plan tiers ($19-$59), gift code redemption, template access control, TemplateSelector extraction |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 
@@ -190,6 +190,7 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 - ✅ **Collaborative Family Goals**: Weekly goal system with auto-bonus when reached - collaboration over competition
 - ✅ **Weekly Patterns Analysis**: Heatmap + text insights showing busiest/slowest days per kid (last 60 days)
 - ✅ **Chore Rotation Templates**: 7 pre-built schedules including **Dynamic Daily Routines** (scales to any family size 1-8 kids) + slot-based templates (Smart Rotation, Weekend Warrior, Daily Basics, Large Family, Summer Break, School Year) with Manual (Default) option + partial slot assignment
+- ✅ **Template Gating & Gift Codes**: Prepaid plan tiers (Free vs Family Plan), gift code redemption (`/redeem`), JSONB-based plan storage, TemplateSelector component extraction
 
 ### Known Limitations
 - **Testing**: Comprehensive test suite not yet implemented
@@ -235,5 +236,5 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 
 ---
 
-*Last updated: January 18, 2026*
+*Last updated: January 19, 2026*
 *Maintained by: Claude Code AI Assistant*

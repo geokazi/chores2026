@@ -1,7 +1,7 @@
 # ChoreGami 2026 - Technical Architecture
 
 **Version**: 1.0  
-**Last Updated**: January 10, 2026  
+**Last Updated**: January 19, 2026
 **Status**: Production Ready
 
 ## System Overview
@@ -390,6 +390,86 @@ export async function handler(req: Request, ctx: FreshContext) {
 - **Rate Limiting**: Deno KV-based per-IP throttling for auth routes
 - **Honeypot Fields**: Hidden form fields detect automated bot submissions
 - **See**: [Authentication Security Hardening](./milestones/20260119_authentication_security_hardening.md)
+
+## Monetization Architecture
+
+### Template Gating & Gift Codes
+
+**Status**: ✅ Implemented (January 19, 2026)
+
+ChoreGami uses a prepaid time-pass model for monetizing advanced chore rotation templates. The system is built on the existing JSONB settings architecture with no new database columns required.
+
+#### Plan Tiers
+
+| Tier | Templates | Price |
+|------|-----------|-------|
+| **Free** | Manual, Daily Basics, Dynamic Daily Routines | $0 |
+| **Family Plan** | All templates (Smart Rotation, Weekend Warrior, Large Family, Seasonal) | $19-$59 |
+
+#### Technical Components
+
+```
+lib/plan-gate.ts              # Plan checking utilities (~55 lines)
+├── getPlan()                 # Extract plan from JSONB settings
+├── hasPaidPlan()             # Boolean check for paid status
+├── canAccessTemplate()       # Template access control
+└── calculateNewExpiry()      # Plan extension (additive, not replacement)
+
+routes/api/gift/redeem.ts     # Redemption API (~100 lines)
+routes/redeem.tsx             # Redemption page (~65 lines)
+islands/RedeemForm.tsx        # Interactive form (~195 lines)
+islands/TemplateSelector.tsx  # Template selection with gating (~450 lines)
+
+sql/20260118_gift_codes.sql   # Gift code table + generation functions
+```
+
+#### Data Flow
+
+```
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   Gift Code     │    │  Redemption API  │    │  JSONB Settings │
+│   GIFT-XXXX-... │───▶│  POST /api/gift  │───▶│  families.      │
+│   (gift_codes)  │    │  /redeem         │    │  settings.apps. │
+└─────────────────┘    └──────────────────┘    │  choregami.plan │
+                                                └─────────────────┘
+                                                        │
+                                                        ▼
+                                                ┌─────────────────┐
+                                                │ TemplateSelector│
+                                                │ canAccessTemplate│
+                                                │ 🔓 or 🔒 display │
+                                                └─────────────────┘
+```
+
+#### Plan Storage (JSONB)
+
+```jsonc
+// families.settings
+{
+  "apps": {
+    "choregami": {
+      "plan": {
+        "type": "school_year",      // 'school_year' | 'summer' | 'full_year'
+        "expires_at": "2027-06-30", // ISO date
+        "activated_at": "2026-09-01",
+        "source": "gift",           // 'direct' | 'gift' | 'promo'
+        "gift_code": "GIFT-ABCD-1234"
+      }
+    }
+  }
+}
+```
+
+#### Key Design Decisions
+
+1. **JSONB over columns**: No ALTER TABLE migrations, flexible for future plan types
+2. **Additive expiry**: Redeeming a code extends existing plans, doesn't replace
+3. **Component extraction**: TemplateSelector (~450 lines) extracted from FamilySettings (~2400→1800 lines)
+4. **Free templates**: Daily Basics + Dynamic Daily ensure core value is free
+
+**See**: [Template Gating Implementation](./planned/20260118_template_gating_gift_codes.md)
+
+---
 
 ## Component Architecture
 

@@ -252,16 +252,35 @@ ChoreGami 2026 is a streamlined family chore management application designed to 
 ## 💰 Revenue Model
 
 ### Freemium Structure
-- **Free Tier**: Basic chore management for up to 6 family members
-- **Premium Tier** ($9.99/month): Advanced features, unlimited members
-- **Family Plan** ($19.99/month): Multi-family management and analytics
 
-### Premium Features
-- Custom achievement creation and rewards
-- Advanced analytics and progress reports
-- Priority customer support
-- Early access to new features
-- Integration with external reward systems
+**Phase 1 (✅ Implemented Jan 19, 2026)**: Prepaid time-pass model via gift codes
+
+| Tier | Access | Price |
+|------|--------|-------|
+| **Free** | Manual chores, Daily Basics, Dynamic Daily templates | $0 |
+| **School Year Pass** | All templates (~10 months) | $49 |
+| **Summer Pass** | All templates (3 months) | $19 |
+| **Full Year Pass** | All templates (12 months) | $59 |
+
+**Key Features:**
+- Gift code redemption (`/redeem` page)
+- Plan extension (codes add days, don't replace existing plans)
+- JSONB-based plan storage (no database migrations)
+- See: [Template Gating Implementation](./planned/20260118_template_gating_gift_codes.md)
+
+**Phase 2 (Planned)**: Stripe integration for direct purchases
+- In-app purchase flow
+- Gift purchase for others
+- Promo code management
+
+### Premium Features (Family Plan)
+- All 7 chore rotation templates (vs 3 free)
+- Smart Family Rotation (biweekly patterns)
+- Weekend Warrior (weekend-only schedules)
+- Large Family Rotation (4-slot templates for 3-8 kids)
+- Seasonal templates (Summer Break, School Year)
+- Future: Custom achievement creation and rewards
+- Future: Advanced analytics and progress reports
 
 ## 🎯 Go-to-Market Strategy
 
@@ -311,7 +330,8 @@ ChoreGami 2026 is a streamlined family chore management application designed to 
 
 ---
 
-**Document Owner**: Product Team  
-**Review Cycle**: Monthly  
-**Next Review**: February 6, 2026  
+**Document Owner**: Product Team
+**Review Cycle**: Monthly
+**Last Updated**: January 19, 2026
+**Next Review**: February 19, 2026
 **Stakeholders**: Engineering, Design, Marketing, Customer Success

@@ -852,11 +852,14 @@ const loadTest = async () => {
 - **Honeypot Bot Detection**: Hidden form fields detect automated submissions (~70% simple bots)
 - **See**: [Authentication Security Hardening](./milestones/20260118_authentication_security_hardening.md)
 
-#### Template Gating & Gift Codes 📋 **Planned**
-- **Plan Tiers**: Free (Manual, Daily Basics) vs Family Plan (all advanced templates)
-- **Prepaid Time Passes**: School Year ($49), Summer ($19), Full Year ($59)
+#### Template Gating & Gift Codes ✅ **Implemented Jan 19, 2026**
+- **Plan Tiers**: Free (Manual, Daily Basics, Dynamic Daily) vs Family Plan (all advanced templates)
+- **Prepaid Time Passes**: School Year ($49/300 days), Summer ($19/90 days), Full Year ($59/365 days)
 - **Gift Code Redemption**: `/redeem` page with GIFT-XXXX-XXXX-XXXX codes
-- **See**: [Template Gating Plan](./planned/20260118_template_gating_gift_codes.md)
+- **Plan Extension**: Redeeming codes adds days to existing plans (doesn't replace)
+- **Component Extraction**: TemplateSelector (~450 lines) extracted from FamilySettings
+- **Unit Tests**: 29 tests (15 plan-gate + 14 redemption)
+- **See**: [Template Gating Implementation](./planned/20260118_template_gating_gift_codes.md)
 
 #### Future Security Enhancements
 - **CSRF Protection**: Cross-site request forgery prevention
@@ -893,7 +896,7 @@ const loadTest = async () => {
 
 ---
 
-**Document Maintained By**: Engineering Team  
-**Last Updated**: January 18, 2026  
-**Review Schedule**: Monthly technical review  
+**Document Maintained By**: Engineering Team
+**Last Updated**: January 19, 2026
+**Review Schedule**: Monthly technical review
 **Version Control**: Git-based documentation versioning
