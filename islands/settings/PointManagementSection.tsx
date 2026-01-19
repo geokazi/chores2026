@@ -19,6 +19,7 @@ export default function PointManagementSection({ members, familyId }: PointManag
   const [selectedMember, setSelectedMember] = useState<any>(null);
   const [adjustmentAmount, setAdjustmentAmount] = useState("");
   const [adjustmentReason, setAdjustmentReason] = useState("");
+  const [pendingAdjustment, setPendingAdjustment] = useState(false); // PIN verification step
 
   const handleMemberPointAdjustment = (member: any) => {
     setSelectedMember(member);
@@ -83,6 +84,7 @@ export default function PointManagementSection({ members, familyId }: PointManag
     setSelectedMember(null);
     setAdjustmentAmount("");
     setAdjustmentReason("");
+    setPendingAdjustment(false);
   };
 
   return (
@@ -183,7 +185,7 @@ export default function PointManagementSection({ members, familyId }: PointManag
 
             <div class="modal-actions">
               <button
-                onClick={handlePointAdjustment}
+                onClick={() => setPendingAdjustment(true)}
                 class="btn btn-primary"
                 disabled={!adjustmentAmount || !adjustmentReason}
               >
@@ -191,6 +193,66 @@ export default function PointManagementSection({ members, familyId }: PointManag
               </button>
               <button
                 onClick={closeModal}
+                class="btn btn-secondary"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PIN Verification Modal */}
+      {pendingAdjustment && selectedMember && (
+        <div class="modal-overlay">
+          <div class="modal">
+            <h3>🔐 Verify Parent PIN</h3>
+            <p style={{ marginBottom: "1rem" }}>
+              Enter your PIN to adjust points for <strong>{selectedMember.name}</strong>
+            </p>
+            <p style={{ fontSize: "0.875rem", color: "var(--color-text-light)", marginBottom: "1rem" }}>
+              {parseInt(adjustmentAmount) >= 0 ? '+' : ''}{adjustmentAmount} points · {adjustmentReason}
+            </p>
+            <div style={{ marginBottom: "1rem" }}>
+              <input
+                type="password"
+                maxLength={4}
+                placeholder="Enter 4-digit PIN"
+                id="adjust-pin-input"
+                style={{
+                  width: "100%",
+                  padding: "0.75rem",
+                  borderRadius: "6px",
+                  border: "2px solid #e5e7eb",
+                  fontSize: "1.25rem",
+                  textAlign: "center",
+                  letterSpacing: "0.5rem",
+                }}
+                autoFocus
+                onInput={async (e) => {
+                  const pin = (e.target as HTMLInputElement).value;
+                  if (pin.length === 4) {
+                    // Verify PIN
+                    const res = await fetch("/api/parent/verify-pin-simple", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ pin }),
+                    });
+                    const result = await res.json();
+                    if (result.success) {
+                      setPendingAdjustment(false);
+                      handlePointAdjustment();
+                    } else {
+                      alert("❌ Incorrect PIN");
+                      (e.target as HTMLInputElement).value = "";
+                    }
+                  }
+                }}
+              />
+            </div>
+            <div class="modal-actions">
+              <button
+                onClick={() => setPendingAdjustment(false)}
                 class="btn btn-secondary"
               >
                 Cancel
