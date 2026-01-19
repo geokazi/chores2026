@@ -1,7 +1,7 @@
 # Chore Templates - JSONB Schema Design
 
 **Document Created**: January 15, 2026
-**Updated**: January 16, 2026
+**Updated**: January 19, 2026
 **Status**: Design Complete
 **Architecture**: Zero New Tables - Static TypeScript + JSONB Config
 
@@ -199,15 +199,17 @@ interface RotationCustomizations {
     };
   };
 
-  // Custom chores added by family (appear daily for all slots)
-  custom_chores?: CustomChore[];
+  // DEPRECATED: custom_chores moved to family-level (Jan 19, 2026)
+  // See settings.apps.choregami.custom_chores instead
 }
 
+// Family-level custom chores (available in ALL templates)
+// Stored at: settings.apps.choregami.custom_chores
 interface CustomChore {
-  key: string;                     // Unique key (e.g., "custom_feed_fish")
+  key: string;                     // Unique key (e.g., "custom_1705644123456")
   name: string;                    // Display name
   points: number;                  // Point value
-  icon: string;                    // Emoji icon
+  icon?: string;                   // Emoji icon (optional)
 }
 ```
 
@@ -864,7 +866,7 @@ export const PRESET_CHORES: Record<string, ChoreDefinition[]> = {
 
 ### Template Customization (Implemented)
 
-**Status**: ✅ **COMPLETE** (January 15, 2026)
+**Status**: ✅ **COMPLETE** (January 19, 2026)
 
 **Design: Override Layer Pattern**
 
@@ -879,22 +881,23 @@ This enables 80% of customization needs with minimal complexity.
     "start_date": "2026-01-13",
     "child_slots": [...],
 
-    // NEW: Only stores differences from default
+    // Template-specific customizations (overrides only)
     "customizations": {
       // Override specific chores
       "chore_overrides": {
         "make_bed": { "points": 2 },         // Was 1, now 2
         "vacuum_floor": { "enabled": false }, // Disabled
         "dishes": { "points": 3 }            // Was 2, now 3
-      },
-
-      // Add family-specific chores (daily for all slots)
-      "custom_chores": [
-        { "key": "feed_fish", "name": "Feed the fish", "points": 1, "icon": "🐟" },
-        { "key": "water_plants", "name": "Water plants", "points": 2, "icon": "🌱" }
-      ]
+      }
     }
-  }
+  },
+
+  // FAMILY-LEVEL custom chores (January 19, 2026)
+  // Available in ALL templates and manual mode
+  "custom_chores": [
+    { "key": "feed_fish", "name": "Feed the fish", "points": 1, "icon": "🐟" },
+    { "key": "water_plants", "name": "Water plants", "points": 2, "icon": "🌱" }
+  ]
 }
 ```
 
@@ -902,22 +905,25 @@ This enables 80% of customization needs with minimal complexity.
 
 ```typescript
 function getChoresWithCustomizations(
-  preset: RotationPreset,
-  customizations?: RotationCustomizations
+  presetChores: PresetChore[],
+  customizations?: RotationCustomizations,
+  familyCustomChores?: CustomChore[]  // Family-level (all templates)
 ): PresetChore[] {
-  let chores = [...preset.chores];
+  let chores = [...presetChores];
 
-  // Apply overrides: filter disabled, map point changes
-  chores = chores
-    .filter(c => customizations?.chore_overrides?.[c.key]?.enabled !== false)
-    .map(c => ({
-      ...c,
-      points: customizations?.chore_overrides?.[c.key]?.points ?? c.points
-    }));
+  // Apply template-specific overrides: filter disabled, map point changes
+  if (customizations?.chore_overrides) {
+    chores = chores
+      .filter(c => customizations.chore_overrides?.[c.key]?.enabled !== false)
+      .map(c => ({
+        ...c,
+        points: customizations.chore_overrides?.[c.key]?.points ?? c.points
+      }));
+  }
 
-  // Append custom chores
-  if (customizations?.custom_chores) {
-    chores.push(...customizations.custom_chores.map(c => ({
+  // Append family-level custom chores (available in ALL templates)
+  if (familyCustomChores?.length) {
+    chores.push(...familyCustomChores.map(c => ({
       ...c,
       minutes: 5,           // Default estimate
       category: 'custom',
@@ -928,10 +934,17 @@ function getChoresWithCustomizations(
 }
 ```
 
+**Custom Chores API** (January 19, 2026):
+
+```
+GET  /api/family/custom-chores  → { custom_chores: [...] }
+POST /api/family/custom-chores  → { custom_chores: [...] }
+```
+
 **What Families CAN Customize:**
-- ✅ Change points for any template chore
-- ✅ Disable chores they don't want
-- ✅ Add custom chores (appear daily)
+- ✅ Change points for any template chore (per-template)
+- ✅ Disable chores they don't want (per-template)
+- ✅ Add custom chores (family-level, appear in ALL templates)
 
 **What Stays Fixed (Keep Simple):**
 - ❌ Schedule/day assignments (pick a different template)

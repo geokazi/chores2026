@@ -1,7 +1,7 @@
 # Chore Templates Feature Design
 
 **Document Created**: January 15, 2026
-**Updated**: January 16, 2026
+**Updated**: January 19, 2026
 **Status**: Design Complete - Ready for Implementation
 **Architecture**: JSONB-First, Zero New Tables, Settings-Inline
 
@@ -1048,7 +1048,7 @@ Template auto-appears in selection modal.
 
 ## Template Customization
 
-**Status**: ✅ **COMPLETE** (January 15, 2026)
+**Status**: ✅ **COMPLETE** (January 19, 2026)
 
 Families may want to tweak templates (adjust points, disable chores, add custom chores). The **Override Layer Pattern** enables this with minimal complexity:
 
@@ -1065,6 +1065,33 @@ Families may want to tweak templates (adjust points, disable chores, add custom 
 **What stays fixed (keep simple):**
 - Schedule/day assignments (pick different template instead)
 - Chore names/icons (add custom chore instead)
+
+### Family-Level Custom Chores
+
+**Updated**: January 19, 2026
+
+Custom chores are stored at the **family level** (not per-template), making them available across ALL templates and manual mode:
+
+```
+Storage:      settings.apps.choregami.custom_chores[]
+API:          /api/family/custom-chores (GET/POST)
+UI Location:  "✨ Family Custom Chores" section in /parent/settings
+```
+
+**Benefits:**
+- Custom chores persist when switching templates
+- Same chores appear in manual mode and all templates
+- Simpler mental model for parents
+
+**Data Structure:**
+```typescript
+interface CustomChore {
+  key: string;      // e.g., "custom_1705644123456"
+  name: string;     // e.g., "Feed Zoey"
+  points: number;   // e.g., 0
+  icon?: string;    // e.g., "🐕" (optional)
+}
+```
 
 See **[JSONB Schema Design - Template Customization](./milestones/20260115_chore-templates-jsonb-schema.md#template-customization-future-enhancement)** for complete implementation details including TypeScript interfaces, runtime merge function, and UI mockup.
 
