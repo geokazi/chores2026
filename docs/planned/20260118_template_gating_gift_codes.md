@@ -475,6 +475,7 @@ function generateGiftCode(): string {
 - [JSONB Settings Architecture](../20260114_JSONB_settings_architecture.md)
 - [Chore Templates Design](../chore-templates-design.md)
 - [Seasonal Templates](../milestones/20260116_seasonal-templates-implementation.md)
+- [Gift Codes Table Migration](../../sql/20260118_gift_codes.sql) - Database schema for gift code storage
 
 ---
 

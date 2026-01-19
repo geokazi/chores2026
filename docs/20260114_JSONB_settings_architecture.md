@@ -684,3 +684,4 @@ theme: "fresh_meadow",  // Hardcoded until JSONB migration
 ### Planned Extensions
 
 - [Template Gating & Gift Codes](./planned/20260118_template_gating_gift_codes.md) - Uses JSONB `settings.apps.choregami.plan` for Family Plan storage
+- [Gift Codes Table](../sql/20260118_gift_codes.sql) - Companion table for gift code redemption tracking
