@@ -45,7 +45,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-17 | [↳ Large Family & Partial Assignment](./milestones/20260117_large_family_template_partial_assignment.md) | ✅ Complete | 4-slot template for 3-8 kids + partial slot assignment |
 | 2026-01-17 | [↳ **Dynamic Template Expansion**](./milestones/20260117_dynamic_template_expansion.md) | ✅ Complete | Distribution-based chores scale to any family size (1-8 kids) |
 | 2026-01-18 | [**Legal Pages & Auth Flow Fixes**](./milestones/20260118_legal_pages_auth_flow_fixes.md) | ✅ Complete | Parent-friendly Terms, COPPA-aware Privacy, phone OTP redirect fix |
-| 2026-01-19 | [**Authentication Security Hardening**](./milestones/20260119_authentication_security_hardening.md) | ✅ Complete | Rate limiting, enumeration protection, honeypot bot detection |
+| 2026-01-18 | [**Authentication Security Hardening**](./milestones/20260118_authentication_security_hardening.md) | ✅ Complete | Rate limiting, enumeration protection, honeypot bot detection |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 
