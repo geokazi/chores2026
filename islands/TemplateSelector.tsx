@@ -160,7 +160,8 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
       return;
     }
     const key = `custom_${Date.now()}`;
-    const newChore = { key, name: newChoreName.trim(), points: parseInt(newChorePoints) || 1 };
+    const parsedPoints = parseInt(newChorePoints);
+    const newChore = { key, name: newChoreName.trim(), points: isNaN(parsedPoints) ? 1 : parsedPoints };
     console.log('🔧 Adding custom chore:', newChore);
     setCustomChores([...customChores, newChore]);
     setNewChoreName("");
