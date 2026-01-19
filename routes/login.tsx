@@ -79,19 +79,10 @@ export const handler: Handlers<LoginPageData> = {
         if (user) {
           console.log("✅ User found:", { id: user.id, email: user.email });
 
-          // Generate magic link and redirect user to it
+          // Generate magic link to get session tokens (don't redirect through Supabase)
           const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
             type: "magiclink",
             email: user.email!,
-            options: {
-              redirectTo: new URL("/", req.url).toString(),
-            },
-          });
-
-          console.log("📱 Generate link result:", {
-            error: linkError,
-            hasActionLink: !!linkData?.properties?.action_link,
-            actionLink: linkData?.properties?.action_link?.substring(0, 100) + "...",
           });
 
           if (linkError) {
@@ -100,12 +91,23 @@ export const handler: Handlers<LoginPageData> = {
           }
 
           if (linkData?.properties?.action_link) {
-            console.log("✅ Redirecting to magic link...");
-            // Redirect to the magic link which will establish the session
-            return new Response(null, {
-              status: 303,
-              headers: { Location: linkData.properties.action_link },
-            });
+            // Extract tokens and verify directly to avoid Supabase redirect
+            const actionUrl = new URL(linkData.properties.action_link);
+            const token = actionUrl.searchParams.get("token");
+            const type = actionUrl.searchParams.get("type");
+
+            if (token && type) {
+              const { data: sessionData, error: verifyError } = await supabase.auth.verifyOtp({
+                token_hash: token,
+                type: type as "magiclink",
+              });
+
+              if (!verifyError && sessionData.session) {
+                console.log("✅ Session created, redirecting to home...");
+                return createSessionResponse(req, sessionData.session);
+              }
+              console.error("❌ Token verify error:", verifyError);
+            }
           } else {
             console.error("❌ No action_link in response");
           }

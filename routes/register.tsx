@@ -66,47 +66,49 @@ export const handler: Handlers<RegisterPageData> = {
           u.email?.includes(`${phoneDigits}@phone.`)
         );
 
-        if (existingUser) {
-          // User exists - generate magic link and redirect
-          const { data: linkData } = await supabase.auth.admin.generateLink({
-            type: "magiclink",
-            email: existingUser.email!,
-            options: { redirectTo: new URL("/setup", req.url).toString() },
+        let targetUser = existingUser;
+
+        if (!targetUser) {
+          // New user - create with phone-based email
+          const phoneEmail = `${phone}@phone.choregami.local`;
+          const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
+            email: phoneEmail,
+            phone: phone,
+            email_confirm: true,
+            phone_confirm: true,
           });
 
-          if (linkData?.properties?.action_link) {
-            return new Response(null, {
-              status: 303,
-              headers: { Location: linkData.properties.action_link },
-            });
+          if (createError || !newUser.user) {
+            return ctx.render({ mode: "phone", error: "Failed to create account", otpSent: true });
           }
+          targetUser = newUser.user;
         }
 
-        // New user - create with phone-based email
-        const phoneEmail = `${phone}@phone.choregami.local`;
-        const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
-          email: phoneEmail,
-          phone: phone,
-          email_confirm: true,
-          phone_confirm: true,
-        });
-
-        if (createError || !newUser.user) {
-          return ctx.render({ mode: "phone", error: "Failed to create account", otpSent: true });
-        }
-
-        // Generate magic link for new user
+        // Generate magic link to get session tokens (don't redirect through Supabase)
         const { data: linkData } = await supabase.auth.admin.generateLink({
           type: "magiclink",
-          email: phoneEmail,
-          options: { redirectTo: new URL("/setup", req.url).toString() },
+          email: targetUser.email!,
         });
 
         if (linkData?.properties?.action_link) {
-          return new Response(null, {
-            status: 303,
-            headers: { Location: linkData.properties.action_link },
-          });
+          // Extract tokens from the action_link and set cookies directly
+          // action_link format: https://PROJECT.supabase.co/auth/v1/verify?token=XXX&type=magiclink&redirect_to=...
+          // We need to verify the token to get a session
+          const actionUrl = new URL(linkData.properties.action_link);
+          const token = actionUrl.searchParams.get("token");
+          const type = actionUrl.searchParams.get("type");
+
+          if (token && type) {
+            // Verify the token to get actual session
+            const { data: sessionData, error: verifyError } = await supabase.auth.verifyOtp({
+              token_hash: token,
+              type: type as "magiclink",
+            });
+
+            if (!verifyError && sessionData.session) {
+              return createSessionResponse(req, sessionData.session, "/setup");
+            }
+          }
         }
 
         return ctx.render({ mode: "phone", error: "Account created but login failed", otpSent: true });

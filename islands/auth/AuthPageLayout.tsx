@@ -156,7 +156,7 @@ export default function AuthPageLayout({
                     <>
                       Don't have an account?{" "}
                       <a
-                        href="/signup"
+                        href="/register"
                         style={{
                           color: "#2563eb",
                           fontWeight: "600",

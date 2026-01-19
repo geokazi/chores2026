@@ -116,7 +116,7 @@ export default function PhoneAuthForm({
     // Create hidden form and submit
     const submitForm = document.createElement("form");
     submitForm.method = "POST";
-    submitForm.action = variant === "login" ? "/login" : "/signup";
+    submitForm.action = variant === "login" ? "/login" : "/register";
 
     const params = new URLSearchParams(globalThis.location.search);
     params.set("mode", "phone");
@@ -245,7 +245,7 @@ export default function PhoneAuthForm({
               type="button"
               onClick={() => {
                 clearSecurePhoneNumber();
-                globalThis.location.href = `${variant === "login" ? "/login" : "/signup"}?mode=phone`;
+                globalThis.location.href = `${variant === "login" ? "/login" : "/register"}?mode=phone`;
               }}
               style={{
                 background: "none",
@@ -314,7 +314,7 @@ export default function PhoneAuthForm({
             // Store phone securely before resend
             setSecurePhoneNumber(normalizePhone(phoneValue));
             globalThis.location.href = `${
-              variant === "login" ? "/login" : "/signup"
+              variant === "login" ? "/login" : "/register"
             }?mode=phone&resend=true`;
           }}
           style={{

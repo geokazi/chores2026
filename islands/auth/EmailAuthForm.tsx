@@ -124,7 +124,7 @@ export default function EmailAuthForm({
       // Direct form submission to the appropriate endpoint
       const form = document.createElement("form");
       form.method = "POST";
-      form.action = variant === "login" ? "/login" : "/signup";
+      form.action = variant === "login" ? "/login" : "/register";
 
       // Preserve current URL parameters (like mode, plan, etc.)
       const currentParams = new URLSearchParams(globalThis.location.search);

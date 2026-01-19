@@ -375,7 +375,7 @@ export class AuthenticationService {
         success: false,
         response: new Response(null, {
           status: 303,
-          headers: { Location: authFlow === "login" ? "/login" : "/signup" },
+          headers: { Location: authFlow === "login" ? "/login" : "/register" },
         }),
       };
     }

@@ -1,12 +1,12 @@
 /**
  * Terms of Service - ChoreGami Family Chore Management
- * ~180 lines - adapted from mealplanner, respects 500 line limit
+ * Parent-friendly, plain English, aligned with prepaid/gift model
  */
 
 import { Head } from "$fresh/runtime.ts";
 
 export default function TermsOfService() {
-  const lastUpdated = "January 16, 2026";
+  const lastUpdated = "January 18, 2026";
 
   return (
     <>
@@ -23,108 +23,171 @@ export default function TermsOfService() {
           </header>
 
           <h1>Terms of Service</h1>
-          <p class="intro">Please read these Terms of Service carefully before using ChoreGami.</p>
+          <p class="intro">Please read these Terms of Service ("Terms") carefully before using ChoreGami.</p>
 
           <section>
             <h2>1. Acceptance of Terms</h2>
-            <div class="notice warning">
-              <strong>IMPORTANT:</strong> By using ChoreGami, you acknowledge and agree that:
-              <ul>
-                <li>ChoreGami reserves the right to modify these Terms at any time</li>
-                <li>You use ChoreGami at your own risk</li>
-                <li>You agree to indemnify and hold ChoreGami harmless from all claims</li>
-              </ul>
-              If you do not agree to these terms, do not use the Service.
-            </div>
             <p>
-              By accessing or using ChoreGami ("the Service"), you agree to be bound by these Terms of Service.
-              If you disagree with any part of these terms, you may not access the Service.
+              By accessing or using ChoreGami ("the Service"), you agree to be bound by these Terms and our{" "}
+              <a href="/privacy">Privacy Policy</a>.
+            </p>
+            <p>
+              If you do not agree with these Terms, please do not use the Service.
+            </p>
+            <p>
+              We may update these Terms from time to time. If we make material changes, we will update the
+              "Last updated" date. Continued use of the Service after changes means you accept the updated Terms.
             </p>
           </section>
 
           <section>
-            <h2>2. Description of Service</h2>
-            <p>ChoreGami is a family chore management platform that allows users to:</p>
+            <h2>2. Description of the Service</h2>
+            <p>
+              ChoreGami is a family chore and responsibility management platform designed to help households
+              organize chores, encourage accountability, and build positive habits.
+            </p>
+            <p>The Service may include:</p>
             <ul>
-              <li>Create and manage family chore assignments</li>
-              <li>Track chore completion and award points</li>
-              <li>View family leaderboards and activity</li>
-              <li>Manage family member profiles and permissions</li>
-              <li>Access premium features with subscription plans</li>
+              <li>Creating and assigning chores</li>
+              <li>Tracking chore completion</li>
+              <li>Awarding points or rewards</li>
+              <li>Viewing family leaderboards and activity</li>
+              <li>Managing family members, roles, and permissions</li>
+              <li>Accessing optional paid features such as templates, reports, and insights</li>
             </ul>
-          </section>
-
-          <section>
-            <h2>3. User Accounts</h2>
-            <h3>3.1 Registration</h3>
-            <p>
-              You must register an account to access ChoreGami features. Registration is permitted for
-              persons 18 years or older. Parents/guardians may create child profiles within their family account.
-              You must provide accurate information during registration.
-            </p>
-            <h3>3.2 Account Security</h3>
-            <p>
-              You are responsible for maintaining the security of your account credentials and for all
-              activities conducted through your account.
+            <p class="note">
+              ChoreGami is intended as a planning and organization tool only and does not replace
+              parental supervision or judgment.
             </p>
           </section>
 
           <section>
-            <h2>4. Subscription and Billing</h2>
-            <h3>4.1 Plans</h3>
-            <div class="plan-box">
-              <p><strong>Free Plan:</strong> Basic chore tracking for small families</p>
-              <p><strong>Premium Plan:</strong> Advanced features including unlimited family members, detailed analytics, and priority support</p>
-            </div>
-            <h3>4.2 Billing</h3>
+            <h2>3. Accounts and Eligibility</h2>
+            <h3>3.1 Account Creation</h3>
+            <p>You must be at least 18 years old to create a ChoreGami account.</p>
+            <p>
+              Parents or legal guardians may create and manage child profiles within their family account.
+              Child profiles are not permitted to create accounts independently.
+            </p>
+            <p>You agree to provide accurate and current information when creating your account.</p>
+
+            <h3>3.2 Account Responsibility</h3>
+            <p>You are responsible for:</p>
             <ul>
-              <li>Subscription fees are billed in advance on a recurring basis</li>
-              <li>You authorize automatic charging of your selected payment method</li>
-              <li>All fees are non-refundable except as required by law</li>
-              <li>You may cancel your subscription at any time</li>
+              <li>Maintaining the confidentiality of your login credentials</li>
+              <li>All activity that occurs under your account</li>
+              <li>Ensuring appropriate supervision of children using the Service</li>
             </ul>
+            <p>Please notify us immediately if you believe your account has been compromised.</p>
           </section>
 
           <section>
-            <h2>5. User Responsibilities</h2>
-            <p>You agree to:</p>
-            <ul>
-              <li>Use the Service only for lawful purposes</li>
-              <li>Not share account credentials with unauthorized users</li>
-              <li>Supervise children's use of the Service appropriately</li>
-              <li>Not attempt to circumvent security measures</li>
-              <li>Not use the Service to harass or harm others</li>
-            </ul>
-          </section>
-
-          <section>
-            <h2>6. Limitation of Liability</h2>
-            <div class="notice warning">
-              TO THE MAXIMUM EXTENT PERMITTED BY LAW, CHOREGAMI SHALL NOT BE LIABLE FOR ANY DIRECT,
-              INDIRECT, INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES ARISING FROM YOUR USE OF THE SERVICE.
-            </div>
-          </section>
-
-          <section>
-            <h2>7. Termination</h2>
+            <h2>4. Plans, Payments, and Access</h2>
+            <h3>4.1 Free and Paid Access</h3>
             <p>
-              We may terminate or suspend your account at any time for violations of these Terms.
-              Upon termination, your right to use the Service will immediately cease.
+              ChoreGami offers both free features and optional paid plans. Paid plans may unlock additional
+              templates, customization, analytics, or other premium features.
+            </p>
+            <p>Details of current plans and pricing are shown within the app and may change over time.</p>
+
+            <h3>4.2 Payments</h3>
+            <p>If you purchase a paid plan:</p>
+            <ul>
+              <li>Payment is due in advance</li>
+              <li>Prices are shown clearly before purchase</li>
+              <li>Purchases may be time-based (e.g., school year, seasonal, or fixed-term access)</li>
+              <li>Unless otherwise stated, payments are non-refundable, except where required by law</li>
+            </ul>
+            <p>Some plans may be offered as one-time purchases rather than recurring subscriptions.</p>
+
+            <h3>4.3 Cancellation and Expiration</h3>
+            <ul>
+              <li>Paid access ends automatically when the plan expires</li>
+              <li>You are not required to renew</li>
+              <li>Expired plans revert to the free version of the Service</li>
+            </ul>
+            <p>Optional renewal reminders may be provided, but you are responsible for managing renewals.</p>
+
+            <h3>4.4 Gifts and Promo Codes</h3>
+            <p>Gift codes or promotional access may be offered and are subject to:</p>
+            <ul>
+              <li>One-time use</li>
+              <li>Expiration or activation rules disclosed at redemption</li>
+              <li>No cash value and no resale</li>
+            </ul>
+            <p>We reserve the right to revoke codes obtained fraudulently or used in violation of these Terms.</p>
+          </section>
+
+          <section>
+            <h2>5. Acceptable Use</h2>
+            <p>You agree to use ChoreGami only for lawful and appropriate purposes.</p>
+            <p>You may not:</p>
+            <ul>
+              <li>Attempt to bypass access controls or plan restrictions</li>
+              <li>Interfere with the operation or security of the Service</li>
+              <li>Use the Service to harass, threaten, or harm others</li>
+              <li>Upload or share content that is unlawful or abusive</li>
+            </ul>
+            <p>Parents and guardians are responsible for how children use the Service.</p>
+          </section>
+
+          <section>
+            <h2>6. Data and Content</h2>
+            <p>You retain ownership of the information you enter into ChoreGami.</p>
+            <p>
+              By using the Service, you grant us a limited license to store, process, and display your content
+              solely to provide and improve the Service.
+            </p>
+            <p>
+              We do not sell personal family data. Please review our{" "}
+              <a href="/privacy">Privacy Policy</a> for details on data handling.
             </p>
           </section>
 
           <section>
-            <h2>8. Contact Us</h2>
+            <h2>7. Disclaimer of Warranties</h2>
+            <p>ChoreGami is provided "as is" and "as available."</p>
+            <p>We do not guarantee that:</p>
+            <ul>
+              <li>The Service will be uninterrupted or error-free</li>
+              <li>Chores will be completed</li>
+              <li>Family outcomes or behavior improvements will occur</li>
+            </ul>
+            <p>Use of the Service is at your own discretion and responsibility.</p>
+          </section>
+
+          <section>
+            <h2>8. Limitation of Liability</h2>
+            <p>
+              To the maximum extent permitted by law, ChoreGami shall not be liable for any indirect,
+              incidental, special, or consequential damages arising from your use of the Service.
+            </p>
+            <p>
+              Our total liability for any claim related to the Service will not exceed the amount you paid
+              to ChoreGami in the 12 months prior to the claim.
+            </p>
+          </section>
+
+          <section>
+            <h2>9. Termination</h2>
+            <p>We may suspend or terminate access to the Service if you violate these Terms or misuse the platform.</p>
+            <p>You may stop using ChoreGami at any time.</p>
+            <p>Termination does not affect any accrued rights or obligations prior to termination.</p>
+          </section>
+
+          <section>
+            <h2>10. Contact Information</h2>
+            <p>If you have questions about these Terms, please contact us:</p>
             <div class="contact-box">
               <p><strong>Email:</strong> support@choregami.app</p>
+              <p><strong>Website:</strong> https://choregami.fly.dev</p>
               <p><strong>Company:</strong> GKTech Solutions LLC</p>
-              <p><strong>Website:</strong> choregami.fly.dev</p>
             </div>
           </section>
 
           <footer class="legal-footer">
             <p>© {new Date().getFullYear()} GKTech Solutions LLC. All rights reserved.</p>
-            <p><a href="/privacy">Privacy Policy</a></p>
+            <p>Please also review our <a href="/privacy">Privacy Policy</a>.</p>
           </footer>
         </div>
 
@@ -181,44 +244,55 @@ export default function TermsOfService() {
           }
           h3 {
             color: #444;
-            margin: 1rem 0 0.5rem;
+            margin: 1.5rem 0 0.5rem;
           }
           p, li {
             color: #555;
-            line-height: 1.6;
+            line-height: 1.7;
+          }
+          p {
+            margin-bottom: 0.75rem;
           }
           ul {
             margin: 0.5rem 0 1rem 1.5rem;
           }
-          .notice {
-            padding: 1rem;
-            border-radius: 8px;
-            margin: 1rem 0;
+          li {
+            margin-bottom: 0.25rem;
           }
-          .notice.warning {
-            background: #fef3c7;
-            border: 1px solid #f59e0b;
-            color: #92400e;
+          a {
+            color: var(--color-primary, #10b981);
           }
-          .notice ul {
-            margin: 0.5rem 0 0 1rem;
-          }
-          .plan-box, .contact-box {
+          .note {
             background: #f0fdf4;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            border-left: 3px solid var(--color-primary, #10b981);
+            font-style: italic;
+          }
+          .contact-box {
+            background: #f9fafb;
             padding: 1rem;
             border-radius: 8px;
             margin: 1rem 0;
+          }
+          .contact-box p {
+            margin: 0.5rem 0;
           }
           .legal-footer {
             text-align: center;
             margin-top: 3rem;
-            padding-top: 1rem;
+            padding-top: 1.5rem;
             border-top: 1px solid #e5e5e5;
             color: #666;
             font-size: 0.875rem;
           }
           .legal-footer a {
             color: var(--color-primary, #10b981);
+          }
+          @media (max-width: 600px) {
+            .legal-card {
+              padding: 1.5rem 1rem;
+            }
           }
         `}</style>
       </div>
