@@ -680,3 +680,7 @@ theme: "fresh_meadow",  // Hardcoded until JSONB migration
 | chores2026 | `routes/parent/settings.tsx` | Settings UI |
 | fresh-auth | `utils/familyContext.ts` | Cache pattern reference |
 | mealplanner | `lib/performance/cache-manager.ts` | Cache pattern reference |
+
+### Planned Extensions
+
+- [Template Gating & Gift Codes](./planned/20260118_template_gating_gift_codes.md) - Uses JSONB `settings.apps.choregami.plan` for Family Plan storage

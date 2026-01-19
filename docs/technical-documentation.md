@@ -846,11 +846,17 @@ const loadTest = async () => {
 - **Edge Caching**: CDN integration for static assets
 - **Database Indexing**: Optimize frequently queried columns
 
-#### Security Hardening ✅ **Implemented Jan 19, 2026**
+#### Security Hardening ✅ **Implemented Jan 18, 2026**
 - **Rate Limiting**: Deno KV-based middleware for auth endpoints (5 req/min login, 3 req/min register)
 - **Enumeration Protection**: Generic error messages prevent email/phone discovery attacks
 - **Honeypot Bot Detection**: Hidden form fields detect automated submissions (~70% simple bots)
-- **See**: [Authentication Security Hardening](./milestones/20260119_authentication_security_hardening.md)
+- **See**: [Authentication Security Hardening](./milestones/20260118_authentication_security_hardening.md)
+
+#### Template Gating & Gift Codes 📋 **Planned**
+- **Plan Tiers**: Free (Manual, Daily Basics) vs Family Plan (all advanced templates)
+- **Prepaid Time Passes**: School Year ($49), Summer ($19), Full Year ($59)
+- **Gift Code Redemption**: `/redeem` page with GIFT-XXXX-XXXX-XXXX codes
+- **See**: [Template Gating Plan](./planned/20260118_template_gating_gift_codes.md)
 
 #### Future Security Enhancements
 - **CSRF Protection**: Cross-site request forgery prevention
@@ -888,6 +894,6 @@ const loadTest = async () => {
 ---
 
 **Document Maintained By**: Engineering Team  
-**Last Updated**: January 6, 2026  
+**Last Updated**: January 18, 2026  
 **Review Schedule**: Monthly technical review  
 **Version Control**: Git-based documentation versioning

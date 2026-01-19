@@ -2,7 +2,7 @@
 
 **Version**: 1.5
 **Status**: ✅ Production Ready
-**Last Updated**: January 19, 2026
+**Last Updated**: January 18, 2026
 
 **Project Overview**: A simplified, real-time chore completion system built with Deno Fresh, transforming routine family chores into an engaging, competitive experience with sub-second real-time updates across all family devices.
 
@@ -46,6 +46,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-17 | [↳ **Dynamic Template Expansion**](./milestones/20260117_dynamic_template_expansion.md) | ✅ Complete | Distribution-based chores scale to any family size (1-8 kids) |
 | 2026-01-18 | [**Legal Pages & Auth Flow Fixes**](./milestones/20260118_legal_pages_auth_flow_fixes.md) | ✅ Complete | Parent-friendly Terms, COPPA-aware Privacy, phone OTP redirect fix |
 | 2026-01-18 | [**Authentication Security Hardening**](./milestones/20260118_authentication_security_hardening.md) | ✅ Complete | Rate limiting, enumeration protection, honeypot bot detection |
+| 2026-01-18 | [**Template Gating & Gift Codes**](./planned/20260118_template_gating_gift_codes.md) | 📋 Planned | Prepaid plan tiers, gift code redemption, template access control |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 
