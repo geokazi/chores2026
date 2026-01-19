@@ -43,12 +43,22 @@ export const handler: Handlers = {
         }, { status: 400 });
       }
 
-      // Validate slot count matches preset
-      const requiredSlots = getRequiredSlotCount(preset_key);
-      if (child_slots.length !== requiredSlots) {
-        return Response.json({
-          error: `Preset requires exactly ${requiredSlots} children assigned`
-        }, { status: 400 });
+      // Validate slot count matches preset (skip for dynamic presets which use participant slots)
+      if (preset.is_dynamic) {
+        // Dynamic presets: require at least 1 participant
+        if (child_slots.length === 0) {
+          return Response.json({
+            error: "Please select at least one child to participate"
+          }, { status: 400 });
+        }
+      } else {
+        // Slot-based presets: require exact slot count
+        const requiredSlots = getRequiredSlotCount(preset_key);
+        if (child_slots.length !== requiredSlots) {
+          return Response.json({
+            error: `Preset requires exactly ${requiredSlots} children assigned`
+          }, { status: 400 });
+        }
       }
 
       // Validate no duplicate profile_ids
