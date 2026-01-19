@@ -66,12 +66,38 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
 
     // Open slot assignment modal
     setSelectedPreset(preset.key);
-    const slots = getPresetSlots(preset);
-    const preSelected: Record<string, string> = {};
-    slots.forEach((slot, i) => {
-      if (children[i]) preSelected[slot] = children[i].id;
-    });
-    setChildSlots(preSelected);
+
+    // If this is the currently active template, use current customization state or saved assignments
+    if (activeRotation?.active_preset === preset.key) {
+      // Use inlineChildSlots if there are edits, otherwise use saved activeRotation.child_slots
+      if (Object.keys(inlineChildSlots).length > 0) {
+        setChildSlots({ ...inlineChildSlots });
+      } else if (activeRotation.child_slots?.length > 0) {
+        const existing: Record<string, string> = {};
+        activeRotation.child_slots.forEach((s: { slot: string; profile_id: string }) => {
+          if (s.profile_id) {
+            existing[s.slot] = s.profile_id;
+          }
+        });
+        setChildSlots(existing);
+      }
+    } else {
+      // For new template, pre-select children in order
+      const slots = getPresetSlots(preset);
+      const preSelected: Record<string, string> = {};
+      if (preset.is_dynamic) {
+        // For dynamic templates, pre-select all children
+        children.forEach((child, i) => {
+          preSelected[`participant_${i}`] = child.id;
+        });
+      } else {
+        // For slot-based templates, assign children to slots in order
+        slots.forEach((slot, i) => {
+          if (children[i]) preSelected[slot] = children[i].id;
+        });
+      }
+      setChildSlots(preSelected);
+    }
     setShowRotationModal(true);
   };
 
