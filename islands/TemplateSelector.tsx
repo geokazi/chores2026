@@ -348,7 +348,10 @@ function renderPresetOption(
       <div class="preset-info">
         <strong>{preset.name} {isLocked && <span class="lock-icon">🔒</span>}</strong>
         <p>{preset.description}</p>
-        {isFree && <span class="free-badge">FREE</span>}
+        <div class="preset-badges">
+          {isActive && <span class="active-badge">ACTIVE</span>}
+          {isFree && <span class="free-badge">FREE</span>}
+        </div>
       </div>
     </label>
   );
@@ -600,7 +603,9 @@ const styles = `
   .preset-info strong { display: flex; align-items: center; gap: 0.5rem; }
   .preset-info p { margin: 0.25rem 0 0 0; font-size: 0.8rem; color: var(--color-text-light); }
   .lock-icon { font-size: 0.875rem; }
-  .free-badge { font-size: 0.65rem; background: var(--color-primary); color: white; padding: 0.1rem 0.4rem; border-radius: 4px; margin-left: 0.5rem; font-weight: 600; }
+  .preset-badges { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+  .free-badge { font-size: 0.65rem; background: var(--color-primary); color: white; padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: 600; }
+  .active-badge { font-size: 0.65rem; background: #3b82f6; color: white; padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: 600; }
   .preset-category-header { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-light); margin: 1rem 0 0.5rem; padding-bottom: 0.25rem; border-bottom: 1px solid #e5e7eb; }
   .manage-link { display: inline-block; margin-top: 0.5rem; font-size: 0.8rem; color: var(--color-primary); text-decoration: none; }
   .rotation-start { font-size: 0.75rem; color: var(--color-text-light); margin: 0; }
