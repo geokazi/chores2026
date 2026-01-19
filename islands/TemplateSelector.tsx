@@ -424,6 +424,13 @@ function renderCustomizePanel(
     ? (activeRotation.child_slots || []).map((s: any) => s.profile_id).filter(Boolean)
     : [];
 
+  // For slot-based templates, track which kids are already assigned to other slots
+  const getUsedIdsExcludingSlot = (currentSlot: string) =>
+    Object.entries(inlineChildSlots)
+      .filter(([slot]) => slot !== currentSlot)
+      .map(([_, id]) => id)
+      .filter(Boolean);
+
   return (
     <div class="customize-content">
       <h4>Kid Assignment</h4>
@@ -433,9 +440,10 @@ function renderCustomizePanel(
           <p class="slot-hint">Select which kids participate in this template:</p>
           <div class="dynamic-kid-list">
             {children.map(child => {
-              const isSelected = participantIds.includes(child.id) || Object.values(inlineChildSlots).includes(child.id);
+              // Only check inlineChildSlots for current selection state
+              const isSelected = Object.values(inlineChildSlots).includes(child.id);
               return (
-                <label key={child.id} class="dynamic-kid-checkbox">
+                <label key={child.id} class={`dynamic-kid-checkbox ${isSelected ? 'selected' : ''}`}>
                   <input
                     type="checkbox"
                     checked={isSelected}
@@ -463,21 +471,28 @@ function renderCustomizePanel(
           )}
         </div>
       ) : (
-        // Slot-based templates: show dropdowns
+        // Slot-based templates: show dropdowns with duplicate prevention
         <div class="inline-slot-mapping">
-          {slots.map(slot => (
-            <div key={slot} class="inline-slot-row">
-              <span class="slot-label">{slot}:</span>
-              <select
-                value={inlineChildSlots[slot] || ""}
-                onChange={(e) => setInlineChildSlots({ ...inlineChildSlots, [slot]: e.currentTarget.value })}
-                class="slot-select"
-              >
-                <option value="">Select child...</option>
-                {children.map(child => <option key={child.id} value={child.id}>{child.name}</option>)}
-              </select>
-            </div>
-          ))}
+          {slots.map(slot => {
+            const usedIds = getUsedIdsExcludingSlot(slot);
+            return (
+              <div key={slot} class="inline-slot-row">
+                <span class="slot-label">{slot}:</span>
+                <select
+                  value={inlineChildSlots[slot] || ""}
+                  onChange={(e) => setInlineChildSlots({ ...inlineChildSlots, [slot]: e.currentTarget.value })}
+                  class="slot-select"
+                >
+                  <option value="">Select child...</option>
+                  {children.map(child => (
+                    <option key={child.id} value={child.id} disabled={usedIds.includes(child.id)}>
+                      {child.name}{usedIds.includes(child.id) ? ' (assigned)' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -583,8 +598,9 @@ const styles = `
   .slot-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.5rem; }
   .slot-row select { flex: 1; max-width: 200px; padding: 0.5rem; border: 2px solid #e5e7eb; border-radius: 6px; }
   .dynamic-kid-list { display: flex; flex-direction: column; gap: 0.5rem; }
-  .dynamic-kid-checkbox { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: white; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; }
-  .dynamic-kid-checkbox input { width: 1.25rem; height: 1.25rem; }
+  .dynamic-kid-checkbox { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: white; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; transition: border-color 0.2s, background 0.2s; }
+  .dynamic-kid-checkbox.selected { border-color: var(--color-primary); background: #f0fdf4; }
+  .dynamic-kid-checkbox input { width: 1.25rem; height: 1.25rem; accent-color: var(--color-primary); }
   .dynamic-summary { margin-top: 1rem; padding: 0.5rem 0.75rem; background: #dcfce7; border-radius: 6px; font-size: 0.9rem; color: #166534; }
   .customize-content { margin-top: 1rem; padding: 1rem; background: var(--color-bg); border-radius: 8px; }
   .customize-content h4 { margin: 0 0 0.75rem; font-size: 0.9rem; }
