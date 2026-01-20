@@ -9,7 +9,7 @@ import {
   Session,
   SupabaseClient,
   User,
-} from "@supabase/supabase-js";
+} from "https://esm.sh/@supabase/supabase-js@2.79.0";
 
 export interface UserProfile {
   id: string;

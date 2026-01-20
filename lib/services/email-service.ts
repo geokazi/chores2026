@@ -4,7 +4,7 @@
  */
 
 import { Resend } from "npm:resend";
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "jsr:@supabase/supabase-js@2";
 
 // Lazy initialization to avoid build-time errors (env vars not available during docker build)
 let _resend: Resend | null = null;

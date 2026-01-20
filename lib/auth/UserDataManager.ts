@@ -6,7 +6,7 @@
  * and session logic between login.tsx and signup.tsx.
  */
 
-import type { User } from "@supabase/supabase-js";
+import type { User } from "https://esm.sh/@supabase/supabase-js@2.79.0";
 import { crossDomainSessionManager } from "../user-state/CrossDomainSessionManager.ts";
 
 export interface UserData {
