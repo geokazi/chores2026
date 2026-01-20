@@ -27,6 +27,7 @@ interface Props {
 export default function SecureKidDashboard({ family, familyMembers, recentActivity, goalStatus }: Props) {
   const [activeKid, setActiveKid] = useState<any>(null);
   const [todaysChores, setTodaysChores] = useState<any[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [wsConnected, setWsConnected] = useState(false);
@@ -93,9 +94,12 @@ export default function SecureKidDashboard({ family, familyMembers, recentActivi
       }
 
       setActiveKid(kid);
-      
-      // Load kid's chores
-      await loadKidChores(activeKidId);
+
+      // Load kid's chores and events
+      await Promise.all([
+        loadKidChores(activeKidId),
+        loadKidEvents(activeKidId),
+      ]);
       
     } catch (err) {
       console.error("Error loading active kid:", err);
@@ -130,6 +134,45 @@ export default function SecureKidDashboard({ family, familyMembers, recentActivi
     } catch (err) {
       console.error("Error loading chores:", err);
       setTodaysChores([]);
+    }
+  };
+
+  const loadKidEvents = async (kidId: string) => {
+    try {
+      const response = await fetch('/api/events');
+
+      if (response.ok) {
+        const data = await response.json();
+        const events = data.events || [];
+
+        // Filter events where kid is a participant (or show all if no participants specified)
+        const kidEvents = events.filter((event: any) => {
+          // If no participants specified, show to everyone
+          if (!event.participants || event.participants.length === 0) {
+            return true;
+          }
+          // Otherwise, check if kid is in participants list
+          return event.participants.includes(kidId);
+        });
+
+        // Only show events in the next 7 days
+        const now = new Date();
+        const weekFromNow = new Date(now);
+        weekFromNow.setDate(weekFromNow.getDate() + 7);
+
+        const upcomingKidEvents = kidEvents.filter((event: any) => {
+          const eventDate = new Date(event.event_date + "T00:00:00");
+          return eventDate <= weekFromNow;
+        });
+
+        setUpcomingEvents(upcomingKidEvents);
+      } else {
+        console.error("Failed to load events");
+        setUpcomingEvents([]);
+      }
+    } catch (err) {
+      console.error("Error loading events:", err);
+      setUpcomingEvents([]);
     }
   };
 
@@ -235,6 +278,7 @@ export default function SecureKidDashboard({ family, familyMembers, recentActivi
         family={family}
         familyMembers={familyMembers}
         todaysChores={todaysChores}
+        upcomingEvents={upcomingEvents}
         recentActivity={recentActivity}
         onChoreComplete={() => {
           // Refresh chores after completion to get updated data

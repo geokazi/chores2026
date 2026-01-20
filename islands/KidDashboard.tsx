@@ -8,7 +8,7 @@ import ChoreList from "./ChoreList.tsx";
 import LiveLeaderboard from "./LiveLeaderboard.tsx";
 import LiveActivityFeed from "./LiveActivityFeed.tsx";
 import EventMissionGroup from "./EventMissionGroup.tsx";
-import { groupChoresByEvent, usePointsMode } from "../lib/utils/household.ts";
+import { groupChoresByEvent, usePointsMode, formatTime } from "../lib/utils/household.ts";
 
 interface FamilyMember {
   id: string;
@@ -46,11 +46,25 @@ interface ChoreAssignment {
   };
 }
 
+interface UpcomingEvent {
+  id: string;
+  title: string;
+  event_date: string;
+  schedule_data?: {
+    all_day?: boolean;
+    start_time?: string;
+  };
+  metadata?: {
+    emoji?: string;
+  };
+}
+
 interface Props {
   kid: FamilyMember;
   family: any;
   familyMembers: FamilyMember[];
   todaysChores: ChoreAssignment[];
+  upcomingEvents?: UpcomingEvent[];
   recentActivity: any[];
   onChoreComplete?: () => void;
 }
@@ -60,6 +74,7 @@ export default function KidDashboard({
   family,
   familyMembers,
   todaysChores,
+  upcomingEvents = [],
   recentActivity,
   onChoreComplete,
 }: Props) {
@@ -188,6 +203,76 @@ export default function KidDashboard({
         )}
 
       </div>
+
+      {/* Upcoming Events - Show events the kid is participating in */}
+      {upcomingEvents.length > 0 && (
+        <div style={{ marginBottom: "1.5rem" }}>
+          <h2
+            style={{
+              fontSize: "1.125rem",
+              fontWeight: "600",
+              marginBottom: "1rem",
+              color: "var(--color-text)",
+            }}
+          >
+            📅 Coming Up
+          </h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+            {upcomingEvents.map((event) => {
+              const eventDate = new Date(event.event_date + "T00:00:00");
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              const tomorrow = new Date(today);
+              tomorrow.setDate(tomorrow.getDate() + 1);
+              const eventDateOnly = new Date(event.event_date + "T00:00:00");
+              eventDateOnly.setHours(0, 0, 0, 0);
+
+              let dateLabel: string;
+              if (eventDateOnly.getTime() === today.getTime()) {
+                dateLabel = "Today";
+              } else if (eventDateOnly.getTime() === tomorrow.getTime()) {
+                dateLabel = "Tomorrow";
+              } else {
+                dateLabel = eventDate.toLocaleDateString("en-US", {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                });
+              }
+
+              const timeStr = event.schedule_data?.start_time
+                ? formatTime(event.schedule_data.start_time)
+                : event.schedule_data?.all_day
+                ? "All day"
+                : "";
+
+              const emoji = event.metadata?.emoji || "📅";
+
+              return (
+                <div
+                  key={event.id}
+                  class="card"
+                  style={{
+                    padding: "0.75rem 1rem",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.75rem",
+                  }}
+                >
+                  <span style={{ fontSize: "1.5rem" }}>{emoji}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontWeight: "500" }}>{event.title}</div>
+                    <div style={{ fontSize: "0.875rem", color: "var(--color-text-light)" }}>
+                      {dateLabel}
+                      {timeStr && ` at ${timeStr}`}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Kid's Status Card - Above leaderboard */}
       <div class="card" style={{ textAlign: "center", marginBottom: "1.5rem" }}>
