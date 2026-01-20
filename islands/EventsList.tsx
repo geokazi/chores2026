@@ -6,6 +6,7 @@
 import { useState } from "preact/hooks";
 import { formatTime, formatEventDate } from "../lib/utils/household.ts";
 import AddEventModal from "./AddEventModal.tsx";
+import AddChoreModal from "./AddChoreModal.tsx";
 
 interface FamilyEvent {
   id: string;
@@ -37,8 +38,15 @@ interface Props {
 }
 
 export default function EventsList({ thisWeek, upcoming, familyMembers }: Props) {
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [showAddEventModal, setShowAddEventModal] = useState(false);
+  const [showAddChoreModal, setShowAddChoreModal] = useState(false);
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+
+  const handleAddChore = (eventId: string) => {
+    setSelectedEventId(eventId);
+    setShowAddChoreModal(true);
+  };
 
   const handleDelete = async (eventId: string) => {
     if (!confirm("Delete this event? Linked chores will be unlinked but not deleted.")) {
@@ -127,25 +135,40 @@ export default function EventsList({ thisWeek, upcoming, familyMembers }: Props)
           <div style={{ fontSize: "0.875rem", color: "var(--color-text-light)" }}>
             {(event.linked_chores_count || 0) > 0 ? (
               <>
-                {event.linked_chores_count} mission{event.linked_chores_count !== 1 ? "s" : ""} (
+                {event.linked_chores_count} chore{event.linked_chores_count !== 1 ? "s" : ""} linked (
                 {event.completed_chores_count || 0} done)
               </>
             ) : (
-              "No missions linked"
+              "No chores linked"
             )}
           </div>
         </div>
-        <div style={{ display: "flex", gap: "0.5rem" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem", alignItems: "flex-end" }}>
+          <button
+            onClick={() => handleAddChore(event.id)}
+            style={{
+              padding: "0.375rem 0.75rem",
+              border: "1px solid var(--color-primary)",
+              background: "white",
+              cursor: "pointer",
+              color: "var(--color-primary)",
+              fontSize: "0.75rem",
+              borderRadius: "0.25rem",
+              fontWeight: "500",
+            }}
+          >
+            + Add Chore
+          </button>
           <button
             onClick={() => handleDelete(event.id)}
             disabled={deleting === event.id}
             style={{
-              padding: "0.5rem",
+              padding: "0.25rem 0.5rem",
               border: "none",
               background: "none",
               cursor: deleting === event.id ? "not-allowed" : "pointer",
               color: "var(--color-warning)",
-              fontSize: "0.875rem",
+              fontSize: "0.75rem",
             }}
           >
             {deleting === event.id ? "..." : "Delete"}
@@ -172,7 +195,7 @@ export default function EventsList({ thisWeek, upcoming, familyMembers }: Props)
           📅 Family Events
         </h2>
         <button
-          onClick={() => setShowAddModal(true)}
+          onClick={() => setShowAddEventModal(true)}
           class="btn btn-primary"
           style={{
             padding: "0.5rem 1rem",
@@ -190,7 +213,7 @@ export default function EventsList({ thisWeek, upcoming, familyMembers }: Props)
             No events scheduled yet.
           </p>
           <button
-            onClick={() => setShowAddModal(true)}
+            onClick={() => setShowAddEventModal(true)}
             class="btn btn-secondary"
             style={{ padding: "0.75rem 1.5rem" }}
           >
@@ -241,9 +264,21 @@ export default function EventsList({ thisWeek, upcoming, familyMembers }: Props)
 
       {/* Add Event Modal */}
       <AddEventModal
-        isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
+        isOpen={showAddEventModal}
+        onClose={() => setShowAddEventModal(false)}
         familyMembers={familyMembers}
+        onSuccess={() => window.location.reload()}
+      />
+
+      {/* Add Chore Modal (for linking chores to events) */}
+      <AddChoreModal
+        isOpen={showAddChoreModal}
+        onClose={() => {
+          setShowAddChoreModal(false);
+          setSelectedEventId(null);
+        }}
+        familyMembers={familyMembers}
+        preSelectedEventId={selectedEventId || undefined}
         onSuccess={() => window.location.reload()}
       />
     </div>

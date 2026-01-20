@@ -40,9 +40,10 @@ interface Props {
   onClose: () => void;
   familyMembers: FamilyMember[];
   onSuccess?: () => void;
+  preSelectedEventId?: string; // Pre-select an event when opened from event card
 }
 
-export default function AddChoreModal({ isOpen, onClose, familyMembers, onSuccess }: Props) {
+export default function AddChoreModal({ isOpen, onClose, familyMembers, onSuccess, preSelectedEventId }: Props) {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -56,12 +57,16 @@ export default function AddChoreModal({ isOpen, onClose, familyMembers, onSucces
   const [events, setEvents] = useState<FamilyEvent[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
 
-  // Fetch events when modal opens
+  // Fetch events when modal opens and set pre-selected event
   useEffect(() => {
     if (isOpen) {
       fetchEvents();
+      // Pre-select the event if provided
+      if (preSelectedEventId) {
+        setFormData(prev => ({ ...prev, familyEventId: preSelectedEventId }));
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, preSelectedEventId]);
 
   const fetchEvents = async () => {
     setLoadingEvents(true);
