@@ -152,7 +152,7 @@ export default function EventsList({ thisWeek, upcoming, familyMembers }: Props)
               marginBottom: "0.5rem",
             }}
           >
-            {getEventEmoji(event)} {event.title}
+            {getEventEmoji(event)}{getEventEmoji(event) ? " " : ""}{event.title}
           </div>
           <div style={{ fontSize: "0.875rem", color: "var(--color-text-light)" }}>
             {(() => {
@@ -212,12 +212,14 @@ export default function EventsList({ thisWeek, upcoming, familyMembers }: Props)
           <button
             onClick={() => handleEditEvent(event)}
             style={{
-              padding: "0.25rem 0.5rem",
-              border: "none",
-              background: "none",
+              padding: "0.5rem 0.75rem",
+              border: "1px solid var(--color-border)",
+              background: "white",
               cursor: "pointer",
               color: "var(--color-primary)",
               fontSize: "0.75rem",
+              borderRadius: "0.25rem",
+              minHeight: "36px",
             }}
           >
             Edit
@@ -226,12 +228,13 @@ export default function EventsList({ thisWeek, upcoming, familyMembers }: Props)
             onClick={() => handleDelete(event.id)}
             disabled={deleting === event.id}
             style={{
-              padding: "0.25rem 0.5rem",
+              padding: "0.5rem 0.75rem",
               border: "none",
               background: "none",
               cursor: deleting === event.id ? "not-allowed" : "pointer",
               color: "var(--color-warning)",
               fontSize: "0.75rem",
+              minHeight: "36px",
             }}
           >
             {deleting === event.id ? "..." : "Delete"}
