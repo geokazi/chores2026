@@ -60,6 +60,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | Date | Decision | Status | Summary |
 |------|----------|--------|---------|
 | 2026-01-20 | [Feedback Strategy](./decisions/20260120_feedback_strategy.md) | ✅ Decided | Google Form now, in-app JSONB at 100+ users |
+| 2026-01-20 | [Analytics Strategy](./decisions/20260120_analytics_strategy.md) | ✅ Decided | External analytics (Plausible) + existing data; don't extend FamilyScore |
 | 2026-01-20 | Tablet/Desktop Styling | ✅ Deferred | Mobile-first approach; revisit with analytics data |
 
 ### 📖 Core Documentation
