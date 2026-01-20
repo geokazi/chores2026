@@ -286,6 +286,39 @@ export default function SecureKidDashboard({ family, familyMembers, recentActivi
             loadKidChores(activeKid.id);
           }
         }}
+        onPrepTaskToggle={async (eventId, taskId, done) => {
+          try {
+            // Optimistic update
+            setUpcomingEvents(prev => prev.map(event => {
+              if (event.id !== eventId) return event;
+              const prepTasks = event.metadata?.prep_tasks || [];
+              return {
+                ...event,
+                metadata: {
+                  ...event.metadata,
+                  prep_tasks: prepTasks.map((t: any) =>
+                    t.id === taskId ? { ...t, done } : t
+                  ),
+                },
+              };
+            }));
+
+            // Send to API
+            const response = await fetch(`/api/events/${eventId}/prep-task`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ taskId, done }),
+            });
+
+            if (!response.ok) {
+              // Revert on failure
+              loadKidEvents(activeKid.id);
+            }
+          } catch (error) {
+            console.error("Failed to toggle prep task:", error);
+            loadKidEvents(activeKid.id);
+          }
+        }}
       />
     </WebSocketManager>
   );

@@ -10,6 +10,7 @@ import * as $api_chores_create from "./routes/api/chores/create.ts";
 import * as $api_debug_session from "./routes/api/debug/session.ts";
 import * as $api_events from "./routes/api/events.ts";
 import * as $api_events_id_ from "./routes/api/events/[id].ts";
+import * as $api_events_id_prep_task from "./routes/api/events/[id]/prep-task.ts";
 import * as $api_family_family_id_pin_setting from "./routes/api/family/[family_id]/pin-setting.ts";
 import * as $api_family_create from "./routes/api/family/create.ts";
 import * as $api_family_custom_chores from "./routes/api/family/custom-chores.ts";
@@ -52,6 +53,7 @@ import * as $setup from "./routes/setup.tsx";
 import * as $terms from "./routes/terms.tsx";
 import * as $AddChoreModal from "./islands/AddChoreModal.tsx";
 import * as $AddEventModal from "./islands/AddEventModal.tsx";
+import * as $AddPrepTasksModal from "./islands/AddPrepTasksModal.tsx";
 import * as $AppHeader from "./islands/AppHeader.tsx";
 import * as $ChoreDetail from "./islands/ChoreDetail.tsx";
 import * as $ChoreList from "./islands/ChoreList.tsx";
@@ -100,6 +102,7 @@ const manifest = {
     "./routes/api/debug/session.ts": $api_debug_session,
     "./routes/api/events.ts": $api_events,
     "./routes/api/events/[id].ts": $api_events_id_,
+    "./routes/api/events/[id]/prep-task.ts": $api_events_id_prep_task,
     "./routes/api/family/[family_id]/pin-setting.ts":
       $api_family_family_id_pin_setting,
     "./routes/api/family/create.ts": $api_family_create,
@@ -146,6 +149,7 @@ const manifest = {
   islands: {
     "./islands/AddChoreModal.tsx": $AddChoreModal,
     "./islands/AddEventModal.tsx": $AddEventModal,
+    "./islands/AddPrepTasksModal.tsx": $AddPrepTasksModal,
     "./islands/AppHeader.tsx": $AppHeader,
     "./islands/ChoreDetail.tsx": $ChoreDetail,
     "./islands/ChoreList.tsx": $ChoreList,

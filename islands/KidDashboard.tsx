@@ -46,6 +46,13 @@ interface ChoreAssignment {
   };
 }
 
+interface PrepTask {
+  id: string;
+  text: string;
+  assignee_id?: string;
+  done: boolean;
+}
+
 interface UpcomingEvent {
   id: string;
   title: string;
@@ -56,6 +63,7 @@ interface UpcomingEvent {
   };
   metadata?: {
     emoji?: string;
+    prep_tasks?: PrepTask[];
   };
 }
 
@@ -67,6 +75,7 @@ interface Props {
   upcomingEvents?: UpcomingEvent[];
   recentActivity: any[];
   onChoreComplete?: () => void;
+  onPrepTaskToggle?: (eventId: string, taskId: string, done: boolean) => void;
 }
 
 export default function KidDashboard({
@@ -77,6 +86,7 @@ export default function KidDashboard({
   upcomingEvents = [],
   recentActivity,
   onChoreComplete,
+  onPrepTaskToggle,
 }: Props) {
   const [chores, setChores] = useState(todaysChores);
   const [leaderboard, setLeaderboard] = useState(familyMembers);
@@ -156,7 +166,7 @@ export default function KidDashboard({
             color: "var(--color-text)",
           }}
         >
-          Your Chores Today ({completedChores}/{totalChores})
+          Your Missions Today ({completedChores}/{totalChores})
         </h2>
 
         {/* Event Mission Groups - Show chores grouped by event first */}
@@ -248,25 +258,72 @@ export default function KidDashboard({
 
               const emoji = event.metadata?.emoji || "📅";
 
+              // Get prep tasks assigned to this kid
+              const myPrepTasks = (event.metadata?.prep_tasks || []).filter(
+                task => !task.assignee_id || task.assignee_id === kid.id
+              );
+
               return (
                 <div
                   key={event.id}
                   class="card"
                   style={{
                     padding: "0.75rem 1rem",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.75rem",
                   }}
                 >
-                  <span style={{ fontSize: "1.5rem" }}>{emoji}</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: "500" }}>{event.title}</div>
-                    <div style={{ fontSize: "0.875rem", color: "var(--color-text-light)" }}>
-                      {dateLabel}
-                      {timeStr && ` at ${timeStr}`}
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                    <span style={{ fontSize: "1.5rem" }}>{emoji}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: "500" }}>{event.title}</div>
+                      <div style={{ fontSize: "0.875rem", color: "var(--color-text-light)" }}>
+                        {dateLabel}
+                        {timeStr && ` at ${timeStr}`}
+                      </div>
                     </div>
                   </div>
+
+                  {/* Prep tasks for this kid */}
+                  {myPrepTasks.length > 0 && (
+                    <div style={{ marginTop: "0.75rem", paddingTop: "0.75rem", borderTop: "1px solid var(--color-border)" }}>
+                      <div style={{ fontSize: "0.75rem", color: "var(--color-text-light)", marginBottom: "0.5rem" }}>
+                        Your missions:
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
+                        {myPrepTasks.map((task) => (
+                          <button
+                            key={task.id}
+                            onClick={() => onPrepTaskToggle?.(event.id, task.id, !task.done)}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.5rem",
+                              padding: "0.5rem",
+                              border: "1px solid var(--color-border)",
+                              borderRadius: "0.375rem",
+                              background: task.done ? "var(--color-bg)" : "white",
+                              cursor: "pointer",
+                              textAlign: "left",
+                              width: "100%",
+                            }}
+                          >
+                            <span style={{ fontSize: "1rem" }}>
+                              {task.done ? "✅" : "⬜"}
+                            </span>
+                            <span
+                              style={{
+                                flex: 1,
+                                fontSize: "0.875rem",
+                                textDecoration: task.done ? "line-through" : "none",
+                                color: task.done ? "var(--color-text-light)" : "var(--color-text)",
+                              }}
+                            >
+                              {task.text}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}

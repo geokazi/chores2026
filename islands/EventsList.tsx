@@ -7,6 +7,14 @@ import { useState } from "preact/hooks";
 import { formatTime, formatEventDate } from "../lib/utils/household.ts";
 import AddEventModal from "./AddEventModal.tsx";
 import AddChoreModal from "./AddChoreModal.tsx";
+import AddPrepTasksModal from "./AddPrepTasksModal.tsx";
+
+interface PrepTask {
+  id: string;
+  text: string;
+  assignee_id?: string;
+  done: boolean;
+}
 
 interface FamilyEvent {
   id: string;
@@ -20,6 +28,7 @@ interface FamilyEvent {
   metadata?: {
     source_app?: string;
     emoji?: string;
+    prep_tasks?: PrepTask[];
   };
   linked_chores_count?: number;
   completed_chores_count?: number;
@@ -40,12 +49,18 @@ interface Props {
 export default function EventsList({ thisWeek, upcoming, familyMembers }: Props) {
   const [showAddEventModal, setShowAddEventModal] = useState(false);
   const [showAddChoreModal, setShowAddChoreModal] = useState(false);
+  const [showPrepTasksModal, setShowPrepTasksModal] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
 
   const handleAddChore = (eventId: string) => {
     setSelectedEventId(eventId);
     setShowAddChoreModal(true);
+  };
+
+  const handleAddPrepTasks = (eventId: string) => {
+    setSelectedEventId(eventId);
+    setShowPrepTasksModal(true);
   };
 
   const handleDelete = async (eventId: string) => {
@@ -133,19 +148,27 @@ export default function EventsList({ thisWeek, upcoming, familyMembers }: Props)
             {getEventEmoji(event)} {event.title}
           </div>
           <div style={{ fontSize: "0.875rem", color: "var(--color-text-light)" }}>
-            {(event.linked_chores_count || 0) > 0 ? (
-              <>
-                {event.linked_chores_count} chore{event.linked_chores_count !== 1 ? "s" : ""} linked (
-                {event.completed_chores_count || 0} done)
-              </>
-            ) : (
-              "No chores linked"
-            )}
+            {(() => {
+              const prepTasks = event.metadata?.prep_tasks || [];
+              const prepDone = prepTasks.filter(t => t.done).length;
+              const prepTotal = prepTasks.length;
+              const choresLinked = event.linked_chores_count || 0;
+              const choresDone = event.completed_chores_count || 0;
+
+              const parts = [];
+              if (prepTotal > 0) {
+                parts.push(`Prep: ${prepDone}/${prepTotal}`);
+              }
+              if (choresLinked > 0) {
+                parts.push(`Chores: ${choresDone}/${choresLinked}`);
+              }
+              return parts.length > 0 ? parts.join(" · ") : "No tasks yet";
+            })()}
           </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem", alignItems: "flex-end" }}>
           <button
-            onClick={() => handleAddChore(event.id)}
+            onClick={() => handleAddPrepTasks(event.id)}
             style={{
               padding: "0.375rem 0.75rem",
               border: "1px solid var(--color-primary)",
@@ -157,7 +180,22 @@ export default function EventsList({ thisWeek, upcoming, familyMembers }: Props)
               fontWeight: "500",
             }}
           >
-            + Add Task
+            + Prep Tasks
+          </button>
+          <button
+            onClick={() => handleAddChore(event.id)}
+            style={{
+              padding: "0.375rem 0.75rem",
+              border: "1px solid var(--color-border)",
+              background: "white",
+              cursor: "pointer",
+              color: "var(--color-text-light)",
+              fontSize: "0.75rem",
+              borderRadius: "0.25rem",
+              fontWeight: "500",
+            }}
+          >
+            + Chore
           </button>
           <button
             onClick={() => handleDelete(event.id)}
@@ -287,6 +325,25 @@ export default function EventsList({ thisWeek, upcoming, familyMembers }: Props)
             familyMembers={familyMembers}
             preSelectedEventId={selectedEventId || undefined}
             preSelectedAssignee={firstParticipant}
+            onSuccess={() => window.location.reload()}
+          />
+        );
+      })()}
+
+      {/* Add Prep Tasks Modal */}
+      {(() => {
+        const allEvents = [...thisWeek, ...upcoming];
+        const selectedEvent = selectedEventId ? allEvents.find(e => e.id === selectedEventId) : null;
+
+        return (
+          <AddPrepTasksModal
+            isOpen={showPrepTasksModal}
+            onClose={() => {
+              setShowPrepTasksModal(false);
+              setSelectedEventId(null);
+            }}
+            event={selectedEvent || null}
+            familyMembers={familyMembers}
             onSuccess={() => window.location.reload()}
           />
         );

@@ -73,6 +73,87 @@ export const handler: Handlers = {
     }
   },
 
+  // PATCH /api/events/[id] - Update event (metadata, prep_tasks, etc.)
+  async PATCH(req, ctx) {
+    try {
+      const cookies = getCookies(req.headers);
+      const accessToken = cookies["sb-access-token"];
+      if (!accessToken) {
+        return new Response(JSON.stringify({ error: "Not authenticated" }), {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      const client = getServiceSupabaseClient();
+      const familyId = await getUserFamilyId(client, accessToken);
+      if (!familyId) {
+        return new Response(JSON.stringify({ error: "Family not found" }), {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      const eventId = ctx.params.id;
+      const body = await req.json();
+
+      // Verify event belongs to this family
+      const { data: existing } = await client
+        .schema("choretracker")
+        .from("family_events")
+        .select("*")
+        .eq("id", eventId)
+        .eq("family_id", familyId)
+        .eq("is_deleted", false)
+        .single();
+
+      if (!existing) {
+        return new Response(JSON.stringify({ error: "Event not found" }), {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      // Build update object (only allow certain fields)
+      const updateData: Record<string, unknown> = {
+        updated_at: new Date().toISOString(),
+      };
+
+      if (body.title !== undefined) updateData.title = body.title;
+      if (body.event_date !== undefined) updateData.event_date = body.event_date;
+      if (body.schedule_data !== undefined) updateData.schedule_data = body.schedule_data;
+      if (body.participants !== undefined) updateData.participants = body.participants;
+      if (body.metadata !== undefined) updateData.metadata = body.metadata;
+
+      const { data: updated, error } = await client
+        .schema("choretracker")
+        .from("family_events")
+        .update(updateData)
+        .eq("id", eventId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Event update error:", error);
+        return new Response(JSON.stringify({ error: "Failed to update event" }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(JSON.stringify({ event: updated }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (error) {
+      console.error("Event PATCH error:", error);
+      return new Response(JSON.stringify({ error: "Failed to update event" }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+  },
+
   // DELETE /api/events/[id] - Soft delete event
   async DELETE(req, ctx) {
     try {
