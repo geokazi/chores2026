@@ -61,35 +61,66 @@ export const handler: Handlers<SetupPageData> = {
         return ctx.render({ error: "Both fields are required" });
       }
 
-      // Forward cookies to API call
-      const cookies = req.headers.get("cookie") || "";
+      // Get auth token from cookies
+      const cookies = getCookies(req.headers);
+      const accessToken = cookies["sb-access-token"];
 
-      const response = await fetch(new URL("/api/family/create", req.url).toString(), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Cookie": cookies,
-        },
-        body: JSON.stringify({ parentName, familyName }),
-      });
-
-      if (!response.ok) {
-        console.error("Setup API error:", response.status, response.statusText);
-        const text = await response.text();
-        console.error("Response body:", text);
-        try {
-          const result = JSON.parse(text);
-          return ctx.render({ error: result.error || "Failed to create family" });
-        } catch {
-          return ctx.render({ error: `Server error: ${response.status}` });
-        }
+      if (!accessToken) {
+        return new Response(null, { status: 303, headers: { Location: "/login" } });
       }
 
-      const result = await response.json();
+      const supabase = getServiceSupabaseClient();
 
-      if (!result.success) {
-        return ctx.render({ error: result.error || "Failed to create family" });
+      // Verify user
+      const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
+      if (authError || !user) {
+        console.error("Setup auth error:", authError);
+        return new Response(null, { status: 303, headers: { Location: "/login" } });
       }
+
+      // Check for existing profile
+      const { data: existingProfile } = await supabase
+        .from("family_profiles")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("is_deleted", false)
+        .single();
+
+      if (existingProfile) {
+        return new Response(null, { status: 303, headers: { Location: "/" } });
+      }
+
+      // Create family
+      const { data: family, error: familyError } = await supabase
+        .from("families")
+        .insert({ name: familyName.trim(), settings: { _version: 1 } })
+        .select("id")
+        .single();
+
+      if (familyError || !family) {
+        console.error("Failed to create family:", familyError);
+        return ctx.render({ error: `Failed to create family: ${familyError?.message || 'unknown'}` });
+      }
+
+      // Create parent profile
+      const { error: profileError } = await supabase
+        .from("family_profiles")
+        .insert({
+          family_id: family.id,
+          user_id: user.id,
+          name: parentName.trim(),
+          role: "parent",
+          current_points: 0,
+          is_deleted: false,
+        });
+
+      if (profileError) {
+        console.error("Failed to create profile:", profileError);
+        await supabase.from("families").delete().eq("id", family.id);
+        return ctx.render({ error: `Failed to create profile: ${profileError.message}` });
+      }
+
+      console.log("✅ Family created:", { familyId: family.id, parentName, familyName, userId: user.id });
 
       // Success -> redirect to home
       return new Response(null, { status: 303, headers: { Location: "/" } });
