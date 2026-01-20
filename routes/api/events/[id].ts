@@ -121,9 +121,30 @@ export const handler: Handlers = {
 
       if (body.title !== undefined) updateData.title = body.title;
       if (body.event_date !== undefined) updateData.event_date = body.event_date;
-      if (body.schedule_data !== undefined) updateData.schedule_data = body.schedule_data;
       if (body.participants !== undefined) updateData.participants = body.participants;
-      if (body.metadata !== undefined) updateData.metadata = body.metadata;
+
+      // Handle schedule_data - accept either nested or flat format
+      if (body.schedule_data !== undefined) {
+        updateData.schedule_data = body.schedule_data;
+      } else if (body.is_all_day !== undefined || body.event_time !== undefined) {
+        // Merge with existing schedule_data
+        updateData.schedule_data = {
+          ...(existing.schedule_data || {}),
+          all_day: body.is_all_day ?? existing.schedule_data?.all_day ?? false,
+          start_time: body.event_time ?? existing.schedule_data?.start_time ?? null,
+        };
+      }
+
+      // Handle metadata - accept either nested or flat format
+      if (body.metadata !== undefined) {
+        updateData.metadata = body.metadata;
+      } else if (body.emoji !== undefined) {
+        // Merge emoji into existing metadata, preserving prep_tasks etc.
+        updateData.metadata = {
+          ...(existing.metadata || {}),
+          emoji: body.emoji,
+        };
+      }
 
       const { data: updated, error } = await client
         .schema("choretracker")

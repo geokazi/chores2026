@@ -1,9 +1,9 @@
 /**
- * Add Event Modal Component
+ * Add/Edit Event Modal Component
  * Simplified event form for ChoreGami (no multi-day, recurrence, or location)
  */
 
-import { useState } from "preact/hooks";
+import { useState, useEffect } from "preact/hooks";
 
 // Helper to get local date as YYYY-MM-DD
 const getLocalDateString = () => {
@@ -20,24 +20,51 @@ interface FamilyMember {
   role: "parent" | "child";
 }
 
+interface FamilyEvent {
+  id: string;
+  title: string;
+  event_date: string;
+  schedule_data?: {
+    all_day?: boolean;
+    start_time?: string;
+  };
+  participants?: string[];
+  metadata?: {
+    emoji?: string;
+  };
+}
+
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   familyMembers: FamilyMember[];
   onSuccess?: () => void;
+  editingEvent?: FamilyEvent | null;
 }
 
-export default function AddEventModal({ isOpen, onClose, familyMembers, onSuccess }: Props) {
-  const [formData, setFormData] = useState({
-    title: "",
-    emoji: "",
-    event_date: getLocalDateString(),
-    event_time: "",
-    is_all_day: false,
-    participants: [] as string[],
+export default function AddEventModal({ isOpen, onClose, familyMembers, onSuccess, editingEvent }: Props) {
+  const isEditing = !!editingEvent;
+
+  const getInitialFormData = () => ({
+    title: editingEvent?.title || "",
+    emoji: editingEvent?.metadata?.emoji || "",
+    event_date: editingEvent?.event_date || getLocalDateString(),
+    event_time: editingEvent?.schedule_data?.start_time || "",
+    is_all_day: editingEvent?.schedule_data?.all_day || false,
+    participants: editingEvent?.participants || [] as string[],
   });
+
+  const [formData, setFormData] = useState(getInitialFormData());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Reset form when modal opens/closes or editingEvent changes
+  useEffect(() => {
+    if (isOpen) {
+      setFormData(getInitialFormData());
+      setError(null);
+    }
+  }, [isOpen, editingEvent?.id]);
 
   const handleSubmit = async (e: Event) => {
     e.preventDefault();
@@ -51,8 +78,11 @@ export default function AddEventModal({ isOpen, onClose, familyMembers, onSucces
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/events", {
-        method: "POST",
+      const url = isEditing ? `/api/events/${editingEvent!.id}` : "/api/events";
+      const method = isEditing ? "PATCH" : "POST";
+
+      const response = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: formData.title,
@@ -67,24 +97,14 @@ export default function AddEventModal({ isOpen, onClose, familyMembers, onSucces
       const result = await response.json();
 
       if (response.ok && result.event) {
-        // Reset form
-        setFormData({
-          title: "",
-          emoji: "",
-          event_date: getLocalDateString(),
-          event_time: "",
-          is_all_day: false,
-          participants: [],
-        });
-
         onSuccess?.();
         onClose();
       } else {
-        setError(result.error || "Failed to create event");
+        setError(result.error || `Failed to ${isEditing ? "update" : "create"} event`);
       }
     } catch (err) {
-      console.error("Error creating event:", err);
-      setError("Failed to create event");
+      console.error(`Error ${isEditing ? "updating" : "creating"} event:`, err);
+      setError(`Failed to ${isEditing ? "update" : "create"} event`);
     } finally {
       setIsSubmitting(false);
     }
@@ -152,7 +172,7 @@ export default function AddEventModal({ isOpen, onClose, familyMembers, onSucces
           }}
         >
           <h2 style={{ fontSize: "1.25rem", fontWeight: "600", margin: 0 }}>
-            📅 Add Event
+            {isEditing ? "✏️ Edit Event" : "📅 Add Event"}
           </h2>
           <button
             onClick={onClose}
@@ -444,7 +464,9 @@ export default function AddEventModal({ isOpen, onClose, familyMembers, onSucces
                 fontWeight: "600",
               }}
             >
-              {isSubmitting ? "Creating..." : "Create Event"}
+              {isSubmitting
+                ? (isEditing ? "Saving..." : "Creating...")
+                : (isEditing ? "Save Changes" : "Create Event")}
             </button>
           </div>
         </form>

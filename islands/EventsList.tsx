@@ -51,6 +51,7 @@ export default function EventsList({ thisWeek, upcoming, familyMembers }: Props)
   const [showAddChoreModal, setShowAddChoreModal] = useState(false);
   const [showPrepTasksModal, setShowPrepTasksModal] = useState(false);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [editingEvent, setEditingEvent] = useState<FamilyEvent | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
 
   const handleAddChore = (eventId: string) => {
@@ -61,6 +62,11 @@ export default function EventsList({ thisWeek, upcoming, familyMembers }: Props)
   const handleAddPrepTasks = (eventId: string) => {
     setSelectedEventId(eventId);
     setShowPrepTasksModal(true);
+  };
+
+  const handleEditEvent = (event: FamilyEvent) => {
+    setEditingEvent(event);
+    setShowAddEventModal(true);
   };
 
   const handleDelete = async (eventId: string) => {
@@ -89,7 +95,8 @@ export default function EventsList({ thisWeek, upcoming, familyMembers }: Props)
   };
 
   const getEventEmoji = (event: FamilyEvent) => {
-    return event.metadata?.emoji || "📅";
+    // Return event-specific emoji or empty string (no generic fallback)
+    return event.metadata?.emoji || "";
   };
 
   const formatDate = (dateStr: string) => {
@@ -203,6 +210,19 @@ export default function EventsList({ thisWeek, upcoming, familyMembers }: Props)
             + Chore
           </button>
           <button
+            onClick={() => handleEditEvent(event)}
+            style={{
+              padding: "0.25rem 0.5rem",
+              border: "none",
+              background: "none",
+              cursor: "pointer",
+              color: "var(--color-primary)",
+              fontSize: "0.75rem",
+            }}
+          >
+            Edit
+          </button>
+          <button
             onClick={() => handleDelete(event.id)}
             disabled={deleting === event.id}
             style={{
@@ -225,24 +245,20 @@ export default function EventsList({ thisWeek, upcoming, familyMembers }: Props)
 
   return (
     <div>
-      {/* Header with Add button */}
+      {/* Centered Add button - no redundant header (page header already shows "Family Events") */}
       <div
         style={{
           display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
+          justifyContent: "center",
           marginBottom: "1.5rem",
         }}
       >
-        <h2 style={{ margin: 0, fontSize: "1.25rem", fontWeight: "600" }}>
-          📅 Family Events
-        </h2>
         <button
           onClick={() => setShowAddEventModal(true)}
           class="btn btn-primary"
           style={{
-            padding: "0.5rem 1rem",
-            fontSize: "0.875rem",
+            padding: "0.75rem 1.5rem",
+            fontSize: "1rem",
           }}
         >
           + Add Event
@@ -305,12 +321,16 @@ export default function EventsList({ thisWeek, upcoming, familyMembers }: Props)
         </>
       )}
 
-      {/* Add Event Modal */}
+      {/* Add/Edit Event Modal */}
       <AddEventModal
         isOpen={showAddEventModal}
-        onClose={() => setShowAddEventModal(false)}
+        onClose={() => {
+          setShowAddEventModal(false);
+          setEditingEvent(null);
+        }}
         familyMembers={familyMembers}
         onSuccess={() => window.location.reload()}
+        editingEvent={editingEvent}
       />
 
       {/* Add Chore Modal (for linking chores to events) */}
