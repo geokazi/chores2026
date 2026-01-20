@@ -32,6 +32,7 @@ export default function ParentPinGate({
   const [loading, setLoading] = useState(true);
   const [hasDefaultPin, setHasDefaultPin] = useState(false);
   const [cancelAttempted, setCancelAttempted] = useState(false);
+  const [needsSetup, setNeedsSetup] = useState(false); // First-time PIN setup needed
 
   useEffect(() => {
     checkParentPinStatus();
@@ -74,10 +75,12 @@ export default function ParentPinGate({
       // Check if parent has PIN set
       if (!parent.pin_hash) {
         console.log('🔐 Parent has no PIN set, requiring setup');
+        setNeedsSetup(true); // First-time setup mode
         setNeedsPin(true);
         if (onPinRequired) onPinRequired();
       } else {
         console.log('🔐 Parent PIN verification required for:', operation);
+        setNeedsSetup(false); // PIN exists, verify mode
         setNeedsPin(true);
         if (onPinRequired) onPinRequired();
       }
@@ -175,6 +178,7 @@ export default function ParentPinGate({
           onSuccess={handlePinSuccess}
           onCancel={handlePinCancel}
           parentData={currentParent}
+          needsSetup={needsSetup}
         />
         {cancelAttempted && (
           <div style={{

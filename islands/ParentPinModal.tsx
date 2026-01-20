@@ -23,6 +23,7 @@ interface Props {
   onCancel: () => void;
   parentData: FamilyMember;
   forceChangePin?: boolean; // Force PIN change mode (for default PIN scenario)
+  needsSetup?: boolean; // First-time PIN setup (no PIN exists yet)
 }
 
 export default function ParentPinModal({
@@ -31,15 +32,17 @@ export default function ParentPinModal({
   onSuccess,
   onCancel,
   parentData,
-  forceChangePin = false
+  forceChangePin = false,
+  needsSetup = false
 }: Props) {
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
 
   // First-time setup / PIN change modes
+  // Start in setup_new if forceChangePin OR needsSetup (no PIN exists)
   const [setupMode, setSetupMode] = useState<'verify' | 'setup_new' | 'confirm_new'>(
-    forceChangePin ? 'setup_new' : 'verify'
+    (forceChangePin || needsSetup) ? 'setup_new' : 'verify'
   );
   const [newPinToConfirm, setNewPinToConfirm] = useState("");
 
@@ -257,9 +260,13 @@ export default function ParentPinModal({
   // Get header text based on mode
   const getHeaderText = () => {
     if (setupMode === 'setup_new') {
-      return forceChangePin
-        ? { title: "🔒 Change Your PIN", subtitle: "Enter a new 4-digit PIN (not 1234)" }
-        : { title: "🔐 Create Your PIN", subtitle: "Enter a new 4-digit PIN (not 1234)" };
+      if (forceChangePin) {
+        return { title: "🔒 Change Your PIN", subtitle: "Enter a new 4-digit PIN (not 1234)" };
+      }
+      if (needsSetup) {
+        return { title: "🔐 Set Up Your PIN", subtitle: "Create a 4-digit PIN to secure settings" };
+      }
+      return { title: "🔐 Create Your PIN", subtitle: "Enter a new 4-digit PIN (not 1234)" };
     }
     if (setupMode === 'confirm_new') {
       return { title: "🔐 Confirm Your PIN", subtitle: "Enter the same PIN again to confirm" };
