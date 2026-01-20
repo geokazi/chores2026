@@ -4,7 +4,8 @@
  * Uses existing modal patterns from project
  */
 
-import { useState } from "preact/hooks";
+import { useState, useEffect } from "preact/hooks";
+import { formatEventDate } from "../lib/utils/household.ts";
 
 // Helper to get local date as YYYY-MM-DD (avoids UTC timezone issues)
 const getLocalDateString = () => {
@@ -21,6 +22,19 @@ interface FamilyMember {
   role: "parent" | "child";
 }
 
+interface FamilyEvent {
+  id: string;
+  title: string;
+  event_date: string;
+  schedule_data?: {
+    all_day?: boolean;
+    start_time?: string;
+  };
+  metadata?: {
+    emoji?: string;
+  };
+}
+
 interface Props {
   isOpen: boolean;
   onClose: () => void;
@@ -35,9 +49,34 @@ export default function AddChoreModal({ isOpen, onClose, familyMembers, onSucces
     assignedTo: "",
     points: 5,
     dueDate: getLocalDateString(), // Today's date
+    familyEventId: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [events, setEvents] = useState<FamilyEvent[]>([]);
+  const [loadingEvents, setLoadingEvents] = useState(false);
+
+  // Fetch events when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      fetchEvents();
+    }
+  }, [isOpen]);
+
+  const fetchEvents = async () => {
+    setLoadingEvents(true);
+    try {
+      const response = await fetch("/api/events");
+      if (response.ok) {
+        const data = await response.json();
+        setEvents(data.events || []);
+      }
+    } catch (err) {
+      console.error("Error fetching events:", err);
+    } finally {
+      setLoadingEvents(false);
+    }
+  };
 
   // Get all family members for assignment (both parents and children)
   const assignableMembers = familyMembers;
@@ -69,6 +108,7 @@ export default function AddChoreModal({ isOpen, onClose, familyMembers, onSucces
           assignedTo: formData.assignedTo,
           dueDate: formData.dueDate + "T23:59:59.999Z", // End of day
           category: "household",
+          familyEventId: formData.familyEventId || null,
         }),
       });
 
@@ -82,6 +122,7 @@ export default function AddChoreModal({ isOpen, onClose, familyMembers, onSucces
           assignedTo: "",
           points: 5,
           dueDate: getLocalDateString(),
+          familyEventId: "",
         });
         
         onSuccess?.();
@@ -256,6 +297,36 @@ export default function AddChoreModal({ isOpen, onClose, familyMembers, onSucces
               />
             </div>
           </div>
+
+          {/* Link to Event (optional) */}
+          {events.length > 0 && (
+            <div>
+              <label style={{ display: "block", fontSize: "0.875rem", fontWeight: "500", marginBottom: "0.5rem" }}>
+                📅 Link to Event (optional)
+              </label>
+              <select
+                value={formData.familyEventId}
+                onChange={(e) => setFormData({ ...formData, familyEventId: e.currentTarget.value })}
+                style={{
+                  width: "100%",
+                  padding: "0.75rem",
+                  border: "1px solid var(--color-border)",
+                  borderRadius: "0.5rem",
+                  fontSize: "1rem",
+                }}
+              >
+                <option value="">(none)</option>
+                {events.map((event) => (
+                  <option key={event.id} value={event.id}>
+                    {event.metadata?.emoji || "📅"} {event.title} ({formatEventDate(event)})
+                  </option>
+                ))}
+              </select>
+              <div style={{ fontSize: "0.75rem", color: "var(--color-text-light)", marginTop: "0.25rem" }}>
+                Linked chores show as "missions" for the event
+              </div>
+            </div>
+          )}
 
           <div>
             <label style={{ display: "block", fontSize: "0.875rem", fontWeight: "500", marginBottom: "0.5rem" }}>

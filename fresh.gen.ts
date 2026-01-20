@@ -8,6 +8,8 @@ import * as $api_auth_validate_oauth from "./routes/api/auth/validate-oauth.ts";
 import * as $api_chores_chore_id_complete from "./routes/api/chores/[chore_id]/complete.ts";
 import * as $api_chores_create from "./routes/api/chores/create.ts";
 import * as $api_debug_session from "./routes/api/debug/session.ts";
+import * as $api_events from "./routes/api/events.ts";
+import * as $api_events_id_ from "./routes/api/events/[id].ts";
 import * as $api_family_family_id_pin_setting from "./routes/api/family/[family_id]/pin-setting.ts";
 import * as $api_family_create from "./routes/api/family/create.ts";
 import * as $api_family_custom_chores from "./routes/api/family/custom-chores.ts";
@@ -39,6 +41,7 @@ import * as $login from "./routes/login.tsx";
 import * as $logout from "./routes/logout.ts";
 import * as $parent_activity from "./routes/parent/activity.tsx";
 import * as $parent_dashboard from "./routes/parent/dashboard.tsx";
+import * as $parent_events from "./routes/parent/events.tsx";
 import * as $parent_my_chores from "./routes/parent/my-chores.tsx";
 import * as $parent_settings from "./routes/parent/settings.tsx";
 import * as $privacy from "./routes/privacy.tsx";
@@ -48,9 +51,12 @@ import * as $reports from "./routes/reports.tsx";
 import * as $setup from "./routes/setup.tsx";
 import * as $terms from "./routes/terms.tsx";
 import * as $AddChoreModal from "./islands/AddChoreModal.tsx";
+import * as $AddEventModal from "./islands/AddEventModal.tsx";
 import * as $AppHeader from "./islands/AppHeader.tsx";
 import * as $ChoreDetail from "./islands/ChoreDetail.tsx";
 import * as $ChoreList from "./islands/ChoreList.tsx";
+import * as $EventMissionGroup from "./islands/EventMissionGroup.tsx";
+import * as $EventsList from "./islands/EventsList.tsx";
 import * as $FamilyReports from "./islands/FamilyReports.tsx";
 import * as $FamilySettings from "./islands/FamilySettings.tsx";
 import * as $KidDashboard from "./islands/KidDashboard.tsx";
@@ -92,6 +98,8 @@ const manifest = {
     "./routes/api/chores/[chore_id]/complete.ts": $api_chores_chore_id_complete,
     "./routes/api/chores/create.ts": $api_chores_create,
     "./routes/api/debug/session.ts": $api_debug_session,
+    "./routes/api/events.ts": $api_events,
+    "./routes/api/events/[id].ts": $api_events_id_,
     "./routes/api/family/[family_id]/pin-setting.ts":
       $api_family_family_id_pin_setting,
     "./routes/api/family/create.ts": $api_family_create,
@@ -125,6 +133,7 @@ const manifest = {
     "./routes/logout.ts": $logout,
     "./routes/parent/activity.tsx": $parent_activity,
     "./routes/parent/dashboard.tsx": $parent_dashboard,
+    "./routes/parent/events.tsx": $parent_events,
     "./routes/parent/my-chores.tsx": $parent_my_chores,
     "./routes/parent/settings.tsx": $parent_settings,
     "./routes/privacy.tsx": $privacy,
@@ -136,9 +145,12 @@ const manifest = {
   },
   islands: {
     "./islands/AddChoreModal.tsx": $AddChoreModal,
+    "./islands/AddEventModal.tsx": $AddEventModal,
     "./islands/AppHeader.tsx": $AppHeader,
     "./islands/ChoreDetail.tsx": $ChoreDetail,
     "./islands/ChoreList.tsx": $ChoreList,
+    "./islands/EventMissionGroup.tsx": $EventMissionGroup,
+    "./islands/EventsList.tsx": $EventsList,
     "./islands/FamilyReports.tsx": $FamilyReports,
     "./islands/FamilySettings.tsx": $FamilySettings,
     "./islands/KidDashboard.tsx": $KidDashboard,

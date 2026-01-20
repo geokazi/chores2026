@@ -3,10 +3,12 @@
  * Main interface for kids showing their status, chores, and family leaderboard
  */
 
-import { useEffect, useState } from "preact/hooks";
+import { useEffect, useState, useMemo } from "preact/hooks";
 import ChoreList from "./ChoreList.tsx";
 import LiveLeaderboard from "./LiveLeaderboard.tsx";
 import LiveActivityFeed from "./LiveActivityFeed.tsx";
+import EventMissionGroup from "./EventMissionGroup.tsx";
+import { groupChoresByEvent, usePointsMode } from "../lib/utils/household.ts";
 
 interface FamilyMember {
   id: string;
@@ -19,6 +21,24 @@ interface ChoreAssignment {
   id: string;
   status: "pending" | "completed" | "verified" | "rejected";
   point_value: number;
+  family_event_id?: string | null;
+  family_event?: {
+    id: string;
+    title: string;
+    emoji?: string;
+    event_date: string;
+    schedule_data?: {
+      all_day?: boolean;
+      start_time?: string;
+    };
+    metadata?: {
+      emoji?: string;
+    };
+  } | null;
+  source?: "manual" | "rotation";
+  rotation_key?: string;
+  rotation_preset?: string;
+  rotation_date?: string;
   chore_template?: {
     name: string;
     description?: string;
@@ -51,6 +71,10 @@ export default function KidDashboard({
   useEffect(() => {
     setChores(todaysChores);
   }, [todaysChores]);
+
+  // Group chores by event for mission display
+  const groupedChores = useMemo(() => groupChoresByEvent(chores), [chores]);
+  const showPoints = useMemo(() => usePointsMode(chores), [chores]);
 
   // Calculate kid's ranking and streak
   const sortedMembers = [...leaderboard]
@@ -120,11 +144,40 @@ export default function KidDashboard({
           Your Chores Today ({completedChores}/{totalChores})
         </h2>
 
-        <ChoreList
-          chores={chores}
-          onChoreComplete={handleChoreComplete}
-          kidId={kid.id}
-        />
+        {/* Event Mission Groups - Show chores grouped by event first */}
+        {groupedChores.events.map(({ event, chores: eventChores }) => (
+          <EventMissionGroup
+            key={event.id}
+            event={event}
+            chores={eventChores}
+            kidId={kid.id}
+            onChoreComplete={handleChoreComplete}
+          />
+        ))}
+
+        {/* Regular Chores - Not linked to any event */}
+        {groupedChores.unlinked.length > 0 && (
+          <div style={{ marginTop: groupedChores.events.length > 0 ? "1rem" : "0" }}>
+            {groupedChores.events.length > 0 && (
+              <h3
+                style={{
+                  fontSize: "1rem",
+                  fontWeight: "600",
+                  marginBottom: "0.75rem",
+                  color: "var(--color-text)",
+                }}
+              >
+                {showPoints ? "Earn Points Today" : "Other Tasks"}
+              </h3>
+            )}
+            <ChoreList
+              chores={groupedChores.unlinked}
+              onChoreComplete={handleChoreComplete}
+              kidId={kid.id}
+              showPoints={showPoints}
+            />
+          </div>
+        )}
 
         {chores.length === 0 && (
           <div class="card" style={{ textAlign: "center", padding: "2rem" }}>
@@ -138,30 +191,34 @@ export default function KidDashboard({
 
       {/* Kid's Status Card - Above leaderboard */}
       <div class="card" style={{ textAlign: "center", marginBottom: "1.5rem" }}>
-        <div
-          style={{
-            fontSize: "1.25rem",
-            fontWeight: "600",
-            marginBottom: "0.5rem",
-          }}
-        >
-          {getRankDisplay()}
-        </div>
-        <div
-          style={{
-            fontSize: "1.5rem",
-            fontWeight: "600",
-            color: "var(--color-primary)",
-            marginBottom: "0.5rem",
-          }}
-        >
-          {kid.current_points} pts {getStreakDisplay()}
-        </div>
+        {showPoints && (
+          <>
+            <div
+              style={{
+                fontSize: "1.25rem",
+                fontWeight: "600",
+                marginBottom: "0.5rem",
+              }}
+            >
+              {getRankDisplay()}
+            </div>
+            <div
+              style={{
+                fontSize: "1.5rem",
+                fontWeight: "600",
+                color: "var(--color-primary)",
+                marginBottom: "0.5rem",
+              }}
+            >
+              {kid.current_points} pts {getStreakDisplay()}
+            </div>
+          </>
+        )}
         {totalChores > 0 && (
           <div
             style={{ fontSize: "0.875rem", color: "var(--color-text-light)" }}
           >
-            Today's Progress: {completedChores}/{totalChores} chores ⭐
+            Today's Progress: {completedChores}/{totalChores} {showPoints ? "chores" : "tasks"} ⭐
           </div>
         )}
       </div>

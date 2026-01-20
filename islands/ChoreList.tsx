@@ -24,9 +24,10 @@ interface Props {
   chores: ChoreAssignment[];
   onChoreComplete: (choreId: string) => void;
   kidId: string;
+  showPoints?: boolean;
 }
 
-export default function ChoreList({ chores, onChoreComplete, kidId }: Props) {
+export default function ChoreList({ chores, onChoreComplete, kidId, showPoints = true }: Props) {
   const [completingChore, setCompletingChore] = useState<string | null>(null);
 
   const handleChoreComplete = async (chore: ChoreAssignment) => {
@@ -172,9 +173,11 @@ export default function ChoreList({ chores, onChoreComplete, kidId }: Props) {
                 )}
               </div>
             </div>
-            <div class="chore-points">
-              +{chore.point_value} pts
-            </div>
+            {showPoints && (
+              <div class="chore-points">
+                +{chore.point_value} pts
+              </div>
+            )}
           </div>
 
           {chore.status === "completed" && (

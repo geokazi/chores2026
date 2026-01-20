@@ -155,7 +155,8 @@ export class ChoreService {
       .from("chore_assignments")
       .select(`
         *,
-        chore_template:chore_templates!inner(*)
+        chore_template:chore_templates!inner(*),
+        family_event:family_events(id, title, event_date, schedule_data, metadata)
       `)
       .eq("family_id", familyId)
       .eq("assigned_to_profile_id", profileId)
@@ -843,7 +844,8 @@ export class ChoreService {
     familyId: string,
     createdByProfileId: string,
     dueDate: string,
-    category: string = "household"
+    category: string = "household",
+    familyEventId?: string | null
   ): Promise<{ success: boolean; assignment?: ChoreAssignment; error?: string }> {
     try {
       // First create the template
@@ -889,6 +891,7 @@ export class ChoreService {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           is_deleted: false,
+          family_event_id: familyEventId || null,
         })
         .select(`
           *,

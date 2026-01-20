@@ -1,6 +1,6 @@
 # ChoreGami 2026 - Technical Architecture
 
-**Version**: 1.0  
+**Version**: 1.1
 **Last Updated**: January 19, 2026
 **Status**: Production Ready
 
@@ -160,11 +160,25 @@ choretracker.chore_assignments (
   family_id uuid REFERENCES families(id),
   chore_template_id uuid REFERENCES chore_templates(id),
   assigned_to_profile_id uuid REFERENCES family_profiles(id),
+  family_event_id uuid REFERENCES family_events(id) ON DELETE SET NULL, -- Event link for "missions"
   status text DEFAULT 'pending', -- 'pending' | 'completed' | 'verified'
   due_date timestamptz,
   point_value integer,
   assigned_date date DEFAULT CURRENT_DATE,
   completed_at timestamptz,
+  created_at timestamptz DEFAULT now()
+)
+
+-- Family events (reused from MealPlanner)
+choretracker.family_events (
+  id uuid PRIMARY KEY,
+  family_id uuid REFERENCES families(id),
+  title text NOT NULL,
+  event_date date NOT NULL,
+  schedule_data jsonb, -- { all_day: boolean, start_time: string }
+  participants uuid[], -- Profile IDs of participants
+  metadata jsonb, -- { source_app: string, emoji: string }
+  is_deleted boolean DEFAULT false,
   created_at timestamptz DEFAULT now()
 )
 
@@ -391,6 +405,76 @@ export async function handler(req: Request, ctx: FreshContext) {
 - **Honeypot Fields**: Hidden form fields detect automated bot submissions
 - **See**: [Authentication Security Hardening](./milestones/20260119_authentication_security_hardening.md)
 
+## Events Calendar Integration
+
+### Event Mission Architecture
+
+**Status**: ✅ Implemented (January 19, 2026)
+
+ChoreGami supports linking chores to family events, displaying them as grouped "missions" on the kid dashboard. This enables preparation-focused task management for activities like sports practice, birthday parties, and school events.
+
+#### Key Concepts
+
+| Concept | Description |
+|---------|-------------|
+| **Event Mission** | Chores linked to an event, displayed as a grouped section |
+| **Points Hiding** | Event missions hide points (focus on preparation, not rewards) |
+| **Unlinked Chores** | Regular chores displayed separately with points visible |
+| **Points Mode** | Auto-detected: if any chore has points > 0, show points for unlinked |
+
+#### Technical Components
+
+```
+lib/utils/household.ts           # Grouping and points utilities (~100 lines)
+├── groupChoresByEvent()         # Groups chores by family_event_id
+├── usePointsMode()              # Detects if family uses points
+├── formatEventDate()            # Display formatting for events
+└── formatTime()                 # 12-hour time formatting
+
+islands/EventMissionGroup.tsx    # Mission display component (~180 lines)
+islands/EventsList.tsx           # Parent events list (~200 lines)
+islands/AddEventModal.tsx        # Event creation form (~300 lines)
+
+routes/api/events.ts             # Events API (GET list, POST create)
+routes/api/events/[id].ts        # Single event (GET, DELETE)
+routes/parent/events.tsx         # Parent events page
+```
+
+#### Data Flow
+
+```
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│  family_events  │    │ chore_assignments │   │  KidDashboard   │
+│  (choretracker) │◄───│ .family_event_id  │───▶│ groupChoresByEvent│
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+        │                                               │
+        ▼                                               ▼
+┌─────────────────┐                            ┌─────────────────┐
+│   EventsList    │                            │EventMissionGroup│
+│ "This Week" +   │                            │ Grouped display │
+│ "Upcoming"      │                            │ No points shown │
+└─────────────────┘                            └─────────────────┘
+```
+
+#### Event-Chore Linking
+
+```typescript
+// When creating a chore, optionally link to an event
+const result = await choreService.createChoreWithTemplate(
+  name, description, points, assignedTo,
+  familyId, createdById, dueDate, category,
+  familyEventId  // Optional: links chore to event
+);
+
+// Kid dashboard groups chores by event
+const groupedChores = groupChoresByEvent(todaysChores);
+// Returns: { events: [{ event, chores }], unlinked: [] }
+```
+
+**See**: [Events Calendar Integration Plan](./planned/20260119_events_calendar_rev2.md)
+
+---
+
 ## Monetization Architecture
 
 ### Template Gating & Gift Codes
@@ -518,16 +602,19 @@ App Layout
 ├── Family Selection
 │   ├── KidSelector.tsx (Multi-role family member picker)
 │   └── PinEntryModal.tsx (Conditional kid PIN entry)
-├── Kid Experience  
+├── Kid Experience
 │   ├── SecureKidDashboard.tsx (Session-based kid identification)
-│   ├── KidDashboard.tsx (Chore completion interface)
-│   ├── ChoreList.tsx (Checkbox completion pattern)
+│   ├── KidDashboard.tsx (Chore completion interface with event grouping)
+│   ├── ChoreList.tsx (Checkbox completion pattern with showPoints prop)
+│   ├── EventMissionGroup.tsx (Event-linked chores as "missions")
 │   └── ChoreDetail.tsx (Individual chore view)
 ├── Parent Experience
-│   ├── SecureParentDashboard.tsx (Personal parent chore view)  
+│   ├── SecureParentDashboard.tsx (Personal parent chore view)
 │   ├── ParentDashboard.tsx (Family management interface)
-│   ├── AddChoreModal.tsx (Chore creation for any family member)
-│   └── ParentActivityTab.tsx (Point adjustment interface)
+│   ├── AddChoreModal.tsx (Chore creation with optional event linking)
+│   ├── ParentActivityTab.tsx (Point adjustment interface)
+│   ├── EventsList.tsx (Family events with "This Week"/"Upcoming" sections)
+│   └── AddEventModal.tsx (Simple event creation form)
 ├── Real-Time Features
 │   ├── LiveLeaderboard.tsx (Family rankings with WebSocket)
 │   ├── LiveActivityFeed.tsx (Recent completions feed)
@@ -801,20 +888,24 @@ export default function ComponentWithLiveUpdates({ family, familyMembers }) {
 ```
 routes/
 ├── index.tsx                     # Family member selection (post-login)
-├── login.tsx                     # Multi-provider authentication  
+├── login.tsx                     # Multi-provider authentication
 ├── kid/
 │   └── dashboard.tsx             # Secure session-based kid dashboard
 ├── parent/
 │   ├── dashboard.tsx             # Family management dashboard
 │   ├── my-chores.tsx            # Personal parent chore completion
+│   ├── events.tsx               # Family events list page
 │   └── settings.tsx             # Family settings and PIN management
 └── api/
     ├── chores/
-    │   ├── create.ts             # Create chore + assignment (atomic)
+    │   ├── create.ts             # Create chore + assignment (atomic, supports event linking)
     │   └── [chore_id]/
     │       └── complete.ts       # Complete chore with transaction logging
+    ├── events/
+    │   ├── index.ts              # GET list, POST create events
+    │   └── [id].ts              # GET single, DELETE event
     ├── kids/
-    │   └── chores.ts            # Secure chore loading (POST with kidId)
+    │   └── chores.ts            # Secure chore loading with event data (POST with kidId)
     ├── points/
     │   └── adjust.ts            # Manual point adjustments with audit trail
     ├── family/

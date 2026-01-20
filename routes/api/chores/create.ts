@@ -15,6 +15,7 @@ interface CreateChoreRequest {
   assignedTo: string; // kid profile ID
   dueDate: string; // ISO date string
   category?: string;
+  familyEventId?: string; // optional event link
 }
 
 export const handler: Handlers = {
@@ -82,7 +83,8 @@ export const handler: Handlers = {
         parentSession.family.id,
         currentParent.id,
         choreData.dueDate,
-        choreData.category || "household"
+        choreData.category || "household",
+        choreData.familyEventId || null
       );
 
       if (result.success) {

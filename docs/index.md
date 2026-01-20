@@ -1,6 +1,6 @@
 # ChoreGami 2026 Documentation
 
-**Version**: 1.6
+**Version**: 1.7
 **Status**: ✅ Production Ready
 **Last Updated**: January 19, 2026
 
@@ -48,6 +48,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-18 | [**Authentication Security Hardening**](./milestones/20260118_authentication_security_hardening.md) | ✅ Complete | Rate limiting, enumeration protection, honeypot bot detection |
 | 2026-01-19 | [**Template Gating & Gift Codes**](./planned/20260118_template_gating_gift_codes.md) | ✅ Complete | Prepaid plan tiers ($19-$59), gift code redemption, template access control, TemplateSelector extraction |
 | 2026-01-19 | [**Signup & PIN Detection Fixes**](./milestones/20260119_signup_and_pin_fixes.md) | ✅ Complete | Fixed Supabase schema config, first-time PIN UX, settings order, PIN detection after logout |
+| 2026-01-19 | [**Events Calendar Integration**](./planned/20260119_events_calendar_rev2.md) | ✅ Complete | Event-linked chores as "missions", parent events page, groupChoresByEvent utility |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 
@@ -194,6 +195,7 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 - ✅ **Chore Rotation Templates**: 7 pre-built schedules including **Dynamic Daily Routines** (scales to any family size 1-8 kids) + slot-based templates (Smart Rotation, Weekend Warrior, Daily Basics, Large Family, Summer Break, School Year) with Manual (Default) option + partial slot assignment
 - ✅ **Template Gating & Gift Codes**: Prepaid plan tiers (Free vs Family Plan), gift code redemption (`/redeem`), JSONB-based plan storage, TemplateSelector component extraction, ACTIVE badge on templates, improved Free Plan UX
 - ✅ **Point Adjustment Security**: Parent PIN verification required before applying any point adjustments
+- ✅ **Events Calendar Integration**: Event-linked chores as "missions" on kid dashboard, parent events page (`/parent/events`), simplified event creation, points hiding for event missions, preparation-focused UX
 
 ### Known Limitations
 - **Testing**: Comprehensive test suite not yet implemented

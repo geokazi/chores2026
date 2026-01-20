@@ -98,6 +98,11 @@ export default function AppHeader({
             <a href="/reports" class={currentPage === "reports" ? "active" : ""}>
               📊 Reports
             </a>
+            {isParent && (
+              <a href="/parent/events" class={currentPage === "events" ? "active" : ""}>
+                📅 Events
+              </a>
+            )}
 
             {/* Kid shortcuts - SECURITY: session-based, no GUIDs in URLs */}
             {kids.length > 0 && (

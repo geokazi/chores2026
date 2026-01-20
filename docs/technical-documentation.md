@@ -88,17 +88,23 @@ graph TB
 ├── 📁 islands/                  # Client-side interactive components
 │   ├── 📄 KidSelector.tsx       # Family member selection grid
 │   ├── 📄 PinEntryModal.tsx     # 4-digit PIN authentication
-│   ├── 📄 KidDashboard.tsx      # Kid's main dashboard
-│   ├── 📄 ChoreList.tsx         # Chore listing component
+│   ├── 📄 KidDashboard.tsx      # Kid's main dashboard with event grouping
+│   ├── 📄 ChoreList.tsx         # Chore listing with showPoints prop
 │   ├── 📄 ChoreDetail.tsx       # Individual chore interface
+│   ├── 📄 EventMissionGroup.tsx # Event-linked chores display
+│   ├── 📄 EventsList.tsx        # Parent events list
+│   ├── 📄 AddEventModal.tsx     # Event creation form
 │   ├── 📄 LiveLeaderboard.tsx   # Real-time family rankings
 │   ├── 📄 LiveActivityFeed.tsx  # Recent activity stream
 │   ├── 📄 ParentDashboard.tsx   # Parent management interface
+│   ├── 📄 AddChoreModal.tsx     # Chore creation with event linking
 │   └── 📁 auth/                 # Authentication components
 ├── 📁 lib/                      # Core business logic
 │   ├── 📁 services/             # Data access and business services
-│   │   ├── 📄 chore-service.ts  # Chore CRUD operations
+│   │   ├── 📄 chore-service.ts  # Chore CRUD operations with event support
 │   │   └── 📄 transaction-service.ts # Point tracking with FamilyScore
+│   ├── 📁 utils/                # Utility functions
+│   │   └── 📄 household.ts      # Event grouping, points mode detection
 │   ├── 📁 auth/                 # Authentication system
 │   ├── 📁 security/             # Security utilities
 │   └── 📁 user-state/           # Session management
@@ -231,6 +237,33 @@ Response: { success: boolean, children_pins_enabled: boolean }
 POST /api/points/adjust
 Body: { member_id: string, family_id: string, amount: number, reason: string }
 Response: { success: boolean, new_balance: number }
+```
+
+#### Events Calendar
+```typescript
+// List family events (today and future)
+GET /api/events
+Response: { events: FamilyEvent[] }
+
+// Create a new event
+POST /api/events
+Body: { title: string, emoji?: string, event_date: string, event_time?: string,
+        is_all_day?: boolean, participants?: string[] }
+Response: { event: FamilyEvent }
+
+// Get single event
+GET /api/events/[id]
+Response: { event: FamilyEvent }
+
+// Delete event (soft delete, unlinks chores)
+DELETE /api/events/[id]
+Response: { success: boolean }
+
+// Create chore with event link
+POST /api/chores/create
+Body: { name: string, points: number, assignedTo: string, dueDate: string,
+        familyEventId?: string }  // Optional event link
+Response: { success: boolean, choreId: string }
 ```
 
 #### Authentication
@@ -860,6 +893,15 @@ const loadTest = async () => {
 - **Component Extraction**: TemplateSelector (~450 lines) extracted from FamilySettings
 - **Unit Tests**: 29 tests (15 plan-gate + 14 redemption)
 - **See**: [Template Gating Implementation](./planned/20260118_template_gating_gift_codes.md)
+
+#### Events Calendar Integration ✅ **Implemented Jan 19, 2026**
+- **Event-Chore Linking**: Chores can be linked to family events via `family_event_id`
+- **Mission Grouping**: Kid dashboard shows event-linked chores as grouped "missions"
+- **Points Hiding**: Event missions hide points (focus on preparation, not rewards)
+- **Parent Events Page**: `/parent/events` with "This Week" and "Upcoming" sections
+- **Event Creation**: Simplified form with title, emoji, date, time, participants
+- **Utility Functions**: `groupChoresByEvent()`, `usePointsMode()`, `formatEventDate()`
+- **See**: [Events Calendar Implementation](./planned/20260119_events_calendar_rev2.md)
 
 #### Future Security Enhancements
 - **CSRF Protection**: Cross-site request forgery prevention

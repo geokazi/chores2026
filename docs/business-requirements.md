@@ -139,7 +139,35 @@ ChoreGami 2026 is a streamlined family chore management application designed to 
 
 **Business Value:** Ensures security and prevents unauthorized access to sensitive family operations
 
-### Epic 3: Real-Time Integration
+### Epic 3: Events Calendar Integration
+
+#### Story 3.1: Event-Linked Chores
+**As a parent**, I want to link chores to family events like soccer practice or birthday parties
+**So that** my kids see preparation tasks grouped together as "missions"
+
+**Acceptance Criteria:**
+- ✅ Create events with title, date, time, and optional emoji
+- ✅ Link chores to events when creating assignments
+- ✅ Events show "This Week" and "Upcoming" sections
+- ✅ Delete events (soft delete, unlinks chores)
+- ✅ Mobile-optimized event creation form
+
+**Business Value:** Contextualizes chores around real family activities, increasing completion rates
+
+#### Story 3.2: Event Mission Display
+**As a child**, I want to see event-linked chores grouped together
+**So that** I know what I need to do to get ready for activities
+
+**Acceptance Criteria:**
+- ✅ Event missions display as grouped sections on dashboard
+- ✅ Points hidden for event missions (preparation focus)
+- ✅ Celebration when all event tasks completed
+- ✅ Progress indicator shows completion status
+- ✅ Event time displayed with mission group
+
+**Business Value:** Reduces cognitive load by organizing related tasks together
+
+### Epic 4: Real-Time Integration
 
 #### Story 3.1: Live Updates
 **As a family member**, I want to see real-time updates when others complete chores  
@@ -237,6 +265,7 @@ ChoreGami 2026 is a streamlined family chore management application designed to 
 - Mobile-optimized interface
 
 ### Phase 2: Enhancement (Q1 2026)
+- ✅ Events Calendar integration (event-linked chores as "missions")
 - Advanced chore management for parents
 - Photo verification for task completion
 - Achievement system and badges
