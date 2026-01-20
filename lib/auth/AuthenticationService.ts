@@ -11,7 +11,7 @@ import type {
   Session,
   SupabaseClient,
   User,
-} from "https://esm.sh/@supabase/supabase-js@2.79.0";
+} from "@supabase/supabase-js";
 
 // Helper function - would normally import from utils
 function getServiceSupabaseClient(): SupabaseClient {

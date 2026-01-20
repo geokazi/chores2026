@@ -3,7 +3,7 @@
  * For server-side operations in routes and middleware
  */
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.79.0";
+import { createClient } from "@supabase/supabase-js";
 
 /**
  * Create a server-side Supabase client for use in Fresh routes

@@ -17,8 +17,11 @@ COPY lib/ lib/
 COPY static/ static/
 COPY utils/ utils/
 
+# Clear Deno cache to ensure fresh dependencies
+RUN rm -rf /root/.cache/deno
+
 # Cache dependencies after all files are copied
-RUN deno cache main.ts dev.ts
+RUN deno cache --reload main.ts dev.ts
 
 # Build Fresh islands for production (generates JS chunks)
 RUN deno run -A dev.ts build
