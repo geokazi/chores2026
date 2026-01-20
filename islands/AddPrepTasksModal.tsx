@@ -41,6 +41,8 @@ interface TaskRow {
   id: string;
   text: string;
   assignee_id: string;
+  isExisting?: boolean; // Track if this is an existing task
+  done?: boolean; // Preserve done status for existing tasks
 }
 
 export default function AddPrepTasksModal({ isOpen, onClose, event, familyMembers, onSuccess }: Props) {
@@ -55,10 +57,20 @@ export default function AddPrepTasksModal({ isOpen, onClose, event, familyMember
 
   const defaultAssignee = assignableMembers[0]?.id || "";
 
-  // Initialize with one empty row when modal opens
+  // Initialize with existing tasks + one empty row when modal opens
   useEffect(() => {
     if (isOpen && event) {
-      setTasks([{ id: crypto.randomUUID(), text: "", assignee_id: defaultAssignee }]);
+      const existingTasks = (event.metadata?.prep_tasks || []).map((task: PrepTask) => ({
+        id: task.id,
+        text: task.text,
+        assignee_id: task.assignee_id || defaultAssignee,
+        isExisting: true,
+        done: task.done,
+      }));
+
+      // Add one empty row for new tasks
+      const emptyRow = { id: crypto.randomUUID(), text: "", assignee_id: defaultAssignee };
+      setTasks([...existingTasks, emptyRow]);
       setError(null);
     }
   }, [isOpen, event?.id]);
@@ -72,9 +84,13 @@ export default function AddPrepTasksModal({ isOpen, onClose, event, familyMember
   };
 
   const removeRow = (id: string) => {
-    if (tasks.length > 1) {
-      setTasks(tasks.filter(t => t.id !== id));
+    // Always allow removing any task (existing or new)
+    const remaining = tasks.filter(t => t.id !== id);
+    // Ensure at least one empty row exists
+    if (remaining.length === 0 || remaining.every(t => t.text.trim())) {
+      remaining.push({ id: crypto.randomUUID(), text: "", assignee_id: defaultAssignee });
     }
+    setTasks(remaining);
   };
 
   const handleSubmit = async (e: Event) => {
@@ -83,11 +99,8 @@ export default function AddPrepTasksModal({ isOpen, onClose, event, familyMember
 
     // Filter out empty tasks
     const validTasks = tasks.filter(t => t.text.trim());
-    if (validTasks.length === 0) {
-      setError("Please enter at least one task");
-      return;
-    }
 
+    // Allow saving with zero tasks (clears all prep tasks)
     if (!event) {
       setError("No event selected");
       return;
@@ -96,19 +109,13 @@ export default function AddPrepTasksModal({ isOpen, onClose, event, familyMember
     setIsSubmitting(true);
 
     try {
-      // Get existing prep tasks
-      const existingTasks = event.metadata?.prep_tasks || [];
-
-      // Create new prep tasks
-      const newPrepTasks: PrepTask[] = validTasks.map(t => ({
+      // Convert form tasks to prep tasks (preserving done status for existing)
+      const allTasks: PrepTask[] = validTasks.map(t => ({
         id: t.id,
         text: t.text.trim(),
         assignee_id: t.assignee_id || undefined,
-        done: false,
+        done: t.done || false, // Preserve done status for existing tasks
       }));
-
-      // Merge with existing
-      const allTasks = [...existingTasks, ...newPrepTasks];
 
       // Update event metadata
       const response = await fetch(`/api/events/${event.id}`, {
@@ -178,7 +185,7 @@ export default function AddPrepTasksModal({ isOpen, onClose, event, familyMember
           }}
         >
           <h2 style={{ fontSize: "1.25rem", fontWeight: "600", margin: 0 }}>
-            Add Prep Tasks
+            Prep Tasks
           </h2>
           <button
             onClick={onClose}

@@ -167,21 +167,26 @@ export default function EventsList({ thisWeek, upcoming, familyMembers }: Props)
           </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem", alignItems: "flex-end" }}>
-          <button
-            onClick={() => handleAddPrepTasks(event.id)}
-            style={{
-              padding: "0.375rem 0.75rem",
-              border: "1px solid var(--color-primary)",
-              background: "white",
-              cursor: "pointer",
-              color: "var(--color-primary)",
-              fontSize: "0.75rem",
-              borderRadius: "0.25rem",
-              fontWeight: "500",
-            }}
-          >
-            + Prep Tasks
-          </button>
+          {(() => {
+            const prepCount = (event.metadata?.prep_tasks || []).length;
+            return (
+              <button
+                onClick={() => handleAddPrepTasks(event.id)}
+                style={{
+                  padding: "0.375rem 0.75rem",
+                  border: "1px solid var(--color-primary)",
+                  background: "white",
+                  cursor: "pointer",
+                  color: "var(--color-primary)",
+                  fontSize: "0.75rem",
+                  borderRadius: "0.25rem",
+                  fontWeight: "500",
+                }}
+              >
+                {prepCount > 0 ? `Prep (${prepCount})` : "+ Prep Tasks"}
+              </button>
+            );
+          })()}
           <button
             onClick={() => handleAddChore(event.id)}
             style={{
