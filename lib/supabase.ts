@@ -87,9 +87,6 @@ export function getServiceSupabaseClient(): any {
       autoRefreshToken: false,
       persistSession: false,
     },
-    db: {
-      schema: "public,choretracker,analytics",
-    },
   });
 
   return _serviceClient;
