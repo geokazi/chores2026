@@ -157,7 +157,7 @@ export default function EventsList({ thisWeek, upcoming, familyMembers }: Props)
               fontWeight: "500",
             }}
           >
-            + Add Chore
+            + Add Task
           </button>
           <button
             onClick={() => handleDelete(event.id)}

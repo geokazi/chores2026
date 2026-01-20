@@ -227,11 +227,33 @@ export default function AddEventModal({ isOpen, onClose, familyMembers, onSucces
             >
               Emoji (optional)
             </label>
+            {/* Quick emoji buttons for common activities */}
+            <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.5rem", flexWrap: "wrap" }}>
+              {["🏀", "⚾", "🩰", "🏊", "🎹", "⚽", "📅"].map((emoji) => (
+                <button
+                  key={emoji}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, emoji })}
+                  style={{
+                    padding: "0.5rem",
+                    border: "1px solid",
+                    borderColor: formData.emoji === emoji ? "var(--color-primary)" : "var(--color-border)",
+                    borderRadius: "0.5rem",
+                    backgroundColor: formData.emoji === emoji ? "var(--color-primary)" : "white",
+                    cursor: "pointer",
+                    fontSize: "1.25rem",
+                    lineHeight: 1,
+                  }}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
             <input
               type="text"
               value={formData.emoji}
               onChange={(e) => setFormData({ ...formData, emoji: e.currentTarget.value })}
-              placeholder="⚽"
+              placeholder="Or type/paste any emoji"
               maxLength={2}
               style={{
                 width: "100%",
@@ -241,9 +263,6 @@ export default function AddEventModal({ isOpen, onClose, familyMembers, onSucces
                 fontSize: "1rem",
               }}
             />
-            <div style={{ fontSize: "0.75rem", color: "var(--color-text-light)", marginTop: "0.25rem" }}>
-              Use your keyboard's emoji picker (Win + . or Ctrl + Cmd + Space)
-            </div>
           </div>
 
           {/* Date and Time */}
