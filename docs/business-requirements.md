@@ -167,6 +167,20 @@ ChoreGami 2026 is a streamlined family chore management application designed to 
 
 **Business Value:** Reduces cognitive load by organizing related tasks together
 
+#### Story 3.3: Prep Tasks (Lightweight Checklist)
+**As a parent**, I want to create quick prep task checklists for events
+**So that** I can remind kids of simple preparations without creating full chores
+
+**Acceptance Criteria:**
+- ✅ Add multiple prep tasks at once via batch creation modal
+- ✅ Edit existing prep tasks in the same modal
+- ✅ Prep tasks stored in event metadata (not as full chores)
+- ✅ Kids can mark prep tasks done with single tap
+- ✅ No points for prep tasks (preparation focus, not gamification)
+- ✅ Smart button shows count when tasks exist
+
+**Business Value:** Reduces friction for simple checklist items that don't need point tracking
+
 ### Epic 4: Real-Time Integration
 
 #### Story 3.1: Live Updates
@@ -266,6 +280,7 @@ ChoreGami 2026 is a streamlined family chore management application designed to 
 
 ### Phase 2: Enhancement (Q1 2026)
 - ✅ Events Calendar integration (event-linked chores as "missions")
+- ✅ Prep Tasks feature (lightweight checklist items for events)
 - Advanced chore management for parents
 - Photo verification for task completion
 - Achievement system and badges
@@ -366,6 +381,6 @@ ChoreGami 2026 is a streamlined family chore management application designed to 
 
 **Document Owner**: Product Team
 **Review Cycle**: Monthly
-**Last Updated**: January 19, 2026
-**Next Review**: February 19, 2026
+**Last Updated**: January 20, 2026
+**Next Review**: February 20, 2026
 **Stakeholders**: Engineering, Design, Marketing, Customer Success
