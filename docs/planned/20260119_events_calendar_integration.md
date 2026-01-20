@@ -46,6 +46,66 @@ choretracker.family_events (
 
 **Total existing code**: ~450 lines (production-tested)
 
+### API Request/Response Examples
+
+#### GET /api/events
+```typescript
+// Response
+{
+  "events": [
+    {
+      "id": "uuid",
+      "family_id": "uuid",
+      "title": "Soccer Practice",
+      "event_date": "2026-01-21",
+      "schedule_data": { "start_time": "17:00", "end_time": "18:30" },
+      "participants": ["profile-uuid-1"],
+      "location_data": { "name": "Soccer Field" },
+      "recurrence_data": {},
+      "metadata": { "source_app": "chores2026" },
+      "created_by_profile_id": "uuid",
+      "is_deleted": false,
+      "created_at": "2026-01-19T10:00:00Z"
+    }
+  ]
+}
+```
+
+#### POST /api/events
+```typescript
+// Request
+{
+  "title": "Soccer Practice",
+  "event_date": "2026-01-21",
+  "schedule_data": { "start_time": "17:00", "end_time": "18:30" },
+  "participants": ["profile-uuid-1"],
+  "location_data": { "name": "Soccer Field", "address": "123 Main St" },
+  "is_multi_day": false,  // If true, also send end_date
+  "end_date": null        // For multi-day events
+}
+
+// Response
+{
+  "event": { ... },       // Created event
+  "events": [ ... ]       // Array (for multi-day creates multiple)
+}
+```
+
+#### PUT /api/events/[id]
+```typescript
+// Request - same format as POST
+// Response - same format as POST
+```
+
+#### DELETE /api/events/[id]
+```typescript
+// Response
+{
+  "success": true,
+  "message": "Event deleted successfully"
+}
+```
+
 ### Features Already Built
 
 | Feature | Status | Implementation |
