@@ -249,7 +249,7 @@ export default function AddEventModal({ isOpen, onClose, familyMembers, onSucces
             </label>
             {/* Quick emoji buttons for common activities */}
             <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.5rem", flexWrap: "wrap" }}>
-              {["🏀", "⚾", "🩰", "🏊", "🎹", "⚽", "📅"].map((emoji) => (
+              {["🏀", "⚾", "🚗", "🏊", "🎹", "⚽", "📅"].map((emoji) => (
                 <button
                   key={emoji}
                   type="button"
