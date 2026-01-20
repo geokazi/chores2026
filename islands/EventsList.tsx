@@ -250,7 +250,8 @@ export default function EventsList({ thisWeek, upcoming, familyMembers }: Props)
         style={{
           display: "flex",
           justifyContent: "center",
-          marginBottom: "1.5rem",
+          marginBottom: "1rem",
+          marginTop: "-0.5rem",
         }}
       >
         <button
