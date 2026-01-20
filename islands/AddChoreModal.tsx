@@ -362,9 +362,10 @@ export default function AddChoreModal({ isOpen, onClose, familyMembers, onSucces
             />
           </div>
 
-          <div style={{ display: "flex", gap: "0.75rem", marginTop: "1rem" }}>
+          <div class="modal-footer" style={{ display: "flex", gap: "0.75rem" }}>
             <button
               type="button"
+              class="btn btn-secondary"
               onClick={onClose}
               style={{
                 flex: 1,
@@ -372,25 +373,20 @@ export default function AddChoreModal({ isOpen, onClose, familyMembers, onSucces
                 border: "1px solid var(--color-border)",
                 backgroundColor: "white",
                 color: "var(--color-text)",
-                borderRadius: "0.5rem",
-                cursor: "pointer",
-                fontSize: "1rem",
               }}
             >
               Cancel
             </button>
             <button
               type="submit"
+              class="btn btn-primary"
               disabled={isSubmitting}
               style={{
                 flex: 1,
                 padding: "0.75rem",
                 border: "none",
-                backgroundColor: isSubmitting ? "#ccc" : "var(--color-primary)",
+                backgroundColor: "var(--color-primary)",
                 color: "white",
-                borderRadius: "0.5rem",
-                cursor: isSubmitting ? "not-allowed" : "pointer",
-                fontSize: "1rem",
                 fontWeight: "600",
               }}
             >

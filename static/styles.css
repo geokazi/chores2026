@@ -416,6 +416,73 @@ body {
   border-color: var(--color-primary);
 }
 
+/* ========================================
+   HIGH-IMPACT POLISH (Jan 20, 2026)
+   ======================================== */
+
+/* 1. Smooth focus states for all inputs */
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  transition: all 0.15s ease;
+}
+
+/* 2. Interactive button transitions */
+button,
+.btn {
+  transition: all 0.15s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+}
+
+.btn-secondary:hover {
+  background-color: #f9fafb;
+  border-color: #9ca3af;
+}
+
+/* 3. Disabled button state */
+button:disabled,
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* 4. Clear emoji selection */
+.emoji-option {
+  border: 2px solid transparent;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  transition: all 0.15s ease;
+  cursor: pointer;
+  font-size: 1.25rem;
+  line-height: 1;
+  background: white;
+}
+
+.emoji-option:hover {
+  background-color: #f3f4f6;
+}
+
+.emoji-option.selected {
+  border-color: #2563eb;
+  background-color: #eff6ff;
+}
+
+/* 5. Modal footer separator */
+.modal-footer {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 1.5rem;
+  margin-top: 1.5rem;
+}
+
 /* Utility classes */
 .text-center {
   text-align: center;
