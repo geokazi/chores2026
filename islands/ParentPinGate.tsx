@@ -12,6 +12,7 @@ interface FamilyMember {
   name: string;
   role: "parent" | "child";
   pin_hash?: string;
+  has_pin?: boolean; // Session provides this boolean (pin_hash is not exposed to client)
 }
 
 interface Props {
@@ -72,8 +73,9 @@ export default function ParentPinGate({
 
       setCurrentParent(parent);
 
-      // Check if parent has PIN set
-      if (!parent.pin_hash) {
+      // Check if parent has PIN set (use has_pin boolean from session, not pin_hash)
+      const hasPin = parent.has_pin || !!parent.pin_hash;
+      if (!hasPin) {
         console.log('🔐 Parent has no PIN set, requiring setup');
         setNeedsSetup(true); // First-time setup mode
         setNeedsPin(true);

@@ -14,6 +14,7 @@ interface FamilyMember {
   name: string;
   role: "parent" | "child";
   pin_hash?: string;
+  has_pin?: boolean; // Session provides this boolean (pin_hash is not exposed to client)
 }
 
 interface Props {
@@ -81,7 +82,7 @@ export default function ParentPinModal({
 
     console.log("🔧 Parent PIN validation started for:", parentName);
     console.log("🔧 Mode:", setupMode);
-    console.log("🔧 Parent has pin_hash:", !!parentData.pin_hash);
+    console.log("🔧 Parent has PIN:", parentData.has_pin || !!parentData.pin_hash);
 
     try {
       // ========== SETUP_NEW MODE: First step of setting new PIN ==========
@@ -185,9 +186,9 @@ export default function ParentPinModal({
           return;
         }
 
-        // Handle bcrypt hash - needs re-setup
-        if (result.message === 'Invalid PIN' && parentData.pin_hash?.startsWith('$2')) {
-          console.log("🔧 Detected bcrypt hash - needs re-setup");
+        // Handle legacy hash that needs re-setup (server returns specific message)
+        if (result.message === 'PIN needs reset') {
+          console.log("🔧 Server indicates PIN needs re-setup");
           setError("PIN needs to be reset. Enter a new PIN.");
           setSetupMode('setup_new');
           setPin("");
