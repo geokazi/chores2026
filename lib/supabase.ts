@@ -88,7 +88,7 @@ export function getServiceSupabaseClient(): any {
       persistSession: false,
     },
     db: {
-      schema: "auth,public,analytics,choretracker",
+      schema: "public",
     },
   });
 
