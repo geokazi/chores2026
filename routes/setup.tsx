@@ -55,34 +55,51 @@ export const handler: Handlers<SetupPageData> = {
   },
 
   async POST(req, ctx) {
-    const formData = await req.formData();
-    const parentName = formData.get("parentName") as string;
-    const familyName = formData.get("familyName") as string;
+    try {
+      const formData = await req.formData();
+      const parentName = formData.get("parentName") as string;
+      const familyName = formData.get("familyName") as string;
 
-    if (!parentName?.trim() || !familyName?.trim()) {
-      return ctx.render({ error: "Both fields are required" });
+      if (!parentName?.trim() || !familyName?.trim()) {
+        return ctx.render({ error: "Both fields are required" });
+      }
+
+      // Forward cookies to API call
+      const cookies = req.headers.get("cookie") || "";
+
+      const response = await fetch(new URL("/api/family/create", req.url).toString(), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Cookie": cookies,
+        },
+        body: JSON.stringify({ parentName, familyName }),
+      });
+
+      if (!response.ok) {
+        console.error("Setup API error:", response.status, response.statusText);
+        const text = await response.text();
+        console.error("Response body:", text);
+        try {
+          const result = JSON.parse(text);
+          return ctx.render({ error: result.error || "Failed to create family" });
+        } catch {
+          return ctx.render({ error: `Server error: ${response.status}` });
+        }
+      }
+
+      const result = await response.json();
+
+      if (!result.success) {
+        return ctx.render({ error: result.error || "Failed to create family" });
+      }
+
+      // Success -> redirect to home
+      return new Response(null, { status: 303, headers: { Location: "/" } });
+    } catch (error) {
+      console.error("Setup POST error:", error);
+      return ctx.render({ error: "An unexpected error occurred. Please try again." });
     }
-
-    // Forward cookies to API call
-    const cookies = req.headers.get("cookie") || "";
-
-    const response = await fetch(new URL("/api/family/create", req.url).toString(), {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Cookie": cookies,
-      },
-      body: JSON.stringify({ parentName, familyName }),
-    });
-
-    const result = await response.json();
-
-    if (!result.success) {
-      return ctx.render({ error: result.error || "Failed to create family" });
-    }
-
-    // Success -> redirect to home
-    return new Response(null, { status: 303, headers: { Location: "/" } });
   },
 };
 

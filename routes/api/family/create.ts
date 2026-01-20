@@ -5,15 +5,19 @@
  */
 
 import { Handlers } from "$fresh/server.ts";
-import { createClient } from "@supabase/supabase-js";
 import { getCookies } from "@std/http/cookie";
+import { getServiceSupabaseClient } from "../../../lib/supabase.ts";
 
 export const handler: Handlers = {
   async POST(req) {
+    console.log("🔧 Create family API called");
+
     try {
       // 1. Verify authentication
       const cookies = getCookies(req.headers);
       const accessToken = cookies["sb-access-token"];
+
+      console.log("🔧 Access token present:", !!accessToken);
 
       if (!accessToken) {
         return new Response(JSON.stringify({ error: "Not authenticated" }), {
@@ -22,14 +26,14 @@ export const handler: Handlers = {
         });
       }
 
-      const supabase = createClient(
-        Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-      );
+      const supabase = getServiceSupabaseClient();
 
       // 2. Get authenticated user
       const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
+      console.log("🔧 Auth result:", { userId: user?.id, authError: authError?.message });
+
       if (authError || !user) {
+        console.error("🔧 Auth failed:", authError);
         return new Response(JSON.stringify({ error: "Invalid session" }), {
           status: 401,
           headers: { "Content-Type": "application/json" },
@@ -62,6 +66,7 @@ export const handler: Handlers = {
       }
 
       // 5. Create family
+      console.log("🔧 Creating family:", familyName.trim());
       const { data: family, error: familyError } = await supabase
         .from("families")
         .insert({
@@ -71,15 +76,18 @@ export const handler: Handlers = {
         .select("id")
         .single();
 
+      console.log("🔧 Family creation result:", { familyId: family?.id, error: familyError?.message });
+
       if (familyError || !family) {
         console.error("Failed to create family:", familyError);
-        return new Response(JSON.stringify({ error: "Failed to create family" }), {
+        return new Response(JSON.stringify({ error: `Failed to create family: ${familyError?.message || 'unknown'}` }), {
           status: 500,
           headers: { "Content-Type": "application/json" },
         });
       }
 
       // 6. Create parent profile linked to auth user
+      console.log("🔧 Creating profile:", { familyId: family.id, userId: user.id, name: parentName.trim() });
       const { error: profileError } = await supabase
         .from("family_profiles")
         .insert({
@@ -91,11 +99,13 @@ export const handler: Handlers = {
           is_deleted: false,
         });
 
+      console.log("🔧 Profile creation result:", { error: profileError?.message });
+
       if (profileError) {
         console.error("Failed to create profile:", profileError);
         // Rollback: delete the family we just created
         await supabase.from("families").delete().eq("id", family.id);
-        return new Response(JSON.stringify({ error: "Failed to create profile" }), {
+        return new Response(JSON.stringify({ error: `Failed to create profile: ${profileError.message}` }), {
           status: 500,
           headers: { "Content-Type": "application/json" },
         });
