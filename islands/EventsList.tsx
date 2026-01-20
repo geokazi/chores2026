@@ -130,57 +130,70 @@ export default function EventsList({ thisWeek, upcoming, familyMembers }: Props)
         marginBottom: "0.75rem",
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <div style={{ flex: 1 }}>
-          <div
-            style={{
-              fontSize: "0.75rem",
-              color: "var(--color-text-light)",
-              marginBottom: "0.25rem",
-            }}
-          >
-            {formatDate(event.event_date)}
-            {event.schedule_data?.start_time && !event.schedule_data?.all_day && (
-              <> at {formatTime(event.schedule_data.start_time)}</>
-            )}
-            {event.schedule_data?.all_day && " (All day)"}
-          </div>
-          <div
-            style={{
-              fontSize: "1rem",
-              fontWeight: "600",
-              marginBottom: "0.5rem",
-            }}
-          >
-            {getEventEmoji(event)}{getEventEmoji(event) ? " " : ""}{event.title}
-          </div>
-          <div style={{ fontSize: "0.875rem", color: "var(--color-text-light)" }}>
-            {(() => {
-              const prepTasks = event.metadata?.prep_tasks || [];
-              const prepDone = prepTasks.filter(t => t.done).length;
-              const prepTotal = prepTasks.length;
-              const choresLinked = event.linked_chores_count || 0;
-              const choresDone = event.completed_chores_count || 0;
-
-              const parts = [];
-              if (prepTotal > 0) {
-                parts.push(`Prep: ${prepDone}/${prepTotal}`);
-              }
-              if (choresLinked > 0) {
-                parts.push(`Chores: ${choresDone}/${choresLinked}`);
-              }
-              return parts.length > 0 ? parts.join(" · ") : "No tasks yet";
-            })()}
-          </div>
+      {/* Event Info */}
+      <div style={{ marginBottom: "0.75rem" }}>
+        <div
+          style={{
+            fontSize: "0.75rem",
+            color: "var(--color-text-light)",
+            marginBottom: "0.25rem",
+          }}
+        >
+          {formatDate(event.event_date)}
+          {event.schedule_data?.start_time && !event.schedule_data?.all_day && (
+            <> at {formatTime(event.schedule_data.start_time)}</>
+          )}
+          {event.schedule_data?.all_day && " (All day)"}
         </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem", alignItems: "flex-end" }}>
+        <div
+          style={{
+            fontSize: "1rem",
+            fontWeight: "600",
+            marginBottom: "0.25rem",
+          }}
+        >
+          {getEventEmoji(event)}{getEventEmoji(event) ? " " : ""}{event.title}
+        </div>
+        <div style={{ fontSize: "0.875rem", color: "var(--color-text-light)" }}>
+          {(() => {
+            const prepTasks = event.metadata?.prep_tasks || [];
+            const prepDone = prepTasks.filter(t => t.done).length;
+            const prepTotal = prepTasks.length;
+            const choresLinked = event.linked_chores_count || 0;
+            const choresDone = event.completed_chores_count || 0;
+
+            const parts = [];
+            if (prepTotal > 0) {
+              parts.push(`Prep: ${prepDone}/${prepTotal}`);
+            }
+            if (choresLinked > 0) {
+              parts.push(`Chores: ${choresDone}/${choresLinked}`);
+            }
+            return parts.length > 0 ? parts.join(" · ") : "No tasks yet";
+          })()}
+        </div>
+      </div>
+
+      {/* Actions - Bottom Split Layout */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          paddingTop: "0.75rem",
+          borderTop: "1px solid var(--color-border)",
+          gap: "0.5rem",
+        }}
+      >
+        {/* Primary Actions (left) */}
+        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
           {(() => {
             const prepCount = (event.metadata?.prep_tasks || []).length;
             return (
               <button
                 onClick={() => handleAddPrepTasks(event.id)}
                 style={{
-                  padding: "0.375rem 0.75rem",
+                  padding: "0.5rem 0.75rem",
                   border: "1px solid var(--color-primary)",
                   background: "white",
                   cursor: "pointer",
@@ -188,38 +201,42 @@ export default function EventsList({ thisWeek, upcoming, familyMembers }: Props)
                   fontSize: "0.75rem",
                   borderRadius: "0.25rem",
                   fontWeight: "500",
+                  whiteSpace: "nowrap",
                 }}
               >
-                {prepCount > 0 ? `Prep (${prepCount})` : "+ Prep Tasks"}
+                {prepCount > 0 ? `Prep (${prepCount})` : "+ Prep"}
               </button>
             );
           })()}
           <button
             onClick={() => handleAddChore(event.id)}
             style={{
-              padding: "0.375rem 0.75rem",
-              border: "1px solid var(--color-border)",
-              background: "white",
-              cursor: "pointer",
-              color: "var(--color-text-light)",
-              fontSize: "0.75rem",
-              borderRadius: "0.25rem",
-              fontWeight: "500",
-            }}
-          >
-            + Chore
-          </button>
-          <button
-            onClick={() => handleEditEvent(event)}
-            style={{
               padding: "0.5rem 0.75rem",
               border: "1px solid var(--color-border)",
               background: "white",
               cursor: "pointer",
-              color: "var(--color-primary)",
+              color: "var(--color-text)",
               fontSize: "0.75rem",
               borderRadius: "0.25rem",
-              minHeight: "36px",
+              fontWeight: "500",
+              whiteSpace: "nowrap",
+            }}
+          >
+            + Chore
+          </button>
+        </div>
+
+        {/* Secondary Actions (right) */}
+        <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+          <button
+            onClick={() => handleEditEvent(event)}
+            style={{
+              padding: "0.5rem",
+              border: "none",
+              background: "none",
+              cursor: "pointer",
+              color: "var(--color-primary)",
+              fontSize: "0.75rem",
             }}
           >
             Edit
@@ -228,13 +245,12 @@ export default function EventsList({ thisWeek, upcoming, familyMembers }: Props)
             onClick={() => handleDelete(event.id)}
             disabled={deleting === event.id}
             style={{
-              padding: "0.5rem 0.75rem",
+              padding: "0.5rem",
               border: "none",
               background: "none",
               cursor: deleting === event.id ? "not-allowed" : "pointer",
               color: "var(--color-warning)",
               fontSize: "0.75rem",
-              minHeight: "36px",
             }}
           >
             {deleting === event.id ? "..." : "Delete"}
