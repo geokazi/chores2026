@@ -6,7 +6,7 @@
 
 import { Handlers, PageProps } from "$fresh/server.ts";
 import { getCookies } from "@std/http/cookie";
-import { createClient } from "@supabase/supabase-js";
+import { getServiceSupabaseClient } from "../lib/supabase.ts";
 import AppFooter from "../components/AppFooter.tsx";
 
 interface SetupPageData {
@@ -24,10 +24,7 @@ export const handler: Handlers<SetupPageData> = {
       return new Response(null, { status: 303, headers: { Location: "/login" } });
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
+    const supabase = getServiceSupabaseClient();
 
     const { data: { user } } = await supabase.auth.getUser(accessToken);
 
