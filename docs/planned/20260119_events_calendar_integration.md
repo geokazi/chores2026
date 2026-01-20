@@ -2,7 +2,7 @@
 
 **Document Created**: January 19, 2026
 **Status**: APPROVED FOR IMPLEMENTATION
-**Estimated Effort**: 2-3 hours (~80 new lines)
+**Estimated Effort**: 1-2 hours (~50 new lines)
 **Pareto Score**: 95/100
 
 ## Executive Summary
@@ -65,7 +65,7 @@ choretracker.family_events (
 
 | Principle | Score | Reasoning |
 |-----------|-------|-----------|
-| 20% effort / 80% value | 95% | 0 new tables, ~80 lines new code |
+| 20% effort / 80% value | 95% | 0 new tables, ~50 lines new code |
 | No code bloat | 100% | Reuse existing 450 lines |
 | Reuse existing code | 100% | Table + full CRUD exists |
 | Simplicity | 95% | Events = grouping tags |
@@ -78,7 +78,7 @@ choretracker.family_events (
 | Approach | New Tables | New Columns | New Code | Time |
 |----------|------------|-------------|----------|------|
 | Build from scratch | 1 | 1 | ~500 lines | 2 days |
-| **Reuse MealPlanner** | **0** | **1** | **~80 lines** | **2-3 hours** |
+| **Reuse MealPlanner** | **0** | **1** | **~50 lines** | **1-2 hours** |
 
 ---
 
@@ -111,45 +111,7 @@ Copy from MealPlanner to chores2026:
 3. Remove debug console.log statements (lines 11-13 in index.ts)
 4. Remove database connection test code (lines 213-228 in index.ts)
 
-### Phase 3: Event Health Endpoint (~30 lines)
-
-```typescript
-// routes/api/events/[id]/health.ts
-import { Handlers } from "$fresh/server.ts";
-import { createClient } from "@supabase/supabase-js";
-
-const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-export const handler: Handlers = {
-  async GET(_req, ctx) {
-    const client = createClient(supabaseUrl, supabaseServiceKey);
-    const eventId = ctx.params.id;
-
-    const { data, error } = await client
-      .schema("choretracker")
-      .from("chore_assignments")
-      .select("status")
-      .eq("family_event_id", eventId);
-
-    if (error) {
-      return Response.json({ error: error.message }, { status: 500 });
-    }
-
-    const total = data?.length || 0;
-    const done = data?.filter(c => c.status === "completed").length || 0;
-
-    return Response.json({
-      event_id: eventId,
-      total,
-      done,
-      health: total === 0 ? "no_chores" : done === total ? "ready" : "incomplete"
-    });
-  }
-};
-```
-
-### Phase 4: UI Integration (~50 lines)
+### Phase 3: UI Integration (~35 lines)
 
 **Chore Assignment Form Enhancement**:
 ```typescript
@@ -173,28 +135,6 @@ const { data: events } = await fetch("/api/events").then(r => r.json());
 </select>
 ```
 
-**Event Health Badge**:
-```typescript
-// Show on event cards
-function EventHealthBadge({ eventId }: { eventId: string }) {
-  const [health, setHealth] = useState(null);
-
-  useEffect(() => {
-    fetch(`/api/events/${eventId}/health`)
-      .then(r => r.json())
-      .then(setHealth);
-  }, [eventId]);
-
-  if (!health || health.total === 0) return null;
-
-  return (
-    <span className={`badge ${health.health}`}>
-      {health.done}/{health.total} chores
-    </span>
-  );
-}
-```
-
 ---
 
 ## File Structure After Implementation
@@ -202,9 +142,7 @@ function EventHealthBadge({ eventId }: { eventId: string }) {
 ```
 routes/api/events/
 ├── index.ts              # GET (list), POST (create) - copied from MealPlanner
-├── [id].ts               # PUT, DELETE - copied from MealPlanner
-└── [id]/
-    └── health.ts         # NEW: Event health indicator (~30 lines)
+└── [id].ts               # PUT, DELETE - copied from MealPlanner
 
 sql/
 └── 20260119_event_assignment_link.sql  # NEW: FK migration (~5 lines)
@@ -296,9 +234,8 @@ sql/
 
 - [ ] FK migration applied successfully
 - [ ] Events API copied and working
-- [ ] Health endpoint returns correct counts
 - [ ] Chores can be linked to events via UI
-- [ ] Event health badge displays correctly
+- [ ] Kid dashboard groups chores by event
 
 ---
 

@@ -22,7 +22,21 @@
 - Fewer edge cases (partial completion, chore removal)
 - Events = organization, not gamification
 
-### 2. Dedicated /parent/events Page
+### 2. No Health Badges
+
+| Decision | Reasoning |
+|----------|-----------|
+| Skip health badges for MVP | Redundant when chores are visible |
+| Chore checkboxes show status | ✅/☐ already indicates completion |
+| Add later if requested | Validate demand before building |
+
+**Why no health badges:**
+- When chores are expanded, you can already see completion status
+- Extra API endpoint for marginal value
+- 10% effort for 5% value - not Pareto
+- Core value is **grouping**, not badges
+
+### 3. Dedicated /parent/events Page
 
 | Decision | Reasoning |
 |----------|-----------|
@@ -30,7 +44,7 @@
 | Matches /reports pattern | Consistent navigation mental model |
 | Not in settings tab | Events are managed content, not configuration |
 
-### 3. Kid-Facing Language: "Missions"
+### 4. Kid-Facing Language: "Missions"
 
 | Audience | Word | Reasoning |
 |----------|------|-----------|
@@ -82,7 +96,7 @@
 │                                         │
 │  ┌─────────────────────────────────────┐│
 │  │ Tue 21                              ││
-│  │ ⚽ Soccer Practice          ⚠️ 2/3  ││
+│  │ ⚽ Soccer Practice                  ││
 │  │ 5:00 PM • Alex                      ││
 │  │ 3 chores linked                     ││
 │  │                      [Edit] [Delete]││
@@ -90,7 +104,7 @@
 │                                         │
 │  ┌─────────────────────────────────────┐│
 │  │ Wed 22                              ││
-│  │ 🎹 Piano Lesson            ✅ Ready ││
+│  │ 🎹 Piano Lesson                     ││
 │  │ 4:00 PM • Alex                      ││
 │  │ 1 chore linked                      ││
 │  │                      [Edit] [Delete]││
@@ -98,7 +112,7 @@
 │                                         │
 │  ┌─────────────────────────────────────┐│
 │  │ Thu 23                              ││
-│  │ 🦷 Dentist Appointment     📋 None  ││
+│  │ 🦷 Dentist Appointment              ││
 │  │ 10:00 AM • Alex, Jamie              ││
 │  │ No chores linked                    ││
 │  │                      [Edit] [Delete]││
@@ -110,7 +124,7 @@
 │                                         │
 │  ┌─────────────────────────────────────┐│
 │  │ Sat 25                              ││
-│  │ 🏕️ Scout Camping           📋 None  ││
+│  │ 🏕️ Scout Camping                    ││
 │  │ All day • Alex                      ││
 │  │ No chores linked                    ││
 │  │                      [Edit] [Delete]││
@@ -118,7 +132,7 @@
 │                                         │
 │  ┌─────────────────────────────────────┐│
 │  │ Tue 28                              ││
-│  │ ⚽ Soccer Practice          📋 None ││
+│  │ ⚽ Soccer Practice                  ││
 │  │ 5:00 PM • Alex                      ││
 │  │ No chores linked                    ││
 │  │                      [Edit] [Delete]││
@@ -133,8 +147,8 @@
 **Implementation notes:**
 - List view (not calendar grid) for simplicity
 - Grouped by "This Week" and "Upcoming"
-- Health badge shows chore completion status
-- ~100 lines
+- Shows chore count (no health badges - see design decisions)
+- ~80 lines
 
 ---
 
@@ -204,7 +218,7 @@
 │  TODAY'S MISSIONS                       │
 │                                         │
 │  ┌─────────────────────────────────────┐│
-│  │ ⚽ Soccer Practice (5pm)    ⚠️ 2/3  ││
+│  │ ⚽ Soccer Practice (5pm)            ││
 │  │ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ││
 │  │                                     ││
 │  │  ┌───────────────────────────────┐  ││
@@ -259,7 +273,7 @@
 ```
 ┌─────────────────────────────────────────┐
 │  ┌─────────────────────────────────────┐│
-│  │ ⚽ Soccer Practice (5pm)   ✅ READY ││
+│  │ ⚽ Soccer Practice (5pm)            ││
 │  │ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ ││
 │  │                                     ││
 │  │  ✅ Pack soccer bag           +5    ││
@@ -273,8 +287,8 @@
 ```
 
 **Implementation notes:**
-- Green "READY" badge replaces progress indicator
-- Celebratory message for positive reinforcement
+- Celebratory message when all chores complete (derived from ✅ count)
+- No separate health badge needed - checkboxes show status
 - ~10 lines conditional rendering
 
 ---
@@ -364,57 +378,17 @@
 
 ---
 
-### 7. Health Badge States
-
-**Visual indicator for event readiness**
-
-```
-┌─────────────────────────────────────────┐
-│  HEALTH BADGE STATES                    │
-├─────────────────────────────────────────┤
-│                                         │
-│  STATE         DISPLAY       MEANING    │
-│  ─────────────────────────────────────  │
-│                                         │
-│  Ready         ✅ Ready      All done   │
-│                (green)                  │
-│                                         │
-│  Partial       ⚠️ 2/3       Some left  │
-│                (amber)                  │
-│                                         │
-│  No chores     📋 None      Not linked │
-│                (gray)                   │
-│                                         │
-├─────────────────────────────────────────┤
-│  EXAMPLES IN CONTEXT                    │
-├─────────────────────────────────────────┤
-│                                         │
-│  ⚽ Soccer Practice          ✅ Ready   │
-│  🎹 Piano Lesson             ⚠️ 1/2    │
-│  🏕️ Scout Camping            📋 None   │
-│                                         │
-└─────────────────────────────────────────┘
-```
-
-**Implementation notes:**
-- Shared component used in events page and kid dashboard
-- Derives state from API response
-- ~20 lines
-
----
-
 ## Implementation Summary
 
 | Component | Location | Est. Lines | Reuse |
 |-----------|----------|------------|-------|
-| Events list page | `/parent/events` | ~100 | Existing page patterns |
+| Events list page | `/parent/events` | ~80 | Existing page patterns |
 | Add/Edit modal | Modal component | ~50 | Existing modal patterns |
 | Event grouping | Kid dashboard | ~30 | Modify existing ChoreList |
 | Complete state | Kid dashboard | ~10 | Conditional in ChoreList |
 | Event dropdown | Chore form | ~15 | Add to existing form |
 | Nav integration | Parent dashboard | ~5 | Add tile |
-| Health badge | Shared component | ~20 | New small component |
-| **Total UI** | | **~230 lines** | |
+| **Total UI** | | **~190 lines** | |
 
 ---
 
@@ -422,6 +396,7 @@
 
 | Feature | Status | Reasoning |
 |---------|--------|-----------|
+| Health badges | Skip | Redundant - checkboxes show status |
 | Calendar grid view | Skip | List view sufficient for MVP |
 | Drag-drop scheduling | Skip | Dropdown is simpler |
 | Event templates | Phase 2 | Manual creation first |
@@ -448,8 +423,8 @@
 ```
 1. Kid Dashboard shows missions grouped by event
 2. Complete missions within event group
-3. See progress: ⚠️ 2/3 → ✅ Ready
-4. Celebration: "🎉 All set for Soccer!"
+3. See checkboxes change: ☐ → ✅
+4. Celebration when all done: "🎉 All set for Soccer!"
 ```
 
 ---
@@ -458,12 +433,12 @@
 
 | Principle | Score | Evidence |
 |-----------|-------|----------|
-| 20% effort / 80% value | ✅ | ~230 lines UI, reuse events API |
+| 20% effort / 80% value | ✅ | ~190 lines UI, reuse events API, no health badges |
 | No code bloat | ✅ | Each component under 100 lines |
 | Reuse existing code | ✅ | Modal patterns, ChoreList, form patterns |
-| Simplicity | ✅ | List view, single dropdown, no drag-drop |
-| Low cognitive load | ✅ | Familiar patterns, minimal new concepts |
-| <500 lines per module | ✅ | Largest component ~100 lines |
+| Simplicity | ✅ | List view, single dropdown, no badges |
+| Low cognitive load | ✅ | Checkboxes show status, no extra indicators |
+| <500 lines per module | ✅ | Largest component ~80 lines |
 | Future flexibility | ✅ | DB supports recurring, multi-day (UI deferred) |
 
 ---
