@@ -2,7 +2,9 @@
 
 **Document Created**: January 19, 2026
 **Status**: APPROVED FOR IMPLEMENTATION
-**Related**: [Events Calendar Integration Plan](./20260119_events_calendar_integration.md)
+**Related Documents:**
+- [Events Calendar Integration - Technical Implementation](./20260119_events_calendar_integration.md)
+- [Critical Analysis: MealPlanner vs Mockups (Hybrid Approach)](./20260119_events_calendar_rev2.md)
 
 ---
 
