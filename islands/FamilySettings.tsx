@@ -1,9 +1,9 @@
 /**
  * FamilySettings - Orchestrator for all settings sections
  *
- * Sections are ordered by usage frequency:
- * 1. Chore Rotation Templates - Core functionality
- * 2. Family Members - Frequent management
+ * Sections are ordered for first-time user flow:
+ * 1. Family Members - Add kids first (critical for first-time users)
+ * 2. Chore Rotation Templates - Core functionality (requires kids)
  * 3. Point Management - Regular adjustments
  * 4. Weekly Family Goal - Occasional updates
  * 5. App Theme - Personalization
@@ -63,15 +63,15 @@ export default function FamilySettings({ family, members, settings }: FamilySett
 
   return (
     <div class="settings-container">
-      {/* 1. Most used - Chore Rotation Templates */}
+      {/* 1. First-time setup - Family Members (add kids first!) */}
+      <FamilyMembersSection members={members} />
+
+      {/* 2. Core functionality - Chore Rotation Templates */}
       <TemplateSelector
         settings={settings}
         children={childMembers}
         onRemoveRotation={handleRemoveRotation}
       />
-
-      {/* 2. Frequently used - Family Members */}
-      <FamilyMembersSection members={members} />
 
       {/* 3. Regular use - Point Management */}
       <PointManagementSection members={members} familyId={family.id} />
