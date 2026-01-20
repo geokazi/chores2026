@@ -2,7 +2,7 @@
 
 **Document Created:** January 19, 2026
 **Status:** ✅ APPROVED - HYBRID APPROACH SELECTED
-**Estimated Effort:** ~8 hours, ~238 lines
+**Estimated Effort:** ~5-6 hours, ~140 new lines (after MealPlanner code reuse)
 **Related Documents:**
 - [Events Calendar Integration - Technical Implementation](./20260119_events_calendar_integration.md)
 - [Events UI Mockups & Design Decisions](./20260119_events_ui_mockups.md)
@@ -331,6 +331,22 @@ If no (it's just informational), then we can simply pass `showPoints={false}` an
 ## Implementation Roadmap
 
 Since MealPlanner doesn't use points for logic, this is a clean 3-line change to hide them in ChoreGami.
+
+### Code Reuse from MealPlanner
+
+**Source:** `/Users/georgekariuki/repos/deno2/neo4jmlplan/choregami-mealplanner`
+
+| File | Source Path | Changes Needed | Lines Changed |
+|------|-------------|----------------|---------------|
+| PersonSelector.tsx | `components/forms/` | Add `showPoints` prop | ~3 lines |
+| AddEventDialog.tsx | `components/modals/` | Remove multi-day, recurrence, location, notes fields | Delete ~200 lines |
+| events.ts | `routes/api/` | Copy as-is (shared DB) | 0 |
+| events/[id].ts | `routes/api/` | Copy as-is | 0 |
+| family-members.ts | `routes/api/` | Already exists in ChoreGami | 0 |
+
+**Why this works:** Both apps share the same Supabase database (`choretracker.family_events` table). Events created in MealPlanner are automatically visible to ChoreGami.
+
+**Revised estimate:** ~5-6 hours (down from ~8 hours)
 
 ---
 
