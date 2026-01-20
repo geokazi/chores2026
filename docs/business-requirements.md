@@ -181,6 +181,20 @@ ChoreGami 2026 is a streamlined family chore management application designed to 
 
 **Business Value:** Reduces friction for simple checklist items that don't need point tracking
 
+#### Story 3.4: Event Management (Edit/Delete)
+**As a parent**, I want to edit existing events to update details
+**So that** I can correct mistakes or update changed plans
+
+**Acceptance Criteria:**
+- ✅ Edit button on each event card
+- ✅ Pre-populated form with existing event data
+- ✅ Update title, date, time, emoji, participants
+- ✅ Bottom-split card layout (actions at bottom)
+- ✅ Clear visual hierarchy (info → actions)
+- ✅ Mobile-friendly tap targets (min 36px height)
+
+**Business Value:** Enables ongoing event management without recreating events
+
 ### Epic 4: Real-Time Integration
 
 #### Story 3.1: Live Updates

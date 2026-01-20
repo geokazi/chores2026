@@ -1,6 +1,6 @@
 # ChoreGami 2026 Documentation
 
-**Version**: 1.8
+**Version**: 1.9
 **Status**: ✅ Production Ready
 **Last Updated**: January 20, 2026
 
@@ -198,8 +198,9 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 - ✅ **Chore Rotation Templates**: 7 pre-built schedules including **Dynamic Daily Routines** (scales to any family size 1-8 kids) + slot-based templates (Smart Rotation, Weekend Warrior, Daily Basics, Large Family, Summer Break, School Year) with Manual (Default) option + partial slot assignment
 - ✅ **Template Gating & Gift Codes**: Prepaid plan tiers (Free vs Family Plan), gift code redemption (`/redeem`), JSONB-based plan storage, TemplateSelector component extraction, ACTIVE badge on templates, improved Free Plan UX
 - ✅ **Point Adjustment Security**: Parent PIN verification required before applying any point adjustments
-- ✅ **Events Calendar Integration**: Event-linked chores as "missions" on kid dashboard, parent events page (`/parent/events`), simplified event creation, points hiding for event missions, preparation-focused UX
+- ✅ **Events Calendar Integration**: Event-linked chores as "missions" on kid dashboard, parent events page (`/parent/events`), create/edit events, points hiding for event missions, preparation-focused UX
 - ✅ **Prep Tasks Feature**: Lightweight checklist items stored in event metadata, batch creation/editing, kids can mark done with optimistic UI, no points (preparation focus)
+- ✅ **Events Page UX Polish**: Bottom-split card layout, centered Add Event button, event-specific emojis, improved tap targets, clear visual hierarchy
 
 ### Known Limitations
 - **Testing**: Comprehensive test suite not yet implemented

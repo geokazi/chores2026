@@ -18,6 +18,7 @@ Implemented comprehensive events calendar integration with two types of event-li
 - **Event List**: "This Week" and "Upcoming" sections
 - **Event Cards**: Show date, time, emoji, prep task count, linked chore count
 - **Create Event**: Title, date, time, all-day toggle, participant selection
+- **Edit Event**: Modify title, date, time, emoji, participants
 - **Quick Emoji Picker**: 🏀⚾🩰🏊🎹⚽📅 buttons for common activities
 - **Delete Event**: Soft delete with chore unlinking
 
@@ -152,6 +153,49 @@ ADD COLUMN family_event_id UUID REFERENCES choretracker.family_events(id);
 | Verification | Kid self-marks | Parent verification flow |
 | Batch Create | Yes | No (one at a time) |
 
+## UX Polish (January 20, 2026)
+
+### Visual Hierarchy Improvements
+
+#### Events Page Header
+- **Removed redundancy**: Eliminated duplicate "📅 Family Events" subheader (page header already shows title)
+- **Centered "+ Add Event" button**: More prominent, cleaner visual hierarchy
+- **Proper spacing**: 1rem top margin, 1.5rem bottom margin
+
+#### Event Card Layout
+- **Bottom-split layout**: Actions moved from right-side stack to bottom row
+- **Clear separation**: Border line between event info and actions
+- **Primary actions left**: `+ Prep`, `+ Chore` buttons with borders
+- **Secondary actions right**: `Edit`, `Delete` text links
+- **Better mobile scaling**: `flexWrap` for narrow screens
+
+#### Event Emojis
+- **Event-specific only**: Removed generic 📅 fallback
+- **Conditional spacing**: Space only added when emoji exists
+- **Encourages personalization**: Events without emojis prompt users to add via Edit
+
+### Edit Event Functionality
+- **Edit button**: Added to each event card
+- **AddEventModal extended**: Supports both create and edit modes
+- **Pre-populated form**: Loads existing event data when editing
+- **PATCH endpoint updated**: Accepts flat field format (`emoji`, `event_time`, `is_all_day`)
+
+### Mobile Optimizations
+- **Larger tap targets**: Buttons have `minHeight: 36px`
+- **Consistent button sizing**: `padding: 0.5rem 0.75rem`
+- **No horizontal overflow**: Bottom-split layout scales gracefully
+
+### Event Card Visual Structure
+```
+┌─────────────────────────────────────────┐
+│ Today at 6:00 PM                        │
+│ 🏀 Basketball practice                  │
+│ Prep: 1/4                               │
+│ ─────────────────────────────────────── │
+│ [+ Prep] [+ Chore]          Edit Delete │
+└─────────────────────────────────────────┘
+```
+
 ## Commits
 
 | Hash | Message |
@@ -164,6 +208,10 @@ ADD COLUMN family_event_id UUID REFERENCES choretracker.family_events(id);
 | `586e524` | Add prep tasks feature for events |
 | `5d01a27` | Enable editing existing prep tasks in modal |
 | `4ffce5d` | Add unit tests for events, prep tasks, and utilities |
+| `fde12da` | UX improvements: remove redundancy + add event editing |
+| `c59db1e` | Fix Add Event button spacing |
+| `cca5b6a` | Improve tap targets for Edit button |
+| `374ee40` | Event cards: bottom-split layout for actions |
 
 ## Future Enhancements
 
