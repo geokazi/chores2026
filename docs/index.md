@@ -47,6 +47,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-18 | [**Legal Pages & Auth Flow Fixes**](./milestones/20260118_legal_pages_auth_flow_fixes.md) | ✅ Complete | Parent-friendly Terms, COPPA-aware Privacy, phone OTP redirect fix |
 | 2026-01-18 | [**Authentication Security Hardening**](./milestones/20260118_authentication_security_hardening.md) | ✅ Complete | Rate limiting, enumeration protection, honeypot bot detection |
 | 2026-01-19 | [**Template Gating & Gift Codes**](./planned/20260118_template_gating_gift_codes.md) | ✅ Complete | Prepaid plan tiers ($19-$59), gift code redemption, template access control, TemplateSelector extraction |
+| 2026-01-19 | [**Signup & PIN Detection Fixes**](./milestones/20260119_signup_and_pin_fixes.md) | ✅ Complete | Fixed Supabase schema config, first-time PIN UX, settings order, PIN detection after logout |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 

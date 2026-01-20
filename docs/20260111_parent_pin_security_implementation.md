@@ -372,6 +372,16 @@ By reusing 85% of the existing kid PIN infrastructure, the implementation requir
 - `islands/ParentPinGate.tsx` - Enhanced cancel handling with security warning message
 - Commit: `fb16f86 🔒 CRITICAL: Fix parent PIN cancel bypass vulnerability`
 
-*Implementation completed by: Claude Code AI Assistant*  
-*Security review: ✅ Complete - No bypass vulnerabilities*  
-*Documentation version: 1.1*
+### ✅ PIN Detection After Logout/Login (2026-01-19)
+**Issue**: After setting PIN, logging out, and logging back in, users prompted to set PIN again
+**Root Cause**: Session returns `has_pin: boolean` for security (doesn't expose actual hash), but `ParentPinGate` was checking `pin_hash` which is always undefined on client
+**Solution**: Updated `ParentPinGate` and `ParentPinModal` to check `has_pin` instead of `pin_hash`
+**Files Modified**:
+- `islands/ParentPinGate.tsx` - Check `has_pin || !!pin_hash` for compatibility
+- `islands/ParentPinModal.tsx` - Updated interface to include `has_pin` property
+
+**Related**: See [Signup & PIN Detection Fixes](./milestones/20260119_signup_and_pin_fixes.md) for full details on this session's fixes.
+
+*Implementation completed by: Claude Code AI Assistant*
+*Security review: ✅ Complete - No bypass vulnerabilities*
+*Documentation version: 1.2*
