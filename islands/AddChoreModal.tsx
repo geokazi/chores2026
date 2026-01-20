@@ -41,32 +41,41 @@ interface Props {
   familyMembers: FamilyMember[];
   onSuccess?: () => void;
   preSelectedEventId?: string; // Pre-select an event when opened from event card
+  preSelectedAssignee?: string; // Pre-select assignee (first participant from event)
 }
 
-export default function AddChoreModal({ isOpen, onClose, familyMembers, onSuccess, preSelectedEventId }: Props) {
+export default function AddChoreModal({ isOpen, onClose, familyMembers, onSuccess, preSelectedEventId, preSelectedAssignee }: Props) {
+  // Default points: 0 for event-linked chores (missions), 5 for regular chores
+  const defaultPoints = preSelectedEventId ? 0 : 5;
+
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    assignedTo: "",
-    points: 5,
+    assignedTo: preSelectedAssignee || "",
+    points: defaultPoints,
     dueDate: getLocalDateString(), // Today's date
-    familyEventId: "",
+    familyEventId: preSelectedEventId || "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [events, setEvents] = useState<FamilyEvent[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
 
-  // Fetch events when modal opens and set pre-selected event
+  // Fetch events when modal opens and set pre-selected values
   useEffect(() => {
     if (isOpen) {
       fetchEvents();
-      // Pre-select the event if provided
+      // Pre-select event, assignee, and points when opened from event card
       if (preSelectedEventId) {
-        setFormData(prev => ({ ...prev, familyEventId: preSelectedEventId }));
+        setFormData(prev => ({
+          ...prev,
+          familyEventId: preSelectedEventId,
+          assignedTo: preSelectedAssignee || prev.assignedTo,
+          points: 0, // Event-linked chores default to 0 points (missions)
+        }));
       }
     }
-  }, [isOpen, preSelectedEventId]);
+  }, [isOpen, preSelectedEventId, preSelectedAssignee]);
 
   const fetchEvents = async () => {
     setLoadingEvents(true);

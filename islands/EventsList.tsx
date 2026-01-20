@@ -271,16 +271,26 @@ export default function EventsList({ thisWeek, upcoming, familyMembers }: Props)
       />
 
       {/* Add Chore Modal (for linking chores to events) */}
-      <AddChoreModal
-        isOpen={showAddChoreModal}
-        onClose={() => {
-          setShowAddChoreModal(false);
-          setSelectedEventId(null);
-        }}
-        familyMembers={familyMembers}
-        preSelectedEventId={selectedEventId || undefined}
-        onSuccess={() => window.location.reload()}
-      />
+      {(() => {
+        // Find the selected event to get its first participant
+        const allEvents = [...thisWeek, ...upcoming];
+        const selectedEvent = selectedEventId ? allEvents.find(e => e.id === selectedEventId) : null;
+        const firstParticipant = selectedEvent?.participants?.[0];
+
+        return (
+          <AddChoreModal
+            isOpen={showAddChoreModal}
+            onClose={() => {
+              setShowAddChoreModal(false);
+              setSelectedEventId(null);
+            }}
+            familyMembers={familyMembers}
+            preSelectedEventId={selectedEventId || undefined}
+            preSelectedAssignee={firstParticipant}
+            onSuccess={() => window.location.reload()}
+          />
+        );
+      })()}
     </div>
   );
 }
