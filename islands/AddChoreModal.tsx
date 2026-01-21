@@ -65,17 +65,22 @@ export default function AddChoreModal({ isOpen, onClose, familyMembers, onSucces
   useEffect(() => {
     if (isOpen) {
       fetchEvents();
-      // Pre-select event, assignee, and points when opened from event card
-      if (preSelectedEventId) {
-        setFormData(prev => ({
-          ...prev,
-          familyEventId: preSelectedEventId,
-          assignedTo: preSelectedAssignee || prev.assignedTo,
-          points: 0, // Event-linked chores default to 0 points (missions)
-        }));
-      }
     }
-  }, [isOpen, preSelectedEventId, preSelectedAssignee]);
+  }, [isOpen]);
+
+  // When events are loaded and we have a preSelectedEventId, set form defaults
+  useEffect(() => {
+    if (isOpen && preSelectedEventId && events.length > 0) {
+      const selectedEvent = events.find(e => e.id === preSelectedEventId);
+      setFormData(prev => ({
+        ...prev,
+        familyEventId: preSelectedEventId,
+        assignedTo: preSelectedAssignee || prev.assignedTo,
+        points: 0, // Event-linked chores default to 0 points (missions)
+        dueDate: selectedEvent?.event_date || prev.dueDate, // Use event date, not today
+      }));
+    }
+  }, [isOpen, preSelectedEventId, preSelectedAssignee, events]);
 
   const fetchEvents = async () => {
     setLoadingEvents(true);
@@ -94,6 +99,18 @@ export default function AddChoreModal({ isOpen, onClose, familyMembers, onSucces
 
   // Get all family members for assignment (both parents and children)
   const assignableMembers = familyMembers;
+
+  // Handle event selection - update due date to match event date
+  const handleEventChange = (eventId: string) => {
+    const selectedEvent = events.find(e => e.id === eventId);
+    setFormData(prev => ({
+      ...prev,
+      familyEventId: eventId,
+      // Update due date to event date, default to 0 points for event-linked chores
+      dueDate: selectedEvent?.event_date || prev.dueDate,
+      points: eventId ? 0 : prev.points,
+    }));
+  };
 
   const handleSubmit = async (e: Event) => {
     e.preventDefault();
@@ -320,7 +337,7 @@ export default function AddChoreModal({ isOpen, onClose, familyMembers, onSucces
               </label>
               <select
                 value={formData.familyEventId}
-                onChange={(e) => setFormData({ ...formData, familyEventId: e.currentTarget.value })}
+                onChange={(e) => handleEventChange(e.currentTarget.value)}
                 style={{
                   width: "100%",
                   padding: "0.75rem",

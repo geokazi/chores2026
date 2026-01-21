@@ -90,7 +90,10 @@ export default function SecureParentDashboard({ family, familyMembers, recentAct
 
   const loadParentEvents = async (parentId: string) => {
     try {
-      const response = await fetch('/api/events');
+      // Pass local date to avoid timezone issues
+      const now = new Date();
+      const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const response = await fetch(`/api/events?localDate=${localDate}`);
 
       if (response.ok) {
         const data = await response.json();
@@ -101,7 +104,15 @@ export default function SecureParentDashboard({ family, familyMembers, recentAct
           if (!event.participants || event.participants.length === 0) {
             return true;
           }
-          return event.participants.includes(parentId);
+          const isParticipant = event.participants.includes(parentId);
+          if (!isParticipant) {
+            console.log("📅 Event filtered out (not participant):", {
+              event: event.title,
+              participants: event.participants,
+              parentId,
+            });
+          }
+          return isParticipant;
         });
 
         // Only show events from today through next 7 days
@@ -123,7 +134,35 @@ export default function SecureParentDashboard({ family, familyMembers, recentAct
           parentId,
         });
 
-        setUpcomingEvents(upcomingParentEvents);
+        // Fetch chores linked to these events (Fix 0b)
+        if (upcomingParentEvents.length > 0) {
+          const eventIds = upcomingParentEvents.map((e: any) => e.id);
+          try {
+            const choresResponse = await fetch("/api/chores/by-events", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ eventIds, memberId: parentId }),
+            });
+            if (choresResponse.ok) {
+              const { chores } = await choresResponse.json();
+              console.log("📋 Event-linked chores loaded:", chores.length);
+
+              // Merge chores into events
+              const eventsWithChores = upcomingParentEvents.map((event: any) => ({
+                ...event,
+                linked_chores: chores.filter((c: any) => c.family_event_id === event.id),
+              }));
+              setUpcomingEvents(eventsWithChores);
+            } else {
+              setUpcomingEvents(upcomingParentEvents);
+            }
+          } catch (err) {
+            console.error("Error loading event chores:", err);
+            setUpcomingEvents(upcomingParentEvents);
+          }
+        } else {
+          setUpcomingEvents(upcomingParentEvents);
+        }
       } else {
         setUpcomingEvents([]);
       }
@@ -333,7 +372,10 @@ export default function SecureParentDashboard({ family, familyMembers, recentAct
             {upcomingEvents.map((event: any) => {
               const prepTasks = event.metadata?.prep_tasks || [];
               const myTasks = prepTasks.filter((t: any) => t.assignee_id === activeParent.id);
+              const myChores = event.linked_chores || [];
               const emoji = event.metadata?.emoji || "";
+
+              const hasMissions = myTasks.length > 0 || myChores.length > 0;
 
               return (
                 <div
@@ -358,9 +400,15 @@ export default function SecureParentDashboard({ family, familyMembers, recentAct
                       <> at {event.schedule_data.start_time}</>
                     )}
                   </div>
-                  {myTasks.length > 0 && (
+                  {hasMissions && (
                     <div style={{ fontSize: "0.875rem", color: "var(--color-primary)", marginTop: "0.25rem" }}>
-                      {myTasks.filter((t: any) => t.done).length}/{myTasks.length} prep tasks done
+                      {myTasks.length > 0 && (
+                        <span>{myTasks.filter((t: any) => t.done).length}/{myTasks.length} prep tasks</span>
+                      )}
+                      {myTasks.length > 0 && myChores.length > 0 && <span> · </span>}
+                      {myChores.length > 0 && (
+                        <span>{myChores.filter((c: any) => c.status === "completed").length}/{myChores.length} chores</span>
+                      )}
                     </div>
                   )}
                 </div>

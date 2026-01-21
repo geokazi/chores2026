@@ -6,6 +6,7 @@ import * as $_app from "./routes/_app.tsx";
 import * as $_middleware from "./routes/_middleware.ts";
 import * as $api_auth_validate_oauth from "./routes/api/auth/validate-oauth.ts";
 import * as $api_chores_chore_id_complete from "./routes/api/chores/[chore_id]/complete.ts";
+import * as $api_chores_by_events from "./routes/api/chores/by-events.ts";
 import * as $api_chores_create from "./routes/api/chores/create.ts";
 import * as $api_debug_session from "./routes/api/debug/session.ts";
 import * as $api_events from "./routes/api/events.ts";
@@ -98,6 +99,7 @@ const manifest = {
     "./routes/_middleware.ts": $_middleware,
     "./routes/api/auth/validate-oauth.ts": $api_auth_validate_oauth,
     "./routes/api/chores/[chore_id]/complete.ts": $api_chores_chore_id_complete,
+    "./routes/api/chores/by-events.ts": $api_chores_by_events,
     "./routes/api/chores/create.ts": $api_chores_create,
     "./routes/api/debug/session.ts": $api_debug_session,
     "./routes/api/events.ts": $api_events,

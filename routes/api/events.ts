@@ -43,6 +43,11 @@ export const handler: Handlers = {
         });
       }
 
+      // Use local date from query param to avoid timezone issues
+      const url = new URL(req.url);
+      const localDate = url.searchParams.get("localDate") ||
+        new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD format in server's local time
+
       // Get events with linked chore counts
       const { data: events } = await client
         .schema("choretracker")
@@ -50,7 +55,7 @@ export const handler: Handlers = {
         .select("*")
         .eq("family_id", familyId)
         .eq("is_deleted", false)
-        .gte("event_date", new Date().toISOString().split("T")[0]) // Today and future
+        .gte("event_date", localDate) // Today and future (using local date)
         .order("event_date")
         .order("created_at");
 

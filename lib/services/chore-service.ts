@@ -150,13 +150,14 @@ export class ChoreService {
     const todayEndStr = todayEnd.toISOString();
 
     // Get all pending chores for this user
+    // Use explicit FK reference for reliable join behavior
     const { data, error } = await this.client
       .schema("choretracker")
       .from("chore_assignments")
       .select(`
         *,
         chore_template:chore_templates!inner(*),
-        family_event:family_events(id, title, event_date, schedule_data, metadata)
+        family_event:family_events!family_event_id(id, title, event_date, schedule_data, metadata, is_deleted)
       `)
       .eq("family_id", familyId)
       .eq("assigned_to_profile_id", profileId)
@@ -171,13 +172,25 @@ export class ChoreService {
       return [];
     }
 
+    // Debug logging for event join
+    const withEvent = (data || []).filter((c: any) => c.family_event);
+    const withEventId = (data || []).filter((c: any) => c.family_event_id);
+    console.log(`📋 Chores loaded: ${data?.length || 0}, with family_event_id: ${withEventId.length}, with family_event object: ${withEvent.length}`);
+
     // Filter chores based on type and due date
+    // Also clear event data for soft-deleted events
     const filteredChores = (data || []).filter((chore: any) => {
+      // Clear event reference if event is soft-deleted
+      if (chore.family_event?.is_deleted) {
+        console.log(`📋 Clearing deleted event reference for chore: ${chore.chore_template?.name}`);
+        chore.family_event = null;
+      }
+
       if (!chore.due_date) return false;
-      
+
       const dueDate = new Date(chore.due_date);
       const isRecurring = chore.chore_template?.is_recurring || chore.is_recurring_instance;
-      
+
       if (isRecurring) {
         // Recurring chores: only show if due today
         const choreDay = dueDate.toDateString();

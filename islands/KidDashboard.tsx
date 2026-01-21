@@ -53,6 +53,18 @@ interface PrepTask {
   done: boolean;
 }
 
+interface LinkedChore {
+  id: string;
+  status: string;
+  point_value: number;
+  chore_template?: {
+    id: string;
+    name: string;
+    icon?: string;
+    description?: string;
+  };
+}
+
 interface UpcomingEvent {
   id: string;
   title: string;
@@ -65,6 +77,7 @@ interface UpcomingEvent {
     emoji?: string;
     prep_tasks?: PrepTask[];
   };
+  linked_chores?: LinkedChore[];
 }
 
 interface Props {
@@ -263,6 +276,12 @@ export default function KidDashboard({
                 task => !task.assignee_id || task.assignee_id === kid.id
               );
 
+              // Get linked chores for this event
+              const myLinkedChores = event.linked_chores || [];
+
+              // Show missions section if either prep tasks or linked chores exist
+              const hasMissions = myPrepTasks.length > 0 || myLinkedChores.length > 0;
+
               return (
                 <div
                   key={event.id}
@@ -282,13 +301,14 @@ export default function KidDashboard({
                     </div>
                   </div>
 
-                  {/* Prep tasks for this kid */}
-                  {myPrepTasks.length > 0 && (
+                  {/* Prep tasks and linked chores for this kid */}
+                  {hasMissions && (
                     <div style={{ marginTop: "0.75rem", paddingTop: "0.75rem", borderTop: "1px solid var(--color-border)" }}>
                       <div style={{ fontSize: "0.75rem", color: "var(--color-text-light)", marginBottom: "0.5rem" }}>
                         Your missions:
                       </div>
                       <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
+                        {/* Prep tasks */}
                         {myPrepTasks.map((task) => (
                           <button
                             key={task.id}
@@ -320,6 +340,41 @@ export default function KidDashboard({
                               {task.text}
                             </span>
                           </button>
+                        ))}
+                        {/* Linked chores */}
+                        {myLinkedChores.map((chore) => (
+                          <div
+                            key={chore.id}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.5rem",
+                              padding: "0.5rem",
+                              border: "1px solid var(--color-border)",
+                              borderRadius: "0.375rem",
+                              background: chore.status === "completed" ? "var(--color-bg)" : "white",
+                            }}
+                          >
+                            <span style={{ fontSize: "1rem" }}>
+                              {chore.status === "completed" ? "✅" : "⬜"}
+                            </span>
+                            <span style={{ fontSize: "1rem" }}>
+                              {chore.chore_template?.icon || "📋"}
+                            </span>
+                            <span
+                              style={{
+                                flex: 1,
+                                fontSize: "0.875rem",
+                                textDecoration: chore.status === "completed" ? "line-through" : "none",
+                                color: chore.status === "completed" ? "var(--color-text-light)" : "var(--color-text)",
+                              }}
+                            >
+                              {chore.chore_template?.name || "Task"}
+                            </span>
+                            <span style={{ fontSize: "0.75rem", color: "var(--color-text-light)" }}>
+                              (due {event.event_date.slice(5)})
+                            </span>
+                          </div>
                         ))}
                       </div>
                     </div>

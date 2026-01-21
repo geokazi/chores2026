@@ -139,7 +139,10 @@ export default function SecureKidDashboard({ family, familyMembers, recentActivi
 
   const loadKidEvents = async (kidId: string) => {
     try {
-      const response = await fetch('/api/events');
+      // Pass local date to avoid timezone issues
+      const now = new Date();
+      const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const response = await fetch(`/api/events?localDate=${localDate}`);
 
       if (response.ok) {
         const data = await response.json();
@@ -152,7 +155,15 @@ export default function SecureKidDashboard({ family, familyMembers, recentActivi
             return true;
           }
           // Otherwise, check if kid is in participants list
-          return event.participants.includes(kidId);
+          const isParticipant = event.participants.includes(kidId);
+          if (!isParticipant) {
+            console.log("📅 Event filtered out (not participant):", {
+              event: event.title,
+              participants: event.participants,
+              kidId,
+            });
+          }
+          return isParticipant;
         });
 
         // Only show events from today through next 7 days
@@ -174,7 +185,35 @@ export default function SecureKidDashboard({ family, familyMembers, recentActivi
           kidId,
         });
 
-        setUpcomingEvents(upcomingKidEvents);
+        // Fetch chores linked to these events (Fix 0b)
+        if (upcomingKidEvents.length > 0) {
+          const eventIds = upcomingKidEvents.map((e: any) => e.id);
+          try {
+            const choresResponse = await fetch("/api/chores/by-events", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ eventIds, memberId: kidId }),
+            });
+            if (choresResponse.ok) {
+              const { chores } = await choresResponse.json();
+              console.log("📋 Event-linked chores loaded:", chores.length);
+
+              // Merge chores into events
+              const eventsWithChores = upcomingKidEvents.map((event: any) => ({
+                ...event,
+                linked_chores: chores.filter((c: any) => c.family_event_id === event.id),
+              }));
+              setUpcomingEvents(eventsWithChores);
+            } else {
+              setUpcomingEvents(upcomingKidEvents);
+            }
+          } catch (err) {
+            console.error("Error loading event chores:", err);
+            setUpcomingEvents(upcomingKidEvents);
+          }
+        } else {
+          setUpcomingEvents(upcomingKidEvents);
+        }
       } else {
         console.error("Failed to load events");
         setUpcomingEvents([]);

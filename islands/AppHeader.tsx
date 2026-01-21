@@ -6,6 +6,7 @@
 
 import { useState } from "preact/hooks";
 import { changeTheme, type ThemeId } from "../lib/theme-manager.ts";
+import { ActiveKidSessionManager } from "../lib/active-kid-session.ts";
 
 interface FamilyMember {
   id: string;
@@ -169,9 +170,28 @@ export default function AppHeader({
               <span class="user-name">{currentUser?.name || "User"}</span>
             </div>
             <hr />
-            <button onClick={handleSwitchUser}>
-              🔄 Switch User
-            </button>
+
+            {/* Inline User Switcher - All family members */}
+            <div class="menu-section" style={{ marginTop: 0, paddingTop: "0.5rem", borderTop: "none" }}>
+              <span class="menu-label">Switch to</span>
+              {familyMembers
+                .filter((m) => m.id !== currentUser?.id)
+                .map((member) => (
+                  <button
+                    key={member.id}
+                    onClick={() => {
+                      ActiveKidSessionManager.setActiveKid(member.id, member.name);
+                      window.location.href = member.role === "parent"
+                        ? "/parent/my-chores"
+                        : "/kid/dashboard";
+                    }}
+                  >
+                    {member.avatar_emoji || (member.role === "parent" ? "👤" : "🧒")} {member.name}
+                  </button>
+                ))}
+            </div>
+
+            <hr />
             <button onClick={handleLogout}>
               🚪 Logout
             </button>
@@ -250,7 +270,22 @@ export default function AppHeader({
           width: 100%;
         }
         .nav-menu a:hover, .nav-menu button:hover, .user-menu button:hover { background: var(--color-bg); }
-        .nav-menu a.active, .nav-menu button.active { background: var(--color-primary); color: white; }
+        .nav-menu a.active, .nav-menu button.active {
+          background: var(--color-primary);
+          color: white;
+          position: relative;
+        }
+        .nav-menu a.active::before, .nav-menu button.active::before {
+          content: "";
+          position: absolute;
+          left: 0;
+          top: 50%;
+          transform: translateY(-50%);
+          width: 4px;
+          height: 60%;
+          background: white;
+          border-radius: 0 2px 2px 0;
+        }
         .menu-section { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--color-bg); }
         .menu-label { font-size: 0.75rem; color: var(--color-text-light); text-transform: uppercase; padding: 0 1rem; }
         .kid-link { font-size: 0.9rem; }
