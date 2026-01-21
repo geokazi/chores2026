@@ -266,10 +266,15 @@ Body: { name: string, points: number, assignedTo: string, dueDate: string,
 Response: { success: boolean, choreId: string }
 ```
 
-**Planned Enhancement: Kid Event Creation**
+**Kid Event Creation** ✅ **Implemented Jan 20, 2026**
 
 Kids can create events when `families.settings.apps.choregami.kids_can_create_events` is enabled.
-See [Implementation Plan](./planned/20260120_kid_event_creation.md) for details.
+- **API**: `POST /api/events` accepts `creatorId` for kid attribution
+- **Settings API**: `POST /api/settings/kids-events` toggles the family setting
+- **PIN Gating**: If kid PINs enabled, PIN required before creating
+- **Attribution**: `created_by_profile_id` stores kid's profile ID
+- **Parent Visibility**: Events show "Added by [name]" badge in events list
+- See [Implementation Details](./planned/20260120_kid_event_creation.md)
 
 #### Authentication
 ```typescript

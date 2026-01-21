@@ -120,12 +120,15 @@ This positions ChoreGami for the "responsible teen" market segment that's curren
 
 ## Action Items
 
-- [ ] Implement family setting: `kids_can_create_events`
-- [ ] Add toggle to `/parent/settings`
-- [ ] Add "+ Add Event" to kid "Coming Up" section (conditional)
-- [ ] Update API to accept kid sessions (when enabled)
-- [ ] Add "Added by [name]" badge to events
-- [ ] Update documentation
+- [x] Implement family setting: `kids_can_create_events`
+- [x] Add toggle to `/parent/settings`
+- [x] Add "+ Add Event" to kid "Coming Up" section (conditional)
+- [x] Update API to accept kid sessions (when enabled)
+- [x] Add "Added by [name]" badge to events
+- [x] Update documentation
+- [x] Add unit tests
+
+**Implementation Complete**: January 20, 2026 (commit `d8ebdfe`)
 
 ## Related Documents
 

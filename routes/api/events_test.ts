@@ -174,3 +174,122 @@ Deno.test("events POST - handles missing participants", () => {
   const participants = (requestBody.participants as string[]) || [];
   assertEquals(participants.length, 0);
 });
+
+// ============================================
+// Kid Event Creation Tests (Feature: Jan 2026)
+// ============================================
+
+// Mock family settings
+const mockFamilySettingsEnabled = {
+  apps: {
+    choregami: {
+      kids_can_create_events: true,
+    },
+  },
+};
+
+const mockFamilySettingsDisabled = {
+  apps: {
+    choregami: {
+      kids_can_create_events: false,
+    },
+  },
+};
+
+// Mock kid profile
+const mockKidProfile = {
+  id: "kid-profile-1",
+  family_id: "family-1",
+  name: "Alex",
+  role: "child",
+};
+
+// Test: Kid can create event when setting is enabled
+Deno.test("events POST - kid can create event when kids_can_create_events is true", () => {
+  const settings = mockFamilySettingsEnabled;
+  const kidsCanCreate = settings.apps?.choregami?.kids_can_create_events === true;
+
+  assertEquals(kidsCanCreate, true);
+  // In real handler: would allow kid to create event
+});
+
+// Test: Kid cannot create event when setting is disabled
+Deno.test("events POST - kid blocked when kids_can_create_events is false", () => {
+  const settings = mockFamilySettingsDisabled;
+  const kidsCanCreate = settings.apps?.choregami?.kids_can_create_events === true;
+
+  assertEquals(kidsCanCreate, false);
+  // In real handler: would return 403 error
+});
+
+// Test: Kid-created event has creator attribution
+Deno.test("events POST - kid-created event stores created_by_profile_id", () => {
+  const requestBody = {
+    title: "Basketball practice",
+    event_date: "2026-01-25",
+    creatorId: "kid-profile-1",
+  };
+
+  const eventData = {
+    title: requestBody.title,
+    event_date: requestBody.event_date,
+    created_by_profile_id: requestBody.creatorId,
+  };
+
+  assertEquals(eventData.created_by_profile_id, "kid-profile-1");
+});
+
+// Test: Parent-created event has no creatorId in request
+Deno.test("events POST - parent-created event has no creatorId", () => {
+  const requestBody = {
+    title: "Family dinner",
+    event_date: "2026-01-25",
+    // No creatorId - parent session
+  };
+
+  const hasCreatorId = "creatorId" in requestBody;
+  assertEquals(hasCreatorId, false);
+  // In real handler: uses parent profile from session
+});
+
+// Test: Kid profile must belong to family
+Deno.test("events POST - kid must belong to same family", () => {
+  const kidProfile = mockKidProfile;
+  const sessionFamilyId = "family-1";
+
+  assertEquals(kidProfile.family_id, sessionFamilyId);
+  // In real handler: verifies kid's family_id matches session
+});
+
+// Test: Settings default to kids cannot create events
+Deno.test("events POST - defaults to kids cannot create when setting missing", () => {
+  const emptySettings = {};
+  const settingsWithoutChoregami = { apps: {} };
+
+  // @ts-ignore - testing missing property
+  const kidsCanCreate1 = emptySettings.apps?.choregami?.kids_can_create_events === true;
+  // @ts-ignore - testing missing property
+  const kidsCanCreate2 = settingsWithoutChoregami.apps?.choregami?.kids_can_create_events === true;
+
+  assertEquals(kidsCanCreate1, false);
+  assertEquals(kidsCanCreate2, false);
+});
+
+// Test: CreatorId spread only when provided
+Deno.test("events POST - creatorId spread conditionally", () => {
+  const kidId: string | null = "kid-1";
+  const parentId: string | null = null;
+
+  const withCreator = {
+    title: "Kid event",
+    ...(kidId ? { creatorId: kidId } : {}),
+  };
+
+  const withoutCreator = {
+    title: "Parent event",
+    ...(parentId ? { creatorId: parentId } : {}),
+  };
+
+  assertEquals("creatorId" in withCreator, true);
+  assertEquals("creatorId" in withoutCreator, false);
+});

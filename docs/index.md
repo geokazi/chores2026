@@ -54,7 +54,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-20 | [**Navigation UX Improvements**](./milestones/20260120_navigation_ux_improvements.md) | ✅ Complete | Inline user switcher, active nav indicator, reduced switching friction |
 | 2026-01-20 | [**Events Display Fixes**](./investigations/20260120_events_not_showing_diagnosis.md) | ✅ Complete | Event-linked chores default to event date, timezone fixes, explicit FK joins |
 | TBD | [Event Library & Reuse](./planned/20260120_event_library_reuse.md) | 📋 Planned | Quick recreation of past events |
-| TBD | [Kid Event Creation](./planned/20260120_kid_event_creation.md) | 📋 Planned | Teens create own events with parent visibility |
+| 2026-01-20 | [**Kid Event Creation**](./planned/20260120_kid_event_creation.md) | ✅ Complete | Teens create own events with parent visibility, PIN-gated |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 
@@ -214,6 +214,7 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 - ✅ **Prep Tasks Feature**: Lightweight checklist items stored in event metadata, batch creation/editing, kids can mark done with optimistic UI, no points (preparation focus)
 - ✅ **Events Page UX Polish**: Bottom-split card layout, centered Add Event button, event-specific emojis, improved tap targets, clear visual hierarchy
 - ✅ **Navigation UX**: Inline user switcher (2-click profile switching), active nav indicator, clickable participant links on events
+- ✅ **Kid Event Creation**: Teens can create own events when family setting enabled, PIN-gated if kid PINs active, parent visibility with "Added by" attribution
 
 ### Known Limitations
 - **Testing**: Comprehensive test suite not yet implemented
