@@ -65,6 +65,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-20 | [Feedback Strategy](./decisions/20260120_feedback_strategy.md) | ✅ Decided | Google Form now, in-app JSONB at 100+ users |
 | 2026-01-20 | [Analytics Strategy](./decisions/20260120_analytics_strategy.md) | ✅ Decided | External analytics (Plausible) + existing data; don't extend FamilyScore |
 | 2026-01-20 | [Kid Event Creation](./decisions/20260120_kid_event_creation.md) | ✅ Decided | Allow kids to create events with parent visibility, gated by existing PIN |
+| 2026-01-20 | [Community Messaging Board](./decisions/20260120_community_messaging_board_analysis.md) | ✅ Deferred | Test with Facebook Group first; in-app at 2000+ users |
 | 2026-01-20 | Tablet/Desktop Styling | ✅ Deferred | Mobile-first approach; revisit with analytics data |
 
 ### 📖 Core Documentation
