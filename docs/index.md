@@ -58,6 +58,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-20 | [**Kid Event Creation**](./milestones/20260120_kid_event_creation.md) | ✅ Complete | Teens create own events with parent visibility, PIN-gated |
 | 2026-01-20 | **Prep Tasks Inline Expansion** | ✅ Complete | Smart auto-expand (≤3 tasks), inline checkboxes, 1-click completion |
 | 2026-01-20 | **Emoji Picker Optimization** | ✅ Complete | Native `<select>` dropdown on same line as event name; 150px→40px (73% smaller) |
+| 2026-01-20 | **Parent My-Chores Compact Layout** | ✅ Complete | Removed stats card, compact empty state; ~200px space savings |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 
@@ -223,6 +224,7 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 - ✅ **Smart Event Grouping**: Events organized by Today/This Week/Later (removes 7-day limit), "Later" collapsed by default
 - ✅ **Prep Tasks Inline Expansion**: Smart auto-expand (≤3 tasks visible inline), 1-click completion with inline checkboxes, optimistic UI
 - ✅ **Emoji Picker Optimization**: Native `<select>` dropdown inline with event name, responsive wrap on small screens (150px→40px, 73% space savings)
+- ✅ **Parent My-Chores Compact Layout**: Removed stats card (points not relevant for parents), compact empty state when no chores (~200px space savings)
 
 ### Known Limitations
 - **Testing**: Comprehensive test suite not yet implemented

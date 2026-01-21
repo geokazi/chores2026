@@ -318,47 +318,31 @@ export default function SecureParentDashboard({ family, familyMembers, recentAct
         userRole="parent"
       />
 
-      {/* Parent Stats */}
-      <div class="card" style={{ marginBottom: "1.5rem", textAlign: "center" }}>
-        <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>🏆</div>
+      {/* My Chores Section - Compact when empty */}
+      {parentChores.length === 0 ? (
+        /* Compact empty state - single line, no card */
         <div style={{
-          fontSize: "1.5rem",
-          fontWeight: "600",
-          color: "var(--color-primary)",
-          marginBottom: "0.5rem"
-        }}>
-          {activeParent.current_points || 0} pts
-        </div>
-        <div style={{
-          fontSize: "0.875rem",
+          display: "flex",
+          alignItems: "center",
+          gap: "0.5rem",
+          padding: "0.75rem 1rem",
+          marginBottom: "1.5rem",
           color: "var(--color-text-light)",
-          marginBottom: "1rem"
+          fontSize: "0.9rem",
         }}>
-          Today's Progress: {parentChores.filter(c => c.status === "completed").length}/{parentChores.length} chores
+          <span style={{ fontSize: "1.25rem" }}>✅</span>
+          <span>No chores today</span>
         </div>
-      </div>
-
-      {/* My Chores Section */}
-      <div class="card" style={{ marginBottom: "1.5rem" }}>
-        <h2 style={{
-          fontSize: "1.25rem",
-          fontWeight: "600",
-          marginBottom: "1rem",
-        }}>
-          My Chores ({parentChores.length})
-        </h2>
-
-        {parentChores.length === 0 ? (
-          <div style={{ 
-            textAlign: "center", 
-            padding: "2rem",
-            color: "var(--color-text-light)" 
+      ) : (
+        /* Chores list when has chores */
+        <div class="card" style={{ marginBottom: "1.5rem" }}>
+          <h2 style={{
+            fontSize: "1.25rem",
+            fontWeight: "600",
+            marginBottom: "1rem",
           }}>
-            <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>✅</div>
-            <p>No chores assigned today!</p>
-            <p style={{ fontSize: "0.875rem" }}>Great job staying on top of things.</p>
-          </div>
-        ) : (
+            My Chores ({parentChores.length})
+          </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
             {parentChores.map((chore: any) => (
               <div
@@ -431,8 +415,8 @@ export default function SecureParentDashboard({ family, familyMembers, recentAct
               </div>
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Coming Up - Events with Smart Grouping */}
       {upcomingEvents.length > 0 && (
