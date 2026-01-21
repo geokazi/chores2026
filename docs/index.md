@@ -2,7 +2,7 @@
 
 **Version**: 1.9
 **Status**: ✅ Production Ready
-**Last Updated**: January 20, 2026
+**Last Updated**: January 20, 2026 (Smart Event Grouping)
 
 **Project Overview**: A simplified, real-time chore completion system built with Deno Fresh, transforming routine family chores into an engaging, competitive experience with sub-second real-time updates across all family devices.
 
@@ -53,6 +53,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-19/20 | [↳ Hybrid Implementation Guide](./milestones/20260119_events_calendar_rev2_plan.md) | ✅ Complete | MealPlanner analysis and approach |
 | 2026-01-20 | [**Navigation UX Improvements**](./milestones/20260120_navigation_ux_improvements.md) | ✅ Complete | Inline user switcher, active nav indicator, reduced switching friction |
 | 2026-01-20 | [**Events Display Fixes**](./investigations/20260120_events_not_showing_diagnosis.md) | ✅ Complete | Event-linked chores default to event date, timezone fixes, explicit FK joins |
+| 2026-01-20 | [↳ Smart Event Grouping](./investigations/20260120_events_not_showing_diagnosis.md#fix-5-smart-event-grouping-removes-7-day-limit) | ✅ Complete | Removed 7-day limit; events grouped by Today/This Week/Later |
 | TBD | [Event Library & Reuse](./planned/20260120_event_library_reuse.md) | 📋 Planned | Quick recreation of past events |
 | 2026-01-20 | [**Kid Event Creation**](./milestones/20260120_kid_event_creation.md) | ✅ Complete | Teens create own events with parent visibility, PIN-gated |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
@@ -216,6 +217,7 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 - ✅ **Events Page UX Polish**: Bottom-split card layout, centered Add Event button, event-specific emojis, improved tap targets, clear visual hierarchy
 - ✅ **Navigation UX**: Inline user switcher (2-click profile switching), active nav indicator, clickable participant links on events
 - ✅ **Kid Event Creation**: Teens can create own events when family setting enabled, PIN-gated if kid PINs active, parent visibility with "Added by" attribution
+- ✅ **Smart Event Grouping**: Events organized by Today/This Week/Later (removes 7-day limit), "Later" collapsed by default
 
 ### Known Limitations
 - **Testing**: Comprehensive test suite not yet implemented

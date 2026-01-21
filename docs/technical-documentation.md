@@ -104,7 +104,7 @@ graph TB
 │   │   ├── 📄 chore-service.ts  # Chore CRUD operations with event support
 │   │   └── 📄 transaction-service.ts # Point tracking with FamilyScore
 │   ├── 📁 utils/                # Utility functions
-│   │   └── 📄 household.ts      # Event grouping, points mode detection
+│   │   └── 📄 household.ts      # Event grouping (Today/This Week/Later), points mode detection
 │   ├── 📁 auth/                 # Authentication system
 │   ├── 📁 security/             # Security utilities
 │   └── 📁 user-state/           # Session management
@@ -910,7 +910,7 @@ const loadTest = async () => {
 - **Points Hiding**: Event missions hide points (focus on preparation, not rewards)
 - **Parent Events Page**: `/parent/events` with "This Week" and "Upcoming" sections
 - **Event Creation**: Simplified form with title, emoji, date, time, participants
-- **Utility Functions**: `groupChoresByEvent()`, `usePointsMode()`, `formatEventDate()`
+- **Utility Functions**: `groupChoresByEvent()`, `usePointsMode()`, `formatEventDate()`, `groupEventsByTimePeriod()` (smart Today/This Week/Later grouping)
 - **See**: [Events Calendar Implementation](./planned/20260119_events_calendar_rev2.md)
 
 #### Future Security Enhancements
@@ -949,6 +949,6 @@ const loadTest = async () => {
 ---
 
 **Document Maintained By**: Engineering Team
-**Last Updated**: January 19, 2026
+**Last Updated**: January 20, 2026
 **Review Schedule**: Monthly technical review
 **Version Control**: Git-based documentation versioning

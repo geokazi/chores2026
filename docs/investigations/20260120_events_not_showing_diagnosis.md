@@ -337,6 +337,41 @@ After fixes:
 | Fix 2 | `lib/services/chore-service.ts` (combined with Fix 4) | ✅ Done |
 | **Fix 3** | `islands/SecureKidDashboard.tsx`, `islands/SecureParentDashboard.tsx`, `lib/services/chore-service.ts` | ✅ Done |
 | **Fix 4** | `lib/services/chore-service.ts` | ✅ Done |
+| **Fix 5** | Smart Event Grouping (see below) | ✅ Done |
+
+### Fix 5: Smart Event Grouping (Removes 7-Day Limit)
+
+**Problem**: Events more than 7 days in the future weren't appearing in the "Coming Up" section. This was discovered when a kid-created event 11 days out didn't show on the dashboard.
+
+**Root Cause**: Hard-coded 7-day filter in multiple locations:
+- `SecureKidDashboard.tsx`: `eventDate <= weekFromNow`
+- `SecureParentDashboard.tsx`: `eventDate <= weekFromNow`
+
+**Solution**: Remove the upper time limit and implement smart grouping:
+
+| Location | Before | After |
+|----------|--------|-------|
+| SecureKidDashboard | 7-day filter | No limit (shows all future) |
+| SecureParentDashboard | 7-day filter | No limit (shows all future) |
+| KidDashboard UI | Flat list | Grouped: Today / This Week / Later |
+| Parent Dashboard UI | Flat list | Grouped: Today / This Week / Later |
+
+**New Utility Function**: `lib/utils/household.ts`
+
+```typescript
+export function groupEventsByTimePeriod<T extends { event_date: string }>(events: T[]): {
+  today: T[];
+  thisWeek: T[];
+  later: T[];
+}
+```
+
+**UX Design**:
+- **Today**: Always expanded, primary color header
+- **This Week**: Always expanded, muted header
+- **Later**: Collapsed by default (click to expand), prevents dashboard clutter
+
+**Commit**: `039984c` - "✨ Smart event grouping: Today, This Week, Later (removes 7-day limit)"
 
 ### Changes Made
 
