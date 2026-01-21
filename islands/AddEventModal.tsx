@@ -209,7 +209,7 @@ export default function AddEventModal({ isOpen, onClose, familyMembers, onSucces
             </div>
           )}
 
-          {/* Event Name */}
+          {/* Event Name + Emoji (same row, responsive) */}
           <div>
             <label
               style={{
@@ -221,61 +221,39 @@ export default function AddEventModal({ isOpen, onClose, familyMembers, onSucces
             >
               Event Name *
             </label>
-            <input
-              type="text"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.currentTarget.value })}
-              placeholder="e.g., Soccer Practice"
-              style={{
-                width: "100%",
-                padding: "0.75rem",
-                border: "1px solid var(--color-border)",
-                borderRadius: "0.5rem",
-                fontSize: "1rem",
-              }}
-              required
-            />
-          </div>
-
-          {/* Emoji */}
-          <div>
-            <label
-              style={{
-                display: "block",
-                fontSize: "0.875rem",
-                fontWeight: "500",
-                marginBottom: "0.5rem",
-              }}
-            >
-              Emoji (optional)
-            </label>
-            {/* Quick emoji buttons for common activities */}
-            <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.5rem", flexWrap: "wrap" }}>
-              {["🏀", "⚾", "🚗", "🏊", "🎹", "⚽", "📅"].map((emoji) => (
-                <button
-                  key={emoji}
-                  type="button"
-                  class={`emoji-option${formData.emoji === emoji ? " selected" : ""}`}
-                  onClick={() => setFormData({ ...formData, emoji })}
-                >
-                  {emoji}
-                </button>
-              ))}
+            <div class="name-emoji-row">
+              <input
+                type="text"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.currentTarget.value })}
+                placeholder="e.g., Soccer Practice"
+                class="event-name-input"
+                required
+              />
+              <select
+                value={formData.emoji || "📅"}
+                onChange={(e) => setFormData({ ...formData, emoji: e.currentTarget.value })}
+                class="emoji-select"
+                aria-label="Event emoji"
+              >
+                <option value="📅">📅</option>
+                <option value="🏀">🏀</option>
+                <option value="⚾">⚾</option>
+                <option value="🏈">🏈</option>
+                <option value="⚽">⚽</option>
+                <option value="🎾">🎾</option>
+                <option value="🏊">🏊</option>
+                <option value="🎹">🎹</option>
+                <option value="🎨">🎨</option>
+                <option value="📚">📚</option>
+                <option value="🏥">🏥</option>
+                <option value="💼">💼</option>
+                <option value="🛒">🛒</option>
+                <option value="🚗">🚗</option>
+                <option value="🎂">🎂</option>
+                <option value="🎓">🎓</option>
+              </select>
             </div>
-            <input
-              type="text"
-              value={formData.emoji}
-              onChange={(e) => setFormData({ ...formData, emoji: e.currentTarget.value })}
-              placeholder="Or type/paste any emoji"
-              maxLength={2}
-              style={{
-                width: "100%",
-                padding: "0.75rem",
-                border: "1px solid var(--color-border)",
-                borderRadius: "0.5rem",
-                fontSize: "1rem",
-              }}
-            />
           </div>
 
           {/* Date and Time */}

@@ -2,7 +2,7 @@
 
 **Version**: 1.9
 **Status**: ✅ Production Ready
-**Last Updated**: January 20, 2026 (Smart Event Grouping)
+**Last Updated**: January 20, 2026 (Emoji Picker Optimization)
 
 **Project Overview**: A simplified, real-time chore completion system built with Deno Fresh, transforming routine family chores into an engaging, competitive experience with sub-second real-time updates across all family devices.
 
@@ -57,6 +57,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | TBD | [Event Library & Reuse](./planned/20260120_event_library_reuse.md) | 📋 Planned | Quick recreation of past events |
 | 2026-01-20 | [**Kid Event Creation**](./milestones/20260120_kid_event_creation.md) | ✅ Complete | Teens create own events with parent visibility, PIN-gated |
 | 2026-01-20 | **Prep Tasks Inline Expansion** | ✅ Complete | Smart auto-expand (≤3 tasks), inline checkboxes, 1-click completion |
+| 2026-01-20 | **Emoji Picker Optimization** | ✅ Complete | Native `<select>` dropdown on same line as event name; 150px→40px (73% smaller) |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 
@@ -221,6 +222,7 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 - ✅ **Kid Event Creation**: Teens can create own events when family setting enabled, PIN-gated if kid PINs active, parent visibility with "Added by" attribution
 - ✅ **Smart Event Grouping**: Events organized by Today/This Week/Later (removes 7-day limit), "Later" collapsed by default
 - ✅ **Prep Tasks Inline Expansion**: Smart auto-expand (≤3 tasks visible inline), 1-click completion with inline checkboxes, optimistic UI
+- ✅ **Emoji Picker Optimization**: Native `<select>` dropdown inline with event name, responsive wrap on small screens (150px→40px, 73% space savings)
 
 ### Known Limitations
 - **Testing**: Comprehensive test suite not yet implemented
