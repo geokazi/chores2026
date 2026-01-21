@@ -104,14 +104,23 @@ export default function SecureParentDashboard({ family, familyMembers, recentAct
           return event.participants.includes(parentId);
         });
 
-        // Only show events in the next 7 days
-        const now = new Date();
-        const weekFromNow = new Date(now);
+        // Only show events from today through next 7 days
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const weekFromNow = new Date(today);
         weekFromNow.setDate(weekFromNow.getDate() + 7);
 
         const upcomingParentEvents = parentEvents.filter((event: any) => {
           const eventDate = new Date(event.event_date + "T00:00:00");
-          return eventDate <= weekFromNow;
+          eventDate.setHours(0, 0, 0, 0);
+          return eventDate >= today && eventDate <= weekFromNow;
+        });
+
+        console.log("📅 Parent events loaded:", {
+          total: events.length,
+          forParent: parentEvents.length,
+          upcoming: upcomingParentEvents.length,
+          parentId,
         });
 
         setUpcomingEvents(upcomingParentEvents);

@@ -155,14 +155,23 @@ export default function SecureKidDashboard({ family, familyMembers, recentActivi
           return event.participants.includes(kidId);
         });
 
-        // Only show events in the next 7 days
-        const now = new Date();
-        const weekFromNow = new Date(now);
+        // Only show events from today through next 7 days
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const weekFromNow = new Date(today);
         weekFromNow.setDate(weekFromNow.getDate() + 7);
 
         const upcomingKidEvents = kidEvents.filter((event: any) => {
           const eventDate = new Date(event.event_date + "T00:00:00");
-          return eventDate <= weekFromNow;
+          eventDate.setHours(0, 0, 0, 0);
+          return eventDate >= today && eventDate <= weekFromNow;
+        });
+
+        console.log("📅 Kid events loaded:", {
+          total: events.length,
+          forKid: kidEvents.length,
+          upcoming: upcomingKidEvents.length,
+          kidId,
         });
 
         setUpcomingEvents(upcomingKidEvents);

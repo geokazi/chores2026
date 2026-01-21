@@ -5,6 +5,7 @@
 
 import { useState } from "preact/hooks";
 import { formatTime, formatEventDate } from "../lib/utils/household.ts";
+import { ActiveKidSessionManager } from "../lib/active-kid-session.ts";
 import AddEventModal from "./AddEventModal.tsx";
 import AddChoreModal from "./AddChoreModal.tsx";
 import AddPrepTasksModal from "./AddPrepTasksModal.tsx";
@@ -99,14 +100,24 @@ export default function EventsList({ thisWeek, upcoming, familyMembers }: Props)
     return event.metadata?.emoji || "";
   };
 
-  const getParticipantNames = (event: FamilyEvent) => {
+  const getParticipants = (event: FamilyEvent) => {
     if (!event.participants || event.participants.length === 0) {
-      return "Everyone";
+      return null; // Will show "Everyone" text
     }
-    const names = event.participants
-      .map(id => familyMembers.find(m => m.id === id)?.name)
-      .filter(Boolean);
-    return names.length > 0 ? names.join(", ") : "Everyone";
+    return event.participants
+      .map(id => familyMembers.find(m => m.id === id))
+      .filter(Boolean) as FamilyMember[];
+  };
+
+  const handleParticipantClick = (member: FamilyMember) => {
+    // Set the active session for this member
+    ActiveKidSessionManager.setActiveKid(member.id, member.name);
+    // Navigate to appropriate dashboard
+    if (member.role === "parent") {
+      window.location.href = "/parent/my-chores";
+    } else {
+      window.location.href = "/kid/dashboard";
+    }
   };
 
   const formatDate = (dateStr: string) => {
@@ -164,8 +175,37 @@ export default function EventsList({ thisWeek, upcoming, familyMembers }: Props)
         >
           {getEventEmoji(event)}{getEventEmoji(event) ? " " : ""}{event.title}
         </div>
-        <div style={{ fontSize: "0.75rem", color: "var(--color-text-light)", marginBottom: "0.25rem" }}>
-          👤 {getParticipantNames(event)}
+        <div style={{ fontSize: "0.75rem", color: "var(--color-text-light)", marginBottom: "0.25rem", display: "flex", alignItems: "center", gap: "0.25rem", flexWrap: "wrap" }}>
+          <span>👤</span>
+          {(() => {
+            const participants = getParticipants(event);
+            if (!participants) {
+              return <span>Everyone</span>;
+            }
+            return participants.map((member, idx) => (
+              <span key={member.id}>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleParticipantClick(member);
+                  }}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    padding: 0,
+                    color: "var(--color-primary)",
+                    cursor: "pointer",
+                    textDecoration: "underline",
+                    fontSize: "inherit",
+                  }}
+                >
+                  {member.name}
+                </button>
+                {idx < participants.length - 1 && ", "}
+              </span>
+            ));
+          })()}
         </div>
         <div style={{ fontSize: "0.875rem", color: "var(--color-text-light)" }}>
           {(() => {
