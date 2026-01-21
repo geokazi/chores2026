@@ -10,6 +10,7 @@
 import { Handlers } from "$fresh/server.ts";
 import { getCookies } from "@std/http/cookie";
 import { getServiceSupabaseClient } from "../../lib/supabase.ts";
+import { getActivityService } from "../../lib/services/activity-service.ts";
 
 interface SessionInfo {
   familyId: string;
@@ -258,6 +259,36 @@ export const handler: Handlers = {
       }
 
       console.log(`✅ Event created: "${newEvent.title}" on ${newEvent.event_date} (id: ${newEvent.id})`);
+
+      // Log activity (non-blocking)
+      try {
+        // Get creator name
+        let creatorName = "Someone";
+        if (creatorProfileId) {
+          const { data: creator } = await client
+            .from("family_profiles")
+            .select("name")
+            .eq("id", creatorProfileId)
+            .single();
+          creatorName = creator?.name || "Someone";
+        }
+
+        const activityService = getActivityService();
+        await activityService.logActivity({
+          familyId: familyId!,
+          actorId: creatorProfileId || "",
+          actorName: creatorName,
+          type: "event_created",
+          title: `${creatorName} created "${newEvent.title}"`,
+          target: {
+            type: "event",
+            id: newEvent.id,
+            name: newEvent.title,
+          },
+        });
+      } catch (error) {
+        console.warn("Failed to log activity:", error);
+      }
 
       return new Response(JSON.stringify({ event: newEvent }), {
         status: 201,

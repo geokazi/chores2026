@@ -7,6 +7,7 @@ import { useEffect, useState, useMemo } from "preact/hooks";
 import { ActiveKidSessionManager } from "../lib/active-kid-session.ts";
 import { groupEventsByTimePeriod } from "../lib/utils/household.ts";
 import AppHeader from "./AppHeader.tsx";
+import LiveActivityFeed from "./LiveActivityFeed.tsx";
 
 interface Props {
   family: any;
@@ -627,6 +628,16 @@ export default function SecureParentDashboard({ family, familyMembers, recentAct
               </div>
             );
           })()}
+        </div>
+      )}
+
+      {/* Recent Activity Feed */}
+      {recentActivity.length > 0 && (
+        <div style={{ marginBottom: "1.5rem" }}>
+          <LiveActivityFeed
+            initialActivity={recentActivity}
+            familyId={family.id}
+          />
         </div>
       )}
 

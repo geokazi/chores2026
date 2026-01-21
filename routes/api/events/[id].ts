@@ -5,6 +5,7 @@
 import { Handlers } from "$fresh/server.ts";
 import { getCookies } from "@std/http/cookie";
 import { getServiceSupabaseClient } from "../../../lib/supabase.ts";
+import { getActivityService } from "../../../lib/services/activity-service.ts";
 
 async function getUserFamilyId(client: any, accessToken: string): Promise<string | null> {
   const { data: { user } } = await client.auth.getUser(accessToken);
@@ -162,6 +163,71 @@ export const handler: Handlers = {
         });
       }
 
+      // Log activity (non-blocking) - only for meaningful updates
+      const hasContentChange = body.title !== undefined || body.event_date !== undefined ||
+        body.participants !== undefined || body.schedule_data !== undefined ||
+        body.is_all_day !== undefined || body.event_time !== undefined;
+      const hasPrepTaskChange = body.metadata?.prep_tasks !== undefined;
+
+      if (hasContentChange) {
+        try {
+          const { data: { user } } = await client.auth.getUser(accessToken);
+          const { data: userProfile } = await client
+            .from("family_profiles")
+            .select("id, name")
+            .eq("user_id", user?.id)
+            .eq("family_id", familyId)
+            .single();
+
+          const activityService = getActivityService();
+          await activityService.logActivity({
+            familyId: familyId!,
+            actorId: userProfile?.id || "",
+            actorName: userProfile?.name || "Someone",
+            type: "event_updated",
+            title: `${userProfile?.name || "Someone"} updated "${updated.title}"`,
+            target: {
+              type: "event",
+              id: updated.id,
+              name: updated.title,
+            },
+          });
+        } catch (activityError) {
+          console.warn("Failed to log activity:", activityError);
+        }
+      }
+
+      // Log prep tasks added (separate activity type)
+      if (hasPrepTaskChange && body.metadata?.prep_tasks?.length > (existing.metadata?.prep_tasks?.length || 0)) {
+        try {
+          const { data: { user } } = await client.auth.getUser(accessToken);
+          const { data: userProfile } = await client
+            .from("family_profiles")
+            .select("id, name")
+            .eq("user_id", user?.id)
+            .eq("family_id", familyId)
+            .single();
+
+          const newCount = body.metadata.prep_tasks.length - (existing.metadata?.prep_tasks?.length || 0);
+          const activityService = getActivityService();
+          await activityService.logActivity({
+            familyId: familyId!,
+            actorId: userProfile?.id || "",
+            actorName: userProfile?.name || "Someone",
+            type: "prep_task_added",
+            title: `${userProfile?.name || "Someone"} added ${newCount} prep task${newCount > 1 ? "s" : ""} to "${updated.title}"`,
+            target: {
+              type: "event",
+              id: updated.id,
+              name: updated.title,
+            },
+            meta: { count: newCount },
+          });
+        } catch (activityError) {
+          console.warn("Failed to log prep task activity:", activityError);
+        }
+      }
+
       return new Response(JSON.stringify({ event: updated }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
@@ -198,11 +264,11 @@ export const handler: Handlers = {
 
       const eventId = ctx.params.id;
 
-      // Verify event belongs to this family
+      // Verify event belongs to this family (get title for activity logging)
       const { data: existing } = await client
         .schema("choretracker")
         .from("family_events")
-        .select("id")
+        .select("id, title")
         .eq("id", eventId)
         .eq("family_id", familyId)
         .single();
@@ -213,6 +279,15 @@ export const handler: Handlers = {
           headers: { "Content-Type": "application/json" },
         });
       }
+
+      // Get user profile for activity logging
+      const { data: { user } } = await client.auth.getUser(accessToken);
+      const { data: userProfile } = await client
+        .from("family_profiles")
+        .select("id, name")
+        .eq("user_id", user?.id)
+        .eq("family_id", familyId)
+        .single();
 
       // Soft delete
       const { error } = await client
@@ -235,6 +310,25 @@ export const handler: Handlers = {
         .from("chore_assignments")
         .update({ family_event_id: null })
         .eq("family_event_id", eventId);
+
+      // Log activity (non-blocking)
+      try {
+        const activityService = getActivityService();
+        await activityService.logActivity({
+          familyId: familyId!,
+          actorId: userProfile?.id || "",
+          actorName: userProfile?.name || "Someone",
+          type: "event_deleted",
+          title: `${userProfile?.name || "Someone"} deleted "${existing.title}"`,
+          target: {
+            type: "event",
+            id: eventId,
+            name: existing.title,
+          },
+        });
+      } catch (activityError) {
+        console.warn("Failed to log activity:", activityError);
+      }
 
       return new Response(JSON.stringify({ success: true }), {
         status: 200,

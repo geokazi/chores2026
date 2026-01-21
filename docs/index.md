@@ -1,8 +1,8 @@
 # ChoreGami 2026 Documentation
 
-**Version**: 1.9
+**Version**: 1.10
 **Status**: ✅ Production Ready
-**Last Updated**: January 20, 2026 (Emoji Picker Optimization)
+**Last Updated**: January 20, 2026 (Expanded Activity Feed)
 
 **Project Overview**: A simplified, real-time chore completion system built with Deno Fresh, transforming routine family chores into an engaging, competitive experience with sub-second real-time updates across all family devices.
 
@@ -59,6 +59,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-20 | **Prep Tasks Inline Expansion** | ✅ Complete | Smart auto-expand (≤3 tasks), inline checkboxes, 1-click completion |
 | 2026-01-20 | **Emoji Picker Optimization** | ✅ Complete | Native `<select>` dropdown on same line as event name; 150px→40px (73% smaller) |
 | 2026-01-20 | **Parent My-Chores Compact Layout** | ✅ Complete | Removed stats card, compact empty state; ~200px space savings |
+| 2026-01-20 | [**Expanded Activity Feed**](./decisions/20260120_expanded_activity_feed.md) | ✅ Complete | Track all activities (chores, events, prep tasks); new `family_activity` table with JSONB payload |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 
@@ -71,6 +72,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-20 | [Kid Event Creation](./decisions/20260120_kid_event_creation.md) | ✅ Decided | Allow kids to create events with parent visibility, gated by existing PIN |
 | 2026-01-20 | [Community Messaging Board](./decisions/20260120_community_messaging_board_analysis.md) | ✅ Deferred | Test with Facebook Group first; in-app at 2000+ users |
 | 2026-01-20 | [Prep Tasks Visibility](./decisions/20260120_prep_tasks_visibility_analysis.md) | ✅ Decided | Smart auto-expand ≤3 tasks + inline checkboxes |
+| 2026-01-20 | [Expanded Activity Feed](./decisions/20260120_expanded_activity_feed.md) | ✅ Decided | Minimal table + JSONB payload; tracks all activity types |
 | 2026-01-20 | Tablet/Desktop Styling | ✅ Deferred | Mobile-first approach; revisit with analytics data |
 
 ### 📖 Core Documentation
@@ -225,6 +227,7 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 - ✅ **Prep Tasks Inline Expansion**: Smart auto-expand (≤3 tasks visible inline), 1-click completion with inline checkboxes, optimistic UI
 - ✅ **Emoji Picker Optimization**: Native `<select>` dropdown inline with event name, responsive wrap on small screens (150px→40px, 73% space savings)
 - ✅ **Parent My-Chores Compact Layout**: Removed stats card (points not relevant for parents), compact empty state when no chores (~200px space savings)
+- ✅ **Expanded Activity Feed**: Track all family activities (chore creation, event CRUD, prep tasks, completions) with new `family_activity` table + JSONB payload; feeds on kid dashboard, parent dashboard, parent board, activity tab
 
 ### Known Limitations
 - **Testing**: Comprehensive test suite not yet implemented

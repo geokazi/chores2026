@@ -7,6 +7,7 @@
 import { Handlers } from "$fresh/server.ts";
 import { getAuthenticatedSession } from "../../../lib/auth/session.ts";
 import { ChoreService } from "../../../lib/services/chore-service.ts";
+import { getActivityService } from "../../../lib/services/activity-service.ts";
 
 interface CreateChoreRequest {
   name: string;
@@ -89,14 +90,37 @@ export const handler: Handlers = {
 
       if (result.success) {
         console.log(`✅ Chore created: ${choreData.name} assigned to ${assignedMember.name}`);
-        
+
+        // Log activity (non-blocking)
+        try {
+          const activityService = getActivityService();
+          const isLinkedChore = !!choreData.familyEventId;
+          await activityService.logActivity({
+            familyId: parentSession.family.id,
+            actorId: currentParent.id,
+            actorName: currentParent.name,
+            type: isLinkedChore ? "linked_chore_created" : "chore_created",
+            title: isLinkedChore
+              ? `${currentParent.name} linked chore "${choreData.name}" to event`
+              : `${currentParent.name} created chore "${choreData.name}"`,
+            target: {
+              type: "chore_assignment",
+              id: result.assignment?.id || "",
+              name: choreData.name,
+            },
+            meta: isLinkedChore ? { eventId: choreData.familyEventId } : undefined,
+          });
+        } catch (error) {
+          console.warn("Failed to log activity:", error);
+        }
+
         return new Response(
-          JSON.stringify({ 
-            success: true, 
+          JSON.stringify({
+            success: true,
             message: `Chore "${choreData.name}" created for ${assignedMember.name}`,
             choreId: result.assignment?.id
           }),
-          { 
+          {
             status: 200,
             headers: { "Content-Type": "application/json" }
           }

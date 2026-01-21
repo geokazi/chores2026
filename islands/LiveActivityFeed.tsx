@@ -1,12 +1,37 @@
 /**
  * Live Activity Feed Component
- * Shows real-time family chore completions and activities
+ * Shows real-time family activities - chore completions, events, prep tasks
+ * Supports both legacy chore_assignments format and new family_activity format
  */
 
 import { useEffect, useState } from "preact/hooks";
-import WebSocketManager from "./WebSocketManager.tsx";
 
-interface ActivityItem {
+// New activity format from ActivityService (family_activity table)
+interface NewActivityData {
+  v: number;
+  type: string;
+  actor_id: string;
+  actor_name: string;
+  icon: string;
+  title: string;
+  target?: {
+    type: string;
+    id: string;
+    name: string;
+  };
+  points?: number;
+  meta?: Record<string, unknown>;
+}
+
+interface NewActivity {
+  id: string;
+  family_id: string;
+  created_at: string;
+  data: NewActivityData;
+}
+
+// Legacy format from ChoreService.getRecentActivity (chore_assignments)
+interface LegacyActivity {
   id: string;
   chore_template?: {
     name: string;
@@ -24,9 +49,17 @@ interface ActivityItem {
   completed_at: string;
 }
 
+// Union type for activity items
+type ActivityItem = NewActivity | LegacyActivity;
+
 interface Props {
   initialActivity: ActivityItem[];
   familyId: string;
+}
+
+// Check if activity is new format
+function isNewActivity(activity: ActivityItem): activity is NewActivity {
+  return "data" in activity && typeof activity.data === "object";
 }
 
 export default function LiveActivityFeed({ initialActivity, familyId }: Props) {
@@ -35,8 +68,8 @@ export default function LiveActivityFeed({ initialActivity, familyId }: Props) {
 
   const formatTimeAgo = (timestamp: string) => {
     const now = new Date();
-    const completed = new Date(timestamp);
-    const diffMs = now.getTime() - completed.getTime();
+    const activityTime = new Date(timestamp);
+    const diffMs = now.getTime() - activityTime.getTime();
     const diffMins = Math.floor(diffMs / (1000 * 60));
 
     if (diffMins < 1) return "just now";
@@ -49,7 +82,8 @@ export default function LiveActivityFeed({ initialActivity, familyId }: Props) {
     return `${diffDays}d ago`;
   };
 
-  const getChoreIcon = (chore?: { name: string; icon?: string }) => {
+  // Get icon for legacy chore format
+  const getLegacyChoreIcon = (chore?: { name: string; icon?: string }) => {
     if (chore?.icon) return chore.icon;
 
     const name = chore?.name?.toLowerCase() || "";
@@ -64,19 +98,100 @@ export default function LiveActivityFeed({ initialActivity, familyId }: Props) {
     return "✅";
   };
 
+  // Render new activity format
+  const renderNewActivity = (activity: NewActivity, index: number) => {
+    const { data, created_at } = activity;
+    const hasPoints = data.points !== undefined && data.points > 0;
+
+    return (
+      <div
+        key={`${activity.id}_${index}`}
+        class="activity-item"
+        style={{
+          animation:
+            index === 0 && isLive ? "fadeInSlide 0.5s ease-out" : undefined,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          <span style={{ fontSize: "1.25rem" }}>{data.icon}</span>
+          <div>
+            <div class="activity-text">{data.title}</div>
+            <div class="activity-time">
+              {hasPoints && <span>+{data.points} pts • </span>}
+              {formatTimeAgo(created_at)}
+              {isLive && index === 0 && (
+                <span
+                  style={{
+                    color: "var(--color-success)",
+                    marginLeft: "0.5rem",
+                  }}
+                >
+                  🟢
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Render legacy activity format (chore completion from chore_assignments)
+  const renderLegacyActivity = (activity: LegacyActivity, index: number) => {
+    return (
+      <div
+        key={`${activity.id}_${index}`}
+        class="activity-item"
+        style={{
+          animation:
+            index === 0 && isLive ? "fadeInSlide 0.5s ease-out" : undefined,
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+          <span style={{ fontSize: "1.25rem" }}>
+            {getLegacyChoreIcon(activity.chore_template)}
+          </span>
+          <div>
+            <div class="activity-text">
+              <strong>
+                {activity.assigned_to_profile?.name || "Someone"}
+              </strong>{" "}
+              completed{" "}
+              <em>"{activity.chore_template?.name || "a chore"}"</em>
+            </div>
+            <div class="activity-time">
+              +{activity.point_value} pts •{" "}
+              {formatTimeAgo(activity.completed_at)}
+              {isLive && index === 0 && (
+                <span
+                  style={{
+                    color: "var(--color-success)",
+                    marginLeft: "0.5rem",
+                  }}
+                >
+                  🟢
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // TODO: Temporarily disabled to prevent duplicate WebSocket connections
   // WebSocket connection will be handled by LiveLeaderboard component
   useEffect(() => {
     // Disabled to prevent duplicate connections
     console.log("🔕 ActivityFeed WebSocket disabled - using shared connection");
     return;
-    
+
     const connectWebSocket = () => {
       try {
         // This will connect to our Fresh WebSocket proxy route
         const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
         const ws = new WebSocket(
-          `${protocol}//${window.location.host}/api/familyscore/live/${familyId}`,
+          `${protocol}//${window.location.host}/api/familyscore/live/${familyId}`
         );
 
         ws.onopen = () => {
@@ -91,23 +206,20 @@ export default function LiveActivityFeed({ initialActivity, familyId }: Props) {
             if (data.type === "chore_completed") {
               console.log("🎉 New activity received", data);
 
-              // Add new activity to the front of the list
-              const newActivity = {
+              // Add new activity in new format
+              const newActivity: NewActivity = {
                 id: data.chore_id || `activity_${Date.now()}`,
-                chore_template: {
-                  name: data.chore_name || "Chore completed",
-                  icon: data.icon,
+                family_id: familyId,
+                created_at: new Date().toISOString(),
+                data: {
+                  v: 1,
+                  type: "chore_completed",
+                  actor_id: data.user_id,
+                  actor_name: data.user_name || "Family Member",
+                  icon: data.icon || "✅",
+                  title: `${data.user_name || "Someone"} completed "${data.chore_name || "chore"}"`,
+                  points: data.points || 0,
                 },
-                assigned_to_profile: {
-                  id: data.user_id,
-                  name: data.user_name || "Family Member",
-                },
-                completed_by_profile: {
-                  id: data.user_id,
-                  name: data.user_name || "Family Member",
-                },
-                point_value: data.points || 0,
-                completed_at: new Date().toISOString(),
               };
 
               setActivities((prev) => [newActivity, ...prev.slice(0, 9)]); // Keep only 10 most recent
@@ -174,48 +286,11 @@ export default function LiveActivityFeed({ initialActivity, familyId }: Props) {
       </div>
 
       <div class="activity-feed">
-        {activities.map((activity, index) => (
-          <div
-            key={`${activity.id}_${index}`}
-            class="activity-item"
-            style={{
-              animation: index === 0 && isLive
-                ? "fadeInSlide 0.5s ease-out"
-                : undefined,
-            }}
-          >
-            <div
-              style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}
-            >
-              <span style={{ fontSize: "1.25rem" }}>
-                {getChoreIcon(activity.chore_template)}
-              </span>
-              <div>
-                <div class="activity-text">
-                  <strong>
-                    {activity.assigned_to_profile?.name || "Someone"}
-                  </strong>{" "}
-                  completed{" "}
-                  <em>"{activity.chore_template?.name || "a chore"}"</em>
-                </div>
-                <div class="activity-time">
-                  +{activity.point_value} pts •{" "}
-                  {formatTimeAgo(activity.completed_at)}
-                  {isLive && index === 0 && (
-                    <span
-                      style={{
-                        color: "var(--color-success)",
-                        marginLeft: "0.5rem",
-                      }}
-                    >
-                      🟢
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
+        {activities.map((activity, index) =>
+          isNewActivity(activity)
+            ? renderNewActivity(activity, index)
+            : renderLegacyActivity(activity, index)
+        )}
 
         {activities.length === 0 && (
           <div
@@ -243,17 +318,17 @@ export default function LiveActivityFeed({ initialActivity, familyId }: Props) {
 
       <style jsx>
         {`
-        @keyframes fadeInSlide {
-          from {
-            opacity: 0;
-            transform: translateY(-10px);
+          @keyframes fadeInSlide {
+            from {
+              opacity: 0;
+              transform: translateY(-10px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
           }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-      `}
+        `}
       </style>
     </div>
   );

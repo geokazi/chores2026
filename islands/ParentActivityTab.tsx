@@ -1,8 +1,40 @@
 /**
  * Parent Activity Tab - Real-time activity monitoring
+ * Supports both legacy chore_assignments format and new family_activity format
  */
 
 import { useEffect, useState } from "preact/hooks";
+
+// Check if activity is new format (from family_activity table)
+function isNewActivity(activity: any): boolean {
+  return "data" in activity && typeof activity.data === "object";
+}
+
+// Icon mapping for new activity types
+const ACTIVITY_ICONS: Record<string, string> = {
+  chore_completed: "✅",
+  chore_created: "📋",
+  event_created: "📅",
+  event_updated: "✏️",
+  event_deleted: "🗑️",
+  prep_task_added: "📝",
+  prep_task_completed: "☑️",
+  linked_chore_created: "🔗",
+  point_adjustment: "⚙️",
+};
+
+// Color mapping for activity types
+const ACTIVITY_COLORS: Record<string, string> = {
+  chore_completed: "var(--color-success)",
+  chore_created: "var(--color-primary)",
+  event_created: "var(--color-secondary)",
+  event_updated: "var(--color-secondary)",
+  event_deleted: "var(--color-warning)",
+  prep_task_added: "var(--color-primary)",
+  prep_task_completed: "var(--color-success)",
+  linked_chore_created: "var(--color-primary)",
+  point_adjustment: "var(--color-accent)",
+};
 
 interface ParentActivityTabProps {
   family: any;
@@ -11,6 +43,81 @@ interface ParentActivityTabProps {
 
 export default function ParentActivityTab({ family, recentActivity }: ParentActivityTabProps) {
   const [activities, setActivities] = useState(recentActivity);
+
+  const renderNewActivity = (activity: any) => {
+    const { data, created_at } = activity;
+    const hasPoints = data.points !== undefined && data.points > 0;
+    const borderColor = ACTIVITY_COLORS[data.type] || "var(--color-primary)";
+
+    return (
+      <div
+        key={activity.id}
+        class="activity-item"
+        style={{ borderLeftColor: borderColor }}
+      >
+        <div class="activity-content">
+          <div class="activity-main">
+            <span style={{ fontSize: "1.25rem" }}>{data.icon}</span>
+            <span class="activity-text">{data.title}</span>
+          </div>
+          <div class="activity-meta">
+            {hasPoints && <span class="points">+{data.points} points</span>}
+            <span class="timestamp">
+              {formatTimeAgo(created_at)}
+            </span>
+          </div>
+        </div>
+        {data.type === "chore_completed" && (
+          <div class="activity-actions">
+            <button
+              class="btn-adjust"
+              title="Adjust points"
+              onClick={() => handleAdjustment(activity)}
+            >
+              ⚙️
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderLegacyActivity = (activity: any) => {
+    return (
+      <div key={activity.id} class="activity-item">
+        <div class="activity-content">
+          <div class="activity-main">
+            <span class="child-name">
+              {activity.assigned_to_profile?.name || "Unknown"}
+            </span>
+            <span class="activity-text">completed</span>
+            <span class="chore-name">
+              {activity.chore_template?.name ||
+                activity.description ||
+                "Unnamed chore"}
+            </span>
+          </div>
+          <div class="activity-meta">
+            <span class="points">+{activity.point_value} points</span>
+            <span class="timestamp">
+              {activity.completed_at
+                ? formatTimeAgo(activity.completed_at)
+                : "Recently"}
+            </span>
+          </div>
+        </div>
+        <div class="activity-actions">
+          <button
+            class="btn-adjust"
+            title="Adjust points"
+            onClick={() => handleAdjustment(activity)}
+          >
+            ⚙️
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div class="activity-container">
@@ -25,40 +132,15 @@ export default function ParentActivityTab({ family, recentActivity }: ParentActi
       {activities.length === 0 ? (
         <div class="empty-state">
           <h3>No recent activity</h3>
-          <p>Chore completions will appear here in real-time.</p>
+          <p>Family activities will appear here in real-time.</p>
         </div>
       ) : (
         <div class="activity-list">
-          {activities.map((activity) => (
-            <div key={activity.id} class="activity-item">
-              <div class="activity-content">
-                <div class="activity-main">
-                  <span class="child-name">
-                    {activity.assigned_to_profile?.name || 'Unknown'}
-                  </span>
-                  <span class="activity-text">completed</span>
-                  <span class="chore-name">
-                    {activity.chore_template?.name || activity.description || 'Unnamed chore'}
-                  </span>
-                </div>
-                <div class="activity-meta">
-                  <span class="points">+{activity.point_value} points</span>
-                  <span class="timestamp">
-                    {activity.completed_at ? formatTimeAgo(activity.completed_at) : 'Recently'}
-                  </span>
-                </div>
-              </div>
-              <div class="activity-actions">
-                <button 
-                  class="btn-adjust" 
-                  title="Adjust points"
-                  onClick={() => handleAdjustment(activity)}
-                >
-                  ⚙️
-                </button>
-              </div>
-            </div>
-          ))}
+          {activities.map((activity) =>
+            isNewActivity(activity)
+              ? renderNewActivity(activity)
+              : renderLegacyActivity(activity)
+          )}
         </div>
       )}
 
@@ -162,7 +244,6 @@ export default function ParentActivityTab({ family, recentActivity }: ParentActi
 
         .activity-text {
           color: var(--color-text);
-          opacity: 0.8;
           font-size: 0.875rem;
         }
 
@@ -234,12 +315,12 @@ function formatTimeAgo(timestamp: string): string {
   const now = new Date();
   const then = new Date(timestamp);
   const diffMs = now.getTime() - then.getTime();
-  
+
   const minutes = Math.floor(diffMs / (1000 * 60));
   const hours = Math.floor(diffMs / (1000 * 60 * 60));
   const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-  if (minutes < 1) return 'Just now';
+  if (minutes < 1) return "Just now";
   if (minutes < 60) return `${minutes}m ago`;
   if (hours < 24) return `${hours}h ago`;
   return `${days}d ago`;
@@ -247,5 +328,5 @@ function formatTimeAgo(timestamp: string): string {
 
 function handleAdjustment(activity: any) {
   // TODO: Open point adjustment modal
-  console.log('Adjust points for activity:', activity.id);
+  console.log("Adjust points for activity:", activity.id);
 }

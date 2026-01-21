@@ -5,7 +5,7 @@
 
 import { Handlers, PageProps } from "$fresh/server.ts";
 import { getAuthenticatedSession } from "../../lib/auth/session.ts";
-import { ChoreService } from "../../lib/services/chore-service.ts";
+import { getActivityService } from "../../lib/services/activity-service.ts";
 import ParentActivityTab from "../../islands/ParentActivityTab.tsx";
 
 interface ParentActivityData {
@@ -29,10 +29,10 @@ export const handler: Handlers<ParentActivityData> = {
     const familyId = session.family.id;
 
     try {
-      const choreService = new ChoreService();
+      const activityService = getActivityService();
 
       // Get recent activity (last 50 items for activity view)
-      const recentActivity = await choreService.getRecentActivity(familyId, 50);
+      const recentActivity = await activityService.getRecentActivity(familyId, 50);
 
       console.log("✅ Parent activity loaded for family:", session.family.name);
 

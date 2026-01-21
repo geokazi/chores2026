@@ -7,6 +7,7 @@
 import { Handlers, PageProps } from "$fresh/server.ts";
 import { getAuthenticatedSession } from "../../lib/auth/session.ts";
 import { ChoreService } from "../../lib/services/chore-service.ts";
+import { getActivityService } from "../../lib/services/activity-service.ts";
 import SecureParentDashboard from "../../islands/SecureParentDashboard.tsx";
 import AppHeader from "../../islands/AppHeader.tsx";
 
@@ -39,8 +40,9 @@ export const handler: Handlers<SecureParentData> = {
         choreService.getFamilyMembers(familyId)
       ]);
 
-      // Get recent family activity (for context)
-      const recentActivity = await choreService.getRecentActivity(familyId, 5);
+      // Get recent family activity from new ActivityService (includes all types)
+      const activityService = getActivityService();
+      const recentActivity = await activityService.getRecentActivity(familyId, 10);
 
       console.log(`✅ Secure parent view data loaded for family: ${family?.name || 'unknown'}`);
 

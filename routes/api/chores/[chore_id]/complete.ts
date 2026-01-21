@@ -7,6 +7,7 @@ import { Handlers } from "$fresh/server.ts";
 import { getAuthenticatedSession } from "../../../../lib/auth/session.ts";
 import { ChoreService } from "../../../../lib/services/chore-service.ts";
 import { TransactionService } from "../../../../lib/services/transaction-service.ts";
+import { getActivityService } from "../../../../lib/services/activity-service.ts";
 
 export const handler: Handlers = {
   async POST(req, ctx) {
@@ -126,6 +127,26 @@ export const handler: Handlers = {
       } catch (error) {
         console.warn("Failed to record FamilyScore transaction:", error);
         // Don't fail the chore completion if FamilyScore sync fails
+      }
+
+      // Log activity (non-blocking)
+      try {
+        const activityService = getActivityService();
+        await activityService.logActivity({
+          familyId: user.family_id,
+          actorId: userId,
+          actorName: user.name,
+          type: "chore_completed",
+          title: `${user.name} completed "${chore.chore_template?.name || 'chore'}"`,
+          points: chore.point_value,
+          target: {
+            type: "chore_assignment",
+            id: choreId,
+            name: chore.chore_template?.name || "Chore",
+          },
+        });
+      } catch (error) {
+        console.warn("Failed to log activity:", error);
       }
 
       // Check if family goal was reached (non-blocking)

@@ -9,6 +9,7 @@
 import { Handlers, PageProps } from "$fresh/server.ts";
 import { getAuthenticatedSession } from "../../lib/auth/session.ts";
 import { ChoreService } from "../../lib/services/chore-service.ts";
+import { getActivityService } from "../../lib/services/activity-service.ts";
 import SecureKidDashboard from "../../islands/SecureKidDashboard.tsx";
 import AppFooter from "../../components/AppFooter.tsx";
 
@@ -45,8 +46,9 @@ export const handler: Handlers<SecureKidDashboardData> = {
       const { family } = session;
 
       // Query DB for dynamic data (recent activity + goal status)
+      const activityService = getActivityService();
       const [recentActivity, goalStatus] = await Promise.all([
-        choreService.getRecentActivity(family.id, 5),
+        activityService.getRecentActivity(family.id, 10),
         choreService.getFamilyGoalStatus(family.id),
       ]);
 

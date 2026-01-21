@@ -9,6 +9,7 @@
 import { Handlers, PageProps } from "$fresh/server.ts";
 import { getAuthenticatedSession } from "../../lib/auth/session.ts";
 import { ChoreService } from "../../lib/services/chore-service.ts";
+import { getActivityService } from "../../lib/services/activity-service.ts";
 import ParentDashboard from "../../islands/ParentDashboard.tsx";
 import AppHeader from "../../islands/AppHeader.tsx";
 import AppFooter from "../../components/AppFooter.tsx";
@@ -58,8 +59,9 @@ export const handler: Handlers<ParentDashboardData> = {
         parentChores = await choreService.getTodaysChores(parentProfileId, familyId);
       }
 
-      // Get recent activity (last 10 items)
-      const recentActivity = await choreService.getRecentActivity(familyId, 10);
+      // Get recent activity from new ActivityService (includes all types)
+      const activityService = getActivityService();
+      const recentActivity = await activityService.getRecentActivity(familyId, 10);
 
       console.log("✅ Parent dashboard loaded for family:", family.name);
 

@@ -7,6 +7,7 @@
 import { Handlers } from "$fresh/server.ts";
 import { getCookies } from "@std/http/cookie";
 import { getServiceSupabaseClient } from "../../../../lib/supabase.ts";
+import { getActivityService } from "../../../../lib/services/activity-service.ts";
 
 async function getUserFamilyId(client: any, accessToken: string): Promise<string | null> {
   const { data: { user } } = await client.auth.getUser(accessToken);
@@ -101,6 +102,37 @@ export const handler: Handlers = {
           status: 500,
           headers: { "Content-Type": "application/json" },
         });
+      }
+
+      // Log activity for task completion only (not unchecking)
+      if (done) {
+        try {
+          const { data: { user } } = await client.auth.getUser(accessToken);
+          const { data: userProfile } = await client
+            .from("family_profiles")
+            .select("id, name")
+            .eq("user_id", user?.id)
+            .eq("family_id", familyId)
+            .single();
+
+          const taskName = prepTasks[taskIndex].text || "prep task";
+          const activityService = getActivityService();
+          await activityService.logActivity({
+            familyId: familyId!,
+            actorId: userProfile?.id || "",
+            actorName: userProfile?.name || "Someone",
+            type: "prep_task_completed",
+            title: `${userProfile?.name || "Someone"} completed "${taskName}"`,
+            target: {
+              type: "prep_task",
+              id: taskId,
+              name: taskName,
+            },
+            meta: { eventId, eventTitle: event.title },
+          });
+        } catch (activityError) {
+          console.warn("Failed to log activity:", activityError);
+        }
       }
 
       return new Response(JSON.stringify({ success: true, task: prepTasks[taskIndex] }), {
