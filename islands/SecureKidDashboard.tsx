@@ -263,7 +263,7 @@ export default function SecureKidDashboard({ family, familyMembers, recentActivi
       {/* Mobile-friendly header */}
       <AppHeader
         currentPage="dashboard"
-        pageTitle={`${activeKid.name}'s Dashboard`}
+        pageTitle={`${activeKid.name}'s Board`}
         familyMembers={familyMembers}
         currentUser={activeKid}
         userRole="child"

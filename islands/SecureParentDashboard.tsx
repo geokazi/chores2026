@@ -452,6 +452,9 @@ export default function SecureParentDashboard({ family, familyMembers, recentAct
               const emoji = event.metadata?.emoji || "";
 
               const hasMissions = myTasks.length > 0 || myChores.length > 0;
+              const totalTasks = myTasks.length + myChores.length;
+              const doneTasks = myTasks.filter((t: any) => t.done).length + myChores.filter((c: any) => c.status === "completed").length;
+              const allDone = totalTasks > 0 && doneTasks === totalTasks;
 
               return (
                 <div
@@ -460,11 +463,25 @@ export default function SecureParentDashboard({ family, familyMembers, recentAct
                     padding: "0.75rem",
                     backgroundColor: "var(--color-bg)",
                     borderRadius: "0.5rem",
-                    borderLeft: "3px solid var(--color-primary)",
+                    borderLeft: `3px solid ${allDone ? "var(--color-success)" : "var(--color-primary)"}`,
                   }}
                 >
-                  <div style={{ fontWeight: "600", marginBottom: "0.25rem" }}>
-                    {emoji}{emoji ? " " : ""}{event.title}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.25rem" }}>
+                    <span style={{ fontWeight: "600" }}>
+                      {emoji}{emoji ? " " : ""}{event.title}
+                    </span>
+                    {hasMissions && (
+                      <span style={{
+                        fontSize: "0.75rem",
+                        padding: "0.125rem 0.5rem",
+                        borderRadius: "1rem",
+                        backgroundColor: allDone ? "var(--color-success)" : "var(--color-primary)",
+                        color: "white",
+                        fontWeight: "500",
+                      }}>
+                        {doneTasks}/{totalTasks}
+                      </span>
+                    )}
                   </div>
                   <div style={{ fontSize: "0.875rem", color: "var(--color-text-light)" }}>
                     {new Date(event.event_date + "T00:00:00").toLocaleDateString("en-US", {
