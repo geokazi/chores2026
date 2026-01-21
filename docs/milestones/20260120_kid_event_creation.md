@@ -264,7 +264,7 @@ These are Phase 2 - only implement if demand signals indicate need.
 ## Related Documents
 
 - [Decision Document](../decisions/20260120_kid_event_creation.md) - Why we chose this approach
-- [Events & Prep Tasks](../milestones/20260120_events_prep_tasks_implementation.md) - Base events feature
+- [Events & Prep Tasks](./20260120_events_prep_tasks_implementation.md) - Base events feature
 - [Business Requirements](../business-requirements.md) - Product specifications
 - [Architecture](../architecture.md) - Technical design
 

@@ -211,7 +211,7 @@ ChoreGami 2026 is a streamlined family chore management application designed to 
 
 **Related Documents:**
 - [Decision: Kid Event Creation](./decisions/20260120_kid_event_creation.md)
-- [Implementation Plan](./planned/20260120_kid_event_creation.md)
+- [Implementation Details](./milestones/20260120_kid_event_creation.md)
 
 ### Epic 4: Real-Time Integration
 

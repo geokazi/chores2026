@@ -274,7 +274,7 @@ Kids can create events when `families.settings.apps.choregami.kids_can_create_ev
 - **PIN Gating**: If kid PINs enabled, PIN required before creating
 - **Attribution**: `created_by_profile_id` stores kid's profile ID
 - **Parent Visibility**: Events show "Added by [name]" badge in events list
-- See [Implementation Details](./planned/20260120_kid_event_creation.md)
+- See [Implementation Details](./milestones/20260120_kid_event_creation.md)
 
 #### Authentication
 ```typescript

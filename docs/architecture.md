@@ -488,7 +488,7 @@ families.settings.apps.choregami.kids_can_create_events: boolean (default: false
 
 **See**:
 - [Decision: Kid Event Creation](./decisions/20260120_kid_event_creation.md)
-- [Implementation Plan](./planned/20260120_kid_event_creation.md)
+- [Implementation Details](./milestones/20260120_kid_event_creation.md)
 - [Events Calendar Integration Plan](./planned/20260119_events_calendar_rev2.md)
 
 ---

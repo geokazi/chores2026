@@ -132,7 +132,7 @@ This positions ChoreGami for the "responsible teen" market segment that's curren
 
 ## Related Documents
 
-- [Implementation Plan](../planned/20260120_kid_event_creation.md) - Detailed implementation guide
+- [Implementation Details](../milestones/20260120_kid_event_creation.md) - Detailed implementation guide
 - [Events & Prep Tasks](../milestones/20260120_events_prep_tasks_implementation.md) - Base events feature
 - [Business Requirements](../business-requirements.md) - Product specifications
 - [Architecture](../architecture.md) - Technical design
