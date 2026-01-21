@@ -8,6 +8,8 @@ import ChoreList from "./ChoreList.tsx";
 import LiveLeaderboard from "./LiveLeaderboard.tsx";
 import LiveActivityFeed from "./LiveActivityFeed.tsx";
 import EventMissionGroup from "./EventMissionGroup.tsx";
+import AddEventModal from "./AddEventModal.tsx";
+import PinEntryModal from "./PinEntryModal.tsx";
 import { groupChoresByEvent, usePointsMode, formatTime } from "../lib/utils/household.ts";
 
 interface FamilyMember {
@@ -87,7 +89,10 @@ interface Props {
   todaysChores: ChoreAssignment[];
   upcomingEvents?: UpcomingEvent[];
   recentActivity: any[];
+  kidsCanCreateEvents?: boolean;
+  kidPinRequired?: boolean;
   onChoreComplete?: () => void;
+  onEventCreated?: () => void;
   onPrepTaskToggle?: (eventId: string, taskId: string, done: boolean) => void;
 }
 
@@ -98,12 +103,17 @@ export default function KidDashboard({
   todaysChores,
   upcomingEvents = [],
   recentActivity,
+  kidsCanCreateEvents = false,
+  kidPinRequired = false,
   onChoreComplete,
+  onEventCreated,
   onPrepTaskToggle,
 }: Props) {
   const [chores, setChores] = useState(todaysChores);
   const [leaderboard, setLeaderboard] = useState(familyMembers);
   const [activity, setActivity] = useState(recentActivity);
+  const [showAddEventModal, setShowAddEventModal] = useState(false);
+  const [showPinModal, setShowPinModal] = useState(false);
 
   // Update chores when props change (after refresh)
   useEffect(() => {
@@ -228,18 +238,49 @@ export default function KidDashboard({
       </div>
 
       {/* Upcoming Events - Show events the kid is participating in */}
-      {upcomingEvents.length > 0 && (
+      {(upcomingEvents.length > 0 || kidsCanCreateEvents) && (
         <div style={{ marginBottom: "1.5rem" }}>
-          <h2
-            style={{
-              fontSize: "1.125rem",
-              fontWeight: "600",
-              marginBottom: "1rem",
-              color: "var(--color-text)",
-            }}
-          >
-            📅 Coming Up
-          </h2>
+          <div style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "1rem",
+          }}>
+            <h2
+              style={{
+                fontSize: "1.125rem",
+                fontWeight: "600",
+                margin: 0,
+                color: "var(--color-text)",
+              }}
+            >
+              📅 Coming Up
+            </h2>
+            {kidsCanCreateEvents && (
+              <button
+                onClick={() => {
+                  // If PIN required, show PIN modal first
+                  if (kidPinRequired) {
+                    setShowPinModal(true);
+                  } else {
+                    setShowAddEventModal(true);
+                  }
+                }}
+                style={{
+                  padding: "0.375rem 0.75rem",
+                  backgroundColor: "var(--color-secondary)",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "0.375rem",
+                  fontSize: "0.875rem",
+                  fontWeight: "500",
+                  cursor: "pointer",
+                }}
+              >
+                + Add
+              </button>
+            )}
+          </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
             {upcomingEvents.map((event) => {
               const eventDate = new Date(event.event_date + "T00:00:00");
@@ -455,6 +496,32 @@ export default function KidDashboard({
           📊 See Family Progress
         </a>
       </div>
+
+      {/* Kid Event Creation Modal */}
+      {kidsCanCreateEvents && (
+        <AddEventModal
+          isOpen={showAddEventModal}
+          onClose={() => setShowAddEventModal(false)}
+          familyMembers={familyMembers}
+          onSuccess={() => {
+            setShowAddEventModal(false);
+            onEventCreated?.();
+          }}
+          creatorId={kid.id}
+        />
+      )}
+
+      {/* PIN Entry Modal (when kid PIN is required for event creation) */}
+      {kidPinRequired && showPinModal && (
+        <PinEntryModal
+          kid={kid}
+          onSuccess={() => {
+            setShowPinModal(false);
+            setShowAddEventModal(true);
+          }}
+          onCancel={() => setShowPinModal(false)}
+        />
+      )}
     </div>
   );
 }

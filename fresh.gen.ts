@@ -36,6 +36,7 @@ import * as $api_rotation_apply from "./routes/api/rotation/apply.ts";
 import * as $api_rotation_complete from "./routes/api/rotation/complete.ts";
 import * as $api_rotation_status from "./routes/api/rotation/status.ts";
 import * as $api_rotation_today from "./routes/api/rotation/today.ts";
+import * as $api_settings_kids_events from "./routes/api/settings/kids-events.ts";
 import * as $health from "./routes/health.ts";
 import * as $index from "./routes/index.tsx";
 import * as $kid_dashboard from "./routes/kid/dashboard.tsx";
@@ -131,6 +132,7 @@ const manifest = {
     "./routes/api/rotation/complete.ts": $api_rotation_complete,
     "./routes/api/rotation/status.ts": $api_rotation_status,
     "./routes/api/rotation/today.ts": $api_rotation_today,
+    "./routes/api/settings/kids-events.ts": $api_settings_kids_events,
     "./routes/health.ts": $health,
     "./routes/index.tsx": $index,
     "./routes/kid/dashboard.tsx": $kid_dashboard,

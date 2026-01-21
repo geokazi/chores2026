@@ -32,6 +32,11 @@ export default function SecureKidDashboard({ family, familyMembers, recentActivi
   const [error, setError] = useState<string | null>(null);
   const [wsConnected, setWsConnected] = useState(false);
 
+  // Check if family allows kids to create events
+  const kidsCanCreateEvents = family?.settings?.apps?.choregami?.kids_can_create_events === true;
+  // Check if kid PIN is required (family setting)
+  const kidPinRequired = family?.children_pins_enabled === true;
+
   useEffect(() => {
     // SECURITY: Clear parent session when kid dashboard is accessed
     // This ensures parent must re-enter PIN when switching back to parent features
@@ -328,10 +333,18 @@ export default function SecureKidDashboard({ family, familyMembers, recentActivi
         todaysChores={todaysChores}
         upcomingEvents={upcomingEvents}
         recentActivity={recentActivity}
+        kidsCanCreateEvents={kidsCanCreateEvents}
+        kidPinRequired={kidPinRequired}
         onChoreComplete={() => {
           // Refresh chores after completion to get updated data
           if (activeKid) {
             loadKidChores(activeKid.id);
+          }
+        }}
+        onEventCreated={() => {
+          // Refresh events after kid creates one
+          if (activeKid) {
+            loadKidEvents(activeKid.id);
           }
         }}
         onPrepTaskToggle={async (eventId, taskId, done) => {

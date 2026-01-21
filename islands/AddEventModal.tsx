@@ -40,9 +40,10 @@ interface Props {
   familyMembers: FamilyMember[];
   onSuccess?: () => void;
   editingEvent?: FamilyEvent | null;
+  creatorId?: string; // Kid profile ID when kid creates event (for attribution)
 }
 
-export default function AddEventModal({ isOpen, onClose, familyMembers, onSuccess, editingEvent }: Props) {
+export default function AddEventModal({ isOpen, onClose, familyMembers, onSuccess, editingEvent, creatorId }: Props) {
   const isEditing = !!editingEvent;
 
   const getInitialFormData = () => ({
@@ -91,6 +92,7 @@ export default function AddEventModal({ isOpen, onClose, familyMembers, onSucces
           event_time: formData.event_time || null,
           is_all_day: formData.is_all_day,
           participants: formData.participants,
+          ...(creatorId && { creatorId }), // Kid profile ID for attribution
         }),
       });
 

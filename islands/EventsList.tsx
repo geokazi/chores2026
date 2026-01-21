@@ -33,6 +33,7 @@ interface FamilyEvent {
   };
   linked_chores_count?: number;
   completed_chores_count?: number;
+  created_by_profile_id?: string; // Kid profile ID when kid creates event
 }
 
 interface FamilyMember {
@@ -109,6 +110,17 @@ export default function EventsList({ thisWeek, upcoming, familyMembers }: Props)
       .filter(Boolean) as FamilyMember[];
   };
 
+  // Get creator name for kid-created events (returns null for parent-created)
+  const getKidCreatorName = (event: FamilyEvent) => {
+    if (!event.created_by_profile_id) return null;
+    const creator = familyMembers.find(m => m.id === event.created_by_profile_id);
+    // Only show badge for kid-created events
+    if (creator && creator.role === "child") {
+      return creator.name;
+    }
+    return null;
+  };
+
   const handleParticipantClick = (member: FamilyMember) => {
     // Set the active session for this member
     ActiveKidSessionManager.setActiveKid(member.id, member.name);
@@ -171,9 +183,28 @@ export default function EventsList({ thisWeek, upcoming, familyMembers }: Props)
             fontSize: "1rem",
             fontWeight: "600",
             marginBottom: "0.25rem",
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem",
+            flexWrap: "wrap",
           }}
         >
-          {getEventEmoji(event)}{getEventEmoji(event) ? " " : ""}{event.title}
+          <span>{getEventEmoji(event)}{getEventEmoji(event) ? " " : ""}{event.title}</span>
+          {/* Kid creator badge */}
+          {getKidCreatorName(event) && (
+            <span
+              style={{
+                fontSize: "0.625rem",
+                padding: "0.125rem 0.375rem",
+                backgroundColor: "#e0f2fe",
+                color: "#0369a1",
+                borderRadius: "0.25rem",
+                fontWeight: "500",
+              }}
+            >
+              Added by {getKidCreatorName(event)}
+            </span>
+          )}
         </div>
         <div style={{ fontSize: "0.75rem", color: "var(--color-text-light)", marginBottom: "0.25rem", display: "flex", alignItems: "center", gap: "0.25rem", flexWrap: "wrap" }}>
           <span>👤</span>
