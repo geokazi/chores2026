@@ -56,6 +56,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-20 | [↳ Smart Event Grouping](./investigations/20260120_events_not_showing_diagnosis.md#fix-5-smart-event-grouping-removes-7-day-limit) | ✅ Complete | Removed 7-day limit; events grouped by Today/This Week/Later |
 | TBD | [Event Library & Reuse](./planned/20260120_event_library_reuse.md) | 📋 Planned | Quick recreation of past events |
 | 2026-01-20 | [**Kid Event Creation**](./milestones/20260120_kid_event_creation.md) | ✅ Complete | Teens create own events with parent visibility, PIN-gated |
+| 2026-01-20 | **Prep Tasks Inline Expansion** | ✅ Complete | Smart auto-expand (≤3 tasks), inline checkboxes, 1-click completion |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 
@@ -67,6 +68,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-20 | [Analytics Strategy](./decisions/20260120_analytics_strategy.md) | ✅ Decided | External analytics (Plausible) + existing data; don't extend FamilyScore |
 | 2026-01-20 | [Kid Event Creation](./decisions/20260120_kid_event_creation.md) | ✅ Decided | Allow kids to create events with parent visibility, gated by existing PIN |
 | 2026-01-20 | [Community Messaging Board](./decisions/20260120_community_messaging_board_analysis.md) | ✅ Deferred | Test with Facebook Group first; in-app at 2000+ users |
+| 2026-01-20 | [Prep Tasks Visibility](./decisions/20260120_prep_tasks_visibility_analysis.md) | ✅ Decided | Smart auto-expand ≤3 tasks + inline checkboxes |
 | 2026-01-20 | Tablet/Desktop Styling | ✅ Deferred | Mobile-first approach; revisit with analytics data |
 
 ### 📖 Core Documentation
@@ -218,6 +220,7 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 - ✅ **Navigation UX**: Inline user switcher (2-click profile switching), active nav indicator, clickable participant links on events
 - ✅ **Kid Event Creation**: Teens can create own events when family setting enabled, PIN-gated if kid PINs active, parent visibility with "Added by" attribution
 - ✅ **Smart Event Grouping**: Events organized by Today/This Week/Later (removes 7-day limit), "Later" collapsed by default
+- ✅ **Prep Tasks Inline Expansion**: Smart auto-expand (≤3 tasks visible inline), 1-click completion with inline checkboxes, optimistic UI
 
 ### Known Limitations
 - **Testing**: Comprehensive test suite not yet implemented
