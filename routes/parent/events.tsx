@@ -122,6 +122,8 @@ export const handler: Handlers<EventsPageData> = {
         return eventDate > weekFromNowStr;
       });
 
+      console.log(`📅 Parent events page: ${enrichedEvents.length} total, ${thisWeek.length} this week, ${upcoming.length} upcoming`);
+
       return ctx.render({
         family,
         members,

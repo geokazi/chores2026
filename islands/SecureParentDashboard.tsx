@@ -3,8 +3,9 @@
  * Same pattern as SecureKidDashboard - reads active parent from session storage
  */
 
-import { useEffect, useState } from "preact/hooks";
+import { useEffect, useState, useMemo } from "preact/hooks";
 import { ActiveKidSessionManager } from "../lib/active-kid-session.ts";
+import { groupEventsByTimePeriod } from "../lib/utils/household.ts";
 import AppHeader from "./AppHeader.tsx";
 
 interface Props {
@@ -21,6 +22,10 @@ export default function SecureParentDashboard({ family, familyMembers, recentAct
   const [error, setError] = useState<string | null>(null);
   const [completingChoreId, setCompletingChoreId] = useState<string | null>(null);
   const [togglingTaskId, setTogglingTaskId] = useState<string | null>(null);
+  const [showLaterEvents, setShowLaterEvents] = useState(false);
+
+  // Smart grouping for events: Today, This Week, Later
+  const groupedEvents = useMemo(() => groupEventsByTimePeriod(upcomingEvents), [upcomingEvents]);
 
   useEffect(() => {
     loadActiveParent();
@@ -116,16 +121,14 @@ export default function SecureParentDashboard({ family, familyMembers, recentAct
           return isParticipant;
         });
 
-        // Only show events from today through next 7 days
+        // Show all events from today onwards (no upper limit - smart grouping in UI)
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const weekFromNow = new Date(today);
-        weekFromNow.setDate(weekFromNow.getDate() + 7);
 
         const upcomingParentEvents = parentEvents.filter((event: any) => {
           const eventDate = new Date(event.event_date + "T00:00:00");
           eventDate.setHours(0, 0, 0, 0);
-          return eventDate >= today && eventDate <= weekFromNow;
+          return eventDate >= today;
         });
 
         console.log("📅 Parent events loaded:", {
@@ -431,7 +434,7 @@ export default function SecureParentDashboard({ family, familyMembers, recentAct
         )}
       </div>
 
-      {/* Coming Up - Events */}
+      {/* Coming Up - Events with Smart Grouping */}
       {upcomingEvents.length > 0 && (
         <div class="card" style={{ marginBottom: "1.5rem" }}>
           <h2 style={{
@@ -444,8 +447,10 @@ export default function SecureParentDashboard({ family, familyMembers, recentAct
           }}>
             📅 Coming Up
           </h2>
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-            {upcomingEvents.map((event: any) => {
+
+          {/* Helper to render event card */}
+          {(() => {
+            const renderEventCard = (event: any) => {
               const prepTasks = event.metadata?.prep_tasks || [];
               const myTasks = prepTasks.filter((t: any) => !t.assignee_id || t.assignee_id === activeParent.id);
               const myChores = event.linked_chores || [];
@@ -577,8 +582,67 @@ export default function SecureParentDashboard({ family, familyMembers, recentAct
                   )}
                 </div>
               );
-            })}
-          </div>
+            };
+
+            return (
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                {/* Today's Events */}
+                {groupedEvents.today.length > 0 && (
+                  <div>
+                    <div style={{ fontSize: "0.75rem", fontWeight: "600", color: "var(--color-primary)", marginBottom: "0.5rem", textTransform: "uppercase" }}>
+                      Today ({groupedEvents.today.length})
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                      {groupedEvents.today.map(renderEventCard)}
+                    </div>
+                  </div>
+                )}
+
+                {/* This Week's Events */}
+                {groupedEvents.thisWeek.length > 0 && (
+                  <div>
+                    <div style={{ fontSize: "0.75rem", fontWeight: "600", color: "var(--color-text-light)", marginBottom: "0.5rem", textTransform: "uppercase" }}>
+                      This Week ({groupedEvents.thisWeek.length})
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                      {groupedEvents.thisWeek.map(renderEventCard)}
+                    </div>
+                  </div>
+                )}
+
+                {/* Later Events - Collapsible */}
+                {groupedEvents.later.length > 0 && (
+                  <div>
+                    <button
+                      onClick={() => setShowLaterEvents(!showLaterEvents)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        fontSize: "0.75rem",
+                        fontWeight: "600",
+                        color: "var(--color-text-light)",
+                        marginBottom: showLaterEvents ? "0.5rem" : "0",
+                        textTransform: "uppercase",
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        padding: 0,
+                      }}
+                    >
+                      <span style={{ transform: showLaterEvents ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>▶</span>
+                      Later ({groupedEvents.later.length})
+                    </button>
+                    {showLaterEvents && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                        {groupedEvents.later.map(renderEventCard)}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       )}
 

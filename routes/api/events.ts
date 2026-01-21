@@ -257,6 +257,8 @@ export const handler: Handlers = {
         });
       }
 
+      console.log(`✅ Event created: "${newEvent.title}" on ${newEvent.event_date} (id: ${newEvent.id})`);
+
       return new Response(JSON.stringify({ event: newEvent }), {
         status: 201,
         headers: { "Content-Type": "application/json" },

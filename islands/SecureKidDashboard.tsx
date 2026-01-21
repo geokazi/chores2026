@@ -171,16 +171,14 @@ export default function SecureKidDashboard({ family, familyMembers, recentActivi
           return isParticipant;
         });
 
-        // Only show events from today through next 7 days
+        // Show all events from today onwards (no upper limit - smart grouping in UI)
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const weekFromNow = new Date(today);
-        weekFromNow.setDate(weekFromNow.getDate() + 7);
 
         const upcomingKidEvents = kidEvents.filter((event: any) => {
           const eventDate = new Date(event.event_date + "T00:00:00");
           eventDate.setHours(0, 0, 0, 0);
-          return eventDate >= today && eventDate <= weekFromNow;
+          return eventDate >= today;
         });
 
         console.log("📅 Kid events loaded:", {

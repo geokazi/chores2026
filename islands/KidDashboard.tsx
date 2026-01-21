@@ -10,7 +10,7 @@ import LiveActivityFeed from "./LiveActivityFeed.tsx";
 import EventMissionGroup from "./EventMissionGroup.tsx";
 import AddEventModal from "./AddEventModal.tsx";
 import PinEntryModal from "./PinEntryModal.tsx";
-import { groupChoresByEvent, usePointsMode, formatTime } from "../lib/utils/household.ts";
+import { groupChoresByEvent, usePointsMode, formatTime, groupEventsByTimePeriod } from "../lib/utils/household.ts";
 
 interface FamilyMember {
   id: string;
@@ -114,6 +114,7 @@ export default function KidDashboard({
   const [activity, setActivity] = useState(recentActivity);
   const [showAddEventModal, setShowAddEventModal] = useState(false);
   const [showPinModal, setShowPinModal] = useState(false);
+  const [showLaterEvents, setShowLaterEvents] = useState(false);
 
   // Update chores when props change (after refresh)
   useEffect(() => {
@@ -123,6 +124,9 @@ export default function KidDashboard({
   // Group chores by event for mission display
   const groupedChores = useMemo(() => groupChoresByEvent(chores), [chores]);
   const showPoints = useMemo(() => usePointsMode(chores), [chores]);
+
+  // Smart grouping for events: Today, This Week, Later
+  const groupedEvents = useMemo(() => groupEventsByTimePeriod(upcomingEvents), [upcomingEvents]);
 
   // Calculate kid's ranking and streak
   const sortedMembers = [...leaderboard]
@@ -237,7 +241,7 @@ export default function KidDashboard({
 
       </div>
 
-      {/* Upcoming Events - Show events the kid is participating in */}
+      {/* Upcoming Events - Smart grouping: Today, This Week, Later */}
       {(upcomingEvents.length > 0 || kidsCanCreateEvents) && (
         <div style={{ marginBottom: "1.5rem" }}>
           <div style={{
@@ -281,8 +285,10 @@ export default function KidDashboard({
               </button>
             )}
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-            {upcomingEvents.map((event) => {
+
+          {/* Helper to render event card */}
+          {(() => {
+            const renderEventCard = (event: UpcomingEvent) => {
               const eventDate = new Date(event.event_date + "T00:00:00");
               const today = new Date();
               today.setHours(0, 0, 0, 0);
@@ -422,8 +428,74 @@ export default function KidDashboard({
                   )}
                 </div>
               );
-            })}
-          </div>
+            };
+
+            return (
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                {/* Today's Events */}
+                {groupedEvents.today.length > 0 && (
+                  <div>
+                    <div style={{ fontSize: "0.75rem", fontWeight: "600", color: "var(--color-primary)", marginBottom: "0.5rem", textTransform: "uppercase" }}>
+                      Today ({groupedEvents.today.length})
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                      {groupedEvents.today.map(renderEventCard)}
+                    </div>
+                  </div>
+                )}
+
+                {/* This Week's Events */}
+                {groupedEvents.thisWeek.length > 0 && (
+                  <div>
+                    <div style={{ fontSize: "0.75rem", fontWeight: "600", color: "var(--color-text-light)", marginBottom: "0.5rem", textTransform: "uppercase" }}>
+                      This Week ({groupedEvents.thisWeek.length})
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                      {groupedEvents.thisWeek.map(renderEventCard)}
+                    </div>
+                  </div>
+                )}
+
+                {/* Later Events - Collapsible */}
+                {groupedEvents.later.length > 0 && (
+                  <div>
+                    <button
+                      onClick={() => setShowLaterEvents(!showLaterEvents)}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        fontSize: "0.75rem",
+                        fontWeight: "600",
+                        color: "var(--color-text-light)",
+                        marginBottom: showLaterEvents ? "0.5rem" : "0",
+                        textTransform: "uppercase",
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        padding: 0,
+                      }}
+                    >
+                      <span style={{ transform: showLaterEvents ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>▶</span>
+                      Later ({groupedEvents.later.length})
+                    </button>
+                    {showLaterEvents && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                        {groupedEvents.later.map(renderEventCard)}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Empty state */}
+                {upcomingEvents.length === 0 && !kidsCanCreateEvents && (
+                  <div class="card" style={{ textAlign: "center", padding: "1.5rem", color: "var(--color-text-light)" }}>
+                    No upcoming events
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       )}
 

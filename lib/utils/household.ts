@@ -96,6 +96,51 @@ export function formatTime(time: string): string {
 }
 
 /**
+ * Smart grouping for events by time period
+ * Groups events into: Today, This Week, Later
+ */
+export interface GroupedEvents {
+  today: FamilyEvent[];
+  thisWeek: FamilyEvent[];
+  later: FamilyEvent[];
+}
+
+export function groupEventsByTimePeriod<T extends { event_date: string }>(events: T[]): {
+  today: T[];
+  thisWeek: T[];
+  later: T[];
+} {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const weekFromNow = new Date(today);
+  weekFromNow.setDate(weekFromNow.getDate() + 7);
+
+  const result = {
+    today: [] as T[],
+    thisWeek: [] as T[],
+    later: [] as T[],
+  };
+
+  for (const event of events) {
+    const eventDate = new Date(event.event_date + "T00:00:00");
+    eventDate.setHours(0, 0, 0, 0);
+
+    if (eventDate.getTime() === today.getTime()) {
+      result.today.push(event);
+    } else if (eventDate > today && eventDate < weekFromNow) {
+      result.thisWeek.push(event);
+    } else if (eventDate >= weekFromNow) {
+      result.later.push(event);
+    }
+    // Past events are filtered out
+  }
+
+  return result;
+}
+
+/**
  * Format event date for display
  */
 export function formatEventDate(event: FamilyEvent): string {
