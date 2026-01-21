@@ -252,8 +252,14 @@ export default function AddPrepTasksModal({ isOpen, onClose, event, familyMember
                     display: "flex",
                     gap: "0.5rem",
                     alignItems: "center",
+                    padding: task.done ? "0.25rem" : "0",
+                    backgroundColor: task.done ? "#f0fdf4" : "transparent",
+                    borderRadius: task.done ? "0.375rem" : "0",
                   }}
                 >
+                  {task.done && (
+                    <span style={{ fontSize: "1rem", marginLeft: "0.25rem" }}>✅</span>
+                  )}
                   <input
                     type="text"
                     value={task.text}
@@ -265,8 +271,10 @@ export default function AddPrepTasksModal({ isOpen, onClose, event, familyMember
                       border: "1px solid var(--color-border)",
                       borderRadius: "0.375rem",
                       fontSize: "0.875rem",
+                      backgroundColor: task.done ? "#f0fdf4" : "white",
+                      color: task.done ? "var(--color-text-light)" : "var(--color-text)",
                     }}
-                    autoFocus={index === 0}
+                    autoFocus={index === 0 && !task.done}
                   />
                   <select
                     value={task.assignee_id}
