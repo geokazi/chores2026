@@ -54,6 +54,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-20 | [**Navigation UX Improvements**](./milestones/20260120_navigation_ux_improvements.md) | ✅ Complete | Inline user switcher, active nav indicator, reduced switching friction |
 | 2026-01-20 | [**Events Display Fixes**](./investigations/20260120_events_not_showing_diagnosis.md) | ✅ Complete | Event-linked chores default to event date, timezone fixes, explicit FK joins |
 | TBD | [Event Library & Reuse](./planned/20260120_event_library_reuse.md) | 📋 Planned | Quick recreation of past events |
+| TBD | [Kid Event Creation](./planned/20260120_kid_event_creation.md) | 📋 Planned | Teens create own events with parent visibility |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 
@@ -63,6 +64,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 |------|----------|--------|---------|
 | 2026-01-20 | [Feedback Strategy](./decisions/20260120_feedback_strategy.md) | ✅ Decided | Google Form now, in-app JSONB at 100+ users |
 | 2026-01-20 | [Analytics Strategy](./decisions/20260120_analytics_strategy.md) | ✅ Decided | External analytics (Plausible) + existing data; don't extend FamilyScore |
+| 2026-01-20 | [Kid Event Creation](./decisions/20260120_kid_event_creation.md) | ✅ Decided | Allow kids to create events with parent visibility, gated by existing PIN |
 | 2026-01-20 | Tablet/Desktop Styling | ✅ Deferred | Mobile-first approach; revisit with analytics data |
 
 ### 📖 Core Documentation

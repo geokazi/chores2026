@@ -471,7 +471,25 @@ const groupedChores = groupChoresByEvent(todaysChores);
 // Returns: { events: [{ event, chores }], unlinked: [] }
 ```
 
-**See**: [Events Calendar Integration Plan](./planned/20260119_events_calendar_rev2.md)
+### Kid Event Creation (Planned)
+
+**Status**: 📋 Planned
+
+Kids (especially teens) can create their own events with parent visibility, gated by existing PIN system.
+
+```
+families.settings.apps.choregami.kids_can_create_events: boolean (default: false)
+```
+
+**Access Control:**
+- Setting OFF: Parents only (current behavior)
+- Setting ON + Kid PIN disabled: Kids create freely
+- Setting ON + Kid PIN enabled: PIN required before creating
+
+**See**:
+- [Decision: Kid Event Creation](./decisions/20260120_kid_event_creation.md)
+- [Implementation Plan](./planned/20260120_kid_event_creation.md)
+- [Events Calendar Integration Plan](./planned/20260119_events_calendar_rev2.md)
 
 ---
 

@@ -215,6 +215,7 @@ ADD COLUMN family_event_id UUID REFERENCES choretracker.family_events(id);
 
 ## Future Enhancements
 
+- [Kid Event Creation](../planned/20260120_kid_event_creation.md) - Teens create own events with parent visibility ([Decision](../decisions/20260120_kid_event_creation.md))
 - [Event Library & Reuse](../planned/20260120_event_library_reuse.md) - Quick recreation of past events
 - Event recurrence patterns (weekly practices)
 - Calendar view for events

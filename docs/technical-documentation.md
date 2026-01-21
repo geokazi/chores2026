@@ -266,6 +266,11 @@ Body: { name: string, points: number, assignedTo: string, dueDate: string,
 Response: { success: boolean, choreId: string }
 ```
 
+**Planned Enhancement: Kid Event Creation**
+
+Kids can create events when `families.settings.apps.choregami.kids_can_create_events` is enabled.
+See [Implementation Plan](./planned/20260120_kid_event_creation.md) for details.
+
 #### Authentication
 ```typescript
 // Verify or setup kid PIN

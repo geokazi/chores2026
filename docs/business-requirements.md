@@ -195,6 +195,24 @@ ChoreGami 2026 is a streamlined family chore management application designed to 
 
 **Business Value:** Enables ongoing event management without recreating events
 
+#### Story 3.5: Kid Event Creation (Planned)
+**As a responsible teen**, I want to create my own events for activities like basketball practice or study groups
+**So that** I can manage my schedule without needing a parent to enter everything
+
+**Acceptance Criteria:**
+- [ ] Family setting toggle: "Kids can create events" (OFF by default)
+- [ ] When enabled, kids see "+ Add" button in Coming Up section
+- [ ] If Kid PIN enabled, PIN required before creating event
+- [ ] Events show "Added by [name]" attribution
+- [ ] Parents have full visibility and edit access to all events
+- [ ] Kid-created events appear in parent events page
+
+**Business Value:** Teaches scheduling skills while maintaining parent oversight - differentiator in market
+
+**Related Documents:**
+- [Decision: Kid Event Creation](./decisions/20260120_kid_event_creation.md)
+- [Implementation Plan](./planned/20260120_kid_event_creation.md)
+
 ### Epic 4: Real-Time Integration
 
 #### Story 3.1: Live Updates
