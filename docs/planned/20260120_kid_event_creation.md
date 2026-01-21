@@ -1,9 +1,10 @@
 # Kid Event Creation Feature
 
-**Status**: 📋 Planned
+**Status**: ✅ Implemented
 **Priority**: Medium
-**Estimated Effort**: 2 hours
+**Actual Effort**: ~1 hour
 **Date**: January 20, 2026
+**Commit**: `d8ebdfe`
 
 ## Overview
 
@@ -195,16 +196,17 @@ const kidsCanCreateEvents = familySettings?.settings?.apps?.choregami?.kids_can_
 
 ## File Changes Summary
 
-| File | Change Type | Lines |
+| File | Change Type | Lines (Actual) |
 |------|-------------|-------|
-| `routes/api/events.ts` | Modify | ~20 |
-| `islands/FamilySettings.tsx` | Modify | ~15 |
-| `islands/KidDashboard.tsx` | Modify | ~20 |
-| `islands/SecureKidDashboard.tsx` | Modify | ~10 |
-| `islands/EventsList.tsx` | Modify | ~10 |
-| `routes/parent/settings.tsx` | Modify | ~5 |
+| `routes/api/events.ts` | Modify | +127 |
+| `routes/api/settings/kids-events.ts` | **Create** | +83 |
+| `islands/FamilySettings.tsx` | Modify | +113 |
+| `islands/KidDashboard.tsx` | Modify | +86 |
+| `islands/SecureKidDashboard.tsx` | Modify | +13 |
+| `islands/EventsList.tsx` | Modify | +32 |
+| `islands/AddEventModal.tsx` | Modify | +3 |
 
-**Total**: ~80 lines of code
+**Total**: ~458 lines added (actual)
 
 ## Testing Plan
 
