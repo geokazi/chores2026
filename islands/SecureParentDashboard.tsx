@@ -20,6 +20,7 @@ export default function SecureParentDashboard({ family, familyMembers, recentAct
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [completingChoreId, setCompletingChoreId] = useState<string | null>(null);
+  const [togglingTaskId, setTogglingTaskId] = useState<string | null>(null);
 
   useEffect(() => {
     loadActiveParent();
@@ -202,6 +203,81 @@ export default function SecureParentDashboard({ family, familyMembers, recentAct
     }
   };
 
+  const handlePrepTaskToggle = async (eventId: string, taskId: string, done: boolean) => {
+    if (!activeParent) return;
+
+    setTogglingTaskId(taskId);
+
+    try {
+      // Optimistic update
+      setUpcomingEvents(prev => prev.map(event => {
+        if (event.id !== eventId) return event;
+        const prepTasks = event.metadata?.prep_tasks || [];
+        return {
+          ...event,
+          metadata: {
+            ...event.metadata,
+            prep_tasks: prepTasks.map((t: any) =>
+              t.id === taskId ? { ...t, done } : t
+            ),
+          },
+        };
+      }));
+
+      // Send to API
+      const response = await fetch(`/api/events/${eventId}/prep-task`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ taskId, done }),
+      });
+
+      if (!response.ok) {
+        // Revert on failure
+        loadParentEvents(activeParent.id);
+      }
+    } catch (error) {
+      console.error("Failed to toggle prep task:", error);
+      loadParentEvents(activeParent.id);
+    } finally {
+      setTogglingTaskId(null);
+    }
+  };
+
+  const handleCompleteEventChore = async (choreId: string) => {
+    if (!activeParent) return;
+
+    setCompletingChoreId(choreId);
+
+    try {
+      const response = await fetch(`/api/chores/${choreId}/complete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          profile_id: activeParent.id,
+          family_id: family.id,
+        }),
+      });
+
+      if (response.ok) {
+        // Update local state for linked chores
+        setUpcomingEvents(prev => prev.map(event => ({
+          ...event,
+          linked_chores: (event.linked_chores || []).map((c: any) =>
+            c.id === choreId ? { ...c, status: "completed" } : c
+          ),
+        })));
+      } else {
+        console.error("Failed to complete chore");
+        alert("Failed to complete chore");
+      }
+    } catch (error) {
+      console.error("Error completing chore:", error);
+      alert("Error completing chore");
+    } finally {
+      setCompletingChoreId(null);
+    }
+  };
+
   if (loading) {
     return (
       <div style={{ 
@@ -233,7 +309,7 @@ export default function SecureParentDashboard({ family, familyMembers, recentAct
       {/* Mobile-friendly header */}
       <AppHeader
         currentPage="my-chores"
-        pageTitle={`${activeParent.name}'s Chores`}
+        pageTitle={`${activeParent.name}'s Board`}
         familyMembers={familyMembers}
         currentUser={activeParent}
         userRole="parent"
@@ -371,7 +447,7 @@ export default function SecureParentDashboard({ family, familyMembers, recentAct
           <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
             {upcomingEvents.map((event: any) => {
               const prepTasks = event.metadata?.prep_tasks || [];
-              const myTasks = prepTasks.filter((t: any) => t.assignee_id === activeParent.id);
+              const myTasks = prepTasks.filter((t: any) => !t.assignee_id || t.assignee_id === activeParent.id);
               const myChores = event.linked_chores || [];
               const emoji = event.metadata?.emoji || "";
 
@@ -401,14 +477,85 @@ export default function SecureParentDashboard({ family, familyMembers, recentAct
                     )}
                   </div>
                   {hasMissions && (
-                    <div style={{ fontSize: "0.875rem", color: "var(--color-primary)", marginTop: "0.25rem" }}>
-                      {myTasks.length > 0 && (
-                        <span>{myTasks.filter((t: any) => t.done).length}/{myTasks.length} prep tasks</span>
-                      )}
-                      {myTasks.length > 0 && myChores.length > 0 && <span> · </span>}
-                      {myChores.length > 0 && (
-                        <span>{myChores.filter((c: any) => c.status === "completed").length}/{myChores.length} chores</span>
-                      )}
+                    <div style={{ marginTop: "0.75rem", paddingTop: "0.75rem", borderTop: "1px solid var(--color-border)" }}>
+                      <div style={{ fontSize: "0.75rem", color: "var(--color-text-light)", marginBottom: "0.5rem" }}>
+                        Your tasks:
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
+                        {/* Prep tasks */}
+                        {myTasks.map((task: any) => (
+                          <button
+                            key={task.id}
+                            onClick={() => handlePrepTaskToggle(event.id, task.id, !task.done)}
+                            disabled={togglingTaskId === task.id}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.5rem",
+                              padding: "0.5rem",
+                              border: "1px solid var(--color-border)",
+                              borderRadius: "0.375rem",
+                              background: task.done ? "var(--color-bg)" : "white",
+                              cursor: togglingTaskId === task.id ? "wait" : "pointer",
+                              textAlign: "left",
+                              width: "100%",
+                              opacity: togglingTaskId === task.id ? 0.6 : 1,
+                            }}
+                          >
+                            <span style={{ fontSize: "1rem" }}>
+                              {togglingTaskId === task.id ? "⏳" : (task.done ? "✅" : "⬜")}
+                            </span>
+                            <span
+                              style={{
+                                flex: 1,
+                                fontSize: "0.875rem",
+                                textDecoration: task.done ? "line-through" : "none",
+                                color: task.done ? "var(--color-text-light)" : "var(--color-text)",
+                              }}
+                            >
+                              {task.text}
+                            </span>
+                          </button>
+                        ))}
+                        {/* Linked chores */}
+                        {myChores.map((chore: any) => (
+                          <button
+                            key={chore.id}
+                            onClick={() => chore.status !== "completed" && handleCompleteEventChore(chore.id)}
+                            disabled={completingChoreId === chore.id || chore.status === "completed"}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.5rem",
+                              padding: "0.5rem",
+                              border: "1px solid var(--color-border)",
+                              borderRadius: "0.375rem",
+                              background: chore.status === "completed" ? "var(--color-bg)" : "white",
+                              cursor: chore.status === "completed" ? "default" : (completingChoreId === chore.id ? "wait" : "pointer"),
+                              textAlign: "left",
+                              width: "100%",
+                              opacity: completingChoreId === chore.id ? 0.6 : 1,
+                            }}
+                          >
+                            <span style={{ fontSize: "1rem" }}>
+                              {completingChoreId === chore.id ? "⏳" : (chore.status === "completed" ? "✅" : "⬜")}
+                            </span>
+                            <span style={{ fontSize: "1rem" }}>
+                              {chore.chore_template?.icon || "📋"}
+                            </span>
+                            <span
+                              style={{
+                                flex: 1,
+                                fontSize: "0.875rem",
+                                textDecoration: chore.status === "completed" ? "line-through" : "none",
+                                color: chore.status === "completed" ? "var(--color-text-light)" : "var(--color-text)",
+                              }}
+                            >
+                              {chore.chore_template?.name || "Task"}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
