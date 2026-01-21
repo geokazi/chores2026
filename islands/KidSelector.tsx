@@ -160,7 +160,7 @@ export default function KidSelector({ family, familyMembers }: Props) {
         fontSize: "0.875rem",
         color: wsConnected ? "var(--color-success)" : "var(--color-text-light)"
       }}>
-        {wsConnected ? "🎮 Live points updating" : "📊 Static points display"}
+        {wsConnected ? "🎮 Live points updating" : ""}
       </div>
       
       <div>

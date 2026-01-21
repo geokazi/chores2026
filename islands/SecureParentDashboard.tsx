@@ -16,6 +16,7 @@ interface Props {
 export default function SecureParentDashboard({ family, familyMembers, recentActivity }: Props) {
   const [activeParent, setActiveParent] = useState<any>(null);
   const [parentChores, setParentChores] = useState<any[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [completingChoreId, setCompletingChoreId] = useState<string | null>(null);
@@ -48,9 +49,12 @@ export default function SecureParentDashboard({ family, familyMembers, recentAct
       }
 
       setActiveParent(parent);
-      
-      // Load parent's chores
-      await loadParentChores(activeParentId);
+
+      // Load parent's chores and events
+      await Promise.all([
+        loadParentChores(activeParentId),
+        loadParentEvents(activeParentId),
+      ]);
       
     } catch (err) {
       console.error("Error loading active parent:", err);
@@ -81,6 +85,42 @@ export default function SecureParentDashboard({ family, familyMembers, recentAct
     } catch (err) {
       console.error("Error loading chores:", err);
       setParentChores([]);
+    }
+  };
+
+  const loadParentEvents = async (parentId: string) => {
+    try {
+      const response = await fetch('/api/events');
+
+      if (response.ok) {
+        const data = await response.json();
+        const events = data.events || [];
+
+        // Filter events where parent is a participant (or show all if no participants)
+        const parentEvents = events.filter((event: any) => {
+          if (!event.participants || event.participants.length === 0) {
+            return true;
+          }
+          return event.participants.includes(parentId);
+        });
+
+        // Only show events in the next 7 days
+        const now = new Date();
+        const weekFromNow = new Date(now);
+        weekFromNow.setDate(weekFromNow.getDate() + 7);
+
+        const upcomingParentEvents = parentEvents.filter((event: any) => {
+          const eventDate = new Date(event.event_date + "T00:00:00");
+          return eventDate <= weekFromNow;
+        });
+
+        setUpcomingEvents(upcomingParentEvents);
+      } else {
+        setUpcomingEvents([]);
+      }
+    } catch (err) {
+      console.error("Error loading events:", err);
+      setUpcomingEvents([]);
     }
   };
 
@@ -145,7 +185,7 @@ export default function SecureParentDashboard({ family, familyMembers, recentAct
       {/* Mobile-friendly header */}
       <AppHeader
         currentPage="my-chores"
-        pageTitle="My Chores"
+        pageTitle={`${activeParent.name}'s Chores`}
         familyMembers={familyMembers}
         currentUser={activeParent}
         userRole="parent"
@@ -266,6 +306,60 @@ export default function SecureParentDashboard({ family, familyMembers, recentAct
           </div>
         )}
       </div>
+
+      {/* Coming Up - Events */}
+      {upcomingEvents.length > 0 && (
+        <div class="card" style={{ marginBottom: "1.5rem" }}>
+          <h2 style={{
+            fontSize: "1.125rem",
+            fontWeight: "600",
+            marginBottom: "1rem",
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem",
+          }}>
+            📅 Coming Up
+          </h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+            {upcomingEvents.map((event: any) => {
+              const prepTasks = event.metadata?.prep_tasks || [];
+              const myTasks = prepTasks.filter((t: any) => t.assignee_id === activeParent.id);
+              const emoji = event.metadata?.emoji || "";
+
+              return (
+                <div
+                  key={event.id}
+                  style={{
+                    padding: "0.75rem",
+                    backgroundColor: "var(--color-bg)",
+                    borderRadius: "0.5rem",
+                    borderLeft: "3px solid var(--color-primary)",
+                  }}
+                >
+                  <div style={{ fontWeight: "600", marginBottom: "0.25rem" }}>
+                    {emoji}{emoji ? " " : ""}{event.title}
+                  </div>
+                  <div style={{ fontSize: "0.875rem", color: "var(--color-text-light)" }}>
+                    {new Date(event.event_date + "T00:00:00").toLocaleDateString("en-US", {
+                      weekday: "short",
+                      month: "short",
+                      day: "numeric",
+                    })}
+                    {event.schedule_data?.start_time && !event.schedule_data?.all_day && (
+                      <> at {event.schedule_data.start_time}</>
+                    )}
+                  </div>
+                  {myTasks.length > 0 && (
+                    <div style={{ fontSize: "0.875rem", color: "var(--color-primary)", marginTop: "0.25rem" }}>
+                      {myTasks.filter((t: any) => t.done).length}/{myTasks.length} prep tasks done
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Quick Link to Family Dashboard */}
       <div style={{ textAlign: "center", marginTop: "2rem" }}>

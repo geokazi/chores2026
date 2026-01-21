@@ -99,6 +99,16 @@ export default function EventsList({ thisWeek, upcoming, familyMembers }: Props)
     return event.metadata?.emoji || "";
   };
 
+  const getParticipantNames = (event: FamilyEvent) => {
+    if (!event.participants || event.participants.length === 0) {
+      return "Everyone";
+    }
+    const names = event.participants
+      .map(id => familyMembers.find(m => m.id === id)?.name)
+      .filter(Boolean);
+    return names.length > 0 ? names.join(", ") : "Everyone";
+  };
+
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr + "T00:00:00");
     const today = new Date();
@@ -153,6 +163,9 @@ export default function EventsList({ thisWeek, upcoming, familyMembers }: Props)
           }}
         >
           {getEventEmoji(event)}{getEventEmoji(event) ? " " : ""}{event.title}
+        </div>
+        <div style={{ fontSize: "0.75rem", color: "var(--color-text-light)", marginBottom: "0.25rem" }}>
+          👤 {getParticipantNames(event)}
         </div>
         <div style={{ fontSize: "0.875rem", color: "var(--color-text-light)" }}>
           {(() => {

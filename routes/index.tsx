@@ -105,7 +105,7 @@ export default function IndexPage({ data }: PageProps<IndexPageData>) {
             marginBottom: "0.5rem",
           }}
         >
-          Who's doing chores?
+          Who's contributing today?
         </h2>
       </div>
 
