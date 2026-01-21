@@ -55,6 +55,70 @@ export default function EventsList({ thisWeek, upcoming, familyMembers }: Props)
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [editingEvent, setEditingEvent] = useState<FamilyEvent | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [expandedEvents, setExpandedEvents] = useState<Set<string>>(new Set());
+  const [togglingTask, setTogglingTask] = useState<string | null>(null);
+  // Local state for optimistic updates on prep tasks
+  const [localEvents, setLocalEvents] = useState<Map<string, FamilyEvent>>(new Map());
+
+  const toggleExpanded = (eventId: string) => {
+    setExpandedEvents(prev => {
+      const next = new Set(prev);
+      if (next.has(eventId)) {
+        next.delete(eventId);
+      } else {
+        next.add(eventId);
+      }
+      return next;
+    });
+  };
+
+  const handleTogglePrepTask = async (event: FamilyEvent, taskId: string, done: boolean) => {
+    setTogglingTask(taskId);
+
+    // Optimistic update
+    const updatedTasks = (event.metadata?.prep_tasks || []).map(t =>
+      t.id === taskId ? { ...t, done } : t
+    );
+    const updatedEvent = {
+      ...event,
+      metadata: { ...event.metadata, prep_tasks: updatedTasks },
+    };
+    setLocalEvents(prev => new Map(prev).set(event.id, updatedEvent));
+
+    try {
+      const response = await fetch(`/api/events/${event.id}/prep-task`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ taskId, done }),
+      });
+
+      if (!response.ok) {
+        // Revert on failure
+        setLocalEvents(prev => {
+          const next = new Map(prev);
+          next.delete(event.id);
+          return next;
+        });
+        alert("Failed to update task");
+      }
+    } catch (error) {
+      console.error("Error toggling task:", error);
+      setLocalEvents(prev => {
+        const next = new Map(prev);
+        next.delete(event.id);
+        return next;
+      });
+      alert("Failed to update task");
+    } finally {
+      setTogglingTask(null);
+    }
+  };
+
+  const getAssigneeName = (assigneeId?: string) => {
+    if (!assigneeId) return null;
+    const member = familyMembers.find(m => m.id === assigneeId);
+    return member?.name || null;
+  };
 
   const handleAddChore = (eventId: string) => {
     setSelectedEventId(eventId);
@@ -155,7 +219,18 @@ export default function EventsList({ thisWeek, upcoming, familyMembers }: Props)
     }
   };
 
-  const EventCard = ({ event }: { event: FamilyEvent }) => (
+  const EventCard = ({ event: originalEvent }: { event: FamilyEvent }) => {
+    // Use local state for optimistic updates, fallback to original
+    const event = localEvents.get(originalEvent.id) || originalEvent;
+    const prepTasks = event.metadata?.prep_tasks || [];
+    const prepDone = prepTasks.filter(t => t.done).length;
+    const prepTotal = prepTasks.length;
+
+    // Smart expansion: auto-expand if ≤3 tasks, otherwise use toggle
+    const shouldAutoExpand = prepTotal > 0 && prepTotal <= 3;
+    const isExpanded = shouldAutoExpand || expandedEvents.has(event.id);
+
+    return (
     <div
       class="card"
       style={{
@@ -238,24 +313,102 @@ export default function EventsList({ thisWeek, upcoming, familyMembers }: Props)
             ));
           })()}
         </div>
-        <div style={{ fontSize: "0.875rem", color: "var(--color-text-light)" }}>
-          {(() => {
-            const prepTasks = event.metadata?.prep_tasks || [];
-            const prepDone = prepTasks.filter(t => t.done).length;
-            const prepTotal = prepTasks.length;
-            const choresLinked = event.linked_chores_count || 0;
-            const choresDone = event.completed_chores_count || 0;
+        {/* Prep Tasks Summary or Inline List */}
+        {prepTotal === 0 && (event.linked_chores_count || 0) === 0 && (
+          <div style={{ fontSize: "0.875rem", color: "var(--color-text-light)" }}>
+            No tasks yet
+          </div>
+        )}
 
-            const parts = [];
-            if (prepTotal > 0) {
-              parts.push(`Prep: ${prepDone}/${prepTotal}`);
-            }
-            if (choresLinked > 0) {
-              parts.push(`Chores: ${choresDone}/${choresLinked}`);
-            }
-            return parts.length > 0 ? parts.join(" · ") : "No tasks yet";
-          })()}
-        </div>
+        {/* Show summary for chores (always) */}
+        {(event.linked_chores_count || 0) > 0 && (
+          <div style={{ fontSize: "0.875rem", color: "var(--color-text-light)" }}>
+            Chores: {event.completed_chores_count || 0}/{event.linked_chores_count}
+          </div>
+        )}
+
+        {/* Prep tasks section */}
+        {prepTotal > 0 && (
+          <div style={{ marginTop: "0.5rem" }}>
+            {/* Header with toggle for >3 tasks */}
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: isExpanded ? "0.5rem" : "0",
+            }}>
+              <span style={{ fontSize: "0.875rem", color: "var(--color-text-light)" }}>
+                Prep: {prepDone}/{prepTotal}
+              </span>
+              {prepTotal > 3 && (
+                <button
+                  onClick={() => toggleExpanded(event.id)}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    color: "var(--color-primary)",
+                    fontSize: "0.75rem",
+                    padding: "0.25rem",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.25rem",
+                  }}
+                >
+                  <span style={{
+                    transform: isExpanded ? "rotate(90deg)" : "rotate(0deg)",
+                    transition: "transform 0.2s",
+                    display: "inline-block",
+                  }}>▶</span>
+                  {isExpanded ? "Hide" : "Show"}
+                </button>
+              )}
+            </div>
+
+            {/* Inline task list (shown when expanded or auto-expanded) */}
+            {isExpanded && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                {prepTasks.map(task => (
+                  <button
+                    key={task.id}
+                    onClick={() => handleTogglePrepTask(event, task.id, !task.done)}
+                    disabled={togglingTask === task.id}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.5rem",
+                      padding: "0.375rem 0.5rem",
+                      border: "1px solid var(--color-border)",
+                      borderRadius: "0.25rem",
+                      background: task.done ? "#f0fdf4" : "white",
+                      cursor: togglingTask === task.id ? "wait" : "pointer",
+                      textAlign: "left",
+                      width: "100%",
+                      opacity: togglingTask === task.id ? 0.6 : 1,
+                    }}
+                  >
+                    <span style={{ fontSize: "0.875rem" }}>
+                      {togglingTask === task.id ? "⏳" : (task.done ? "✅" : "☐")}
+                    </span>
+                    <span style={{
+                      flex: 1,
+                      fontSize: "0.8125rem",
+                      textDecoration: task.done ? "line-through" : "none",
+                      color: task.done ? "var(--color-text-light)" : "var(--color-text)",
+                    }}>
+                      {task.text}
+                    </span>
+                    {getAssigneeName(task.assignee_id) && (
+                      <span style={{ fontSize: "0.6875rem", color: "var(--color-text-light)" }}>
+                        ({getAssigneeName(task.assignee_id)})
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Actions - Bottom Split Layout */}
@@ -343,6 +496,7 @@ export default function EventsList({ thisWeek, upcoming, familyMembers }: Props)
       </div>
     </div>
   );
+  };
 
   const isEmpty = thisWeek.length === 0 && upcoming.length === 0;
 
