@@ -1,8 +1,8 @@
 # ChoreGami 2026 Documentation
 
-**Version**: 1.13
+**Version**: 1.14
 **Status**: ✅ Production Ready
-**Last Updated**: January 22, 2026 (Multi-day + Repeating Events)
+**Last Updated**: January 22, 2026 (Modal Header Action Buttons)
 
 **Project Overview**: A simplified, real-time chore completion system built with Deno Fresh, transforming routine family chores into an engaging, competitive experience with sub-second real-time updates across all family devices.
 
@@ -63,6 +63,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-21 | **0-Point Chores** | ✅ Complete | Allow chores with 0 points for non-reward tasks |
 | 2026-01-21 | **Kids Can Add Prep Tasks** | ✅ Complete | Kids can add prep tasks to events from their dashboard; only parents can create chores |
 | 2026-01-21 | [**Multi-day & Repeating Events**](./milestones/20260121_events-multiday-repeating-endtime.md) | ✅ Complete | End time, multi-day (duration), recurring events (presets); pure JSONB, no migration |
+| 2026-01-22 | [**Modal Header Action Buttons**](./milestones/20260122_modal_header_action_buttons.md) | ✅ Complete | Shared ModalHeader component; actions in header row for all form modals |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 
@@ -233,6 +234,7 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 - ✅ **Expanded Activity Feed**: Track all family activities (chore creation, event CRUD, prep tasks, completions) with new `family_activity` table + JSONB payload; feeds on kid dashboard, parent dashboard, parent board, activity tab
 - ✅ **0-Point Chores**: Allow chores with 0 points for non-reward tasks (useful for family responsibilities without gamification)
 - ✅ **Kids Can Add Prep Tasks**: Kids can add prep tasks to events from their dashboard; chore creation remains parent-only (API validates parent role)
+- ✅ **Modal Header Action Buttons**: Shared ModalHeader component with Back/Primary/Close buttons in header row; consistent UX across all form modals
 
 ### Known Limitations
 - **Testing**: Comprehensive test suite not yet implemented

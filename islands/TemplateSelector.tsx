@@ -8,6 +8,7 @@ import { ROTATION_PRESETS, getPresetByKey, getPresetSlots, getPresetsByCategory 
 import { getRotationConfig, getChoresWithCustomizations } from "../lib/services/rotation-service.ts";
 import { canAccessTemplate, hasPaidPlan, getPlan, FREE_TEMPLATES } from "../lib/plan-gate.ts";
 import type { RotationPreset, ChildSlotMapping, RotationCustomizations, CustomChore } from "../lib/types/rotation.ts";
+import ModalHeader from "../components/ModalHeader.tsx";
 
 interface Props {
   settings: any;
@@ -394,16 +395,14 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
       {showRotationModal && selectedPreset && (
         <div class="modal-overlay">
           <div class="modal">
-            <h3>📋 Set Up {getPresetByKey(selectedPreset)?.name}</h3>
+            <ModalHeader
+              title={`Set Up ${getPresetByKey(selectedPreset)?.name || 'Template'}`}
+              onBack={() => setShowRotationModal(false)}
+              onSubmit={handleApplyRotation}
+              submitLabel={isApplyingRotation ? 'Applying...' : 'Activate Template'}
+              isSubmitting={isApplyingRotation}
+            />
             {renderSlotMapping(selectedPreset, children, childSlots, setChildSlots)}
-            <div class="modal-actions">
-              <button onClick={handleApplyRotation} class="btn btn-primary" disabled={isApplyingRotation}>
-                {isApplyingRotation ? 'Applying...' : 'Activate Template'}
-              </button>
-              <button onClick={() => setShowRotationModal(false)} class="btn btn-secondary" disabled={isApplyingRotation}>
-                Cancel
-              </button>
-            </div>
           </div>
         </div>
       )}
@@ -412,13 +411,15 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
       {showUpgradeModal && lockedTemplate && (
         <div class="modal-overlay">
           <div class="modal">
-            <h3>{lockedTemplate.icon} {lockedTemplate.name}</h3>
+            <ModalHeader
+              title={`${lockedTemplate.icon} ${lockedTemplate.name}`}
+              onBack={() => setShowUpgradeModal(false)}
+              submitLabel="Enter Gift Code"
+              submitHref="/redeem"
+              backLabel="Not Now"
+            />
             <p class="template-desc">{lockedTemplate.description}</p>
             <p class="gated-notice">This template is part of <strong>Family Plan</strong>.</p>
-            <div class="modal-actions">
-              <a href="/redeem" class="btn btn-primary">Enter Gift Code</a>
-              <button onClick={() => setShowUpgradeModal(false)} class="btn btn-secondary">Not Now</button>
-            </div>
           </div>
         </div>
       )}

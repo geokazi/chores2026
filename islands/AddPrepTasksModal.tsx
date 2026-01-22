@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect } from "preact/hooks";
+import ModalHeader from "../components/ModalHeader.tsx";
 
 interface PrepTask {
   id: string;
@@ -176,31 +177,12 @@ export default function AddPrepTasksModal({ isOpen, onClose, event, familyMember
           overflow: "auto",
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "1rem",
-          }}
-        >
-          <h2 style={{ fontSize: "1.25rem", fontWeight: "600", margin: 0 }}>
-            Prep Tasks
-          </h2>
-          <button
-            onClick={onClose}
-            style={{
-              background: "none",
-              border: "none",
-              fontSize: "1.5rem",
-              cursor: "pointer",
-              padding: "0.25rem",
-              color: "var(--color-text-light)",
-            }}
-          >
-            ×
-          </button>
-        </div>
+        <ModalHeader
+          title="Prep Tasks"
+          onBack={onClose}
+          submitLabel={isSubmitting ? "Saving..." : "Save Tasks"}
+          isSubmitting={isSubmitting}
+        />
 
         {/* Event info */}
         <div
@@ -337,38 +319,6 @@ export default function AddPrepTasksModal({ isOpen, onClose, event, familyMember
             Prep tasks are simple to-dos without points. Kids can mark them done.
           </div>
 
-          {/* Buttons */}
-          <div class="modal-footer" style={{ display: "flex", gap: "0.75rem" }}>
-            <button
-              type="button"
-              class="btn btn-secondary"
-              onClick={onClose}
-              style={{
-                flex: 1,
-                padding: "0.75rem",
-                border: "1px solid var(--color-border)",
-                backgroundColor: "white",
-                color: "var(--color-text)",
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              class="btn btn-primary"
-              disabled={isSubmitting}
-              style={{
-                flex: 1,
-                padding: "0.75rem",
-                border: "none",
-                backgroundColor: "var(--color-primary)",
-                color: "white",
-                fontWeight: "600",
-              }}
-            >
-              {isSubmitting ? "Saving..." : "Save Tasks"}
-            </button>
-          </div>
         </form>
       </div>
     </div>

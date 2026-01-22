@@ -6,6 +6,7 @@
 
 import { useState, useEffect } from "preact/hooks";
 import { formatEventDate } from "../lib/utils/household.ts";
+import ModalHeader from "../components/ModalHeader.tsx";
 
 // Helper to get local date as YYYY-MM-DD (avoids UTC timezone issues)
 const getLocalDateString = () => {
@@ -206,29 +207,12 @@ export default function AddChoreModal({ isOpen, onClose, familyMembers, onSucces
           overflow: "auto",
         }}
       >
-        <div style={{ 
-          display: "flex", 
-          justifyContent: "space-between", 
-          alignItems: "center",
-          marginBottom: "1.5rem"
-        }}>
-          <h2 style={{ fontSize: "1.25rem", fontWeight: "600", margin: 0 }}>
-            Add New Chore
-          </h2>
-          <button 
-            onClick={onClose}
-            style={{
-              background: "none",
-              border: "none",
-              fontSize: "1.5rem",
-              cursor: "pointer",
-              padding: "0.25rem",
-              color: "var(--color-text-light)"
-            }}
-          >
-            ×
-          </button>
-        </div>
+        <ModalHeader
+          title="Add New Chore"
+          onBack={onClose}
+          submitLabel={isSubmitting ? "Creating..." : "Create Chore"}
+          isSubmitting={isSubmitting}
+        />
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           {error && (
@@ -379,37 +363,6 @@ export default function AddChoreModal({ isOpen, onClose, familyMembers, onSucces
             />
           </div>
 
-          <div class="modal-footer" style={{ display: "flex", gap: "0.75rem" }}>
-            <button
-              type="button"
-              class="btn btn-secondary"
-              onClick={onClose}
-              style={{
-                flex: 1,
-                padding: "0.75rem",
-                border: "1px solid var(--color-border)",
-                backgroundColor: "white",
-                color: "var(--color-text)",
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              class="btn btn-primary"
-              disabled={isSubmitting}
-              style={{
-                flex: 1,
-                padding: "0.75rem",
-                border: "none",
-                backgroundColor: "var(--color-primary)",
-                color: "white",
-                fontWeight: "600",
-              }}
-            >
-              {isSubmitting ? "Creating..." : "Create Chore"}
-            </button>
-          </div>
         </form>
       </div>
     </div>
