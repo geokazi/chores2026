@@ -4,7 +4,7 @@
  * Uses JSONB payload for flexibility - no schema changes needed for new activity types.
  */
 
-import { getSupabaseClient } from "../supabase.ts";
+import { getServiceSupabaseClient } from "../supabase.ts";
 
 // Activity types
 export type ActivityType =
@@ -73,7 +73,8 @@ export class ActivityService {
   private client;
 
   constructor() {
-    this.client = getSupabaseClient();
+    // Use service client - has INSERT permissions via RLS policy
+    this.client = getServiceSupabaseClient();
   }
 
   /**
@@ -92,19 +93,32 @@ export class ActivityService {
       meta: input.meta,
     };
 
-    const { error } = await this.client
+    console.log("🔍 Attempting to log activity:", {
+      family_id: input.familyId,
+      type: input.type,
+      actor: input.actorName,
+    });
+
+    const { data: result, error } = await this.client
       .schema("choretracker")
       .from("family_activity")
       .insert({
         family_id: input.familyId,
         data,
-      });
+      })
+      .select();
 
     if (error) {
-      console.error("❌ Failed to log activity:", error);
+      console.error("❌ Failed to log activity:", {
+        error,
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+      });
       // Non-blocking - don't throw, activity feed is not critical
     } else {
-      console.log(`📝 Activity logged: ${input.type} - ${input.title}`);
+      console.log(`✅ Activity logged successfully: ${input.type} - ${input.title}`, result);
     }
   }
 

@@ -9,6 +9,7 @@ import LiveLeaderboard from "./LiveLeaderboard.tsx";
 import LiveActivityFeed from "./LiveActivityFeed.tsx";
 import EventMissionGroup from "./EventMissionGroup.tsx";
 import AddEventModal from "./AddEventModal.tsx";
+import AddPrepTasksModal from "./AddPrepTasksModal.tsx";
 import PinEntryModal from "./PinEntryModal.tsx";
 import { groupChoresByEvent, usePointsMode, formatTime, groupEventsByTimePeriod } from "../lib/utils/household.ts";
 
@@ -113,6 +114,8 @@ export default function KidDashboard({
   const [leaderboard, setLeaderboard] = useState(familyMembers);
   const [activity, setActivity] = useState(recentActivity);
   const [showAddEventModal, setShowAddEventModal] = useState(false);
+  const [showPrepTasksModal, setShowPrepTasksModal] = useState(false);
+  const [selectedEventForPrep, setSelectedEventForPrep] = useState<UpcomingEvent | null>(null);
   const [showPinModal, setShowPinModal] = useState(false);
   const [showLaterEvents, setShowLaterEvents] = useState(false);
 
@@ -346,6 +349,28 @@ export default function KidDashboard({
                         {timeStr && ` at ${timeStr}`}
                       </div>
                     </div>
+                  </div>
+
+                  {/* Add Prep Tasks button for kids */}
+                  <div style={{ marginTop: "0.5rem" }}>
+                    <button
+                      onClick={() => {
+                        setSelectedEventForPrep(event);
+                        setShowPrepTasksModal(true);
+                      }}
+                      style={{
+                        padding: "0.375rem 0.75rem",
+                        border: "1px solid var(--color-primary)",
+                        background: "white",
+                        cursor: "pointer",
+                        color: "var(--color-primary)",
+                        fontSize: "0.75rem",
+                        borderRadius: "0.25rem",
+                        fontWeight: "500",
+                      }}
+                    >
+                      {myPrepTasks.length > 0 ? `+ Prep (${myPrepTasks.length})` : "+ Add Prep Task"}
+                    </button>
                   </div>
 
                   {/* Prep tasks and linked chores for this kid */}
@@ -594,6 +619,22 @@ export default function KidDashboard({
           onCancel={() => setShowPinModal(false)}
         />
       )}
+
+      {/* Add Prep Tasks Modal for kids */}
+      <AddPrepTasksModal
+        isOpen={showPrepTasksModal}
+        onClose={() => {
+          setShowPrepTasksModal(false);
+          setSelectedEventForPrep(null);
+        }}
+        event={selectedEventForPrep}
+        familyMembers={familyMembers}
+        onSuccess={() => {
+          setShowPrepTasksModal(false);
+          setSelectedEventForPrep(null);
+          onEventCreated?.(); // Refresh events to show new tasks
+        }}
+      />
     </div>
   );
 }

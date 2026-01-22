@@ -295,10 +295,10 @@ export default function AddChoreModal({ isOpen, onClose, familyMembers, onSucces
               </label>
               <input
                 type="number"
-                min="1"
+                min="0"
                 max="50"
                 value={formData.points}
-                onChange={(e) => setFormData({ ...formData, points: parseInt(e.currentTarget.value) || 5 })}
+                onChange={(e) => setFormData({ ...formData, points: parseInt(e.currentTarget.value) || 0 })}
                 style={{
                   width: "100%",
                   padding: "0.75rem",
