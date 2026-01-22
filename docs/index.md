@@ -1,8 +1,8 @@
 # ChoreGami 2026 Documentation
 
-**Version**: 1.10
+**Version**: 1.11
 **Status**: ✅ Production Ready
-**Last Updated**: January 20, 2026 (Expanded Activity Feed)
+**Last Updated**: January 21, 2026 (0-Point Chores + Kid Prep Tasks)
 
 **Project Overview**: A simplified, real-time chore completion system built with Deno Fresh, transforming routine family chores into an engaging, competitive experience with sub-second real-time updates across all family devices.
 
@@ -60,6 +60,8 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-20 | **Emoji Picker Optimization** | ✅ Complete | Native `<select>` dropdown on same line as event name; 150px→40px (73% smaller) |
 | 2026-01-20 | **Parent My-Chores Compact Layout** | ✅ Complete | Removed stats card, compact empty state; ~200px space savings |
 | 2026-01-20 | [**Expanded Activity Feed**](./decisions/20260120_expanded_activity_feed.md) | ✅ Complete | Track all activities (chores, events, prep tasks); new `family_activity` table with JSONB payload |
+| 2026-01-21 | **0-Point Chores** | ✅ Complete | Allow chores with 0 points for non-reward tasks |
+| 2026-01-21 | **Kids Can Add Prep Tasks** | ✅ Complete | Kids can add prep tasks to events from their dashboard; only parents can create chores |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 
@@ -228,6 +230,8 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 - ✅ **Emoji Picker Optimization**: Native `<select>` dropdown inline with event name, responsive wrap on small screens (150px→40px, 73% space savings)
 - ✅ **Parent My-Chores Compact Layout**: Removed stats card (points not relevant for parents), compact empty state when no chores (~200px space savings)
 - ✅ **Expanded Activity Feed**: Track all family activities (chore creation, event CRUD, prep tasks, completions) with new `family_activity` table + JSONB payload; feeds on kid dashboard, parent dashboard, parent board, activity tab
+- ✅ **0-Point Chores**: Allow chores with 0 points for non-reward tasks (useful for family responsibilities without gamification)
+- ✅ **Kids Can Add Prep Tasks**: Kids can add prep tasks to events from their dashboard; chore creation remains parent-only (API validates parent role)
 
 ### Known Limitations
 - **Testing**: Comprehensive test suite not yet implemented

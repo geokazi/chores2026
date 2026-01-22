@@ -13,7 +13,8 @@ ChoreGami currently restricts event creation to parents only (`/parent/events`).
 ### Current State
 - Parents create events at `/parent/events`
 - Kids see events they're participating in via "Coming Up" section
-- Kids can mark prep tasks done but cannot create/edit events
+- Kids can mark prep tasks done and **add prep tasks** to events
+- Kids **cannot** create chores (only parents can create chores)
 - Existing PIN system gates dashboard access (optional family setting)
 
 ### Use Case
@@ -127,8 +128,10 @@ This positions ChoreGami for the "responsible teen" market segment that's curren
 - [x] Add "Added by [name]" badge to events
 - [x] Update documentation
 - [x] Add unit tests
+- [x] Kids can add prep tasks to events (Jan 21, 2026)
 
 **Implementation Complete**: January 20, 2026 (commit `d8ebdfe`)
+**Extended**: January 21, 2026 - Kids can now add prep tasks to events from their dashboard
 
 ## Related Documents
 
