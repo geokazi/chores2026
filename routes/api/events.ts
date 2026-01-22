@@ -1,16 +1,22 @@
 /**
- * Events API - Simplified for ChoreGami (no multi-day complexity)
+ * Events API - Supports multi-day and recurring events via JSONB
  * Reuses choretracker.family_events table from MealPlanner
  *
  * Supports both parent and kid event creation:
  * - Parents: Always allowed
  * - Kids: Only when families.settings.apps.choregami.kids_can_create_events is true
+ *
+ * Query params for GET:
+ * - localDate: Start date (default: today)
+ * - endDate: End date for range (default: 30 days from localDate)
+ * - expand: If "true", expand multi-day and recurring events
  */
 
 import { Handlers } from "$fresh/server.ts";
 import { getCookies } from "@std/http/cookie";
 import { getServiceSupabaseClient } from "../../lib/supabase.ts";
 import { getActivityService } from "../../lib/services/activity-service.ts";
+import { expandEventsForDateRange } from "../../lib/utils/event-expansion.ts";
 
 interface SessionInfo {
   familyId: string;
@@ -123,18 +129,42 @@ export const handler: Handlers = {
       const localDate = url.searchParams.get("localDate") ||
         new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD format in server's local time
 
-      // Get events with linked chore counts
+      // End date for range queries (default: 30 days from start)
+      const defaultEndDate = (() => {
+        const d = new Date(localDate);
+        d.setDate(d.getDate() + 30);
+        return d.toISOString().split("T")[0];
+      })();
+      const endDate = url.searchParams.get("endDate") || defaultEndDate;
+
+      // Whether to expand multi-day and recurring events
+      const shouldExpand = url.searchParams.get("expand") === "true";
+
+      // For recurring events, we need to fetch from the original event_date
+      // so we can generate future occurrences
       const { data: events } = await client
         .schema("choretracker")
         .from("family_events")
         .select("*")
         .eq("family_id", familyId)
         .eq("is_deleted", false)
-        .gte("event_date", localDate) // Today and future (using local date)
+        .lte("event_date", endDate) // Include events that start before end date
         .order("event_date")
         .order("created_at");
 
-      return new Response(JSON.stringify({ events: events || [] }), {
+      // Filter and optionally expand events
+      const rawEvents = events || [];
+
+      let resultEvents;
+      if (shouldExpand) {
+        // Expand multi-day and recurring events
+        resultEvents = expandEventsForDateRange(rawEvents, localDate, endDate);
+      } else {
+        // Just filter to events >= localDate (original behavior)
+        resultEvents = rawEvents.filter((e: { event_date: string }) => e.event_date >= localDate);
+      }
+
+      return new Response(JSON.stringify({ events: resultEvents }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
       });
@@ -225,17 +255,34 @@ export const handler: Handlers = {
         creatorProfileId = parentProfile?.id || null;
       }
 
+      // Build schedule_data with new fields
+      const scheduleData: Record<string, unknown> = {
+        all_day: body.is_all_day || false,
+        start_time: body.event_time || null,
+      };
+      if (body.end_time) {
+        scheduleData.end_time = body.end_time;
+      }
+      if (body.duration_days && body.duration_days > 1) {
+        scheduleData.duration_days = body.duration_days;
+      }
+
+      // Build recurrence_data with new fields
+      const recurrenceData: Record<string, unknown> = {};
+      if (body.repeat_pattern) {
+        recurrenceData.is_recurring = true;
+        recurrenceData.pattern = body.repeat_pattern;
+        recurrenceData.until_date = body.repeat_until || null;
+      }
+
       const eventData = {
         family_id: familyId,
         title: body.title,
         event_date: body.event_date,
-        schedule_data: {
-          all_day: body.is_all_day || false,
-          start_time: body.event_time || null,
-        },
+        schedule_data: scheduleData,
         participants: body.participants || [],
         location_data: {},
-        recurrence_data: {},
+        recurrence_data: recurrenceData,
         metadata: {
           source_app: "chores2026",
           emoji: body.emoji || null,

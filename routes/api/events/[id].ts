@@ -127,13 +127,43 @@ export const handler: Handlers = {
       // Handle schedule_data - accept either nested or flat format
       if (body.schedule_data !== undefined) {
         updateData.schedule_data = body.schedule_data;
-      } else if (body.is_all_day !== undefined || body.event_time !== undefined) {
+      } else if (body.is_all_day !== undefined || body.event_time !== undefined ||
+                 body.end_time !== undefined || body.duration_days !== undefined) {
         // Merge with existing schedule_data
-        updateData.schedule_data = {
+        const newScheduleData: Record<string, unknown> = {
           ...(existing.schedule_data || {}),
           all_day: body.is_all_day ?? existing.schedule_data?.all_day ?? false,
           start_time: body.event_time ?? existing.schedule_data?.start_time ?? null,
         };
+        // Handle end_time
+        if (body.end_time !== undefined) {
+          newScheduleData.end_time = body.end_time;
+        }
+        // Handle duration_days
+        if (body.duration_days !== undefined) {
+          if (body.duration_days > 1) {
+            newScheduleData.duration_days = body.duration_days;
+          } else {
+            delete newScheduleData.duration_days; // Remove if set to 1 (single day)
+          }
+        }
+        updateData.schedule_data = newScheduleData;
+      }
+
+      // Handle recurrence_data
+      if (body.recurrence_data !== undefined) {
+        updateData.recurrence_data = body.recurrence_data;
+      } else if (body.repeat_pattern !== undefined) {
+        if (body.repeat_pattern) {
+          updateData.recurrence_data = {
+            is_recurring: true,
+            pattern: body.repeat_pattern,
+            until_date: body.repeat_until ?? existing.recurrence_data?.until_date ?? null,
+          };
+        } else {
+          // Clear recurrence if pattern is empty/null
+          updateData.recurrence_data = {};
+        }
       }
 
       // Handle metadata - accept either nested or flat format
@@ -166,7 +196,9 @@ export const handler: Handlers = {
       // Log activity (non-blocking) - only for meaningful updates
       const hasContentChange = body.title !== undefined || body.event_date !== undefined ||
         body.participants !== undefined || body.schedule_data !== undefined ||
-        body.is_all_day !== undefined || body.event_time !== undefined;
+        body.is_all_day !== undefined || body.event_time !== undefined ||
+        body.end_time !== undefined || body.duration_days !== undefined ||
+        body.repeat_pattern !== undefined || body.repeat_until !== undefined;
       const hasPrepTaskChange = body.metadata?.prep_tasks !== undefined;
 
       if (hasContentChange) {

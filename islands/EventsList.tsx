@@ -24,6 +24,13 @@ interface FamilyEvent {
   schedule_data?: {
     all_day?: boolean;
     start_time?: string;
+    end_time?: string;
+    duration_days?: number;
+  };
+  recurrence_data?: {
+    is_recurring?: boolean;
+    pattern?: "weekly" | "biweekly" | "monthly";
+    until_date?: string;
   };
   participants?: string[];
   metadata?: {
@@ -34,6 +41,11 @@ interface FamilyEvent {
   linked_chores_count?: number;
   completed_chores_count?: number;
   created_by_profile_id?: string; // Kid profile ID when kid creates event
+  // Expansion fields (from server-side expansion)
+  display_date?: string;
+  display_suffix?: string;
+  is_recurring_instance?: boolean;
+  is_multi_day_instance?: boolean;
 }
 
 interface FamilyMember {
@@ -247,9 +259,12 @@ export default function EventsList({ thisWeek, upcoming, familyMembers }: Props)
             marginBottom: "0.25rem",
           }}
         >
-          {formatDate(event.event_date)}
+          {formatDate(event.display_date || event.event_date)}
           {event.schedule_data?.start_time && !event.schedule_data?.all_day && (
             <> at {formatTime(event.schedule_data.start_time)}</>
+          )}
+          {event.schedule_data?.end_time && !event.schedule_data?.all_day && (
+            <> - {formatTime(event.schedule_data.end_time)}</>
           )}
           {event.schedule_data?.all_day && " (All day)"}
         </div>
@@ -264,7 +279,14 @@ export default function EventsList({ thisWeek, upcoming, familyMembers }: Props)
             flexWrap: "wrap",
           }}
         >
-          <span>{getEventEmoji(event)}{getEventEmoji(event) ? " " : ""}{event.title}</span>
+          <span>
+            {getEventEmoji(event)}{getEventEmoji(event) ? " " : ""}{event.title}
+            {event.display_suffix && (
+              <span style={{ fontWeight: "400", color: "var(--color-text-light)" }}>
+                {event.display_suffix}
+              </span>
+            )}
+          </span>
           {/* Kid creator badge */}
           {getKidCreatorName(event) && (
             <span
@@ -553,7 +575,7 @@ export default function EventsList({ thisWeek, upcoming, familyMembers }: Props)
                 This Week
               </h3>
               {thisWeek.map((event) => (
-                <EventCard key={event.id} event={event} />
+                <EventCard key={`${event.id}-${event.display_date || event.event_date}`} event={event} />
               ))}
             </section>
           )}
@@ -572,7 +594,7 @@ export default function EventsList({ thisWeek, upcoming, familyMembers }: Props)
                 Upcoming
               </h3>
               {upcoming.map((event) => (
-                <EventCard key={event.id} event={event} />
+                <EventCard key={`${event.id}-${event.display_date || event.event_date}`} event={event} />
               ))}
             </section>
           )}

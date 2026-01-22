@@ -1,8 +1,8 @@
 # ChoreGami 2026 Documentation
 
-**Version**: 1.11
+**Version**: 1.13
 **Status**: ✅ Production Ready
-**Last Updated**: January 21, 2026 (0-Point Chores + Kid Prep Tasks)
+**Last Updated**: January 22, 2026 (Multi-day + Repeating Events)
 
 **Project Overview**: A simplified, real-time chore completion system built with Deno Fresh, transforming routine family chores into an engaging, competitive experience with sub-second real-time updates across all family devices.
 
@@ -62,6 +62,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-20 | [**Expanded Activity Feed**](./decisions/20260120_expanded_activity_feed.md) | ✅ Complete | Track all activities (chores, events, prep tasks); new `family_activity` table with JSONB payload |
 | 2026-01-21 | **0-Point Chores** | ✅ Complete | Allow chores with 0 points for non-reward tasks |
 | 2026-01-21 | **Kids Can Add Prep Tasks** | ✅ Complete | Kids can add prep tasks to events from their dashboard; only parents can create chores |
+| 2026-01-21 | [**Multi-day & Repeating Events**](./milestones/20260121_events-multiday-repeating-endtime.md) | ✅ Complete | End time, multi-day (duration), recurring events (presets); pure JSONB, no migration |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 
@@ -235,7 +236,7 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 
 ### Known Limitations
 - **Testing**: Comprehensive test suite not yet implemented
-- **Advanced Chore Management**: Recurring chores, bulk operations
+- **Advanced Chore Management**: Recurring chores (separate from recurring events), bulk operations
 - **Offline Support**: PWA capabilities planned but not implemented
 - **Performance Monitoring**: Telemetry and error tracking to be added
 
@@ -277,5 +278,5 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 
 ---
 
-*Last updated: January 20, 2026*
+*Last updated: January 22, 2026*
 *Maintained by: Claude Code AI Assistant*

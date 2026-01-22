@@ -1,6 +1,6 @@
 /**
  * Add/Edit Event Modal Component
- * Simplified event form for ChoreGami (no multi-day, recurrence, or location)
+ * Supports: end time, multi-day (duration), repeating events (preset patterns)
  */
 
 import { useState, useEffect } from "preact/hooks";
@@ -12,6 +12,13 @@ const getLocalDateString = () => {
   const month = String(now.getMonth() + 1).padStart(2, "0");
   const day = String(now.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+};
+
+// Helper to get date 3 months from a given date (default repeat until)
+const getDefaultUntilDate = (eventDate: string): string => {
+  const date = new Date(eventDate);
+  date.setMonth(date.getMonth() + 3);
+  return date.toISOString().split("T")[0];
 };
 
 interface FamilyMember {
@@ -27,6 +34,13 @@ interface FamilyEvent {
   schedule_data?: {
     all_day?: boolean;
     start_time?: string;
+    end_time?: string;
+    duration_days?: number;
+  };
+  recurrence_data?: {
+    is_recurring?: boolean;
+    pattern?: "weekly" | "biweekly" | "monthly";
+    until_date?: string;
   };
   participants?: string[];
   metadata?: {
@@ -46,14 +60,23 @@ interface Props {
 export default function AddEventModal({ isOpen, onClose, familyMembers, onSuccess, editingEvent, creatorId }: Props) {
   const isEditing = !!editingEvent;
 
-  const getInitialFormData = () => ({
-    title: editingEvent?.title || "",
-    emoji: editingEvent?.metadata?.emoji || "",
-    event_date: editingEvent?.event_date || getLocalDateString(),
-    event_time: editingEvent?.schedule_data?.start_time || "",
-    is_all_day: editingEvent?.schedule_data?.all_day || false,
-    participants: editingEvent?.participants || [] as string[],
-  });
+  const getInitialFormData = () => {
+    const eventDate = editingEvent?.event_date || getLocalDateString();
+    const durationDays = editingEvent?.schedule_data?.duration_days || 1;
+    return {
+      title: editingEvent?.title || "",
+      emoji: editingEvent?.metadata?.emoji || "",
+      event_date: eventDate,
+      event_time: editingEvent?.schedule_data?.start_time || "",
+      end_time: editingEvent?.schedule_data?.end_time || "",
+      is_all_day: editingEvent?.schedule_data?.all_day || false,
+      is_multi_day: durationDays > 1,
+      duration_days: durationDays > 1 ? durationDays : 2, // Default to 2 when enabling
+      repeat_pattern: editingEvent?.recurrence_data?.pattern || "",
+      repeat_until: editingEvent?.recurrence_data?.until_date || getDefaultUntilDate(eventDate),
+      participants: editingEvent?.participants || [] as string[],
+    };
+  };
 
   const [formData, setFormData] = useState(getInitialFormData());
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -90,7 +113,11 @@ export default function AddEventModal({ isOpen, onClose, familyMembers, onSucces
           emoji: formData.emoji || null,
           event_date: formData.event_date,
           event_time: formData.event_time || null,
+          end_time: formData.end_time || null,
           is_all_day: formData.is_all_day,
+          duration_days: formData.is_multi_day ? formData.duration_days : 1,
+          repeat_pattern: formData.repeat_pattern || null,
+          repeat_until: formData.repeat_pattern ? formData.repeat_until : null,
           participants: formData.participants,
           ...(creatorId && { creatorId }), // Kid profile ID for attribution
         }),
@@ -256,62 +283,94 @@ export default function AddEventModal({ isOpen, onClose, familyMembers, onSucces
             </div>
           </div>
 
-          {/* Date and Time */}
-          <div style={{ display: "flex", gap: "1rem" }}>
-            <div style={{ flex: 1 }}>
-              <label
-                style={{
-                  display: "block",
-                  fontSize: "0.875rem",
-                  fontWeight: "500",
-                  marginBottom: "0.5rem",
-                }}
-              >
-                Date *
-              </label>
-              <input
-                type="date"
-                value={formData.event_date}
-                onChange={(e) => setFormData({ ...formData, event_date: e.currentTarget.value })}
-                min={getLocalDateString()}
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  border: "1px solid var(--color-border)",
-                  borderRadius: "0.5rem",
-                  fontSize: "1rem",
-                }}
-                required
-              />
-            </div>
-
-            <div style={{ flex: 1 }}>
-              <label
-                style={{
-                  display: "block",
-                  fontSize: "0.875rem",
-                  fontWeight: "500",
-                  marginBottom: "0.5rem",
-                }}
-              >
-                Time
-              </label>
-              <input
-                type="time"
-                value={formData.event_time}
-                onChange={(e) => setFormData({ ...formData, event_time: e.currentTarget.value })}
-                disabled={formData.is_all_day}
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  border: "1px solid var(--color-border)",
-                  borderRadius: "0.5rem",
-                  fontSize: "1rem",
-                  opacity: formData.is_all_day ? 0.5 : 1,
-                }}
-              />
-            </div>
+          {/* Date */}
+          <div>
+            <label
+              style={{
+                display: "block",
+                fontSize: "0.875rem",
+                fontWeight: "500",
+                marginBottom: "0.5rem",
+              }}
+            >
+              Date *
+            </label>
+            <input
+              type="date"
+              value={formData.event_date}
+              onChange={(e) => setFormData({
+                ...formData,
+                event_date: e.currentTarget.value,
+                // Update repeat_until if it was auto-set
+                repeat_until: formData.repeat_pattern && !formData.repeat_until
+                  ? getDefaultUntilDate(e.currentTarget.value)
+                  : formData.repeat_until,
+              })}
+              min={getLocalDateString()}
+              style={{
+                width: "100%",
+                padding: "0.75rem",
+                border: "1px solid var(--color-border)",
+                borderRadius: "0.5rem",
+                fontSize: "1rem",
+              }}
+              required
+            />
           </div>
+
+          {/* Start Time and End Time (hidden when all-day) */}
+          {!formData.is_all_day && (
+            <div style={{ display: "flex", gap: "1rem" }}>
+              <div style={{ flex: 1 }}>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "0.875rem",
+                    fontWeight: "500",
+                    marginBottom: "0.5rem",
+                  }}
+                >
+                  Start Time
+                </label>
+                <input
+                  type="time"
+                  value={formData.event_time}
+                  onChange={(e) => setFormData({ ...formData, event_time: e.currentTarget.value })}
+                  style={{
+                    width: "100%",
+                    padding: "0.75rem",
+                    border: "1px solid var(--color-border)",
+                    borderRadius: "0.5rem",
+                    fontSize: "1rem",
+                  }}
+                />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "0.875rem",
+                    fontWeight: "500",
+                    marginBottom: "0.5rem",
+                  }}
+                >
+                  End Time
+                </label>
+                <input
+                  type="time"
+                  value={formData.end_time}
+                  onChange={(e) => setFormData({ ...formData, end_time: e.currentTarget.value })}
+                  style={{
+                    width: "100%",
+                    padding: "0.75rem",
+                    border: "1px solid var(--color-border)",
+                    borderRadius: "0.5rem",
+                    fontSize: "1rem",
+                  }}
+                />
+              </div>
+            </div>
+          )}
 
           {/* All Day Checkbox */}
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
@@ -324,6 +383,7 @@ export default function AddEventModal({ isOpen, onClose, familyMembers, onSucces
                   ...formData,
                   is_all_day: e.currentTarget.checked,
                   event_time: e.currentTarget.checked ? "" : formData.event_time,
+                  end_time: e.currentTarget.checked ? "" : formData.end_time,
                 })
               }
               style={{ width: "1rem", height: "1rem" }}
@@ -332,6 +392,115 @@ export default function AddEventModal({ isOpen, onClose, familyMembers, onSucces
               All day event
             </label>
           </div>
+
+          {/* Multi-day Event */}
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <input
+              type="checkbox"
+              id="is_multi_day"
+              checked={formData.is_multi_day}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  is_multi_day: e.currentTarget.checked,
+                })
+              }
+              style={{ width: "1rem", height: "1rem" }}
+            />
+            <label htmlFor="is_multi_day" style={{ fontSize: "0.875rem" }}>
+              Multi-day event
+            </label>
+          </div>
+          {formData.is_multi_day && (
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginLeft: "1.5rem" }}>
+              <label style={{ fontSize: "0.875rem" }}>Duration:</label>
+              <input
+                type="number"
+                min="2"
+                max="14"
+                value={formData.duration_days}
+                onChange={(e) => setFormData({
+                  ...formData,
+                  duration_days: parseInt(e.currentTarget.value) || 2,
+                })}
+                style={{
+                  width: "4rem",
+                  padding: "0.5rem",
+                  border: "1px solid var(--color-border)",
+                  borderRadius: "0.5rem",
+                  fontSize: "1rem",
+                }}
+              />
+              <span style={{ fontSize: "0.875rem" }}>days</span>
+            </div>
+          )}
+
+          {/* Repeating Event */}
+          <div>
+            <label
+              style={{
+                display: "block",
+                fontSize: "0.875rem",
+                fontWeight: "500",
+                marginBottom: "0.5rem",
+              }}
+            >
+              Repeats
+            </label>
+            <select
+              value={formData.repeat_pattern}
+              onChange={(e) => {
+                const pattern = e.currentTarget.value;
+                setFormData({
+                  ...formData,
+                  repeat_pattern: pattern,
+                  // Set default until date when enabling repeat
+                  repeat_until: pattern && !formData.repeat_until
+                    ? getDefaultUntilDate(formData.event_date)
+                    : formData.repeat_until,
+                });
+              }}
+              style={{
+                width: "100%",
+                padding: "0.75rem",
+                border: "1px solid var(--color-border)",
+                borderRadius: "0.5rem",
+                fontSize: "1rem",
+              }}
+            >
+              <option value="">No repeat</option>
+              <option value="weekly">Weekly</option>
+              <option value="biweekly">Every 2 weeks</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </div>
+          {formData.repeat_pattern && (
+            <div>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "0.875rem",
+                  fontWeight: "500",
+                  marginBottom: "0.5rem",
+                }}
+              >
+                Until
+              </label>
+              <input
+                type="date"
+                value={formData.repeat_until}
+                onChange={(e) => setFormData({ ...formData, repeat_until: e.currentTarget.value })}
+                min={formData.event_date}
+                style={{
+                  width: "100%",
+                  padding: "0.75rem",
+                  border: "1px solid var(--color-border)",
+                  borderRadius: "0.5rem",
+                  fontSize: "1rem",
+                }}
+              />
+            </div>
+          )}
 
           {/* Participants */}
           <div>

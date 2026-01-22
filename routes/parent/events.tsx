@@ -1,11 +1,13 @@
 /**
  * Parent Events List Page
  * Simple list view of family events with "This Week" and "Upcoming" sections
+ * Supports multi-day and recurring events via expansion
  */
 
 import { Handlers, PageProps } from "$fresh/server.ts";
 import { getAuthenticatedSession } from "../../lib/auth/session.ts";
 import { getServiceSupabaseClient } from "../../lib/supabase.ts";
+import { expandEventsForDateRange, ExpandedEvent } from "../../lib/utils/event-expansion.ts";
 import AppHeader from "../../islands/AppHeader.tsx";
 import AppFooter from "../../components/AppFooter.tsx";
 import EventsList from "../../islands/EventsList.tsx";
@@ -17,6 +19,13 @@ interface FamilyEvent {
   schedule_data?: {
     all_day?: boolean;
     start_time?: string;
+    end_time?: string;
+    duration_days?: number;
+  };
+  recurrence_data?: {
+    is_recurring?: boolean;
+    pattern?: "weekly" | "biweekly" | "monthly";
+    until_date?: string;
   };
   participants?: string[];
   metadata?: {
@@ -25,6 +34,11 @@ interface FamilyEvent {
   };
   linked_chores_count?: number;
   completed_chores_count?: number;
+  // Expansion fields
+  display_date?: string;
+  display_suffix?: string;
+  is_recurring_instance?: boolean;
+  is_multi_day_instance?: boolean;
 }
 
 interface EventsPageData {
@@ -55,7 +69,7 @@ export const handler: Handlers<EventsPageData> = {
     try {
       const client = getServiceSupabaseClient();
 
-      // Get events with linked chore counts
+      // Date calculations
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const todayStr = today.toISOString().split("T")[0];
@@ -64,13 +78,20 @@ export const handler: Handlers<EventsPageData> = {
       weekFromNow.setDate(weekFromNow.getDate() + 7);
       const weekFromNowStr = weekFromNow.toISOString().split("T")[0];
 
+      // Query end date: 60 days out to capture recurring events
+      const queryEnd = new Date(today);
+      queryEnd.setDate(queryEnd.getDate() + 60);
+      const queryEndStr = queryEnd.toISOString().split("T")[0];
+
+      // Fetch events - include events that may have started before today
+      // (for recurring events that started in the past but have future occurrences)
       const { data: events, error: eventsError } = await client
         .schema("choretracker")
         .from("family_events")
         .select("*")
         .eq("family_id", familyId)
         .eq("is_deleted", false)
-        .gte("event_date", todayStr)
+        .lte("event_date", queryEndStr) // Include events up to query end
         .order("event_date");
 
       if (eventsError) {
@@ -104,25 +125,28 @@ export const handler: Handlers<EventsPageData> = {
         }
       }
 
-      // Enrich events with chore counts
-      const enrichedEvents = (events || []).map((event: any) => ({
+      // Expand multi-day and recurring events
+      const expandedEvents = expandEventsForDateRange(events || [], todayStr, queryEndStr);
+
+      // Enrich expanded events with chore counts
+      const enrichedEvents = expandedEvents.map((event) => ({
         ...event,
         linked_chores_count: choreCounts[event.id]?.total || 0,
         completed_chores_count: choreCounts[event.id]?.completed || 0,
       }));
 
-      // Split into this week and upcoming
-      const thisWeek = enrichedEvents.filter((e: FamilyEvent) => {
-        const eventDate = e.event_date;
-        return eventDate >= todayStr && eventDate <= weekFromNowStr;
+      // Split into this week and upcoming (using display_date for expanded events)
+      const thisWeek = enrichedEvents.filter((e) => {
+        const displayDate = e.display_date || e.event_date;
+        return displayDate >= todayStr && displayDate <= weekFromNowStr;
       });
 
-      const upcoming = enrichedEvents.filter((e: FamilyEvent) => {
-        const eventDate = e.event_date;
-        return eventDate > weekFromNowStr;
+      const upcoming = enrichedEvents.filter((e) => {
+        const displayDate = e.display_date || e.event_date;
+        return displayDate > weekFromNowStr;
       });
 
-      console.log(`📅 Parent events page: ${enrichedEvents.length} total, ${thisWeek.length} this week, ${upcoming.length} upcoming`);
+      console.log(`📅 Parent events page: ${events?.length || 0} raw, ${enrichedEvents.length} expanded, ${thisWeek.length} this week, ${upcoming.length} upcoming`);
 
       return ctx.render({
         family,
