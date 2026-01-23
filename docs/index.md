@@ -1,8 +1,8 @@
 # ChoreGami 2026 Documentation
 
-**Version**: 1.14
+**Version**: 1.15
 **Status**: ✅ Production Ready
-**Last Updated**: January 22, 2026 (Modal Header Action Buttons)
+**Last Updated**: January 23, 2026 (Weekly Digest Enhancement)
 
 **Project Overview**: A simplified, real-time chore completion system built with Deno Fresh, transforming routine family chores into an engaging, competitive experience with sub-second real-time updates across all family devices.
 
@@ -66,6 +66,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-22 | [**Modal Header Action Buttons**](./milestones/20260122_modal_header_action_buttons.md) | ✅ Complete | Shared ModalHeader component; actions in header row for all form modals |
 | TBD | [**Notifications: Calendar + Email + Badges**](./milestones/20260122_notifications_calendar_email_badges.md) | 📋 Planned | .ics export, weekly email digest (Resend), in-app event badge; ~3.5h |
 | TBD | [~~FCM Push Notifications~~](./milestones/20260122_fcm_push_notifications_plan.md) | ⏸️ Deferred | Over-engineered; revisit when demand validated |
+| 2026-01-23 | [**Weekly Digest Enhancement**](./marketing/20260123_weekly_digest_enhancement.md) | ✅ Complete | Personalized family scorecard: leaderboard, streaks, goals, insights |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 
@@ -282,5 +283,5 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 
 ---
 
-*Last updated: January 22, 2026*
+*Last updated: January 23, 2026*
 *Maintained by: Claude Code AI Assistant*

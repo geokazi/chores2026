@@ -28,9 +28,19 @@ interface DigestContent {
   stats: {
     choresCompleted: number;
     choresTotal: number;
+    prevWeekCompleted: number;
+    prevWeekTotal: number;
     topEarner?: { name: string; points: number };
-    longestStreak?: { name: string; days: number };
   };
+  leaderboard: Array<{ name: string; totalPoints: number; weeklyPoints: number; streak: number }>;
+  weeklyEarnings: number;
+  goalProgress?: {
+    target: number;
+    current: number;
+    achieved: boolean;
+    bonus: number;
+  };
+  insights: string[];
 }
 
 /**
@@ -174,18 +184,105 @@ export async function sendWeeklyDigests(): Promise<DigestResult> {
 }
 
 /**
+ * Calculate streak (consecutive days with completions) for a profile.
+ * A streak ends when there's a gap day with no completions.
+ */
+function calculateStreak(transactionDates: string[]): number {
+  if (transactionDates.length === 0) return 0;
+
+  // Get unique dates sorted descending
+  const uniqueDates = [...new Set(transactionDates.map((d) => d.slice(0, 10)))].sort().reverse();
+  if (uniqueDates.length === 0) return 0;
+
+  const today = new Date().toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+
+  // Streak must include today or yesterday
+  if (uniqueDates[0] !== today && uniqueDates[0] !== yesterday) return 0;
+
+  let streak = 1;
+  for (let i = 1; i < uniqueDates.length; i++) {
+    const curr = new Date(uniqueDates[i - 1] + "T00:00:00");
+    const prev = new Date(uniqueDates[i] + "T00:00:00");
+    const diffDays = (curr.getTime() - prev.getTime()) / 86_400_000;
+    if (diffDays === 1) {
+      streak++;
+    } else {
+      break;
+    }
+  }
+  return streak;
+}
+
+/**
+ * Generate personalized insight one-liners from digest data.
+ */
+function generateInsights(content: {
+  stats: { choresCompleted: number; choresTotal: number; prevWeekCompleted: number; prevWeekTotal: number };
+  leaderboard: Array<{ name: string; streak: number; weeklyPoints: number }>;
+  goalProgress?: { achieved: boolean };
+}): string[] {
+  const insights: string[] = [];
+  const { stats, leaderboard, goalProgress } = content;
+
+  // Perfect week
+  if (stats.choresTotal > 0 && stats.choresCompleted === stats.choresTotal) {
+    insights.push("PERFECT WEEK! Every single chore completed!");
+  }
+
+  // Week-over-week improvement
+  if (stats.prevWeekTotal > 0 && stats.choresTotal > 0) {
+    const prevPercent = (stats.prevWeekCompleted / stats.prevWeekTotal) * 100;
+    const currPercent = (stats.choresCompleted / stats.choresTotal) * 100;
+    const delta = currPercent - prevPercent;
+    if (delta > 20) {
+      insights.push(`Up ${Math.round(delta)}% from last week — great momentum!`);
+    }
+  }
+
+  // Goal reached
+  if (goalProgress?.achieved) {
+    insights.push("Family goal reached! Everyone earned the bonus!");
+  }
+
+  // Longest streak in family
+  const streakers = leaderboard.filter((m) => m.streak > 0).sort((a, b) => b.streak - a.streak);
+  if (streakers.length > 0 && streakers[0].streak >= 3) {
+    insights.push(`${streakers[0].name} has the longest streak at ${streakers[0].streak} days!`);
+  }
+
+  // New streak starting (3 days)
+  const newStreakers = leaderboard.filter((m) => m.streak === 3);
+  for (const s of newStreakers.slice(0, 1)) {
+    if (!insights.some((i) => i.includes(s.name))) {
+      insights.push(`${s.name} started a new 3-day streak!`);
+    }
+  }
+
+  return insights.slice(0, 2); // Max 2 insights
+}
+
+/**
  * Build digest content for a parent profile.
  */
 async function buildDigestContent(
   supabase: any,
   profile: { id: string; name: string; family_id: string },
 ): Promise<DigestContent> {
-  // Get family name
+  // Get family name + goal settings
   const { data: family } = await supabase
     .from("families")
-    .select("name")
+    .select("name, settings")
     .eq("id", profile.family_id)
     .single();
+
+  // Get all family members for leaderboard
+  const { data: members } = await supabase
+    .from("family_profiles")
+    .select("id, name, current_points, role")
+    .eq("family_id", profile.family_id)
+    .eq("is_deleted", false)
+    .order("current_points", { ascending: false });
 
   // Get upcoming events (next 7 days)
   const today = new Date();
@@ -199,23 +296,25 @@ async function buildDigestContent(
     .from("family_events")
     .select("title, event_date, schedule_data, metadata")
     .eq("family_id", profile.family_id)
+    .eq("is_deleted", false)
     .gte("event_date", todayStr)
     .lte("event_date", nextWeekStr)
     .order("event_date", { ascending: true })
     .limit(10);
 
-  // Get last week's chore stats
+  // Get this week's chore transactions (last 7 days)
   const lastWeekStart = new Date(today);
   lastWeekStart.setDate(lastWeekStart.getDate() - 7);
 
   const { data: transactions } = await supabase
     .schema("choretracker")
     .from("chore_transactions")
-    .select("profile_id, points_change, transaction_type")
+    .select("profile_id, points_change, transaction_type, created_at")
     .eq("family_id", profile.family_id)
     .eq("transaction_type", "chore_completed")
     .gte("created_at", lastWeekStart.toISOString());
 
+  // Get this week's assignments
   const { data: assignments } = await supabase
     .schema("choretracker")
     .from("chore_assignments")
@@ -224,24 +323,98 @@ async function buildDigestContent(
     .gte("assigned_date", lastWeekStart.toISOString().slice(0, 10))
     .lte("assigned_date", todayStr);
 
-  // Calculate top earner
-  const earnerMap = new Map<string, number>();
+  // Get previous week's transactions (7-14 days ago) for week-over-week
+  const twoWeeksAgo = new Date(today);
+  twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+
+  const { data: prevTransactions } = await supabase
+    .schema("choretracker")
+    .from("chore_transactions")
+    .select("profile_id, points_change")
+    .eq("family_id", profile.family_id)
+    .eq("transaction_type", "chore_completed")
+    .gte("created_at", twoWeeksAgo.toISOString())
+    .lt("created_at", lastWeekStart.toISOString());
+
+  const { data: prevAssignments } = await supabase
+    .schema("choretracker")
+    .from("chore_assignments")
+    .select("id")
+    .eq("family_id", profile.family_id)
+    .gte("assigned_date", twoWeeksAgo.toISOString().slice(0, 10))
+    .lt("assigned_date", lastWeekStart.toISOString().slice(0, 10));
+
+  // Get last 30 days of transactions for streak calculation
+  const thirtyDaysAgo = new Date(today);
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const { data: streakTransactions } = await supabase
+    .schema("choretracker")
+    .from("chore_transactions")
+    .select("profile_id, created_at")
+    .eq("family_id", profile.family_id)
+    .eq("transaction_type", "chore_completed")
+    .gte("created_at", thirtyDaysAgo.toISOString());
+
+  // Calculate per-member weekly earnings and streaks
+  const weeklyEarnerMap = new Map<string, number>();
+  const streakDatesMap = new Map<string, string[]>();
+
   (transactions as any[] || []).forEach((t: any) => {
-    earnerMap.set(t.profile_id, (earnerMap.get(t.profile_id) || 0) + t.points_change);
+    weeklyEarnerMap.set(t.profile_id, (weeklyEarnerMap.get(t.profile_id) || 0) + t.points_change);
   });
 
+  (streakTransactions as any[] || []).forEach((t: any) => {
+    const dates = streakDatesMap.get(t.profile_id) || [];
+    dates.push(t.created_at);
+    streakDatesMap.set(t.profile_id, dates);
+  });
+
+  // Build leaderboard with weekly points and streaks
+  const leaderboard = (members as any[] || []).map((m: any) => ({
+    name: m.name as string,
+    totalPoints: m.current_points as number,
+    weeklyPoints: weeklyEarnerMap.get(m.id) || 0,
+    streak: calculateStreak(streakDatesMap.get(m.id) || []),
+  }));
+
+  // Calculate total weekly earnings
+  const weeklyEarnings = [...weeklyEarnerMap.values()].reduce((a, b) => a + b, 0);
+
+  // Find top earner this week
   let topEarner: { name: string; points: number } | undefined;
-  if (earnerMap.size > 0) {
-    const [topId, topPts] = [...earnerMap.entries()].sort((a, b) => b[1] - a[1])[0];
-    const { data: topProfile } = await supabase
-      .from("family_profiles")
-      .select("name")
-      .eq("id", topId)
-      .single();
-    if (topProfile) {
-      topEarner = { name: (topProfile as any).name, points: topPts };
-    }
+  const topWeekly = leaderboard
+    .filter((m) => m.weeklyPoints > 0)
+    .sort((a, b) => b.weeklyPoints - a.weeklyPoints);
+  if (topWeekly.length > 0) {
+    topEarner = { name: topWeekly[0].name, points: topWeekly[0].weeklyPoints };
   }
+
+  // Calculate goal progress
+  let goalProgress: DigestContent["goalProgress"] | undefined;
+  const goalSettings = (family as any)?.settings?.apps?.choregami;
+  if (goalSettings?.weekly_goal) {
+    const pointsPerDollar = goalSettings.points_per_dollar || 1;
+    const earnedDollars = weeklyEarnings / pointsPerDollar;
+    goalProgress = {
+      target: goalSettings.weekly_goal,
+      current: Math.round(earnedDollars),
+      achieved: earnedDollars >= goalSettings.weekly_goal,
+      bonus: goalSettings.goal_bonus || 0,
+    };
+  }
+
+  const choresCompleted = (transactions as any[] || []).length;
+  const choresTotal = (assignments as any[] || []).length;
+  const prevWeekCompleted = (prevTransactions as any[] || []).length;
+  const prevWeekTotal = (prevAssignments as any[] || []).length;
+
+  // Generate insights
+  const insights = generateInsights({
+    stats: { choresCompleted, choresTotal, prevWeekCompleted, prevWeekTotal },
+    leaderboard,
+    goalProgress,
+  });
 
   return {
     familyName: (family as any)?.name || "Your Family",
@@ -253,10 +426,16 @@ async function buildDigestContent(
       emoji: e.metadata?.emoji || undefined,
     })),
     stats: {
-      choresCompleted: (transactions as any[] || []).length,
-      choresTotal: (assignments as any[] || []).length,
+      choresCompleted,
+      choresTotal,
+      prevWeekCompleted,
+      prevWeekTotal,
       topEarner,
     },
+    leaderboard,
+    weeklyEarnings,
+    goalProgress,
+    insights,
   };
 }
 
@@ -280,7 +459,7 @@ async function sendEmailDigest(
     const { error } = await resend.emails.send({
       from: "ChoreGami <noreply@choregami.com>",
       to: toEmail,
-      subject: `📅 Week Ahead for the ${content.familyName} Family`,
+      subject: `📊 Your Family Scorecard — ${content.familyName}`,
       html,
     });
 
@@ -345,6 +524,60 @@ async function sendSmsDigest(
 }
 
 function buildEmailHtml(content: DigestContent): string {
+  const statsPercent = content.stats.choresTotal > 0
+    ? Math.round((content.stats.choresCompleted / content.stats.choresTotal) * 100)
+    : 0;
+
+  // Week-over-week delta
+  let deltaHtml = "";
+  if (content.stats.prevWeekTotal > 0 && content.stats.choresTotal > 0) {
+    const prevPercent = Math.round((content.stats.prevWeekCompleted / content.stats.prevWeekTotal) * 100);
+    const delta = statsPercent - prevPercent;
+    if (delta > 0) {
+      deltaHtml = `<p style="margin:4px 0;color:#10b981;">📈 Up ${delta}% from last week!</p>`;
+    } else if (delta < 0) {
+      deltaHtml = `<p style="margin:4px 0;color:#f59e0b;">📉 Down ${Math.abs(delta)}% from last week</p>`;
+    } else {
+      deltaHtml = `<p style="margin:4px 0;color:#666;">➡️ Same as last week</p>`;
+    }
+  }
+
+  // Leaderboard rows
+  const medals = ["🥇", "🥈", "🥉"];
+  const leaderboardHtml = content.leaderboard.length > 0
+    ? content.leaderboard.map((m, i) => {
+      const medal = i < 3 ? medals[i] : `${i + 1}.`;
+      const streakStr = m.streak > 0 ? `<span style="color:#f59e0b;">🔥${m.streak}d</span>` : "";
+      const weeklyStr = m.weeklyPoints > 0 ? `<span style="color:#888;font-size:0.85em;">(+${m.weeklyPoints} this week)</span>` : "";
+      return `<tr>
+        <td style="padding:6px 8px;font-size:1.1em;">${medal}</td>
+        <td style="padding:6px 8px;font-weight:600;">${m.name}</td>
+        <td style="padding:6px 8px;text-align:right;">${m.totalPoints} pts ${weeklyStr}</td>
+        <td style="padding:6px 8px;text-align:right;">${streakStr}</td>
+      </tr>`;
+    }).join("")
+    : `<tr><td style="padding:8px;color:#888;">No activity yet</td></tr>`;
+
+  // Goal progress
+  let goalHtml = "";
+  if (content.goalProgress) {
+    const gp = content.goalProgress;
+    const goalPercent = gp.target > 0 ? Math.min(100, Math.round((gp.current / gp.target) * 100)) : 0;
+    const barColor = gp.achieved ? "#10b981" : "#3b82f6";
+    const statusText = gp.achieved
+      ? `<span style="color:#10b981;font-weight:600;">Reached! +$${gp.bonus} bonus each!</span>`
+      : `$${gp.current} / $${gp.target} (${goalPercent}%)`;
+    goalHtml = `
+  <div class="section">
+    <h2>🎯 Family Goal</h2>
+    <div style="background:#e5e7eb;border-radius:4px;height:12px;margin:8px 0;">
+      <div style="background:${barColor};border-radius:4px;height:12px;width:${goalPercent}%;"></div>
+    </div>
+    <p style="margin:4px 0;">${statusText}</p>
+  </div>`;
+  }
+
+  // Events
   const eventsHtml = content.events.length > 0
     ? content.events.map((e) => {
       const date = new Date(e.date + "T00:00:00");
@@ -354,39 +587,60 @@ function buildEmailHtml(content: DigestContent): string {
     }).join("")
     : `<tr><td style="padding:8px;color:#888;">No events this week — enjoy the break!</td></tr>`;
 
-  const statsPercent = content.stats.choresTotal > 0
-    ? Math.round((content.stats.choresCompleted / content.stats.choresTotal) * 100)
-    : 0;
+  // Insights
+  const insightsHtml = content.insights.length > 0
+    ? content.insights.map((i) => `<p style="margin:4px 0;">💡 ${i}</p>`).join("")
+    : "";
 
   return `<!DOCTYPE html>
 <html>
 <head><style>
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
   .container { max-width: 520px; margin: 0 auto; padding: 20px; }
-  h2 { color: #10b981; margin: 0 0 4px 0; font-size: 1rem; }
-  .section { margin: 20px 0; padding: 16px; background: #f8fffe; border-radius: 8px; }
+  h2 { color: #10b981; margin: 0 0 8px 0; font-size: 1rem; }
+  .section { margin: 16px 0; padding: 16px; background: #f8fffe; border-radius: 8px; }
   table { width: 100%; border-collapse: collapse; }
   .footer { text-align: center; color: #888; font-size: 12px; margin-top: 30px; padding-top: 16px; border-top: 1px solid #eee; }
 </style></head>
 <body>
 <div class="container">
-  <h1 style="color:#10b981;text-align:center;margin-bottom:4px;">📅 Week Ahead</h1>
-  <p style="text-align:center;color:#666;margin-top:0;">Hi ${content.parentName}! Here's your family's week at a glance.</p>
+  <h1 style="color:#10b981;text-align:center;margin-bottom:4px;">📊 Family Scorecard</h1>
+  <p style="text-align:center;color:#666;margin-top:0;">Hi ${content.parentName}! Here's your family's weekly scorecard.</p>
 
   <div class="section">
-    <h2>📅 This Week's Events</h2>
+    <h2>✅ Weekly Scorecard</h2>
+    <p style="margin:4px 0;font-size:1.1em;font-weight:600;">${content.stats.choresCompleted}/${content.stats.choresTotal} chores completed (${statsPercent}%)</p>
+    ${deltaHtml}
+    ${content.weeklyEarnings > 0 ? `<p style="margin:4px 0;">💰 ${content.weeklyEarnings} pts earned this week</p>` : ""}
+  </div>
+
+  <div class="section">
+    <h2>🏆 Family Leaderboard</h2>
+    <table>${leaderboardHtml}</table>
+  </div>
+
+  ${content.stats.topEarner ? `
+  <div class="section">
+    <h2>⭐ Top Earner This Week</h2>
+    <p style="margin:4px 0;font-size:1.05em;">${content.stats.topEarner.name} earned <strong>${content.stats.topEarner.points} pts</strong> this week!</p>
+  </div>` : ""}
+
+  ${goalHtml}
+
+  <div class="section">
+    <h2>Upcoming Events</h2>
     <table>${eventsHtml}</table>
   </div>
 
-  <div class="section">
-    <h2>📊 Last Week's Highlights</h2>
-    <p style="margin:4px 0;">✅ Chores completed: ${content.stats.choresCompleted}/${content.stats.choresTotal} (${statsPercent}%)</p>
-    ${content.stats.topEarner ? `<p style="margin:4px 0;">⭐ Top earner: ${content.stats.topEarner.name} (${content.stats.topEarner.points} pts)</p>` : ""}
-  </div>
+  ${insightsHtml ? `
+  <div class="section" style="background:#fffbeb;">
+    <h2 style="color:#f59e0b;">✨ Insights</h2>
+    ${insightsHtml}
+  </div>` : ""}
 
   <div class="footer">
     <p>You're receiving this because weekly digests are enabled.<br/>Manage in Settings → Notifications.</p>
-    <p>ChoreGami — Making chores fun for families</p>
+    <p>ChoreGami — Building Better Family Habits, One Chore at a Time</p>
   </div>
 </div>
 </body>
@@ -394,22 +648,51 @@ function buildEmailHtml(content: DigestContent): string {
 }
 
 function buildSmsBody(content: DigestContent): string {
-  let body = `📅 ${content.familyName} Week Ahead\n\n`;
+  const statsPercent = content.stats.choresTotal > 0
+    ? Math.round((content.stats.choresCompleted / content.stats.choresTotal) * 100)
+    : 0;
 
+  let body = `📊 ${content.familyName} Scorecard\n\n`;
+  body += `✅ ${content.stats.choresCompleted}/${content.stats.choresTotal} chores (${statsPercent}%)`;
+
+  // Week-over-week
+  if (content.stats.prevWeekTotal > 0 && content.stats.choresTotal > 0) {
+    const prevPercent = Math.round((content.stats.prevWeekCompleted / content.stats.prevWeekTotal) * 100);
+    const delta = statsPercent - prevPercent;
+    if (delta > 0) body += ` ↑${delta}%`;
+    else if (delta < 0) body += ` ↓${Math.abs(delta)}%`;
+  }
+
+  // Leaderboard (top 3)
+  body += "\n";
+  const medals = ["🥇", "🥈", "🥉"];
+  content.leaderboard.slice(0, 3).forEach((m, i) => {
+    const streakStr = m.streak > 0 ? ` 🔥${m.streak}d` : "";
+    body += `\n${medals[i]} ${m.name} ${m.totalPoints}pts${streakStr}`;
+  });
+
+  // Weekly earnings
+  if (content.weeklyEarnings > 0) {
+    body += `\n💰 ${content.weeklyEarnings}pts earned`;
+  }
+
+  // Goal
+  if (content.goalProgress) {
+    const gp = content.goalProgress;
+    body += gp.achieved
+      ? `\n🎯 Goal reached! +$${gp.bonus} bonus`
+      : `\n🎯 $${gp.current}/$${gp.target}`;
+  }
+
+  // Events (top 3)
   if (content.events.length > 0) {
-    content.events.slice(0, 5).forEach((e) => {
+    body += "\n";
+    content.events.slice(0, 3).forEach((e) => {
       const date = new Date(e.date + "T00:00:00");
       const day = date.toLocaleDateString("en-US", { weekday: "short" });
       const timeStr = e.time ? ` ${formatTime12(e.time)}` : "";
-      body += `${day}: ${e.emoji || ""} ${e.title}${timeStr}\n`;
+      body += `\n ${day}: ${e.emoji || ""}${e.title}${timeStr}`;
     });
-  } else {
-    body += "No events this week!\n";
-  }
-
-  body += `\n📊 Chores: ${content.stats.choresCompleted}/${content.stats.choresTotal}`;
-  if (content.stats.topEarner) {
-    body += `\n⭐ Top: ${content.stats.topEarner.name} (${content.stats.topEarner.points}pts)`;
   }
 
   return body;

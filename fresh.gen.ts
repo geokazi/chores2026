@@ -42,6 +42,7 @@ import * as $api_rotation_status from "./routes/api/rotation/status.ts";
 import * as $api_rotation_today from "./routes/api/rotation/today.ts";
 import * as $api_settings_kids_events from "./routes/api/settings/kids-events.ts";
 import * as $api_settings_notifications from "./routes/api/settings/notifications.ts";
+import * as $api_settings_timezone from "./routes/api/settings/timezone.ts";
 import * as $health from "./routes/health.ts";
 import * as $index from "./routes/index.tsx";
 import * as $kid_dashboard from "./routes/kid/dashboard.tsx";
@@ -143,6 +144,7 @@ const manifest = {
     "./routes/api/rotation/today.ts": $api_rotation_today,
     "./routes/api/settings/kids-events.ts": $api_settings_kids_events,
     "./routes/api/settings/notifications.ts": $api_settings_notifications,
+    "./routes/api/settings/timezone.ts": $api_settings_timezone,
     "./routes/health.ts": $health,
     "./routes/index.tsx": $index,
     "./routes/kid/dashboard.tsx": $kid_dashboard,

@@ -1151,6 +1151,7 @@ auth.users             preferences.notifications    │               │
 
 ## 8. Cross-References
 
+- **Digest Enhancement**: [Weekly Digest Enhancement: Personalized Family Scorecard](../marketing/20260123_weekly_digest_enhancement.md) - Enhanced 7-section digest with leaderboard, streaks, goals, insights
 - **JSONB Settings**: [JSONB Settings Architecture](../20260114_JSONB_settings_architecture.md) - `preferences.notifications` schema for digest storage
 - **FCM Plan (Deferred)**: [FCM Push Notifications](./20260122_fcm_push_notifications_plan.md) - archived, revisit when demand validated
 - **MealPlanner FCM Strategy**: Referenced for analysis but approach rejected for ChoreGami
@@ -1208,12 +1209,12 @@ auth.users             preferences.notifications    │               │
 | `main.ts` | P2 | `Deno.cron("weekly-digest", "0 6 * * 0", ...)` |
 | `deno.json` | P2 | Added `--unstable-cron` to start/build/preview tasks |
 
-### Test Files (5 new, 87 tests)
+### Test Files (5 new, 100 tests)
 
 | File | Phase | Tests |
 |------|-------|-------|
 | `lib/utils/ics-generator_test.ts` | P1 | 28 tests: VCALENDAR structure, TZID, VALARM, RRULE, multi-day, emoji, multi-timezone (DST/non-DST) |
-| `lib/services/email-digest_test.ts` | P2 | 23 tests: getLastSunday, idempotency, channel detection, opt-in, formatTime12, budget |
+| `lib/services/email-digest_test.ts` | P2 | 36 tests: getLastSunday, idempotency, channel detection, opt-in, formatTime12, budget, calculateStreak, generateInsights |
 | `routes/api/events/badge-check_test.ts` | P3 | 11 tests: date range, today/tomorrow detection, edge cases |
 | `lib/services/usage-tracker_test.ts` | P4 | 10 tests: getMonthlyUsage, getTotalUsage, SMS gate logic |
 | `config/feature-limits_test.ts` | P4 | 15 tests: tier structure, limits, SMS gate threshold |
@@ -1226,7 +1227,7 @@ auth.users             preferences.notifications    │               │
 
 ### Build Status
 - All new/modified files pass type check
-- 80 unit tests passing
+- 100 unit tests passing
 - Only pre-existing errors remain (`routes/api/gift/redeem.ts` — unrelated)
 - Fresh manifest regenerated (56 routes, 39 islands)
 
@@ -1238,7 +1239,7 @@ auth.users             preferences.notifications    │               │
 - **Usage tracking**: Dual counters (`total_*` never reset + `this_month_*` reset monthly)
 
 ### Remaining TODOs (Non-blocking)
-- [x] Unit tests for all phases — 87 tests across 5 test files (all passing)
+- [x] Unit tests for all phases — 100 tests across 5 test files (all passing)
 - [x] Register external cron fallback (GitHub Actions) — fully verified (200 response from live app)
 - [x] Badge tap tracking in AppHeader (POST to `/api/analytics/event` on click when badge visible)
 - [ ] "Upgrade" link for premium tier (deferred until Stripe integration)

@@ -47,7 +47,6 @@ export const handler: Handlers = {
     const ics = generateICS(event, timezone);
 
     // Track usage (non-blocking)
-    const profileId = session.user?.profileId;
     if (profileId) {
       incrementUsage(profileId, "ics").catch((err) =>
         console.warn("Usage tracking failed:", err)

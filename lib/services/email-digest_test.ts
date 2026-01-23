@@ -170,3 +170,151 @@ Deno.test("global budget - over cap blocks sending", () => {
   const GLOBAL_EMAIL_BUDGET = 1000;
   assertEquals(totalSentThisMonth >= GLOBAL_EMAIL_BUDGET, true); // Block
 });
+
+// === calculateStreak Logic Tests ===
+// Reproduce the logic from email-digest.ts for unit testing
+
+function calculateStreak(transactionDates: string[]): number {
+  if (transactionDates.length === 0) return 0;
+  const uniqueDates = [...new Set(transactionDates.map((d) => d.slice(0, 10)))].sort().reverse();
+  if (uniqueDates.length === 0) return 0;
+  const today = new Date().toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+  if (uniqueDates[0] !== today && uniqueDates[0] !== yesterday) return 0;
+  let streak = 1;
+  for (let i = 1; i < uniqueDates.length; i++) {
+    const curr = new Date(uniqueDates[i - 1] + "T00:00:00");
+    const prev = new Date(uniqueDates[i] + "T00:00:00");
+    const diffDays = (curr.getTime() - prev.getTime()) / 86_400_000;
+    if (diffDays === 1) streak++;
+    else break;
+  }
+  return streak;
+}
+
+Deno.test("calculateStreak - empty dates returns 0", () => {
+  assertEquals(calculateStreak([]), 0);
+});
+
+Deno.test("calculateStreak - old dates only returns 0", () => {
+  assertEquals(calculateStreak(["2020-01-01T10:00:00Z", "2020-01-02T10:00:00Z"]), 0);
+});
+
+Deno.test("calculateStreak - today only returns 1", () => {
+  const today = new Date().toISOString();
+  assertEquals(calculateStreak([today]), 1);
+});
+
+Deno.test("calculateStreak - today and yesterday returns 2", () => {
+  const today = new Date().toISOString();
+  const yesterday = new Date(Date.now() - 86_400_000).toISOString();
+  assertEquals(calculateStreak([today, yesterday]), 2);
+});
+
+Deno.test("calculateStreak - 3 consecutive days ending today", () => {
+  const today = new Date().toISOString();
+  const d1 = new Date(Date.now() - 86_400_000).toISOString();
+  const d2 = new Date(Date.now() - 2 * 86_400_000).toISOString();
+  assertEquals(calculateStreak([today, d1, d2]), 3);
+});
+
+Deno.test("calculateStreak - gap breaks streak", () => {
+  const today = new Date().toISOString();
+  const d1 = new Date(Date.now() - 86_400_000).toISOString();
+  // Skip a day
+  const d3 = new Date(Date.now() - 3 * 86_400_000).toISOString();
+  assertEquals(calculateStreak([today, d1, d3]), 2);
+});
+
+Deno.test("calculateStreak - duplicate dates don't inflate streak", () => {
+  const today = new Date().toISOString();
+  const todayEarly = new Date().toISOString().replace(/T.*/, "T08:00:00Z");
+  assertEquals(calculateStreak([today, todayEarly]), 1);
+});
+
+// === generateInsights Logic Tests ===
+
+function generateInsights(content: {
+  stats: { choresCompleted: number; choresTotal: number; prevWeekCompleted: number; prevWeekTotal: number };
+  leaderboard: Array<{ name: string; streak: number; weeklyPoints: number }>;
+  goalProgress?: { achieved: boolean };
+}): string[] {
+  const insights: string[] = [];
+  const { stats, leaderboard, goalProgress } = content;
+  if (stats.choresTotal > 0 && stats.choresCompleted === stats.choresTotal) {
+    insights.push("PERFECT WEEK! Every single chore completed!");
+  }
+  if (stats.prevWeekTotal > 0 && stats.choresTotal > 0) {
+    const prevPercent = (stats.prevWeekCompleted / stats.prevWeekTotal) * 100;
+    const currPercent = (stats.choresCompleted / stats.choresTotal) * 100;
+    const delta = currPercent - prevPercent;
+    if (delta > 20) insights.push(`Up ${Math.round(delta)}% from last week — great momentum!`);
+  }
+  if (goalProgress?.achieved) {
+    insights.push("Family goal reached! Everyone earned the bonus!");
+  }
+  const streakers = leaderboard.filter((m) => m.streak > 0).sort((a, b) => b.streak - a.streak);
+  if (streakers.length > 0 && streakers[0].streak >= 3) {
+    insights.push(`${streakers[0].name} has the longest streak at ${streakers[0].streak} days!`);
+  }
+  const newStreakers = leaderboard.filter((m) => m.streak === 3);
+  for (const s of newStreakers.slice(0, 1)) {
+    if (!insights.some((i) => i.includes(s.name))) {
+      insights.push(`${s.name} started a new 3-day streak!`);
+    }
+  }
+  return insights.slice(0, 2);
+}
+
+Deno.test("generateInsights - perfect week", () => {
+  const insights = generateInsights({
+    stats: { choresCompleted: 10, choresTotal: 10, prevWeekCompleted: 8, prevWeekTotal: 10 },
+    leaderboard: [],
+  });
+  assertEquals(insights[0], "PERFECT WEEK! Every single chore completed!");
+});
+
+Deno.test("generateInsights - week-over-week improvement >20%", () => {
+  const insights = generateInsights({
+    stats: { choresCompleted: 9, choresTotal: 10, prevWeekCompleted: 5, prevWeekTotal: 10 },
+    leaderboard: [],
+  });
+  assertEquals(insights.some((i) => i.includes("from last week")), true);
+});
+
+Deno.test("generateInsights - goal achieved", () => {
+  const insights = generateInsights({
+    stats: { choresCompleted: 5, choresTotal: 10, prevWeekCompleted: 5, prevWeekTotal: 10 },
+    leaderboard: [],
+    goalProgress: { achieved: true },
+  });
+  assertEquals(insights.some((i) => i.includes("Family goal reached")), true);
+});
+
+Deno.test("generateInsights - longest streak highlight", () => {
+  const insights = generateInsights({
+    stats: { choresCompleted: 5, choresTotal: 10, prevWeekCompleted: 5, prevWeekTotal: 10 },
+    leaderboard: [
+      { name: "Julia", streak: 5, weeklyPoints: 30 },
+      { name: "Ciku", streak: 2, weeklyPoints: 20 },
+    ],
+  });
+  assertEquals(insights.some((i) => i.includes("Julia") && i.includes("5 days")), true);
+});
+
+Deno.test("generateInsights - max 2 insights", () => {
+  const insights = generateInsights({
+    stats: { choresCompleted: 10, choresTotal: 10, prevWeekCompleted: 3, prevWeekTotal: 10 },
+    leaderboard: [{ name: "Julia", streak: 5, weeklyPoints: 30 }],
+    goalProgress: { achieved: true },
+  });
+  assertEquals(insights.length <= 2, true);
+});
+
+Deno.test("generateInsights - no insights for low activity", () => {
+  const insights = generateInsights({
+    stats: { choresCompleted: 3, choresTotal: 10, prevWeekCompleted: 3, prevWeekTotal: 10 },
+    leaderboard: [{ name: "Julia", streak: 1, weeklyPoints: 10 }],
+  });
+  assertEquals(insights.length, 0);
+});
