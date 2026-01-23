@@ -85,8 +85,12 @@ export default function AppHeader({
         class="header-btn menu-btn"
         onClick={() => setMenuOpen(!menuOpen)}
         aria-label="Menu"
+        style={{ position: "relative" }}
       >
         {menuOpen ? "✕" : "☰"}
+        {hasUpcomingEvents && !menuOpen && (
+          <span class="header-badge-dot" />
+        )}
       </button>
 
       {/* Page Title */}
@@ -334,6 +338,17 @@ export default function AppHeader({
         .user-avatar { font-size: 2rem; }
         .user-name { font-weight: 600; color: var(--color-text); }
         .user-menu hr { border: none; border-top: 1px solid var(--color-bg); margin: 0.5rem 0; }
+        .header-badge-dot {
+          position: absolute;
+          top: 6px;
+          right: 6px;
+          width: 9px;
+          height: 9px;
+          background: #ef4444;
+          border: 2px solid var(--color-primary);
+          border-radius: 50%;
+          animation: badgePulse 2s infinite;
+        }
         .event-badge-dot {
           position: absolute;
           top: 8px;
