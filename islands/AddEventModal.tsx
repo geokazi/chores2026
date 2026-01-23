@@ -198,9 +198,11 @@ export default function AddEventModal({ isOpen, onClose, familyMembers, onSucces
           onBack={onClose}
           submitLabel={isSubmitting ? (isEditing ? "Saving..." : "Creating...") : (isEditing ? "Save Changes" : "Save Event")}
           isSubmitting={isSubmitting}
+          formId="event-form"
         />
 
         <form
+          id="event-form"
           onSubmit={handleSubmit}
           style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
         >

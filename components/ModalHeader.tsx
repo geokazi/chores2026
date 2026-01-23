@@ -15,6 +15,8 @@ interface ModalHeaderProps {
   submitDisabled?: boolean;
   /** If true, renders submit as <a> link instead of button */
   submitHref?: string;
+  /** Form ID to associate submit button with (for buttons outside <form>) */
+  formId?: string;
 }
 
 export default function ModalHeader({
@@ -26,6 +28,7 @@ export default function ModalHeader({
   isSubmitting = false,
   submitDisabled = false,
   submitHref,
+  formId,
 }: ModalHeaderProps) {
   return (
     <div
@@ -84,6 +87,7 @@ export default function ModalHeader({
         ) : (
           <button
             type={onSubmit ? "button" : "submit"}
+            form={formId}
             onClick={onSubmit}
             disabled={isSubmitting || submitDisabled}
             style={{

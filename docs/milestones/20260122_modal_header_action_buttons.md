@@ -83,6 +83,19 @@ interface ModalHeaderProps {
 
 ---
 
+## Bug Fix: Form Association (Jan 22, 2026)
+
+**Issue**: Submit buttons in ModalHeader didn't trigger form submission because they rendered outside the `<form>` element.
+
+**Root Cause**: HTML buttons with `type="submit"` only submit forms they are children of. ModalHeader renders before/above the form.
+
+**Fix**: Use the HTML5 `form` attribute to associate the submit button with a form by ID:
+- Added `formId` prop to ModalHeader → sets `form={formId}` on the button
+- Each modal's `<form>` gets an `id` attribute (`event-form`, `chore-form`, `prep-form`)
+- TemplateSelector unaffected (uses `onSubmit` click handler directly)
+
+---
+
 ## Design Decisions
 
 ### Why Header Buttons?

@@ -212,9 +212,10 @@ export default function AddChoreModal({ isOpen, onClose, familyMembers, onSucces
           onBack={onClose}
           submitLabel={isSubmitting ? "Creating..." : "Create Chore"}
           isSubmitting={isSubmitting}
+          formId="chore-form"
         />
 
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+        <form id="chore-form" onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           {error && (
             <div style={{ 
               color: "var(--color-warning)", 

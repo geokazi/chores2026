@@ -182,6 +182,7 @@ export default function AddPrepTasksModal({ isOpen, onClose, event, familyMember
           onBack={onClose}
           submitLabel={isSubmitting ? "Saving..." : "Save Tasks"}
           isSubmitting={isSubmitting}
+          formId="prep-form"
         />
 
         {/* Event info */}
@@ -197,7 +198,7 @@ export default function AddPrepTasksModal({ isOpen, onClose, event, familyMember
           {emoji} {event.title}
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form id="prep-form" onSubmit={handleSubmit}>
           {error && (
             <div
               style={{
