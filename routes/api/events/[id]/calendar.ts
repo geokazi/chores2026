@@ -32,7 +32,19 @@ export const handler: Handlers = {
       return new Response("Event not found", { status: 404 });
     }
 
-    const ics = generateICS(event);
+    // Get user's timezone from profile preferences
+    const profileId = session.user?.profileId;
+    let timezone = "UTC";
+    if (profileId) {
+      const { data: profile } = await supabase
+        .from("family_profiles")
+        .select("preferences")
+        .eq("id", profileId)
+        .single();
+      timezone = profile?.preferences?.timezone || "UTC";
+    }
+
+    const ics = generateICS(event, timezone);
 
     // Track usage (non-blocking)
     const profileId = session.user?.profileId;

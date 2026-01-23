@@ -55,6 +55,20 @@ export default function AppHeader({
       .catch(() => {}); // Non-blocking, badge just won't show
   }, []);
 
+  // Auto-detect and sync user timezone (once per session)
+  useEffect(() => {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const stored = sessionStorage.getItem("tz_synced");
+    if (stored === tz) return; // Already synced this session
+    fetch("/api/settings/timezone", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ timezone: tz }),
+    })
+      .then(() => sessionStorage.setItem("tz_synced", tz))
+      .catch(() => {});
+  }, []);
+
   const isParent = userRole === "parent";
   const kids = familyMembers.filter((m) => m.role === "child");
 
