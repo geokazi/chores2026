@@ -339,7 +339,6 @@ export class AuthenticationService {
         </head>
         <body>
           <script>
-            // This will be handled by UserDataManager
             console.log('📋 ${authFlow}: Authentication successful, redirecting to ${redirectUrl}');
             window.location.href = '${redirectUrl}';
           </script>

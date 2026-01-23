@@ -10,6 +10,7 @@ import { Handlers, PageProps } from "$fresh/server.ts";
 import { Head } from "$fresh/runtime.ts";
 import { getAuthenticatedSession } from "../../lib/auth/session.ts";
 import { createClient } from "@supabase/supabase-js";
+import { hasRealEmail, resolvePhone } from "../../lib/utils/resolve-phone.ts";
 import FamilySettings from "../../islands/FamilySettings.tsx";
 import ParentPinGate from "../../islands/ParentPinGate.tsx";
 import AppHeader from "../../islands/AppHeader.tsx";
@@ -62,15 +63,7 @@ export const handler: Handlers<ParentSettingsData> = {
         );
         const { data: { user } } = await supabase.auth.admin.getUserById(parentProfile.user_id);
         if (user) {
-          const hasRealEmail = user.email && !/\@phone\./i.test(user.email);
-          // Resolve phone: explicit field or extracted from placeholder email
-          let resolvedPhone = user.phone || null;
-          if (!resolvedPhone && user.email) {
-            const phoneMatch = user.email.match(/^(\+?\d+)@phone\./);
-            if (phoneMatch) resolvedPhone = phoneMatch[1];
-          }
-          const hasPhone = !!resolvedPhone;
-          digestChannel = hasRealEmail ? "email" : hasPhone ? "sms" : null;
+          digestChannel = hasRealEmail(user.email) ? "email" : resolvePhone(user) ? "sms" : null;
         }
       } catch (e) {
         console.warn("Failed to detect digest channel:", e);

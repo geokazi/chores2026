@@ -6,6 +6,7 @@
 import { Handlers, PageProps } from "$fresh/server.ts";
 import { getAuthenticatedSession } from "../lib/auth/session.ts";
 import { createClient } from "@supabase/supabase-js";
+import { isPhoneSignup, resolvePhone } from "../lib/utils/resolve-phone.ts";
 import AuthModeSelector from "../islands/auth/AuthModeSelector.tsx";
 import PhoneAuthForm from "../islands/auth/PhoneAuthForm.tsx";
 import SocialAuthButtons from "../islands/auth/SocialAuthButtons.tsx";
@@ -221,22 +222,12 @@ function createSessionResponse(req: Request, session: any, redirectTo = "/", ver
 
   // Build userData for localStorage (MealPlanner pattern)
   const user = session.user || {};
-
-  // Detect phone signup: explicit phone field, verified phone passed in, or @phone. placeholder email
-  const isPhoneSignup = !!user.phone || !!verifiedPhone || /\@phone\./i.test(user.email || "");
-  let resolvedPhone = user.phone || verifiedPhone || null;
-  if (!resolvedPhone && isPhoneSignup && user.email) {
-    // Extract phone number from placeholder email (e.g., "+16179030249@phone.mealplanner.internal")
-    const match = user.email.match(/^(\+?\d+)@phone\./);
-    if (match) resolvedPhone = match[1];
-  }
-
   const userData = {
     id: user.id,
     email: user.email || null,
-    phone: resolvedPhone,
+    phone: resolvePhone(user, verifiedPhone),
     user_metadata: user.user_metadata || {},
-    signup_method: isPhoneSignup ? "phone" : "email",
+    signup_method: isPhoneSignup(user, verifiedPhone) ? "phone" : "email",
     auth_flow: "login",
     stored_at: new Date().toISOString(),
   };

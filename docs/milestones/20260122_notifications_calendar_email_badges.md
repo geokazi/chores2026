@@ -348,8 +348,8 @@ The island receives `digestChannel` and renders the correct checkbox label.
 
 ### Fix: Write `chores2026_user_data` on All Login Methods
 
-**Problem**: Currently only OAuth (social) login writes to localStorage.
-Email/password and phone/OTP logins skip it — `UserDataManager.storeUserSession()` is dead code.
+**Problem**: Previously only OAuth (social) login wrote to localStorage.
+Email/password and phone/OTP logins skipped it. (Dead `UserDataManager.ts` was deleted; replaced by `lib/utils/resolve-phone.ts`.)
 
 **Solution**: Follow MealPlanner pattern — change `createSessionResponse()` in
 `routes/login.tsx` and `routes/register.tsx` to return an intermediate HTML page
@@ -416,11 +416,12 @@ return createSessionResponse(req, sessionData.session, "/", phone);
 
 | File | Change |
 |------|--------|
-| `routes/login.tsx` | `createSessionResponse()` → phone detection via `verifiedPhone` param + `@phone.` email pattern |
+| `lib/utils/resolve-phone.ts` | **NEW** — `resolvePhone()`, `isPhoneSignup()`, `hasRealEmail()` (shared utility, 35 lines) |
+| `routes/login.tsx` | Import `resolvePhone` + `isPhoneSignup` from utility |
 | `routes/register.tsx` | Same pattern for signup flow |
-| `routes/parent/settings.tsx` | Detect `digestChannel` via `@phone.` pattern (not just `@phone.choregami.local`) |
-| `lib/services/email-digest.ts` | Same phone detection fix + use `resolvedPhone` for SMS sends |
-| `lib/auth/UserDataManager.ts` | Added `"phone"` to `SignupMethod` type, `@phone.` email pattern detection |
+| `routes/parent/settings.tsx` | Import `hasRealEmail` + `resolvePhone` from utility |
+| `lib/services/email-digest.ts` | Import `resolvePhone` + `hasRealEmail` from utility |
+| `lib/auth/UserDataManager.ts` | **DELETED** — dead code (300+ lines), never imported by any file |
 
 ---
 
@@ -1147,7 +1148,7 @@ auth.users             preferences.notifications    │               │
 - **Twilio Config**: `.env` lines 68-72 (reserved for future SMS if validated)
 - **MealPlanner localStorage Pattern**: `choregami-mealplanner/routes/login.tsx:110-122` — HTML response with script injection
 - **MealPlanner Logout**: `choregami-mealplanner/routes/logout.tsx:59` — clears `mealplanner_user_data`
-- **ChoreGami UserDataManager**: `lib/auth/UserDataManager.ts` — `getStoredUserData()` for client-side reads
+- **Phone Resolution Utility**: `lib/utils/resolve-phone.ts` — `resolvePhone()`, `isPhoneSignup()`, `hasRealEmail()` (replaces deleted UserDataManager)
 - **Usage Queries**: [`sql/20260122_notifications_usage_queries.sql`](../../sql/20260122_notifications_usage_queries.sql) — global budget cap, upgrade candidates, cron helper, atomic increment
 - **POC Scripts**: `scripts/PoCs/poc{1,2,3}_*.ts` — verified Deno.cron, HTTP secret, JSONB idempotency (Jan 22, 2026)
 

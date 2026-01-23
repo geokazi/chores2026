@@ -12,6 +12,7 @@ import { Resend } from "npm:resend";
 import { createClient } from "@supabase/supabase-js";
 import { FEATURE_LIMITS, GLOBAL_EMAIL_BUDGET } from "../../config/feature-limits.ts";
 import { incrementUsage, getMonthlyUsage } from "./usage-tracker.ts";
+import { resolvePhone, hasRealEmail } from "../utils/resolve-phone.ts";
 
 interface DigestResult {
   sent: number;
@@ -99,15 +100,9 @@ export async function sendWeeklyDigests(): Promise<DigestResult> {
         continue;
       }
 
-      const hasRealEmail = user.email && !/\@phone\./i.test(user.email);
-      // Resolve phone: explicit field or extracted from placeholder email
-      let resolvedPhone = user.phone || null;
-      if (!resolvedPhone && user.email) {
-        const phoneMatch = user.email.match(/^(\+?\d+)@phone\./);
-        if (phoneMatch) resolvedPhone = phoneMatch[1];
-      }
-      const hasPhone = !!resolvedPhone;
-      let channel = notifPrefs.digest_channel || (hasRealEmail ? "email" : "sms");
+      const emailValid = hasRealEmail(user.email);
+      const resolvedPhone = resolvePhone(user);
+      let channel = notifPrefs.digest_channel || (emailValid ? "email" : "sms");
 
       // SMS gate: check monthly limit, auto-fallback to email
       if (channel === "sms") {
@@ -117,7 +112,7 @@ export async function sendWeeklyDigests(): Promise<DigestResult> {
 
         if (monthlyUsage >= limit) {
           console.log(`[digest] [${profile.name}] SMS limit reached (${monthlyUsage}/${limit}). Falling back to email.`);
-          if (hasRealEmail) {
+          if (emailValid) {
             channel = "email";
             // Flag sms_limit_hit for settings UI banner
             await supabase.from("family_profiles").update({
@@ -142,11 +137,11 @@ export async function sendWeeklyDigests(): Promise<DigestResult> {
 
       // Send based on channel
       let sendSuccess = false;
-      if (channel === "email" && hasRealEmail) {
+      if (channel === "email" && emailValid) {
         sendSuccess = await sendEmailDigest(user.email!, content);
-      } else if (channel === "sms" && hasPhone) {
-        sendSuccess = await sendSmsDigest(resolvedPhone!, content);
-      } else if (hasRealEmail) {
+      } else if (channel === "sms" && resolvedPhone) {
+        sendSuccess = await sendSmsDigest(resolvedPhone, content);
+      } else if (emailValid) {
         // Fallback to email if preferred channel unavailable
         sendSuccess = await sendEmailDigest(user.email!, content);
       }
