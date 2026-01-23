@@ -1425,6 +1425,24 @@ Page Load → Intl.DateTimeFormat() → "America/New_York"
 
 ---
 
+---
+
+## Commit Trail (January 23, 2026)
+
+| Commit | Summary |
+|--------|---------|
+| `bbd2d74` | Badge tracking, 87 unit tests, auth security hardening |
+| `d1db8a6` | Fix badge-check: query choretracker schema |
+| `63f9bf6` | Prevent missing schema bugs (lint script + CLAUDE.md rule) |
+| `4096258` | Add badge tap tracking SQL queries |
+| `a48b068` | Move badge dot to header hamburger button |
+| `05f8e5b` | Footer: dynamic year + legally safe tagline |
+| `b5cce3a` | Fix ICS timezone: X-WR-TIMEZONE for iOS |
+| `069b8fd` | Remove hardcoded timezone — auto-detect from browser |
+| `0eda125` | Document timezone internationalization + update test counts |
+
+---
+
 *Plan created: January 22, 2026*
 *Implemented: January 22, 2026*
 *GitHub Actions cron: January 23, 2026 (verified — 200 response from live Fly.io app)*
