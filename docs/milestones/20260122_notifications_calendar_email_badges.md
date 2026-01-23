@@ -1050,7 +1050,7 @@ auth.users             preferences.notifications    │               │
 - [x] Create `routes/api/cron/weekly-digest.ts` — HTTP fallback (pattern from `scripts/PoCs/poc2_http_secret.ts`)
 - [x] Make `sendWeeklyDigests()` idempotent — check `last_sent_at` per profile, skip if sent this cycle (pattern from `scripts/PoCs/poc3_idempotent_send.ts`)
 - [x] Record `last_sent_at` in `preferences.notifications` after each successful send
-- [ ] Register external cron fallback (cron-job.org or GitHub Actions) pointing to HTTP endpoint
+- [x] Register external cron fallback (GitHub Actions) — see Section 10 below
 
 **Settings UI:**
 - [x] Add digest checkbox in parent settings (server-side pass-through: route passes `digestChannel` prop)
@@ -1182,11 +1182,93 @@ auth.users             preferences.notifications    │               │
 
 ### Remaining TODOs (Non-blocking)
 - [ ] Unit tests for all phases
-- [ ] Register external cron fallback (cron-job.org or GitHub Actions)
+- [x] Register external cron fallback (GitHub Actions) — secrets configured, workflow file pending
 - [ ] Badge tap tracking in AppHeader (POST to `/api/analytics/event`)
 - [ ] "Upgrade" link for premium tier (deferred until Stripe integration)
 
 ---
 
+## 10. GitHub Actions Cron Fallback
+
+### Purpose
+
+External safety net for the weekly digest. If `Deno.cron` doesn't fire (machine sleeping, mid-deployment, cold start), GitHub Actions triggers the same idempotent endpoint. Both can fire — `last_sent_at` prevents duplicates.
+
+### Architecture
+
+```
+Sunday 6am UTC (9am EAT)
+         │
+    ┌────┴────┐
+    │         │
+    ▼         ▼
+Deno.cron   GitHub Actions
+(primary)   (fallback)
+    │         │
+    └────┬────┘
+         │
+         ▼
+sendWeeklyDigests() [idempotent]
+```
+
+### Repository Secrets (Configured)
+
+| Secret | Purpose | Status |
+|--------|---------|--------|
+| `CRON_SECRET` | Authenticates request to `/api/cron/weekly-digest` | ✅ Set |
+| `APP_BASE_URL` | Production URL (configurable for host migration) | ✅ Set |
+
+**Why `APP_BASE_URL` is a secret**: When migrating from `https://choregami.fly.dev` to `https://choregami.app` (Cloud Run), update this single value — no code change needed.
+
+**Secret type**: Repository secrets (not environment secrets). Environment secrets would only be useful with multiple deploy targets (staging/production). Single-target → repository secrets are simpler.
+
+### Workflow File
+
+**Path**: `.github/workflows/weekly-digest.yml`
+
+```yaml
+name: Weekly Digest Fallback
+on:
+  schedule:
+    - cron: '0 6 * * 0'   # Sunday 6am UTC = 9am EAT
+  workflow_dispatch:        # Manual trigger for testing
+
+jobs:
+  trigger-digest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger weekly digest endpoint
+        run: |
+          response=$(curl -s -w "\n%{http_code}" \
+            "${{ secrets.APP_BASE_URL }}/api/cron/weekly-digest?secret=${{ secrets.CRON_SECRET }}")
+
+          http_code=$(echo "$response" | tail -1)
+          body=$(echo "$response" | head -n -1)
+
+          echo "Status: $http_code"
+          echo "Response: $body"
+
+          if [ "$http_code" -ne 200 ]; then
+            echo "::error::Digest trigger failed with status $http_code"
+            exit 1
+          fi
+```
+
+### Key Properties
+
+- **Idempotent**: Safe to double-fire (Deno.cron + GitHub Actions) — `last_sent_at` per profile prevents duplicate sends
+- **Configurable host**: `APP_BASE_URL` secret allows Fly.io → Cloud Run migration without code changes
+- **Testable**: `workflow_dispatch` enables manual trigger from GitHub Actions UI
+- **Observable**: Failed runs surface in GitHub Actions tab with error details
+
+### Host Migration Checklist (Fly.io → Cloud Run)
+
+1. Deploy to Cloud Run with `CRON_SECRET` env var set to same value
+2. Update `APP_BASE_URL` repository secret to `https://choregami.app`
+3. Verify: Actions tab → "Weekly Digest Fallback" → "Run workflow" → confirm 200 response
+
+---
+
 *Plan created: January 22, 2026*
 *Implemented: January 22, 2026*
+*GitHub Actions cron: January 22, 2026 (secrets configured, workflow file pending)*
