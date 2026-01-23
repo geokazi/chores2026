@@ -106,7 +106,7 @@ export const handler: Handlers<RegisterPageData> = {
             });
 
             if (!verifyError && sessionData.session) {
-              return createSessionResponse(req, sessionData.session, "/setup");
+              return createSessionResponse(req, sessionData.session, "/setup", phone);
             }
           }
         }
@@ -233,7 +233,7 @@ export const handler: Handlers<RegisterPageData> = {
   },
 };
 
-function createSessionResponse(req: Request, session: any, redirectTo: string) {
+function createSessionResponse(req: Request, session: any, redirectTo: string, verifiedPhone?: string) {
   const isLocalhost = req.url.includes("localhost");
   const isSecure = !isLocalhost;
 
@@ -244,12 +244,22 @@ function createSessionResponse(req: Request, session: any, redirectTo: string) {
 
   // Build userData for localStorage (MealPlanner pattern)
   const user = session.user || {};
+
+  // Detect phone signup: explicit phone field, verified phone passed in, or @phone. placeholder email
+  const isPhoneSignup = !!user.phone || !!verifiedPhone || /\@phone\./i.test(user.email || "");
+  let resolvedPhone = user.phone || verifiedPhone || null;
+  if (!resolvedPhone && isPhoneSignup && user.email) {
+    // Extract phone number from placeholder email (e.g., "+16179030249@phone.mealplanner.internal")
+    const match = user.email.match(/^(\+?\d+)@phone\./);
+    if (match) resolvedPhone = match[1];
+  }
+
   const userData = {
     id: user.id,
     email: user.email || null,
-    phone: user.phone || null,
+    phone: resolvedPhone,
     user_metadata: user.user_metadata || {},
-    signup_method: user.phone ? "phone" : "email",
+    signup_method: isPhoneSignup ? "phone" : "email",
     auth_flow: "signup",
     stored_at: new Date().toISOString(),
   };
