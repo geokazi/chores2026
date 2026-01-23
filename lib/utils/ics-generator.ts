@@ -97,6 +97,8 @@ export function generateICS(event: EventData): string {
     "VERSION:2.0",
     "PRODID:-//ChoreGami//Events//EN",
     "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
+    "X-WR-TIMEZONE:Africa/Nairobi",
     "BEGIN:VTIMEZONE",
     "TZID:Africa/Nairobi",
     "BEGIN:STANDARD",

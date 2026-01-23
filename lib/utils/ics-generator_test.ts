@@ -20,6 +20,8 @@ Deno.test("ICS - contains required VCALENDAR structure", () => {
   assertStringIncludes(ics, "VERSION:2.0");
   assertStringIncludes(ics, "PRODID:-//ChoreGami//Events//EN");
   assertStringIncludes(ics, "CALSCALE:GREGORIAN");
+  assertStringIncludes(ics, "METHOD:PUBLISH");
+  assertStringIncludes(ics, "X-WR-TIMEZONE:Africa/Nairobi");
 });
 
 Deno.test("ICS - contains VEVENT block", () => {
