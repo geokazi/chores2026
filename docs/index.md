@@ -67,6 +67,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | TBD | [**Notifications: Calendar + Email + Badges**](./milestones/20260122_notifications_calendar_email_badges.md) | 📋 Planned | .ics export, weekly email digest (Resend), in-app event badge; ~3.5h |
 | TBD | [~~FCM Push Notifications~~](./milestones/20260122_fcm_push_notifications_plan.md) | ⏸️ Deferred | Over-engineered; revisit when demand validated |
 | 2026-01-23 | [**Weekly Digest Enhancement**](./marketing/20260123_weekly_digest_enhancement.md) | ✅ Complete | Personalized family scorecard: leaderboard, streaks, goals, insights |
+| — | [**Testing Notifications Guide**](./testing-notifications.md) | 📖 Guide | How to test email/SMS digest manually (SQL + curl) |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 

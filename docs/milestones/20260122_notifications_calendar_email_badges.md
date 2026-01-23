@@ -1152,6 +1152,7 @@ auth.users             preferences.notifications    │               │
 ## 8. Cross-References
 
 - **Digest Enhancement**: [Weekly Digest Enhancement: Personalized Family Scorecard](../marketing/20260123_weekly_digest_enhancement.md) - Enhanced 7-section digest with leaderboard, streaks, goals, insights
+- **Testing Guide**: [Testing Notifications](../testing-notifications.md) - How to manually test email/SMS digest (SQL + curl)
 - **JSONB Settings**: [JSONB Settings Architecture](../20260114_JSONB_settings_architecture.md) - `preferences.notifications` schema for digest storage
 - **FCM Plan (Deferred)**: [FCM Push Notifications](./20260122_fcm_push_notifications_plan.md) - archived, revisit when demand validated
 - **MealPlanner FCM Strategy**: Referenced for analysis but approach rejected for ChoreGami
