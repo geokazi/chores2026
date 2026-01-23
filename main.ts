@@ -8,7 +8,7 @@ import "@std/dotenv/load";
 import { sendWeeklyDigests } from "./lib/services/email-digest.ts";
 
 // Weekly digest cron — Sunday 9am EAT (6am UTC)
-Deno.cron("weekly-digest", "0 6 * * 0", async () => {
+Deno.cron("weekly-digest", "0 6 * * SUN", async () => {
   console.log("[cron] Weekly digest triggered at:", new Date().toISOString());
   try {
     const result = await sendWeeklyDigests();
