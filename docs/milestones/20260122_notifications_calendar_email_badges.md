@@ -64,17 +64,28 @@ export const handler: Handlers = {
 };
 ```
 
-**ICS format** (with timezone — avoids misinterpretation by calendar apps):
+**ICS format** (with user's auto-detected timezone — works for any locale):
 ```
 BEGIN:VCALENDAR
 VERSION:2.0
 PRODID:-//ChoreGami//Events//EN
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-TIMEZONE:America/New_York    ← user's detected timezone
+BEGIN:VTIMEZONE                    ← dynamically generated
+TZID:America/New_York
+BEGIN:STANDARD
+...
+END:STANDARD
+BEGIN:DAYLIGHT                     ← included for DST timezones
+...
+END:DAYLIGHT
+END:VTIMEZONE
 BEGIN:VEVENT
-DTSTART;TZID=Africa/Nairobi:20260127T183000
-DTEND;TZID=Africa/Nairobi:20260127T193000
+DTSTART;TZID=America/New_York:20260127T183000
+DTEND;TZID=America/New_York:20260127T193000
 SUMMARY:🏀 Basketball Practice
 DESCRIPTION:Participants: Julia, Ciku
-LOCATION:Community Center
 BEGIN:VALARM
 TRIGGER:-PT60M
 ACTION:DISPLAY
@@ -1061,7 +1072,7 @@ auth.users             preferences.notifications    │               │
 - [x] Handle recurring events with RRULE
 - [x] Handle multi-day events with proper DTSTART/DTEND
 - [x] Usage tracking: `incrementUsage(profileId, "ics")` after serving ICS
-- [x] Tests: ICS output format, RRULE correctness, multi-day DTSTART/DTEND, VALARM reminder (21 tests in `lib/utils/ics-generator_test.ts`)
+- [x] Tests: ICS output format, RRULE correctness, multi-day DTSTART/DTEND, VALARM reminder, multi-timezone (28 tests in `lib/utils/ics-generator_test.ts`)
 
 ### Phase 2: Email/SMS Digest (~2.5 hours) ✅
 
@@ -1197,11 +1208,11 @@ auth.users             preferences.notifications    │               │
 | `main.ts` | P2 | `Deno.cron("weekly-digest", "0 6 * * 0", ...)` |
 | `deno.json` | P2 | Added `--unstable-cron` to start/build/preview tasks |
 
-### Test Files (5 new, 80 tests)
+### Test Files (5 new, 87 tests)
 
 | File | Phase | Tests |
 |------|-------|-------|
-| `lib/utils/ics-generator_test.ts` | P1 | 21 tests: VCALENDAR structure, TZID, VALARM, RRULE, multi-day, emoji |
+| `lib/utils/ics-generator_test.ts` | P1 | 28 tests: VCALENDAR structure, TZID, VALARM, RRULE, multi-day, emoji, multi-timezone (DST/non-DST) |
 | `lib/services/email-digest_test.ts` | P2 | 23 tests: getLastSunday, idempotency, channel detection, opt-in, formatTime12, budget |
 | `routes/api/events/badge-check_test.ts` | P3 | 11 tests: date range, today/tomorrow detection, edge cases |
 | `lib/services/usage-tracker_test.ts` | P4 | 10 tests: getMonthlyUsage, getTotalUsage, SMS gate logic |
@@ -1227,7 +1238,7 @@ auth.users             preferences.notifications    │               │
 - **Usage tracking**: Dual counters (`total_*` never reset + `this_month_*` reset monthly)
 
 ### Remaining TODOs (Non-blocking)
-- [x] Unit tests for all phases — 80 tests across 5 test files (all passing)
+- [x] Unit tests for all phases — 87 tests across 5 test files (all passing)
 - [x] Register external cron fallback (GitHub Actions) — fully verified (200 response from live app)
 - [x] Badge tap tracking in AppHeader (POST to `/api/analytics/event` on click when badge visible)
 - [ ] "Upgrade" link for premium tier (deferred until Stripe integration)
@@ -1339,6 +1350,82 @@ Response: {"success":true,"sent":0,"skipped":0,"errors":0}
 
 ---
 
+---
+
+## 11. Timezone Internationalization (January 23, 2026)
+
+### Problem
+ICS calendar exports hardcoded `Africa/Nairobi` (EAT, UTC+3) timezone, causing events
+to appear at wrong times for users in other timezones. Same issue affected badge-check
+endpoint (missing `.schema("choretracker")`) and email-digest queries.
+
+### Solution: Auto-Detect + Dynamic VTIMEZONE
+
+**Architecture:**
+1. **Browser detection**: `Intl.DateTimeFormat().resolvedOptions().timeZone` on page load
+2. **Server storage**: `family_profiles.preferences.timezone` (IANA string)
+3. **ICS generation**: Dynamic VTIMEZONE block with correct UTC offset and DST handling
+4. **Fallback**: UTC if timezone not yet detected
+
+**Files Changed:**
+
+| File | Change |
+|------|--------|
+| `routes/api/settings/timezone.ts` | **NEW** — POST endpoint to save detected timezone (validates IANA) |
+| `islands/AppHeader.tsx` | Auto-detects timezone on load, POSTs once per session |
+| `lib/utils/ics-generator.ts` | Accepts `timezone` param, generates dynamic VTIMEZONE |
+| `routes/api/events/[id]/calendar.ts` | Reads user timezone from profile, passes to generator |
+| `lib/utils/ics-generator_test.ts` | 28 tests covering 8 timezones (DST + non-DST) |
+
+**Timezone Detection Flow:**
+```
+Page Load → Intl.DateTimeFormat() → "America/New_York"
+  → sessionStorage check (already synced this session?)
+  → POST /api/settings/timezone { timezone: "America/New_York" }
+  → Server validates via Intl.DateTimeFormat("en-US", { timeZone })
+  → Saves to family_profiles.preferences.timezone
+  → sessionStorage.setItem("tz_synced", tz)
+```
+
+**VTIMEZONE Generation:**
+- Non-DST zones (Africa/Nairobi, Asia/Tokyo): Single STANDARD section
+- DST zones (America/New_York, Australia/Sydney): STANDARD + DAYLIGHT sections
+- Offsets computed via `Intl.DateTimeFormat` at Jan 15 vs Jul 15 of event year
+- Abbreviations (EST, PST, EAT) via `formatToParts({ timeZoneName: "short" })`
+
+**Tested Timezones:**
+
+| Timezone | UTC Offset | DST | Test |
+|----------|-----------|-----|------|
+| UTC | +0000 | No | ✅ |
+| Africa/Nairobi | +0300 | No | ✅ |
+| Asia/Tokyo | +0900 | No | ✅ |
+| Pacific/Honolulu | -1000 | No | ✅ |
+| America/New_York | -0500/-0400 | Yes | ✅ |
+| America/Los_Angeles | -0800/-0700 | Yes | ✅ |
+| Europe/London | +0000/+0100 | Yes | ✅ |
+| Australia/Sydney | +1100/+1000 | Yes | ✅ |
+
+**iOS/Android Compatibility:**
+- `X-WR-TIMEZONE` header: Required by iOS Calendar for timezone interpretation
+- `METHOD:PUBLISH`: Helps calendar apps understand event intent
+- `VTIMEZONE` block: RFC 5545 standard, used by Google Calendar/Outlook
+- All three included for maximum compatibility
+
+### Related Fixes (Same Session)
+
+| Fix | File | Issue |
+|-----|------|-------|
+| Badge-check wrong schema | `routes/api/events/badge-check.ts` | Missing `.schema("choretracker")` |
+| Email-digest wrong schema | `lib/services/email-digest.ts` | 3 queries missing schema |
+| Calendar route wrong schema | `routes/api/events/[id]/calendar.ts` | Missing schema |
+| Schema lint prevention | `scripts/lint-schema.ts` | Catches future violations |
+| Footer dynamic year | `components/AppFooter.tsx` | Hardcoded 2025 → `new Date().getFullYear()` |
+| Header badge dot | `islands/AppHeader.tsx` | Moved from menu to ☰ button (always visible) |
+
+---
+
 *Plan created: January 22, 2026*
 *Implemented: January 22, 2026*
 *GitHub Actions cron: January 23, 2026 (verified — 200 response from live Fly.io app)*
+*Timezone internationalization: January 23, 2026*
