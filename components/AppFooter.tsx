@@ -30,7 +30,11 @@ export default function AppFooter({ style = "light" }: AppFooterProps) {
           cursor: "default",
         }}
       >
-        Family Chores Made Fun
+        © {new Date().getFullYear()} ChoreGami™ - All rights reserved
+        <br />
+        <span style={{ fontSize: "11px", color: versionColor }}>
+          Building Better Family Habits, One Chore at a Time
+        </span>
         <br />
         <span class="legal-links" style={{ fontSize: "11px", color: versionColor }}>
           <a href="/terms" style={{ color: versionColor, textDecoration: "none" }}>Terms</a>
