@@ -64,7 +64,8 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-21 | **Kids Can Add Prep Tasks** | ✅ Complete | Kids can add prep tasks to events from their dashboard; only parents can create chores |
 | 2026-01-21 | [**Multi-day & Repeating Events**](./milestones/20260121_events-multiday-repeating-endtime.md) | ✅ Complete | End time, multi-day (duration), recurring events (presets); pure JSONB, no migration |
 | 2026-01-22 | [**Modal Header Action Buttons**](./milestones/20260122_modal_header_action_buttons.md) | ✅ Complete | Shared ModalHeader component; actions in header row for all form modals |
-| TBD | [**FCM Push Notifications**](./milestones/20260122_fcm_push_notifications_plan.md) | 📋 Planned | Free push via FCM/PWA: event reminders, chore alerts, streak warnings |
+| TBD | [**Notifications: Calendar + Email + Badges**](./milestones/20260122_notifications_calendar_email_badges.md) | 📋 Planned | .ics export, weekly email digest (Resend), in-app event badge; ~3.5h |
+| TBD | [~~FCM Push Notifications~~](./milestones/20260122_fcm_push_notifications_plan.md) | ⏸️ Deferred | Over-engineered; revisit when demand validated |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 

@@ -1,10 +1,21 @@
 # FCM Push Notifications for ChoreGami
-## Implementation Plan - Pareto-Optimized
+## Implementation Plan - DEFERRED
 
 **Date**: January 22, 2026
-**Status**: 📋 Planned
-**Goal**: Free push notifications for event reminders, chore alerts, and streak warnings
-**Cost**: $0/month (FCM is unlimited and free)
+**Status**: ⏸️ Deferred
+**Reason**: Over-engineered for current stage. Calendar export + email digest provides 80% of value at 20% of effort.
+**Revisit When**: >50% users request push AND organically install PWA
+**Replaced By**: [Notifications: Calendar + Email + Badges](./20260122_notifications_calendar_email_badges.md)
+
+> **Decision (Jan 22, 2026)**: FCM push violates the 20/80 principle for a family chore app.
+> Hidden costs (Firebase lock-in, PWA adoption friction, token cleanup, iOS brittleness,
+> notification permission UX, support burden) outweigh benefits when users already have
+> calendar apps for event reminders and kids don't have their own devices.
+
+---
+
+**Original Goal**: Free push notifications for event reminders, chore alerts, and streak warnings
+**Original Cost**: $0/month (FCM is unlimited and free)
 
 ---
 
