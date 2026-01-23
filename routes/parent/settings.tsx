@@ -62,8 +62,14 @@ export const handler: Handlers<ParentSettingsData> = {
         );
         const { data: { user } } = await supabase.auth.admin.getUserById(parentProfile.user_id);
         if (user) {
-          const hasRealEmail = user.email && !user.email.endsWith("@phone.choregami.local");
-          const hasPhone = !!user.phone;
+          const hasRealEmail = user.email && !/\@phone\./i.test(user.email);
+          // Resolve phone: explicit field or extracted from placeholder email
+          let resolvedPhone = user.phone || null;
+          if (!resolvedPhone && user.email) {
+            const phoneMatch = user.email.match(/^(\+?\d+)@phone\./);
+            if (phoneMatch) resolvedPhone = phoneMatch[1];
+          }
+          const hasPhone = !!resolvedPhone;
           digestChannel = hasRealEmail ? "email" : hasPhone ? "sms" : null;
         }
       } catch (e) {

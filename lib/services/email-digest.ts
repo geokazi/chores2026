@@ -99,8 +99,14 @@ export async function sendWeeklyDigests(): Promise<DigestResult> {
         continue;
       }
 
-      const hasRealEmail = user.email && !user.email.endsWith("@phone.choregami.local");
-      const hasPhone = !!user.phone;
+      const hasRealEmail = user.email && !/\@phone\./i.test(user.email);
+      // Resolve phone: explicit field or extracted from placeholder email
+      let resolvedPhone = user.phone || null;
+      if (!resolvedPhone && user.email) {
+        const phoneMatch = user.email.match(/^(\+?\d+)@phone\./);
+        if (phoneMatch) resolvedPhone = phoneMatch[1];
+      }
+      const hasPhone = !!resolvedPhone;
       let channel = notifPrefs.digest_channel || (hasRealEmail ? "email" : "sms");
 
       // SMS gate: check monthly limit, auto-fallback to email
@@ -139,7 +145,7 @@ export async function sendWeeklyDigests(): Promise<DigestResult> {
       if (channel === "email" && hasRealEmail) {
         sendSuccess = await sendEmailDigest(user.email!, content);
       } else if (channel === "sms" && hasPhone) {
-        sendSuccess = await sendSmsDigest(user.phone!, content);
+        sendSuccess = await sendSmsDigest(resolvedPhone!, content);
       } else if (hasRealEmail) {
         // Fallback to email if preferred channel unavailable
         sendSuccess = await sendEmailDigest(user.email!, content);

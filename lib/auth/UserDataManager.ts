@@ -20,7 +20,7 @@ export interface UserData {
     product_context?: string;
     [key: string]: any;
   };
-  signup_method: "email" | "phone_otp" | "oauth";
+  signup_method: "email" | "phone" | "phone_otp" | "oauth";
   auth_flow: "login" | "signup";
   stored_at: string;
   unified_session_id?: string;
@@ -28,7 +28,7 @@ export interface UserData {
 }
 
 export type AuthFlow = "login" | "signup";
-export type SignupMethod = "email" | "phone_otp" | "oauth";
+export type SignupMethod = "email" | "phone" | "phone_otp" | "oauth";
 
 export class UserDataManager {
   /**
@@ -44,10 +44,17 @@ export class UserDataManager {
     const authMethod = this.determineAuthMethod(user, signupMethod);
     const displayName = this.extractDisplayName(user, signupMethod);
 
+    // Resolve phone: explicit field or extracted from placeholder email
+    let resolvedPhone = user.phone || null;
+    if (!resolvedPhone && user.email) {
+      const phoneMatch = user.email.match(/^(\+?\d+)@phone\./);
+      if (phoneMatch) resolvedPhone = phoneMatch[1];
+    }
+
     return {
       id: user.id,
       email: user.email || null,
-      phone: user.phone || null,
+      phone: resolvedPhone,
       user_metadata: {
         display_name: displayName,
         auth_method: authMethod,
@@ -270,11 +277,16 @@ export class UserDataManager {
 
     // Fallback logic based on user properties
     if (user.phone && (!user.email || user.email === "")) {
-      return "phone_otp";
+      return "phone";
     }
 
     if (user.phone_confirmed_at) {
-      return "phone_otp";
+      return "phone";
+    }
+
+    // Detect phone-as-email placeholder pattern (legacy mealplanner users)
+    if (user.email && /\@phone\./i.test(user.email)) {
+      return "phone";
     }
 
     // Default to email

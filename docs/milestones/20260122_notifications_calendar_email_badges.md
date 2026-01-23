@@ -306,13 +306,19 @@ Based on verified POCs, the digest uses a **belt-and-suspenders** approach:
 At cron execution, fetch from `auth.users` via admin API:
 ```typescript
 const { data: { user } } = await supabaseAdmin.auth.admin.getUserById(profile.user_id);
-const hasRealEmail = user.email && !user.email.endsWith("@phone.choregami.local");
-const hasPhone = !!user.phone;
+const hasRealEmail = user.email && !/\@phone\./i.test(user.email);
+// Resolve phone: explicit field or extracted from placeholder email
+let resolvedPhone = user.phone || null;
+if (!resolvedPhone && user.email) {
+  const phoneMatch = user.email.match(/^(\+?\d+)@phone\./);
+  if (phoneMatch) resolvedPhone = phoneMatch[1];
+}
+const hasPhone = !!resolvedPhone;
 ```
 - Email-registered users → digest via email (`user.email`)
-- Phone-registered users → digest via SMS (`user.phone`)
+- Phone-registered users → digest via SMS (`resolvedPhone`)
 - Social (Google/Facebook) → digest via email (`user.email` from OAuth)
-- `+number@phone.choregami.local` emails are phone-signup placeholders, not real emails
+- `+number@phone.choregami.local` and `+number@phone.mealplanner.internal` are phone-signup placeholders, not real emails
 
 ### Settings UI: Server-Side Pass-Through (Option 3)
 
@@ -322,8 +328,14 @@ Pass contact channel info as props to the island — zero client-side API calls:
 ```typescript
 // In routes/parent/settings.tsx handler
 const { data: { user } } = await supabase.auth.getUser(accessToken);
-const hasRealEmail = user.email && !user.email.endsWith("@phone.choregami.local");
-const hasPhone = !!user.phone;
+const hasRealEmail = user.email && !/\@phone\./i.test(user.email);
+// Resolve phone: explicit field or extracted from placeholder email
+let resolvedPhone = user.phone || null;
+if (!resolvedPhone && user.email) {
+  const phoneMatch = user.email.match(/^(\+?\d+)@phone\./);
+  if (phoneMatch) resolvedPhone = phoneMatch[1];
+}
+const hasPhone = !!resolvedPhone;
 
 // Pass to island
 return ctx.render({
@@ -344,7 +356,7 @@ Email/password and phone/OTP logins skip it — `UserDataManager.storeUserSessio
 that writes localStorage before redirecting:
 
 ```typescript
-function createSessionResponse(req: Request, session: any, userData: any, redirectTo = "/") {
+function createSessionResponse(req: Request, session: any, redirectTo = "/", verifiedPhone?: string) {
   const isLocalhost = req.url.includes("localhost");
   const isSecure = !isLocalhost;
 
@@ -353,12 +365,33 @@ function createSessionResponse(req: Request, session: any, userData: any, redire
     `sb-refresh-token=${session.refresh_token}; Path=/; HttpOnly; ${isSecure ? "Secure; " : ""}SameSite=Lax; Max-Age=${60 * 60 * 24 * 30}`,
   ];
 
+  // Build userData for localStorage (MealPlanner pattern)
+  const user = session.user || {};
+
+  // Detect phone signup: explicit phone field, verified phone passed in, or @phone. placeholder email
+  const isPhoneSignup = !!user.phone || !!verifiedPhone || /\@phone\./i.test(user.email || "");
+  let resolvedPhone = user.phone || verifiedPhone || null;
+  if (!resolvedPhone && isPhoneSignup && user.email) {
+    // Extract phone number from placeholder email (e.g., "+16179030249@phone.mealplanner.internal")
+    const match = user.email.match(/^(\+?\d+)@phone\./);
+    if (match) resolvedPhone = match[1];
+  }
+
+  const userData = {
+    id: user.id,
+    email: user.email || null,
+    phone: resolvedPhone,
+    user_metadata: user.user_metadata || {},
+    signup_method: isPhoneSignup ? "phone" : "email",
+    auth_flow: "login",   // or "signup"
+    stored_at: new Date().toISOString(),
+  };
+
   // Return HTML page that writes localStorage then redirects
   return new Response(`<!DOCTYPE html><html><head><title>Logging in...</title></head>
     <body>
       <script>
         localStorage.setItem('chores2026_user_data', ${JSON.stringify(JSON.stringify(userData))});
-        window.dispatchEvent(new CustomEvent('chores2026_user_data_updated'));
         window.location.href = '${redirectTo}';
       </script>
     </body></html>`, {
@@ -371,29 +404,23 @@ function createSessionResponse(req: Request, session: any, userData: any, redire
 }
 ```
 
-**Build userData before calling createSessionResponse:**
+**Phone OTP flow passes verified phone to createSessionResponse:**
 ```typescript
-// After successful auth (email, phone, or social)
-const userData = {
-  id: user.id,
-  email: user.email,
-  phone: user.phone || null,
-  user_metadata: user.user_metadata || {},
-  signup_method: mode,  // "email" | "phone" | "oauth"
-  auth_flow: "login",   // or "signup"
-  stored_at: new Date().toISOString(),
-};
+// In phone OTP verification, after session created:
+return createSessionResponse(req, sessionData.session, "/", phone);
 ```
 
 **Logout**: Already clears `chores2026_user_data` in `routes/logout.ts:69`.
 
-### Files to Update
+### Files Updated
 
 | File | Change |
 |------|--------|
-| `routes/login.tsx` | `createSessionResponse()` → HTML with localStorage write |
+| `routes/login.tsx` | `createSessionResponse()` → phone detection via `verifiedPhone` param + `@phone.` email pattern |
 | `routes/register.tsx` | Same pattern for signup flow |
-| `routes/parent/settings.tsx` | Pass `digestChannel` prop from `auth.users` |
+| `routes/parent/settings.tsx` | Detect `digestChannel` via `@phone.` pattern (not just `@phone.choregami.local`) |
+| `lib/services/email-digest.ts` | Same phone detection fix + use `resolvedPhone` for SMS sends |
+| `lib/auth/UserDataManager.ts` | Added `"phone"` to `SignupMethod` type, `@phone.` email pattern detection |
 
 ---
 
