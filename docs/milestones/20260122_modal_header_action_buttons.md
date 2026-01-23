@@ -60,12 +60,16 @@ interface ModalHeaderProps {
 | Prep Tasks | `islands/AddPrepTasksModal.tsx` | Header + removed footer |
 | Template Setup | `islands/TemplateSelector.tsx` | Header + removed modal-actions |
 | Template Upgrade | `islands/TemplateSelector.tsx` | Header with link action |
+| Add/Edit Kid | `islands/settings/FamilyMembersSection.tsx` | Header + removed footer |
+| Adjust Points | `islands/settings/PointManagementSection.tsx` | Header + removed footer |
 
 ### Excluded (No Changes)
 
 - **PinEntryModal.tsx** - Custom keypad UI (not a standard form)
 - **ParentPinModal.tsx** - Custom keypad UI
 - **settings/PinSetupModal.tsx** - Custom keypad UI
+- **settings/FamilyMembersSection.tsx** (Remove Kid PIN modal) - Auto-submit PIN input
+- **settings/PointManagementSection.tsx** (Adjust PIN modal) - Auto-submit PIN input
 
 ---
 
@@ -78,8 +82,10 @@ interface ModalHeaderProps {
 | `islands/AddChoreModal.tsx` | -35 |
 | `islands/AddPrepTasksModal.tsx` | -35 |
 | `islands/TemplateSelector.tsx` | -10 |
+| `islands/settings/FamilyMembersSection.tsx` | -10 |
+| `islands/settings/PointManagementSection.tsx` | -12 |
 
-**Net change**: ~-5 lines (reusable component replaces duplicated code)
+**Net change**: ~-27 lines (reusable component replaces duplicated code)
 
 ---
 

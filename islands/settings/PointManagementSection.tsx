@@ -3,6 +3,7 @@
  */
 
 import { useState } from "preact/hooks";
+import ModalHeader from "../../components/ModalHeader.tsx";
 
 interface PointManagementSectionProps {
   members: Array<{
@@ -121,8 +122,15 @@ export default function PointManagementSection({ members, familyId }: PointManag
       {showPointAdjustment && selectedMember && (
         <div class="modal-overlay">
           <div class="modal">
-            <h3>⚡ Adjust Points for {selectedMember.name}</h3>
-            <p>Current points: {selectedMember.current_points}</p>
+            <ModalHeader
+              title={`⚡ Adjust Points for ${selectedMember.name}`}
+              onBack={closeModal}
+              onSubmit={() => setPendingAdjustment(true)}
+              submitLabel="Apply"
+              backLabel="Cancel"
+              submitDisabled={!adjustmentAmount || !adjustmentReason}
+            />
+            <p style={{ marginTop: 0 }}>Current points: {selectedMember.current_points}</p>
 
             <div class="adjustment-form">
               <div class="preset-buttons">
@@ -181,22 +189,6 @@ export default function PointManagementSection({ members, familyId }: PointManag
                   placeholder="Why are you adjusting points?"
                 />
               </div>
-            </div>
-
-            <div class="modal-actions">
-              <button
-                onClick={() => setPendingAdjustment(true)}
-                class="btn btn-primary"
-                disabled={!adjustmentAmount || !adjustmentReason}
-              >
-                Apply Adjustment
-              </button>
-              <button
-                onClick={closeModal}
-                class="btn btn-secondary"
-              >
-                Cancel
-              </button>
             </div>
           </div>
         </div>

@@ -3,6 +3,7 @@
  */
 
 import { useState } from "preact/hooks";
+import ModalHeader from "../../components/ModalHeader.tsx";
 
 interface FamilyMembersSectionProps {
   members: Array<{
@@ -152,8 +153,16 @@ export default function FamilyMembersSection({ members }: FamilyMembersSectionPr
       {showKidModal && (
         <div class="modal-overlay">
           <div class="modal">
-            <h3>{editingKid ? `✏️ Edit ${editingKid.name}` : '➕ Add Kid'}</h3>
-            <div style={{ marginTop: "1rem" }}>
+            <ModalHeader
+              title={editingKid ? `✏️ Edit ${editingKid.name}` : '➕ Add Kid'}
+              onBack={() => setShowKidModal(false)}
+              onSubmit={handleSaveKid}
+              submitLabel={isManagingKid ? 'Saving...' : 'Save'}
+              backLabel="Cancel"
+              isSubmitting={isManagingKid}
+              submitDisabled={!kidNameInput.trim()}
+            />
+            <div>
               <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
                 Name
               </label>
@@ -171,22 +180,6 @@ export default function FamilyMembersSection({ members }: FamilyMembersSectionPr
                 }}
                 autoFocus
               />
-            </div>
-            <div class="modal-actions">
-              <button
-                onClick={handleSaveKid}
-                class="btn btn-primary"
-                disabled={!kidNameInput.trim() || isManagingKid}
-              >
-                {isManagingKid ? 'Saving...' : 'Save'}
-              </button>
-              <button
-                onClick={() => setShowKidModal(false)}
-                class="btn btn-secondary"
-                disabled={isManagingKid}
-              >
-                Cancel
-              </button>
             </div>
           </div>
         </div>
