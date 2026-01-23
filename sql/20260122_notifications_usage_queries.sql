@@ -147,3 +147,56 @@ WHERE role = 'parent'
   AND preferences->'notifications'->'usage'->>'cycle_start' IS NOT NULL
   AND DATE_TRUNC('month', (preferences->'notifications'->'usage'->>'cycle_start')::timestamp)
     < DATE_TRUNC('month', NOW());
+
+
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+-- 8. BADGE TAP TRACKING: Per-profile detail
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+-- See all badge tap analytics per user (with family context)
+-- Ref: docs/milestones/20260122_notifications_calendar_email_badges.md
+SELECT
+  fp.family_id,
+  f.name AS family_name,
+  fp.name,
+  fp.role,
+  fp.preferences->'notifications'->'usage'->>'total_badges_sent' AS lifetime_taps,
+  fp.preferences->'notifications'->'usage'->>'this_month_badges' AS this_month_taps
+FROM family_profiles fp
+JOIN families f ON f.id = fp.family_id
+ORDER BY fp.family_id, fp.role DESC, fp.name;
+
+
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+-- 9. BADGE TAP TRACKING: Grouped by family
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+-- Aggregate badge engagement per family
+-- Ref: docs/milestones/20260122_notifications_calendar_email_badges.md
+SELECT
+  fp.family_id,
+  f.name AS family_name,
+  COUNT(*) AS members,
+  COUNT(fp.preferences->'notifications'->'usage'->>'total_badges_sent') AS members_with_taps,
+  SUM(COALESCE((fp.preferences->'notifications'->'usage'->>'total_badges_sent')::int, 0)) AS total_family_taps
+FROM family_profiles fp
+JOIN families f ON f.id = fp.family_id
+GROUP BY fp.family_id, f.name
+ORDER BY f.name;
+
+
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+-- 10. ALL USAGE STATS: Full notification usage per profile
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+-- Raw usage JSON for debugging/inspection
+SELECT
+  fp.family_id,
+  f.name AS family_name,
+  fp.name,
+  fp.role,
+  fp.preferences->'notifications'->'usage' AS usage_stats
+FROM family_profiles fp
+JOIN families f ON f.id = fp.family_id
+WHERE fp.preferences->'notifications'->'usage' IS NOT NULL
+ORDER BY fp.family_id, fp.name;
