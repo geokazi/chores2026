@@ -14,6 +14,7 @@ COPY routes/ routes/
 COPY islands/ islands/
 COPY components/ components/
 COPY lib/ lib/
+COPY config/ config/
 COPY static/ static/
 COPY utils/ utils/
 
@@ -31,4 +32,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
   CMD deno run --allow-net --no-prompt -e "fetch('http://localhost:8001/health').then(r => r.ok ? Deno.exit(0) : Deno.exit(1))" || exit 1
 
 # Production command - allow all permissions for Fresh app
-CMD ["deno", "run", "--allow-all", "--no-prompt", "main.ts"]
+# --unstable-cron required for Deno.cron() weekly digest scheduler
+CMD ["deno", "run", "--allow-all", "--unstable-cron", "--no-prompt", "main.ts"]
