@@ -1159,6 +1159,7 @@ auth.users             preferences.notifications    │               │
 - **Events System**: [Multi-day & Repeating Events](./20260121_events-multiday-repeating-endtime.md)
 - **Resend Config**: `.env` line 36 (`RESEND_API_KEY`)
 - **Twilio Config**: `.env` lines 68-72 (reserved for future SMS if validated)
+- **SMS Delivery Blocker**: [SMS 10DLC Compliance](../planned/20260123_sms_10dlc_compliance.md) — Carrier blocks unregistered 10DLC; brand+campaign registration required
 - **MealPlanner localStorage Pattern**: `choregami-mealplanner/routes/login.tsx:110-122` — HTML response with script injection
 - **MealPlanner Logout**: `choregami-mealplanner/routes/logout.tsx:59` — clears `mealplanner_user_data`
 - **Phone Resolution Utility**: `lib/utils/resolve-phone.ts` — `resolvePhone()`, `isPhoneSignup()`, `hasRealEmail()` (replaces deleted UserDataManager)
