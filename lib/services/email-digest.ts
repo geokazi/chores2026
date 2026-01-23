@@ -459,7 +459,7 @@ async function sendEmailDigest(
     const { error } = await resend.emails.send({
       from: "ChoreGami <noreply@choregami.com>",
       to: toEmail,
-      subject: `📊 Your Family Scorecard — ${content.familyName}`,
+      subject: `Your Family Scorecard — ${content.familyName}`,
       html,
     });
 
@@ -534,11 +534,11 @@ function buildEmailHtml(content: DigestContent): string {
     const prevPercent = Math.round((content.stats.prevWeekCompleted / content.stats.prevWeekTotal) * 100);
     const delta = statsPercent - prevPercent;
     if (delta > 0) {
-      deltaHtml = `<p style="margin:4px 0;color:#10b981;">📈 Up ${delta}% from last week!</p>`;
+      deltaHtml = `<p style="margin:4px 0;color:#10b981;">Up ${delta}% from last week!</p>`;
     } else if (delta < 0) {
-      deltaHtml = `<p style="margin:4px 0;color:#f59e0b;">📉 Down ${Math.abs(delta)}% from last week</p>`;
+      deltaHtml = `<p style="margin:4px 0;color:#f59e0b;">Down ${Math.abs(delta)}% from last week</p>`;
     } else {
-      deltaHtml = `<p style="margin:4px 0;color:#666;">➡️ Same as last week</p>`;
+      deltaHtml = `<p style="margin:4px 0;color:#666;">Same as last week</p>`;
     }
   }
 
@@ -569,7 +569,7 @@ function buildEmailHtml(content: DigestContent): string {
       : `$${gp.current} / $${gp.target} (${goalPercent}%)`;
     goalHtml = `
   <div class="section">
-    <h2>🎯 Family Goal</h2>
+    <h2>Family Goal</h2>
     <div style="background:#e5e7eb;border-radius:4px;height:12px;margin:8px 0;">
       <div style="background:${barColor};border-radius:4px;height:12px;width:${goalPercent}%;"></div>
     </div>
@@ -589,7 +589,7 @@ function buildEmailHtml(content: DigestContent): string {
 
   // Insights
   const insightsHtml = content.insights.length > 0
-    ? content.insights.map((i) => `<p style="margin:4px 0;">💡 ${i}</p>`).join("")
+    ? content.insights.map((i) => `<p style="margin:4px 0;">${i}</p>`).join("")
     : "";
 
   return `<!DOCTYPE html>
@@ -604,24 +604,24 @@ function buildEmailHtml(content: DigestContent): string {
 </style></head>
 <body>
 <div class="container">
-  <h1 style="color:#10b981;text-align:center;margin-bottom:4px;">📊 Family Scorecard</h1>
+  <h1 style="color:#10b981;text-align:center;margin-bottom:4px;">Family Scorecard</h1>
   <p style="text-align:center;color:#666;margin-top:0;">Hi ${content.parentName}! Here's your family's weekly scorecard.</p>
 
   <div class="section">
-    <h2>✅ Weekly Scorecard</h2>
+    <h2>Weekly Scorecard</h2>
     <p style="margin:4px 0;font-size:1.1em;font-weight:600;">${content.stats.choresCompleted}/${content.stats.choresTotal} chores completed (${statsPercent}%)</p>
     ${deltaHtml}
-    ${content.weeklyEarnings > 0 ? `<p style="margin:4px 0;">💰 ${content.weeklyEarnings} pts earned this week</p>` : ""}
+    ${content.weeklyEarnings > 0 ? `<p style="margin:4px 0;">${content.weeklyEarnings} pts earned this week</p>` : ""}
   </div>
 
   <div class="section">
-    <h2>🏆 Family Leaderboard</h2>
+    <h2>Family Leaderboard</h2>
     <table>${leaderboardHtml}</table>
   </div>
 
   ${content.stats.topEarner ? `
   <div class="section">
-    <h2>⭐ Top Earner This Week</h2>
+    <h2>Top Earner This Week</h2>
     <p style="margin:4px 0;font-size:1.05em;">${content.stats.topEarner.name} earned <strong>${content.stats.topEarner.points} pts</strong> this week!</p>
   </div>` : ""}
 
@@ -634,7 +634,7 @@ function buildEmailHtml(content: DigestContent): string {
 
   ${insightsHtml ? `
   <div class="section" style="background:#fffbeb;">
-    <h2 style="color:#f59e0b;">✨ Insights</h2>
+    <h2 style="color:#f59e0b;">Insights</h2>
     ${insightsHtml}
   </div>` : ""}
 
@@ -652,8 +652,8 @@ function buildSmsBody(content: DigestContent): string {
     ? Math.round((content.stats.choresCompleted / content.stats.choresTotal) * 100)
     : 0;
 
-  let body = `📊 ${content.familyName} Scorecard\n\n`;
-  body += `✅ ${content.stats.choresCompleted}/${content.stats.choresTotal} chores (${statsPercent}%)`;
+  let body = `${content.familyName} Scorecard\n\n`;
+  body += `${content.stats.choresCompleted}/${content.stats.choresTotal} chores (${statsPercent}%)`;
 
   // Week-over-week
   if (content.stats.prevWeekTotal > 0 && content.stats.choresTotal > 0) {
@@ -673,15 +673,15 @@ function buildSmsBody(content: DigestContent): string {
 
   // Weekly earnings
   if (content.weeklyEarnings > 0) {
-    body += `\n💰 ${content.weeklyEarnings}pts earned`;
+    body += `\n${content.weeklyEarnings}pts earned`;
   }
 
   // Goal
   if (content.goalProgress) {
     const gp = content.goalProgress;
     body += gp.achieved
-      ? `\n🎯 Goal reached! +$${gp.bonus} bonus`
-      : `\n🎯 $${gp.current}/$${gp.target}`;
+      ? `\nGoal reached! +$${gp.bonus} bonus`
+      : `\nGoal: $${gp.current}/$${gp.target}`;
   }
 
   // Events (top 3)
