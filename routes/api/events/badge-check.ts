@@ -25,9 +25,11 @@ export const handler: Handlers = {
     const tomorrowStr = tomorrow.toISOString().slice(0, 10);
 
     const { data, error } = await supabase
+      .schema("choretracker")
       .from("family_events")
       .select("id")
       .eq("family_id", session.family.id)
+      .eq("is_deleted", false)
       .gte("event_date", todayStr)
       .lte("event_date", tomorrowStr)
       .limit(1);
