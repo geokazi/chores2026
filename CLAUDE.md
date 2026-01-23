@@ -224,6 +224,32 @@ chores2026/
 
 ## Critical Implementation Patterns
 
+### 🚨 Schema Requirement: choretracker Tables
+
+**ALL queries to these tables MUST use `.schema("choretracker")`:**
+- `family_events`
+- `chore_assignments`
+- `chore_transactions`
+- `chore_templates`
+- `chore_categories`
+
+```typescript
+// ✅ CORRECT
+const { data } = await supabase
+  .schema("choretracker")
+  .from("family_events")
+  .select("*");
+
+// ❌ WRONG — queries public schema (empty/non-existent)
+const { data } = await supabase
+  .from("family_events")
+  .select("*");
+```
+
+**Only `public` schema tables** (no `.schema()` needed): `families`, `family_profiles`
+
+**Lint check**: `deno task lint:schema` catches violations automatically.
+
 ### 🔥 TransactionService Integration
 
 **Copy EXACTLY from existing implementation** - this is production-tested code:

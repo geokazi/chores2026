@@ -2,7 +2,8 @@
   "lock": false,
   "tasks": {
     "test": "deno test --allow-env --allow-net --allow-read --unstable-kv",
-    "check": "deno fmt --check && deno lint && deno check **/*.ts && deno check **/*.tsx",
+    "check": "deno fmt --check && deno lint && deno run --allow-read scripts/lint-schema.ts && deno check **/*.ts && deno check **/*.tsx",
+    "lint:schema": "deno run --allow-read scripts/lint-schema.ts",
     "cli": "echo \"import '\\$fresh/src/dev/cli.ts'\" | deno run --unstable -A -",
     "manifest": "deno task cli manifest $(pwd)",
     "start": "deno run -A --unstable-kv --unstable-cron --watch=static/,routes/ dev.ts",

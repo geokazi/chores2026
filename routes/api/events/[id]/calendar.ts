@@ -21,6 +21,7 @@ export const handler: Handlers = {
     const supabase = getServiceSupabaseClient();
 
     const { data: event, error } = await supabase
+      .schema("choretracker")
       .from("family_events")
       .select("*")
       .eq("id", eventId)

@@ -195,6 +195,7 @@ async function buildDigestContent(
   const nextWeekStr = nextWeek.toISOString().slice(0, 10);
 
   const { data: events } = await supabase
+    .schema("choretracker")
     .from("family_events")
     .select("title, event_date, schedule_data, metadata")
     .eq("family_id", profile.family_id)
@@ -208,6 +209,7 @@ async function buildDigestContent(
   lastWeekStart.setDate(lastWeekStart.getDate() - 7);
 
   const { data: transactions } = await supabase
+    .schema("choretracker")
     .from("chore_transactions")
     .select("profile_id, points_change, transaction_type")
     .eq("family_id", profile.family_id)
@@ -215,6 +217,7 @@ async function buildDigestContent(
     .gte("created_at", lastWeekStart.toISOString());
 
   const { data: assignments } = await supabase
+    .schema("choretracker")
     .from("chore_assignments")
     .select("id")
     .eq("family_id", profile.family_id)
