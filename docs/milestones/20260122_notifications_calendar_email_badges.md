@@ -1182,7 +1182,7 @@ auth.users             preferences.notifications    │               │
 
 ### Remaining TODOs (Non-blocking)
 - [ ] Unit tests for all phases
-- [x] Register external cron fallback (GitHub Actions) — secrets configured, workflow file pending
+- [x] Register external cron fallback (GitHub Actions) — fully verified (200 response from live app)
 - [ ] Badge tap tracking in AppHeader (POST to `/api/analytics/event`)
 - [ ] "Upgrade" link for premium tier (deferred until Stripe integration)
 
@@ -1230,7 +1230,7 @@ sendWeeklyDigests() [idempotent]
 name: Weekly Digest Fallback
 on:
   schedule:
-    - cron: '0 6 * * 0'   # Sunday 6am UTC = 9am EAT
+    - cron: '0 6 * * SUN'   # Sunday 6am UTC = 9am EAT
   workflow_dispatch:        # Manual trigger for testing
 
 jobs:
@@ -1261,6 +1261,28 @@ jobs:
 - **Testable**: `workflow_dispatch` enables manual trigger from GitHub Actions UI
 - **Observable**: Failed runs surface in GitHub Actions tab with error details
 
+### Verification (January 23, 2026)
+
+Manual dispatch via `gh workflow run` confirmed end-to-end:
+
+```
+Status: 200
+Response: {"success":true,"sent":0,"skipped":0,"errors":0}
+```
+
+- GitHub Actions triggers endpoint ✅
+- `CRON_SECRET` authenticates correctly ✅
+- Digest service runs (0 sent = no parents opted in yet) ✅
+- Idempotent — safe to double-fire ✅
+
+### Deployment Fixes Required
+
+| Issue | Fix | Commit |
+|-------|-----|--------|
+| `config/` dir missing from Docker image | Added `COPY config/ config/` to Dockerfile | `0ffa952` |
+| `--unstable-kv` missing from CMD | Added for rate limiter (`Deno.openKv()`) | `139ad45` |
+| `"0 6 * * 0"` invalid cron in Deno 2.0 | Changed to `"0 6 * * SUN"` | `049d8e4` |
+
 ### Host Migration Checklist (Fly.io → Cloud Run)
 
 1. Deploy to Cloud Run with `CRON_SECRET` env var set to same value
@@ -1271,4 +1293,4 @@ jobs:
 
 *Plan created: January 22, 2026*
 *Implemented: January 22, 2026*
-*GitHub Actions cron: January 22, 2026 (secrets configured, workflow file pending)*
+*GitHub Actions cron: January 23, 2026 (verified — 200 response from live Fly.io app)*
