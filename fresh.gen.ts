@@ -4,14 +4,18 @@
 
 import * as $_app from "./routes/_app.tsx";
 import * as $_middleware from "./routes/_middleware.ts";
+import * as $api_analytics_event from "./routes/api/analytics/event.ts";
 import * as $api_auth_validate_oauth from "./routes/api/auth/validate-oauth.ts";
 import * as $api_chores_chore_id_complete from "./routes/api/chores/[chore_id]/complete.ts";
 import * as $api_chores_by_events from "./routes/api/chores/by-events.ts";
 import * as $api_chores_create from "./routes/api/chores/create.ts";
+import * as $api_cron_weekly_digest from "./routes/api/cron/weekly-digest.ts";
 import * as $api_debug_session from "./routes/api/debug/session.ts";
 import * as $api_events from "./routes/api/events.ts";
 import * as $api_events_id_ from "./routes/api/events/[id].ts";
+import * as $api_events_id_calendar from "./routes/api/events/[id]/calendar.ts";
 import * as $api_events_id_prep_task from "./routes/api/events/[id]/prep-task.ts";
+import * as $api_events_badge_check from "./routes/api/events/badge-check.ts";
 import * as $api_family_family_id_pin_setting from "./routes/api/family/[family_id]/pin-setting.ts";
 import * as $api_family_create from "./routes/api/family/create.ts";
 import * as $api_family_custom_chores from "./routes/api/family/custom-chores.ts";
@@ -37,6 +41,7 @@ import * as $api_rotation_complete from "./routes/api/rotation/complete.ts";
 import * as $api_rotation_status from "./routes/api/rotation/status.ts";
 import * as $api_rotation_today from "./routes/api/rotation/today.ts";
 import * as $api_settings_kids_events from "./routes/api/settings/kids-events.ts";
+import * as $api_settings_notifications from "./routes/api/settings/notifications.ts";
 import * as $health from "./routes/health.ts";
 import * as $index from "./routes/index.tsx";
 import * as $kid_dashboard from "./routes/kid/dashboard.tsx";
@@ -98,14 +103,18 @@ const manifest = {
   routes: {
     "./routes/_app.tsx": $_app,
     "./routes/_middleware.ts": $_middleware,
+    "./routes/api/analytics/event.ts": $api_analytics_event,
     "./routes/api/auth/validate-oauth.ts": $api_auth_validate_oauth,
     "./routes/api/chores/[chore_id]/complete.ts": $api_chores_chore_id_complete,
     "./routes/api/chores/by-events.ts": $api_chores_by_events,
     "./routes/api/chores/create.ts": $api_chores_create,
+    "./routes/api/cron/weekly-digest.ts": $api_cron_weekly_digest,
     "./routes/api/debug/session.ts": $api_debug_session,
     "./routes/api/events.ts": $api_events,
     "./routes/api/events/[id].ts": $api_events_id_,
+    "./routes/api/events/[id]/calendar.ts": $api_events_id_calendar,
     "./routes/api/events/[id]/prep-task.ts": $api_events_id_prep_task,
+    "./routes/api/events/badge-check.ts": $api_events_badge_check,
     "./routes/api/family/[family_id]/pin-setting.ts":
       $api_family_family_id_pin_setting,
     "./routes/api/family/create.ts": $api_family_create,
@@ -133,6 +142,7 @@ const manifest = {
     "./routes/api/rotation/status.ts": $api_rotation_status,
     "./routes/api/rotation/today.ts": $api_rotation_today,
     "./routes/api/settings/kids-events.ts": $api_settings_kids_events,
+    "./routes/api/settings/notifications.ts": $api_settings_notifications,
     "./routes/health.ts": $health,
     "./routes/index.tsx": $index,
     "./routes/kid/dashboard.tsx": $kid_dashboard,

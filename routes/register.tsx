@@ -242,10 +242,35 @@ function createSessionResponse(req: Request, session: any, redirectTo: string) {
     `sb-refresh-token=${session.refresh_token}; Path=/; HttpOnly; ${isSecure ? "Secure; " : ""}SameSite=Lax; Max-Age=${60 * 60 * 24 * 30}`,
   ];
 
-  return new Response(null, {
-    status: 303,
-    headers: { Location: redirectTo, "Set-Cookie": cookies.join(", ") },
-  });
+  // Build userData for localStorage (MealPlanner pattern)
+  const user = session.user || {};
+  const userData = {
+    id: user.id,
+    email: user.email || null,
+    phone: user.phone || null,
+    user_metadata: user.user_metadata || {},
+    signup_method: user.phone ? "phone" : "email",
+    auth_flow: "signup",
+    stored_at: new Date().toISOString(),
+  };
+
+  // Return HTML page that writes localStorage then redirects
+  return new Response(
+    `<!DOCTYPE html><html><head><title>Setting up...</title></head>
+    <body>
+      <script>
+        localStorage.setItem('chores2026_user_data', ${JSON.stringify(JSON.stringify(userData))});
+        window.location.href = '${redirectTo}';
+      </script>
+    </body></html>`,
+    {
+      status: 200,
+      headers: {
+        "Content-Type": "text/html",
+        "Set-Cookie": cookies.join(", "),
+      },
+    },
+  );
 }
 
 export default function RegisterPage({ data }: PageProps<RegisterPageData>) {

@@ -5,6 +5,18 @@ import manifest from "./fresh.gen.ts";
 import config from "./fresh.config.ts";
 
 import "@std/dotenv/load";
+import { sendWeeklyDigests } from "./lib/services/email-digest.ts";
+
+// Weekly digest cron — Sunday 9am EAT (6am UTC)
+Deno.cron("weekly-digest", "0 6 * * 0", async () => {
+  console.log("[cron] Weekly digest triggered at:", new Date().toISOString());
+  try {
+    const result = await sendWeeklyDigests();
+    console.log("[cron] Weekly digest result:", result);
+  } catch (err) {
+    console.error("[cron] Weekly digest failed:", err);
+  }
+});
 
 const port = parseInt(Deno.env.get("PORT") ?? "8001");
 const hostname = Deno.env.get("HOSTNAME") ?? "0.0.0.0";

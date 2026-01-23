@@ -4,7 +4,7 @@
  * ~150 lines, CSS-only animations, no external libraries
  */
 
-import { useState } from "preact/hooks";
+import { useState, useEffect } from "preact/hooks";
 import { changeTheme, type ThemeId } from "../lib/theme-manager.ts";
 import { ActiveKidSessionManager } from "../lib/active-kid-session.ts";
 
@@ -42,6 +42,18 @@ export default function AppHeader({
 }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [hasUpcomingEvents, setHasUpcomingEvents] = useState(false);
+
+  // Check for upcoming events (today/tomorrow) — lightweight non-blocking check
+  useEffect(() => {
+    if (userRole !== "parent") return;
+    fetch("/api/events/badge-check")
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.hasUpcoming) setHasUpcomingEvents(true);
+      })
+      .catch(() => {}); // Non-blocking, badge just won't show
+  }, []);
 
   const isParent = userRole === "parent";
   const kids = familyMembers.filter((m) => m.role === "child");
@@ -100,8 +112,11 @@ export default function AppHeader({
               📊 Reports
             </a>
             {isParent && (
-              <a href="/parent/events" class={currentPage === "events" ? "active" : ""}>
+              <a href="/parent/events" class={currentPage === "events" ? "active" : ""} style={{ position: "relative" }}>
                 📅 Events
+                {hasUpcomingEvents && (
+                  <span class="event-badge-dot" />
+                )}
               </a>
             )}
 
@@ -306,6 +321,20 @@ export default function AppHeader({
         .user-avatar { font-size: 2rem; }
         .user-name { font-weight: 600; color: var(--color-text); }
         .user-menu hr { border: none; border-top: 1px solid var(--color-bg); margin: 0.5rem 0; }
+        .event-badge-dot {
+          position: absolute;
+          top: 8px;
+          right: 8px;
+          width: 8px;
+          height: 8px;
+          background: #ef4444;
+          border-radius: 50%;
+          animation: badgePulse 2s infinite;
+        }
+        @keyframes badgePulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
       `}</style>
     </header>
   );

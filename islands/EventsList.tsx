@@ -433,6 +433,24 @@ export default function EventsList({ thisWeek, upcoming, familyMembers }: Props)
         )}
       </div>
 
+      {/* Calendar Export Link */}
+      <div style={{ marginTop: "0.5rem" }}>
+        <a
+          href={`/api/events/${event.id}/calendar`}
+          download={`${event.title}.ics`}
+          style={{
+            fontSize: "0.75rem",
+            color: "var(--color-primary)",
+            textDecoration: "none",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "0.25rem",
+          }}
+        >
+          📅 Add to Calendar
+        </a>
+      </div>
+
       {/* Actions - Bottom Split Layout */}
       <div
         style={{

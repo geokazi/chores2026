@@ -151,10 +151,22 @@ ADD COLUMN preferences JSONB NOT NULL DEFAULT '{}';
   "notifications": {
     "chore_reminders": true,
     "points_earned": true,
-    "weekly_summary": false,
+    "weekly_summary": false,          // Weekly digest enabled (parent only)
+    "digest_channel": "email",        // "email" | "sms" (auto-detected from auth.users)
+    "last_sent_at": null,             // ISO timestamp — idempotency guard for digest cron
+    "sms_limit_hit": false,           // true when monthly SMS gate triggered
     "family_activity": true,
     "push_enabled": false,
-    "email_enabled": true
+    "email_enabled": true,
+    "usage": {                        // Dual counters for analytics + gate enforcement
+      "total_digests_sent": 0,        // All-time (never resets)
+      "total_ics_sent": 0,           // All-time
+      "total_badges_sent": 0,        // All-time
+      "this_month_digests": 0,       // Current cycle (resets monthly, used for gate)
+      "this_month_ics": 0,           // Current cycle
+      "this_month_badges": 0,        // Current cycle
+      "cycle_start": null            // ISO timestamp — start of current billing cycle
+    }
   },
 
   // App-specific personal preferences
@@ -685,3 +697,5 @@ theme: "fresh_meadow",  // Hardcoded until JSONB migration
 
 - [Template Gating & Gift Codes](./planned/20260118_template_gating_gift_codes.md) - Uses JSONB `settings.apps.choregami.plan` for Family Plan storage
 - [Gift Codes Table](../sql/20260118_gift_codes.sql) - Companion table for gift code redemption tracking
+- [Notifications: Calendar/Email/Badges](./milestones/20260122_notifications_calendar_email_badges.md) - Uses `preferences.notifications.weekly_summary` + `digest_channel` for weekly digest opt-in
+- [Notifications Usage Queries](../sql/20260122_notifications_usage_queries.sql) - Runtime queries for usage counters, global budget cap, upgrade candidates

@@ -210,7 +210,7 @@ export const handler: Handlers<LoginPageData> = {
   },
 };
 
-function createSessionResponse(req: Request, session: any) {
+function createSessionResponse(req: Request, session: any, redirectTo = "/") {
   const isLocalhost = req.url.includes("localhost");
   const isSecure = !isLocalhost;
 
@@ -219,10 +219,35 @@ function createSessionResponse(req: Request, session: any) {
     `sb-refresh-token=${session.refresh_token}; Path=/; HttpOnly; ${isSecure ? "Secure; " : ""}SameSite=Lax; Max-Age=${60 * 60 * 24 * 30}`,
   ];
 
-  return new Response(null, {
-    status: 303,
-    headers: { Location: "/", "Set-Cookie": cookies.join(", ") },
-  });
+  // Build userData for localStorage (MealPlanner pattern)
+  const user = session.user || {};
+  const userData = {
+    id: user.id,
+    email: user.email || null,
+    phone: user.phone || null,
+    user_metadata: user.user_metadata || {},
+    signup_method: user.phone ? "phone" : "email",
+    auth_flow: "login",
+    stored_at: new Date().toISOString(),
+  };
+
+  // Return HTML page that writes localStorage then redirects
+  return new Response(
+    `<!DOCTYPE html><html><head><title>Logging in...</title></head>
+    <body>
+      <script>
+        localStorage.setItem('chores2026_user_data', ${JSON.stringify(JSON.stringify(userData))});
+        window.location.href = '${redirectTo}';
+      </script>
+    </body></html>`,
+    {
+      status: 200,
+      headers: {
+        "Content-Type": "text/html",
+        "Set-Cookie": cookies.join(", "),
+      },
+    },
+  );
 }
 
 export default function LoginPage({ data }: PageProps<LoginPageData>) {
