@@ -92,7 +92,7 @@ interface Props {
   recentActivity: any[];
   kidsCanCreateEvents?: boolean;
   kidPinRequired?: boolean;
-  onChoreComplete?: () => void;
+  onChoreComplete?: (result: { points_earned: number; choreName: string }) => void;
   onEventCreated?: () => void;
   onPrepTaskToggle?: (eventId: string, taskId: string, done: boolean) => void;
 }
@@ -165,8 +165,8 @@ export default function KidDashboard({
     return "";
   };
 
-  const handleChoreComplete = (choreId: string) => {
-    // Update local chore status immediately for responsive UI
+  const handleChoreComplete = (choreId: string, result: { points_earned: number; choreName: string }) => {
+    // 1. Update local chore status immediately for responsive UI
     setChores((prev) =>
       prev.map((chore) =>
         chore.id === choreId
@@ -175,13 +175,38 @@ export default function KidDashboard({
       )
     );
 
-    // Trigger parent component refresh if provided
+    // 2. Update leaderboard points for this kid
+    setLeaderboard((prev) =>
+      prev.map((member) =>
+        member.id === kid.id
+          ? { ...member, current_points: member.current_points + result.points_earned }
+          : member
+      )
+    );
+
+    // 3. Add new activity entry at the top
+    const newActivity = {
+      id: `local_${Date.now()}`,
+      family_id: family.id,
+      created_at: new Date().toISOString(),
+      data: {
+        v: 1,
+        type: "chore_completed",
+        actor_id: kid.id,
+        actor_name: kid.name,
+        icon: "✅",
+        title: `${kid.name} completed "${result.choreName}"`,
+        points: result.points_earned,
+      },
+    };
+    setActivity((prev) => [newActivity, ...prev.slice(0, 9)]);
+
+    // 4. Notify parent component
     if (onChoreComplete) {
-      onChoreComplete();
+      onChoreComplete(result);
     }
 
-    // The WebSocket connection will update leaderboard automatically via FamilyScore
-    console.log('🎉 Chore marked as completed locally:', choreId);
+    console.log('🎉 Chore completed:', choreId, `+${result.points_earned} pts`);
   };
 
   return (

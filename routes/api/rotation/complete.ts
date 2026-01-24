@@ -12,10 +12,12 @@ import { getAuthenticatedSession } from "../../../lib/auth/session.ts";
 import { getRotationConfig, getChoresForChild } from "../../../lib/services/rotation-service.ts";
 import { getPresetByKey } from "../../../lib/data/rotation-presets.ts";
 import { TransactionService } from "../../../lib/services/transaction-service.ts";
+import { getActivityService } from "../../../lib/services/activity-service.ts";
 
 interface CompleteRequest {
   chore_key: string;
   date: string; // YYYY-MM-DD for idempotency
+  kid_id?: string; // Profile ID of the kid completing the chore
 }
 
 export const handler: Handlers = {
@@ -26,15 +28,23 @@ export const handler: Handlers = {
         return Response.json({ error: "Unauthorized" }, { status: 401 });
       }
 
-      // Get the active kid profile from session
-      const profileId = session.user?.profileId;
+      const familyId = session.family.id;
+      const body: CompleteRequest = await req.json();
+      const { chore_key, date, kid_id } = body;
+
+      // Use kid_id from body (kid dashboard) or fall back to session profile (parent)
+      const profileId = kid_id || session.user?.profileId;
       if (!profileId) {
         return Response.json({ error: "No active profile" }, { status: 400 });
       }
 
-      const familyId = session.family.id;
-      const body: CompleteRequest = await req.json();
-      const { chore_key, date } = body;
+      // Validate the profile belongs to this family
+      const isFamilyMember = session.family.members?.some(
+        (m: any) => m.id === profileId
+      );
+      if (!isFamilyMember) {
+        return Response.json({ error: "Profile not in family" }, { status: 403 });
+      }
 
       // Validate date format
       if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
@@ -121,6 +131,29 @@ export const handler: Handlers = {
         }
       );
 
+      // Log activity (non-blocking)
+      try {
+        const activityService = getActivityService();
+        const profileName = session.family.members?.find(
+          (m: any) => m.id === profileId
+        )?.name || "Family Member";
+        await activityService.logActivity({
+          familyId,
+          actorId: profileId,
+          actorName: profileName,
+          type: "chore_completed",
+          title: `${profileName} completed "${chore.name}"`,
+          points: chore.points,
+          target: {
+            type: "chore",
+            id: chore.key,
+            name: chore.name,
+          },
+        });
+      } catch (error) {
+        console.warn("Failed to log rotation activity:", error);
+      }
+
       console.log('✅ Rotation chore completed:', {
         family: session.family.name,
         profile: profileId,
@@ -136,6 +169,7 @@ export const handler: Handlers = {
           name: chore.name,
           points: chore.points,
         },
+        points_earned: chore.points,
         date,
       });
     } catch (err) {

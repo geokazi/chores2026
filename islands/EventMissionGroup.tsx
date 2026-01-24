@@ -11,7 +11,7 @@ interface Props {
   event: FamilyEvent;
   chores: ChoreAssignment[];
   kidId: string;
-  onChoreComplete: (choreId: string) => void;
+  onChoreComplete: (choreId: string, result: { points_earned: number; choreName: string }) => void;
 }
 
 export default function EventMissionGroup({ event, chores, kidId, onChoreComplete }: Props) {
@@ -38,6 +38,7 @@ export default function EventMissionGroup({ event, chores, kidId, onChoreComplet
           body: JSON.stringify({
             chore_key: chore.rotation_key,
             date: chore.rotation_date,
+            kid_id: kidId,
           }),
         });
       } else {
@@ -49,7 +50,10 @@ export default function EventMissionGroup({ event, chores, kidId, onChoreComplet
       }
 
       if (response.ok) {
-        onChoreComplete(chore.id);
+        const result = await response.json();
+        const choreName = chore.chore_template?.name || "Task";
+        const pointsEarned = result.points_earned ?? result.chore?.points ?? chore.point_value;
+        onChoreComplete(chore.id, { points_earned: pointsEarned, choreName });
       } else {
         const error = await response.json();
         if (error.already_completed) {

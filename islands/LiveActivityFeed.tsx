@@ -66,6 +66,11 @@ export default function LiveActivityFeed({ initialActivity, familyId }: Props) {
   const [activities, setActivities] = useState(initialActivity);
   const [isLive, setIsLive] = useState(false);
 
+  // Sync with parent state updates (e.g., after chore completion)
+  useEffect(() => {
+    setActivities(initialActivity);
+  }, [initialActivity]);
+
   const formatTimeAgo = (timestamp: string) => {
     const now = new Date();
     const activityTime = new Date(timestamp);
