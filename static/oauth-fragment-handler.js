@@ -153,14 +153,14 @@
             const cleanUrl = window.location.origin + window.location.pathname;
             window.history.replaceState({}, "", cleanUrl);
 
-            // Give the cookies time to be set, then redirect to ensure server sees auth state
-            // Redirect to /login so server-side handler can route:
+            // Give the cookies time to be set, then reload so server sees auth state
+            // Server-side login handler will route:
             //   - New user (no family profile) → /setup
             //   - Existing user (has family) → /
             setTimeout(() => {
-              console.log("🔐 Redirecting for server-side routing...");
-              window.location.href = "/login";
-            }, 100); // Small delay to ensure cookies are set
+              console.log("🔐 Reloading for server-side routing...");
+              window.location.reload();
+            }, 150); // Delay to ensure cookies are set
           } else {
             console.error("❌ Invalid JWT token format");
           }
