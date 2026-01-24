@@ -154,9 +154,12 @@
             window.history.replaceState({}, "", cleanUrl);
 
             // Give the cookies time to be set, then redirect to ensure server sees auth state
+            // Redirect to /login so server-side handler can route:
+            //   - New user (no family profile) → /setup
+            //   - Existing user (has family) → /
             setTimeout(() => {
-              console.log("🔐 Redirecting to main app...");
-              window.location.href = "/";
+              console.log("🔐 Redirecting for server-side routing...");
+              window.location.href = "/login";
             }, 100); // Small delay to ensure cookies are set
           } else {
             console.error("❌ Invalid JWT token format");
