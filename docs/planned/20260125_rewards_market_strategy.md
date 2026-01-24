@@ -144,58 +144,45 @@ dollars drive financial education.
 **Why first**: Zero new tables, leverages existing `chore_transactions` data,
 strongest "why parents pay" story.
 
-**Features**:
-- 8-12 week consistency view per kid
-- Completion rate trends (weekday vs weekend, morning vs evening)
-- Streak analytics with "habit formed" milestone (21+ consecutive days)
-- Enrich existing weekly digest email with trend data
+**Status**: ✅ **IMPLEMENTED** (January 25, 2026)
+
+**Features delivered**:
+- 12-week consistency trend per kid (template-aware expected days)
+- Streak with 1-day recovery (diffDays <= 2), prevents single-miss frustration
+- Habit milestones: Building (7d) → Strengthening (14d) → Forming (21d) → Formed (30d)
+- Morning vs evening routine breakdown (timezone-aware via profile preferences)
+- Weekly digest enhanced with consistency % and recovery-based streaks
+- Consistency-based insight one-liners in digest emails/SMS
+
+**Template-aware logic**:
+- Families with rotation templates: expected days from preset schedule config
+- Manual-only families: expected days from `chore_assignments.assigned_date`
+- All current presets (daily-basics, weekend-warrior, smart-rotation, dynamic-daily,
+  school-year) assign 7 days/week, so daily streaks are valid for all template families
 
 **Monetization story**: "See proof your approach is working. Ciku's morning
 routine consistency went from 40% to 85% over 6 weeks."
 
-**Implementation**:
+**Implementation** (actual):
 ```
-routes/parent/insights.tsx       # ~80 lines (server handler)
-islands/HabitInsights.tsx        # ~120 lines (charts/trends)
-lib/services/insights-service.ts # ~80 lines (aggregate queries)
+routes/parent/insights.tsx       # ~100 lines (server handler + timezone fetch)
+islands/HabitInsights.tsx        # ~317 lines (pure CSS bars, streak cards, routine split)
+lib/services/insights-service.ts # ~318 lines (template-aware analytics engine)
+lib/services/email-digest.ts     # Enhanced: streak recovery + consistency % + insights
+islands/ParentDashboard.tsx      # Added: "Habit Insights" link in actions
 ```
 
-**Queries** (on existing chore_transactions):
-```sql
--- Completion rate by week (last 12 weeks)
-SELECT
-  date_trunc('week', created_at) as week,
-  profile_id,
-  COUNT(*) as completions,
-  COUNT(DISTINCT DATE(created_at)) as active_days
-FROM choretracker.chore_transactions
-WHERE family_id = $1
-  AND transaction_type = 'chore_completed'
-  AND created_at >= now() - interval '12 weeks'
-GROUP BY week, profile_id
-ORDER BY week;
+**Key design decisions**:
+- Pure CSS bars — no chart library dependency
+- `Intl.DateTimeFormat` with `hourCycle: "h23"` for timezone-safe hour extraction
+- Streak recovery: `diffDays <= 2` allows 1 gap day (aligned with gamification research)
+- `getRotationConfig()` reads `families.settings.apps.choregami.rotation` JSONB
+- Non-blocking: shows 0% gracefully if DB queries fail (no crash)
 
--- Current streak per kid
-SELECT profile_id,
-  COUNT(*) as streak_days
-FROM (
-  SELECT DISTINCT profile_id, DATE(created_at) as completion_date
-  FROM choretracker.chore_transactions
-  WHERE family_id = $1 AND transaction_type = 'chore_completed'
-) completions
-WHERE completion_date >= (
-  -- Find the last gap day
-  SELECT COALESCE(MAX(d), '1970-01-01')
-  FROM generate_series(CURRENT_DATE - 90, CURRENT_DATE, '1 day') d
-  WHERE d NOT IN (
-    SELECT DISTINCT DATE(created_at)
-    FROM choretracker.chore_transactions
-    WHERE profile_id = completions.profile_id
-      AND transaction_type = 'chore_completed'
-  )
-)
-GROUP BY profile_id;
-```
+**Cross-references**:
+- [Streak Brainstorm UX](20260114_streak_brainstorm_ux.md) — original design exploration
+- [Weekly Digest Enhancement](../marketing/20260123_weekly_digest_enhancement.md) — digest integration
+- [Weekly Patterns Analysis](../milestones/20260114_weekly_patterns_analysis.md) — 60-day heatmap (separate feature)
 
 **Effort**: ~280 lines, 0 new tables
 **Timeline dependency**: None, can ship independently
