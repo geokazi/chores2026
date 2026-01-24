@@ -191,15 +191,19 @@ export const handler: Handlers<LoginPageData> = {
           Deno.env.get("SUPABASE_URL")!,
           Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
         );
-        const { data: { user } } = await supabase.auth.getUser(accessToken);
+        const { data, error: getUserError } = await supabase.auth.getUser(accessToken);
 
-        if (user) {
+        if (getUserError) {
+          console.log("⚠️ getUser error (token may be expired):", getUserError.message);
+        } else if (data?.user) {
           // User is authenticated but has no family profile -> redirect to setup
-          console.log("⚠️ User authenticated but no family profile, redirecting to /setup:", user.email);
+          console.log("⚠️ User authenticated but no family profile, redirecting to /setup:", data.user.email);
           return new Response(null, { status: 303, headers: { Location: "/setup" } });
+        } else {
+          console.log("⚠️ getUser returned no user and no error");
         }
       } catch (e) {
-        console.log("⚠️ Token validation error:", e);
+        console.log("⚠️ Token validation exception:", e);
       }
     }
 

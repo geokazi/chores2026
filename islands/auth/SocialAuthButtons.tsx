@@ -79,7 +79,7 @@ export default function SocialAuthButtons({ redirectTo }: SocialAuthButtonsProps
     try {
       const origin = window.location.origin;
       const options: any = {
-        redirectTo: redirectTo || `${origin}/`,
+        redirectTo: redirectTo || `${origin}/login`,
       };
 
       if (provider === "google") {

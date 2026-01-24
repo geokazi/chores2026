@@ -333,29 +333,35 @@ const hasPhone = !!resolvedPhone;
 
 ### Settings UI: Server-Side Pass-Through (Option 3)
 
-The settings route handler already calls `supabase.auth.getUser(accessToken)` for auth.
-Pass contact channel info as props to the island — zero client-side API calls:
+Use `session.user.id` (from the auth token) to call `getUserById` for contact detection.
+Pass channel info as props to the island — zero client-side API calls.
+
+> **Note**: The session's cached `family.members` intentionally excludes `user_id` and
+> `preferences` columns (security: no auth IDs or hashes exposed to client). Use
+> `session.user.id` directly instead.
 
 ```typescript
 // In routes/parent/settings.tsx handler
-const { data: { user } } = await supabase.auth.getUser(accessToken);
-const hasRealEmail = user.email && !/\@phone\./i.test(user.email);
-// Resolve phone: explicit field or extracted from placeholder email
-let resolvedPhone = user.phone || null;
-if (!resolvedPhone && user.email) {
-  const phoneMatch = user.email.match(/^(\+?\d+)@phone\./);
-  if (phoneMatch) resolvedPhone = phoneMatch[1];
-}
-const hasPhone = !!resolvedPhone;
+import { hasRealEmail, resolvePhone } from "../../lib/utils/resolve-phone.ts";
+
+const authUserId = session.user?.id; // Auth user ID from session (NOT from member data)
+const { data: { user } } = await supabase.auth.admin.getUserById(authUserId);
+
+const hasEmail = hasRealEmail(user.email);
+const hasPhone = !!resolvePhone(user);
+const hasBothChannels = hasEmail && hasPhone;
+const digestChannel = hasEmail ? "email" : hasPhone ? "sms" : null;
 
 // Pass to island
 return ctx.render({
   ...existingProps,
-  digestChannel: hasRealEmail ? "email" : hasPhone ? "sms" : null,
+  digestChannel,
+  hasBothChannels, // Shows radio buttons when both channels available
 });
 ```
 
-The island receives `digestChannel` and renders the correct checkbox label.
+The island receives `digestChannel` and renders the correct toggle label.
+When `hasBothChannels` is true, radio buttons allow choosing between Email and SMS (mockup 6.5c).
 
 ### Fix: Write `chores2026_user_data` on All Login Methods
 
@@ -908,7 +914,7 @@ No email/phone input — uses contact info from `auth.users` registration.
 └───────────────────────────────────────────────┘
 ```
 
-### 6.5c Digest — Parent with Both Email + Phone
+### 6.5c Digest — Parent with Both Email + Phone ✅ Implemented (Jan 23)
 
 ```
 ┌───────────────────────────────────────────────┐
@@ -1049,7 +1055,7 @@ auth.users             preferences.notifications    │               │
 | Feature | User config needed? | Where configured? | Behavior |
 |---------|--------------------|--------------------|----------|
 | ICS Export | None | — | Link always visible on event cards |
-| Weekly Digest | Toggle only | `/parent/settings` (per-user) | Off by default, channel auto-detected |
+| Weekly Digest | Toggle + channel selector | `/parent/settings` (per-user) | Off by default; single-channel auto-detected, dual-channel shows radio buttons |
 | In-App Badge | None | — | Automatic when event today/tomorrow |
 
 ---
@@ -1096,6 +1102,7 @@ auth.users             preferences.notifications    │               │
 - [x] In `routes/parent/settings.tsx` handler: detect channel from `auth.users`, pass to island
 - [x] Store preference in `family_profiles.preferences.notifications` JSONB (`{ weekly_summary, digest_channel, last_sent_at }`)
 - [x] Create `routes/api/settings/notifications.ts` — POST endpoint for saving preferences
+- [x] Radio buttons for dual-channel users (both email + phone): `hasBothChannels` prop + channel selector UI (mockup 6.5c)
 
 **Tests:**
 - [x] Channel detection (email-registered → email, phone-registered → SMS, null) — `lib/services/email-digest_test.ts`
@@ -1204,8 +1211,8 @@ auth.users             preferences.notifications    │               │
 |------|-------|--------|
 | `routes/login.tsx` | P0 | `createSessionResponse()` → HTML with localStorage write |
 | `routes/register.tsx` | P0 | Same pattern for signup flow |
-| `routes/parent/settings.tsx` | P2 | Pass `digestChannel` + `notificationPrefs` from `auth.users` |
-| `islands/FamilySettings.tsx` | P2 | Notifications section with toggle + SMS limit banner |
+| `routes/parent/settings.tsx` | P2 | Pass `digestChannel` + `hasBothChannels` + `notificationPrefs` from `auth.users` |
+| `islands/FamilySettings.tsx` | P2 | Notifications section with toggle, SMS limit banner, and dual-channel radio selector |
 | `islands/EventsList.tsx` | P1 | "Add to Calendar" link on every event card |
 | `islands/AppHeader.tsx` | P3 | Event badge dot with pulse animation |
 | `main.ts` | P2 | `Deno.cron("weekly-digest", "0 6 * * 0", ...)` |

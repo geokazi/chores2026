@@ -165,26 +165,36 @@ routine consistency went from 40% to 85% over 6 weeks."
 
 **Implementation** (actual):
 ```
-routes/parent/insights.tsx       # ~100 lines (server handler + timezone fetch)
+routes/parent/insights.tsx       # ~121 lines (server handler, uses InsightsService for timezone)
 islands/HabitInsights.tsx        # ~317 lines (pure CSS bars, streak cards, routine split)
-lib/services/insights-service.ts # ~318 lines (template-aware analytics engine)
-lib/services/email-digest.ts     # Enhanced: streak recovery + consistency % + insights
+lib/services/insights-service.ts # ~439 lines (template-aware analytics engine)
+lib/services/email-digest.ts     # Enhanced: streak recovery + template-aware consistency + insights
 islands/ParentDashboard.tsx      # Added: "Habit Insights" link in actions
 ```
 
 **Key design decisions**:
+- **Single DB query**: `getInsights()` fetches 90 days of transactions once, passes in-memory data
+  to all three compute methods. Reduces DB round-trips from 3-4 to 1-2.
+- **Current-week accuracy**: Caps expected days to `Math.min(expected, daysSoFar)` for incomplete
+  weeks so consistency % isn't artificially low early in the week.
+- **Template-aware consistency** (both insights page AND email digest): Uses
+  `getExpectedDaysForProfile()` to compute expected days from family rotation settings.
+  Weekend Warrior (5d/week) families see accurate % in both views.
 - Pure CSS bars — no chart library dependency
 - `Intl.DateTimeFormat` with `hourCycle: "h23"` for timezone-safe hour extraction
 - Streak recovery: `diffDays <= 2` allows 1 gap day (aligned with gamification research)
 - `getRotationConfig()` reads `families.settings.apps.choregami.rotation` JSONB
-- Non-blocking: shows 0% gracefully if DB queries fail (no crash)
+- Per-kid error handling: malformed data for one kid doesn't crash the whole page
+- Typed interfaces (`TransactionRow`, `AssignmentRow`) replace `any[]` casts
+- Single Supabase client: route reuses `InsightsService.getTimezone()` instead of creating a second client
 
 **Cross-references**:
 - [Streak Brainstorm UX](20260114_streak_brainstorm_ux.md) — original design exploration
 - [Weekly Digest Enhancement](../marketing/20260123_weekly_digest_enhancement.md) — digest integration
 - [Weekly Patterns Analysis](../milestones/20260114_weekly_patterns_analysis.md) — 60-day heatmap (separate feature)
+- [JSONB Settings Architecture](../20260114_JSONB_settings_architecture.md) — `families.settings` structure
 
-**Effort**: ~280 lines, 0 new tables
+**Effort**: ~880 lines (service + island + route), 0 new tables
 **Timeline dependency**: None, can ship independently
 
 ---

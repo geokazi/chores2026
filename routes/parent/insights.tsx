@@ -4,16 +4,15 @@
  */
 
 import { Handlers, PageProps } from "$fresh/server.ts";
-import { createClient } from "@supabase/supabase-js";
 import { getAuthenticatedSession } from "../../lib/auth/session.ts";
-import { InsightsService } from "../../lib/services/insights-service.ts";
+import { InsightsService, KidTrend, StreakData, RoutineData } from "../../lib/services/insights-service.ts";
 import HabitInsights from "../../islands/HabitInsights.tsx";
 import AppFooter from "../../components/AppFooter.tsx";
 
 interface InsightsData {
-  trends: any[];
-  streaks: any[];
-  routines: any[];
+  trends: KidTrend[];
+  streaks: StreakData[];
+  routines: RoutineData[];
   familyName: string;
   error?: string;
 }
@@ -41,28 +40,18 @@ export const handler: Handlers<InsightsData> = {
     }
 
     try {
-      // Get parent's timezone for accurate routine breakdown
-      let timezone = "UTC";
-      const profileId = session.user?.profileId;
-      if (profileId) {
-        const supabase = createClient(
-          Deno.env.get("SUPABASE_URL")!,
-          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-        );
-        const { data: profile } = await supabase
-          .from("family_profiles")
-          .select("preferences")
-          .eq("id", profileId)
-          .single();
-        timezone = profile?.preferences?.timezone || "UTC";
-      }
-
       const insightsService = new InsightsService();
-      const [trends, streaks, routines] = await Promise.all([
-        insightsService.getConsistencyTrend(familyId, familySettings, childProfiles),
-        insightsService.getStreaks(familyId, familySettings, childProfiles),
-        insightsService.getRoutineBreakdown(familyId, childProfiles, timezone),
-      ]);
+
+      // Reuse the service's Supabase client for timezone lookup
+      const profileId = session.user?.profileId;
+      const timezone = profileId
+        ? await insightsService.getTimezone(profileId)
+        : "UTC";
+
+      // Single call fetches transactions once, computes all insights
+      const { trends, streaks, routines } = await insightsService.getInsights(
+        familyId, familySettings, childProfiles, timezone
+      );
 
       return ctx.render({
         trends, streaks, routines,

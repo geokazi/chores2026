@@ -26,29 +26,34 @@ export const handler: Handlers<SetupPageData> = {
 
     const supabase = getServiceSupabaseClient();
 
-    const { data: { user } } = await supabase.auth.getUser(accessToken);
+    const { data, error: getUserError } = await supabase.auth.getUser(accessToken);
+    const user = data?.user;
 
-    // Invalid token -> redirect to login
-    if (!user) {
-      return new Response(null, { status: 303, headers: { Location: "/login" } });
+    if (getUserError) {
+      console.log("⚠️ Setup getUser error (rendering form anyway):", getUserError.message);
     }
 
-    // Already has profile -> redirect to home
-    const { data: existingProfile } = await supabase
-      .from("family_profiles")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("is_deleted", false)
-      .single();
+    if (user) {
+      // Already has profile -> redirect to home
+      const { data: existingProfile } = await supabase
+        .from("family_profiles")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("is_deleted", false)
+        .single();
 
-    if (existingProfile) {
-      return new Response(null, { status: 303, headers: { Location: "/" } });
+      if (existingProfile) {
+        return new Response(null, { status: 303, headers: { Location: "/" } });
+      }
     }
 
+    // Render setup form even if getUser failed — the POST handler validates the token.
+    // This prevents infinite redirect loops when OAuth tokens are fresh but
+    // getUser hasn't propagated yet.
     const url = new URL(req.url);
     const error = url.searchParams.get("error") || undefined;
 
-    return ctx.render({ email: user.email, error });
+    return ctx.render({ email: user?.email, error });
   },
 
   async POST(req, ctx) {

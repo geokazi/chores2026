@@ -333,8 +333,13 @@ export default function SecureKidDashboard({ family, familyMembers, recentActivi
         recentActivity={recentActivity}
         kidsCanCreateEvents={kidsCanCreateEvents}
         kidPinRequired={kidPinRequired}
-        onChoreComplete={() => {
-          // Refresh chores after completion to get updated data
+        onChoreComplete={(result: { points_earned: number; choreName: string }) => {
+          // Update active kid's points immediately
+          setActiveKid((current: any) => ({
+            ...current,
+            current_points: (current?.current_points || 0) + result.points_earned,
+          }));
+          // Also refresh chores for server-confirmed data
           if (activeKid) {
             loadKidChores(activeKid.id);
           }

@@ -13,6 +13,7 @@ import { createClient } from "@supabase/supabase-js";
 import { FEATURE_LIMITS, GLOBAL_EMAIL_BUDGET } from "../../config/feature-limits.ts";
 import { incrementUsage, getMonthlyUsage } from "./usage-tracker.ts";
 import { resolvePhone, hasRealEmail } from "../utils/resolve-phone.ts";
+import { getExpectedDaysForProfile } from "./insights-service.ts";
 
 interface DigestResult {
   sent: number;
@@ -216,15 +217,15 @@ function calculateStreak(transactionDates: string[]): number {
 
 /**
  * Calculate 30-day consistency % (active days / expected days).
+ * Template-aware: uses expectedPerWeek to compute expected days over 30 days.
  */
-function calculateConsistency(transactionDates: string[]): number {
+function calculateConsistency(transactionDates: string[], expectedPerWeek = 7): number {
   if (transactionDates.length === 0) return 0;
   const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10);
   const recentDates = [...new Set(transactionDates.map(d => d.slice(0, 10)))]
     .filter(d => d >= thirtyDaysAgo);
-  // Expected 7 days/week over ~4.3 weeks = ~30 days
-  const expected = 30;
-  return Math.min(100, Math.round((recentDates.length / expected) * 100));
+  const expected = Math.round(expectedPerWeek * (30 / 7));
+  return expected > 0 ? Math.min(100, Math.round((recentDates.length / expected) * 100)) : 0;
 }
 
 /**
@@ -389,14 +390,18 @@ async function buildDigestContent(
     streakDatesMap.set(t.profile_id, dates);
   });
 
-  // Build leaderboard with weekly points, streaks, and consistency
-  const leaderboard = (members as any[] || []).map((m: any) => ({
-    name: m.name as string,
-    totalPoints: m.current_points as number,
-    weeklyPoints: weeklyEarnerMap.get(m.id) || 0,
-    streak: calculateStreak(streakDatesMap.get(m.id) || []),
-    consistency: calculateConsistency(streakDatesMap.get(m.id) || []),
-  }));
+  // Build leaderboard with weekly points, streaks, and template-aware consistency
+  const familySettings = (family?.settings as Record<string, unknown>) || null;
+  const leaderboard = (members as any[] || []).map((m: any) => {
+    const expectedPerWeek = getExpectedDaysForProfile(familySettings, m.id);
+    return {
+      name: m.name as string,
+      totalPoints: m.current_points as number,
+      weeklyPoints: weeklyEarnerMap.get(m.id) || 0,
+      streak: calculateStreak(streakDatesMap.get(m.id) || []),
+      consistency: calculateConsistency(streakDatesMap.get(m.id) || [], expectedPerWeek),
+    };
+  });
 
   // Calculate total weekly earnings
   const weeklyEarnings = [...weeklyEarnerMap.values()].reduce((a, b) => a + b, 0);

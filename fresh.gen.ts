@@ -51,6 +51,7 @@ import * as $logout from "./routes/logout.ts";
 import * as $parent_activity from "./routes/parent/activity.tsx";
 import * as $parent_dashboard from "./routes/parent/dashboard.tsx";
 import * as $parent_events from "./routes/parent/events.tsx";
+import * as $parent_insights from "./routes/parent/insights.tsx";
 import * as $parent_my_chores from "./routes/parent/my-chores.tsx";
 import * as $parent_settings from "./routes/parent/settings.tsx";
 import * as $privacy from "./routes/privacy.tsx";
@@ -69,6 +70,7 @@ import * as $EventMissionGroup from "./islands/EventMissionGroup.tsx";
 import * as $EventsList from "./islands/EventsList.tsx";
 import * as $FamilyReports from "./islands/FamilyReports.tsx";
 import * as $FamilySettings from "./islands/FamilySettings.tsx";
+import * as $HabitInsights from "./islands/HabitInsights.tsx";
 import * as $KidDashboard from "./islands/KidDashboard.tsx";
 import * as $KidSelector from "./islands/KidSelector.tsx";
 import * as $KidSessionValidator from "./islands/KidSessionValidator.tsx";
@@ -153,6 +155,7 @@ const manifest = {
     "./routes/parent/activity.tsx": $parent_activity,
     "./routes/parent/dashboard.tsx": $parent_dashboard,
     "./routes/parent/events.tsx": $parent_events,
+    "./routes/parent/insights.tsx": $parent_insights,
     "./routes/parent/my-chores.tsx": $parent_my_chores,
     "./routes/parent/settings.tsx": $parent_settings,
     "./routes/privacy.tsx": $privacy,
@@ -173,6 +176,7 @@ const manifest = {
     "./islands/EventsList.tsx": $EventsList,
     "./islands/FamilyReports.tsx": $FamilyReports,
     "./islands/FamilySettings.tsx": $FamilySettings,
+    "./islands/HabitInsights.tsx": $HabitInsights,
     "./islands/KidDashboard.tsx": $KidDashboard,
     "./islands/KidSelector.tsx": $KidSelector,
     "./islands/KidSessionValidator.tsx": $KidSessionValidator,

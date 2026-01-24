@@ -214,8 +214,11 @@ The digest was enhanced as part of [Priority 1: Behavioral Insights](../planned/
 
 - **Streak recovery**: `calculateStreak()` now uses `diffDays <= 2` (allows 1 gap day)
   instead of strict `diffDays === 1`. Prevents single-miss frustration.
-- **Consistency %**: New `calculateConsistency()` function adds 30-day consistency
-  percentage to leaderboard (active days / 30, capped at 100%).
+- **Template-aware consistency %**: `calculateConsistency(dates, expectedPerWeek)` computes
+  30-day consistency as `activeDays / Math.round(expectedPerWeek * 30/7)`. Uses
+  `getExpectedDaysForProfile()` from insights-service to derive expected days from
+  the family's rotation template (e.g., Weekend Warrior = 5d/week, Daily Basics = 7d/week).
+  Ensures consistency % matches the Habit Insights page exactly.
 - **Leaderboard type updated**: `{ name, totalPoints, weeklyPoints, streak, consistency }`
 - **Email template**: Shows consistency % alongside streak badge in leaderboard rows.
 - **SMS template**: Appends consistency % after streak count.

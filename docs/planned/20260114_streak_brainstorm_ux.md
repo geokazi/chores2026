@@ -10,8 +10,13 @@
 > **Implementation Note (2026-01-25)**: Core streak analytics implemented as part
 > of [Behavioral Insights (Priority 1)](20260125_rewards_market_strategy.md#priority-1-behavioral-insights-highest-pareto).
 > Includes: streak with 1-day recovery, habit milestones (7/14/21/30d),
-> 30-day consistency %, and weekly digest integration.
+> template-aware 30-day consistency %, and weekly digest integration.
 > See: `lib/services/insights-service.ts`, `islands/HabitInsights.tsx`
+>
+> **Architecture** (2026-01-25): Single 90-day DB query shared across all
+> analytics methods (trend, streaks, routines). Per-kid error isolation.
+> Typed interfaces (`TransactionRow`, `AssignmentRow`). Template-aware expected
+> days via `getExpectedDaysForProfile()` — consistent between insights page and digest.
 >
 > **Not yet implemented from this doc**: kid-facing streak UI, celebration
 > animations on milestone, daily streak notifications, perfect day streaks.

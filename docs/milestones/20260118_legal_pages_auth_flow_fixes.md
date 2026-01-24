@@ -115,6 +115,7 @@ curl -s http://localhost:8001/privacy | grep "Privacy Policy"
 ## Related Documentation
 
 - [Authentication Security Hardening](./20260119_authentication_security_hardening.md) - Rate limiting and enumeration protection
+- [OAuth Signup Redirect Fix](./20260123_oauth_signup_redirect_fix.md) - Fixed infinite redirect loop after Google OAuth (same pattern: client-side routing, avoid server-side redirect dependency)
 - [CLAUDE.md](../../CLAUDE.md) - Project specifications
 
 ---

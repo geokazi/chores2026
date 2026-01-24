@@ -22,6 +22,7 @@ interface ParentSettingsData {
   settings: any;
   parentProfileId?: string;
   digestChannel?: "email" | "sms" | null;
+  hasBothChannels?: boolean;
   notificationPrefs?: { weekly_summary?: boolean; digest_channel?: string; sms_limit_hit?: boolean };
   error?: string;
 }
@@ -52,23 +53,46 @@ export const handler: Handlers<ParentSettingsData> = {
 
     // Detect digest channel from auth.users (server-side pass-through)
     let digestChannel: "email" | "sms" | null = null;
+    let hasBothChannels = false;
     let notificationPrefs: any = null;
     const parentProfile = family.members.find((m: any) => m.id === session.user?.profileId) as any;
 
-    if (parentProfile?.user_id) {
+    const authUserId = session.user?.id;
+
+    if (authUserId) {
       try {
         const supabase = createClient(
           Deno.env.get("SUPABASE_URL")!,
           Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
         );
-        const { data: { user } } = await supabase.auth.admin.getUserById(parentProfile.user_id);
+        const { data: { user } } = await supabase.auth.admin.getUserById(authUserId);
         if (user) {
-          digestChannel = hasRealEmail(user.email) ? "email" : resolvePhone(user) ? "sms" : null;
+          const hasEmail = hasRealEmail(user.email);
+          const hasPhone = !!resolvePhone(user);
+          hasBothChannels = hasEmail && hasPhone;
+          digestChannel = hasEmail ? "email" : hasPhone ? "sms" : null;
         }
       } catch (e) {
         console.warn("Failed to detect digest channel:", e);
       }
-      notificationPrefs = parentProfile.preferences?.notifications || {};
+    }
+
+    // Load notification prefs from profile (requires separate query since session doesn't include preferences)
+    if (parentProfile?.id) {
+      try {
+        const supabase = createClient(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+        );
+        const { data: profileWithPrefs } = await supabase
+          .from("family_profiles")
+          .select("preferences")
+          .eq("id", parentProfile.id)
+          .single();
+        notificationPrefs = profileWithPrefs?.preferences?.notifications || {};
+      } catch (e) {
+        console.warn("Failed to load notification prefs:", e);
+      }
     }
 
     return ctx.render({
@@ -83,6 +107,7 @@ export const handler: Handlers<ParentSettingsData> = {
       },
       parentProfileId: session.user?.profileId,
       digestChannel,
+      hasBothChannels,
       notificationPrefs,
     });
   },
@@ -91,7 +116,7 @@ export const handler: Handlers<ParentSettingsData> = {
 export default function ParentSettingsPage(
   { data }: PageProps<ParentSettingsData>,
 ) {
-  const { family, members, settings, parentProfileId, digestChannel, notificationPrefs, error } = data;
+  const { family, members, settings, parentProfileId, digestChannel, hasBothChannels, notificationPrefs, error } = data;
   const currentUser = members.find(m => m.id === parentProfileId) || null;
 
   if (error) {
@@ -141,6 +166,7 @@ export default function ParentSettingsPage(
           members={members}
           settings={settings}
           digestChannel={digestChannel}
+          hasBothChannels={hasBothChannels}
           notificationPrefs={notificationPrefs}
         />
       </ParentPinGate>

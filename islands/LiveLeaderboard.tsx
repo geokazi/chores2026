@@ -27,6 +27,11 @@ export default function LiveLeaderboard({
   const [leaderboard, setLeaderboard] = useState(familyMembers);
   const [isLive, setIsLive] = useState(false);
 
+  // Sync with parent state updates (e.g., after chore completion)
+  useEffect(() => {
+    setLeaderboard(familyMembers);
+  }, [familyMembers]);
+
   // Show all family members (parents and kids) sorted by points
   const allMembers = leaderboard
     .sort((a, b) => b.current_points - a.current_points);

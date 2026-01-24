@@ -484,10 +484,28 @@ const validateActiveUser = (activeUserId: string) => {
 };
 ```
 
+## Cached Session Data — Fields Included/Excluded
+
+The session returned by `getAuthenticatedSession()` intentionally limits the data exposed:
+
+| Field | Included | Reason |
+|-------|----------|--------|
+| `members[].id` | ✅ | Profile identification |
+| `members[].name` | ✅ | Display name |
+| `members[].role` | ✅ | Role-based access |
+| `members[].current_points` | ✅ | Leaderboard display |
+| `members[].has_pin` | ✅ | Boolean only (from `pin_hash`) |
+| `members[].user_id` | ❌ | Auth ID not exposed to client |
+| `members[].pin_hash` | ❌ | Converted to boolean `has_pin` |
+| `members[].preferences` | ❌ | Not needed in cached session |
+
+**Implication**: Route handlers that need `user_id` or `preferences` must use `session.user.id` (the auth user's own ID from the JWT) or query the database separately. Do NOT rely on `family.members[].user_id`.
+
 ## Related Documentation
 
 - [Signup & PIN Detection Fixes](./milestones/20260119_signup_and_pin_fixes.md) - Fixed `has_pin` vs `pin_hash` session property usage
 - [Parent PIN Security Implementation](./20260111_parent_pin_security_implementation.md) - PIN protection architecture
+- [Notifications: Digest Settings Fix](./milestones/20260122_notifications_calendar_email_badges.md#settings-ui-server-side-pass-through-option-3) - Uses `session.user.id` for channel detection
 
 ---
 
