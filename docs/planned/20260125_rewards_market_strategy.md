@@ -621,6 +621,215 @@ Consider a beta cohort or waitlist before building P4-P5.
 
 ---
 
+## Deep Market Research (January 25, 2026)
+
+### Competitor Deep Dive
+
+#### BusyKid ($4/month, billed annually at $48/year)
+- **Model**: Chore-to-payment with real Visa debit card
+- **Key features**: Save/Spend/Share buckets, 4000+ stocks & ETFs, weekly
+  "Payday" with parent approval, 60 vetted charities for donations, parent-set
+  interest on savings
+- **Strengths**: Cheapest with real card, strong work-to-earnings link, no
+  commission stock trades
+- **Weaknesses**: Utilitarian interface, limited gamification (just checkboxes),
+  Plaid bank connection errors, requires more initial setup
+- **Target**: Ages 5-17, families wanting direct chore-to-money connection
+
+#### Greenlight ($5.99-$24.98/month, 4 tiers)
+- **Model**: Family banking platform with chores as one feature
+- **Key features**: FDIC-insured debit cards (up to 5 kids), savings rewards
+  (1-5% by tier), ETF/stock investing from $1 fractional shares, flexible
+  allowance (tied to chores or standalone), real-time purchase notifications
+- **Scale**: 6 million+ users as of January 2025
+- **Tiers**: Core ($5.99) → Max ($10.98) → Infinity ($15.98) → Family Shield ($24.98)
+- **Strengths**: Most comprehensive, real banking, teen independence with oversight
+- **Weaknesses**: Customer service issues, complex plan tiers, expensive at higher levels
+- **Target**: Ages 6-18, families wanting full financial platform
+
+#### S'moresUp ($7.99/month or $79.99/year)
+- **Model**: AI-powered smart chore management with gamification
+- **Key features**: ChoreAI (auto-assigns/reminds/rewards), smart home integration
+  (Bosch, GE, Google, Amazon), Google Classroom integration, photo proof of
+  completion, "Family Campfires" messaging, "Above and Beyond" values-based tasks
+- **Claims**: Saves parents 8 hours/week via automation
+- **Strengths**: Most tech-forward (AI + smart home + school), deepest gamification
+- **Weaknesses**: Expensive, feature bloat, niche smart-home partnerships
+- **Target**: Tech-forward families wanting automation
+
+#### Homey ($4.99/month or $49.99/year)
+- **Model**: Detailed allowance math with chore tracking
+- **Key features**: Per-minute rates, savings jars with percentage allocation,
+  bank account connection (US only), IOU tracking, responsibilities vs paid
+  jobs distinction, interest/fines system
+- **Strengths**: Most detailed financial modeling, "first app that got kids
+  doing chores consistently"
+- **Weaknesses**: Interface feels 2018, no offline support, too many options
+  for younger kids, prone to crashing
+- **Target**: Detail-oriented parents wanting precise allowance control
+
+#### KiddiKash (Free tier available)
+- **Model**: Points-and-rewards system integrated with chore tracking
+- **Key features**: Chore engine woven into points/rewards/savings dashboard,
+  positions itself as fixing competitor pain points
+- **Strengths**: Free entry point, integrated experience
+- **Weaknesses**: Limited third-party reviews, unclear paid tier features
+
+---
+
+### What Parents Actually Pay For (Research Findings)
+
+#### Willingness to Pay Hierarchy
+
+Based on app store reviews, parent forums, and comparison sites:
+
+| Value Level | What Parents Pay For | Price Tolerance |
+|-------------|---------------------|-----------------|
+| **High** | Real money outcomes (debit card, investing, banking) | $5-25/month |
+| **Medium-High** | Financial education (savings goals, budgets, compound interest) | $4-8/month |
+| **Medium** | Automation (AI assignment, smart reminders, scheduling) | $5-8/month |
+| **Low** | Gamification alone (points, badges, leaderboards) | $0-3/month |
+| **Zero** | Basic chore checklist | Free expected |
+
+#### Key Parent Quotes (from reviews)
+
+- "I refuse to pay a monthly fee to use an app — I'm trying to teach my
+  children responsible money practices here, and forgetting about yet another
+  monthly subscription is irresponsible." — Bomad user
+- "Has been the first app that got my kids doing chores consistently, and
+  without me nagging." — Homey user (paying $4.99/mo)
+- "BusyKid creates a crucial mental link between effort and reward — kids
+  can't just receive money, they have to complete chores and request payment."
+  — Parent review
+
+#### Subscription Fatigue Drivers (Churn Causes)
+
+1. **Paywalled features users expected free** — downloading "free" apps then
+   hitting paywalls feels deceptive
+2. **Feature bloat** — apps that try to be "family super-apps" get abandoned;
+   parents use only 10% of features
+3. **Gamification burnout** — novelty wears off, kids start asking "what do I
+   get?" for everything, or disengage when points stop feeling exciting
+4. **Doesn't solve the real problem** — apps that automate nagging instead of
+   building intrinsic motivation get abandoned
+5. **Interface not refreshed** — apps that "feel 2018" lose to fresh competitors
+6. **No tangible outcome** — if parents can't point to a behavior change or
+   financial skill learned, they cancel
+
+---
+
+### Gamification Research: What Actually Works
+
+#### Evidence-Based Findings (2025)
+
+| Finding | Source | Implication for ChoreGami |
+|---------|--------|--------------------------|
+| Social accountability increases completion by 65% | American Society of Training & Development | Family leaderboard is validated |
+| Group participation → 95% more likely to complete goals | ASTD research | Cross-device family visibility matters |
+| Simple check-ins beat complex tracking | App abandonment studies | Keep chore completion to 1 tap |
+| Streak recovery prevents burnout | Habit tracking research | Don't erase weeks of progress for 1 miss |
+| Start with 1-3 habits, master, then add | Behavior design | Onboarding should activate 1 template, not overwhelm |
+| Celebrating small achievements boosts adherence 300% | BJ Fogg, Stanford | Celebration animations are NOT vanity — they're retention |
+| Gamification works for some, annoys others | Meta-analysis | Must be opt-in/subtle, not forced |
+| Tracking itself matters more than which app | 2018 Obesity study | Simple > complex |
+| Money habits form by age 7 | Financial literacy research | Target 6-8 year olds before habits calcify |
+
+#### Streak Best Practices
+
+- **Do**: Show current streak, celebrate milestones (7 days, 21 days, 30 days)
+- **Do**: Allow "streak recovery" — 1 missed day doesn't reset to zero
+- **Don't**: Make streaks the primary motivation (they become stressful)
+- **Don't**: Show negative states ("You broke your streak!")
+- **Do**: Use streaks as proof of habit formation ("21 days = habit formed!")
+
+---
+
+### Smart Home & AI: Market Position
+
+S'moresUp is the only competitor with smart home integration (Bosch dishwashers
+trigger chores, GE/Google/Amazon integration). Their ChoreAI claims to save
+parents 8 hours/week.
+
+**Our position**: Skip. Smart home is:
+- Fragmented ecosystem (no standard)
+- Niche audience (families with specific Bosch/GE appliances)
+- High engineering effort for small addressable market
+- S'moresUp has first-mover advantage we can't overcome
+- AI chore assignment is solvable with rotation templates (already built)
+
+---
+
+### Pricing Strategy Validation
+
+| Competitor | Price | What You Get | ChoreGami Position |
+|-----------|-------|-------------|-------------------|
+| KiddiKash | Free | Points + basic chores | We offer free tier too |
+| BusyKid | $4/mo | Debit card + investing | We're $1 more but no card needed |
+| Homey | $4.99/mo | Detailed allowance + jars | Same price, fresher UX |
+| Greenlight Core | $5.99/mo | Debit card + basic investing | We're cheaper, no card |
+| S'moresUp | $7.99/mo | AI + smart home + gamification | We're cheaper, focused |
+| Greenlight Max | $10.98/mo | Full investing + identity protection | Different category |
+
+**$4.99/month is correctly positioned**: Above commodity (BusyKid) but below
+platform (Greenlight). Justified by insights + rewards + savings goals without
+banking complexity.
+
+---
+
+### Validated Strategy Adjustments
+
+Based on research, these adjustments strengthen the plan:
+
+1. **Streak recovery is essential** — Add to behavioral insights. Don't
+   penalize single missed days. Show "consistency %" not just streak count.
+
+2. **Celebration animations are retention, not vanity** — BJ Fogg's research
+   (300% adherence boost) validates our celebration modals. Keep them.
+
+3. **Free tier must be genuinely useful** — Parents are allergic to
+   "paywalled basics." Core chore tracking + basic leaderboard must be free.
+
+4. **Feature simplicity is competitive advantage** — Homey's "too many
+   options" and S'moresUp's "feature bloat" are real churn drivers.
+   Our 2-dashboard architecture is a feature, not a limitation.
+
+5. **Savings goals are table stakes at $5/mo** — Every competitor at this
+   price point has them. Priority 3 should potentially merge with Priority 2.
+
+6. **"Habit formed" proof is genuinely novel** — No competitor surfaces
+   "your kid has been consistent for 21 days, habit is forming." This is
+   the strongest monetization justification.
+
+7. **Parent independence concern** — Parents value apps that let kids
+   develop independence WITH oversight. Kid-facing dashboard that "just
+   works" without parent intervention is important.
+
+---
+
+### Sources
+
+- [BusyKid Features](https://busykid.com/busykid-features/)
+- [BusyKid Review 2025 - Kids' Money](https://www.kidsmoney.org/parents/money-management/busykid-review/)
+- [Best Chore Apps 2025 - KiddiKash](https://www.kiddikash.com/blog/best-chore-apps-2025)
+- [Best Allowance Apps 2025 - CoFinancially](https://cofinancially.com/best-allowance-apps-for-kids/)
+- [Greenlight Chores & Allowance](https://greenlight.com/chores-and-allowance-app-for-kids)
+- [Greenlight Plans Comparison](https://greenlight.com/plans)
+- [Greenlight Review 2025 - Marriage Kids Money](https://marriagekidsandmoney.com/greenlight-review/)
+- [S'moresUp Pricing](https://www.smoresup.com/pricing)
+- [S'moresUp App - Google Play](https://play.google.com/store/apps/details?id=com.rotation5.smoresup)
+- [Homey Pricing](https://www.homeyapp.net/pricing/)
+- [Homey Reviews - Common Sense Media](https://www.commonsensemedia.org/app-reviews/homey-chores-and-allowance)
+- [Best Free Chore Apps 2025 - MyChoreBoard](https://www.mychoreboard.com/blog/best-free-chore-apps-2025/)
+- [Chore Apps MIT Technology Review](https://www.technologyreview.com/2022/05/10/1051954/chore-apps/)
+- [Gamification Apps 2025 - Gamification+](https://gamificationplus.uk/which-gamified-habit-building-app-do-i-think-is-best-in-2025/)
+- [Habit Tracker Comparison 2025 - Cohorty](https://www.cohorty.app/blog/habit-tracker-comparison-2025-12-apps-tested-free-vs-paid)
+- [Habitica - Internet Matters](https://www.internetmatters.org/advice/apps-and-platforms/wellbeing/habitica/)
+- [Kids Finance Apps - PenFed](https://www.penfed.org/learn/best-kids-finance-apps-to-teach-money-management)
+- [Money Apps for Kids - Bankrate](https://www.bankrate.com/personal-finance/best-money-apps-for-kids/)
+- [Greenlight Review 2026 - FinanceBuzz](https://financebuzz.com/greenlight-review)
+
+---
+
 *Document created: January 25, 2026*
-*Last updated: January 25, 2026 (added screenshot validation, UX fixes, Pareto/market/moat analysis)*
-*Status: Strategic roadmap complete, ready for implementation*
+*Last updated: January 25, 2026 (deep market research, competitor analysis, pricing validation)*
+*Status: Strategic roadmap complete with market validation, ready for implementation*
