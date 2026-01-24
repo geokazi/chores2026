@@ -453,6 +453,162 @@ All priorities use existing DB tables. No migrations needed.
 | 2026-01-25 | Sub-routes, not new tabs | Preserve simple 2-dashboard architecture vs old app's 5-tab complexity |
 | 2026-01-25 | Port concept, not code | Old app's 915-line RewardsService is over-engineered; rebuild in ~260 lines |
 | 2026-01-25 | Positive framing mandatory | "Claim" not "Buy", no red amounts, per rewards_system.md psychology guidelines |
+| 2026-01-25 | Exchange rate in settings, not wizard | Old app's multi-screen Points Configuration is over-built; 2 fields in Settings suffice |
+| 2026-01-25 | Skip special bonuses (Reading/Kindness) | Hardcoded categories are inflexible; existing manual bonus awards are more powerful |
+| 2026-01-25 | Skip approval for savings goals | Kids setting goals is always positive behavior — don't gate it |
+| 2026-01-25 | Green progress bars, not red | Red signals danger; savings progress is positive |
+
+---
+
+## Screenshot-Validated Insights (Old ChoreGami App)
+
+### Validated: Savings Goals Have Real Usage
+
+The old app shows real user data: "New Bike - Ciku $45.00 / $160.00" with
+active progress. This confirms Priority 3 (Savings Goals) is worth building.
+Kids engage with concrete targets.
+
+**What works**: Dollar targets, progress visualization, per-kid attribution,
+"+ Add Goal" button.
+
+**What to fix**: Red progress bars (use green), tiny edit/delete icons
+(use swipe or detail page), no completion celebration, no target dates,
+duplicate entries possible (needs idempotency).
+
+### Validated: Weekly Activity Summary
+
+"This Week's Activity" card shows 3 numbers: $7.00 Earned | 7 Chores Done |
+$0.00 Spent. High information density, parents check this daily.
+
+**Port to 2026**: Add to parent dashboard as a summary card. Simple aggregate
+query on chore_transactions for current week.
+
+### Validated: Transaction Type Filtering
+
+Filter dropdown shows: All Types / Chore Completed / Cash Out / Bonus /
+Penalty / Adjustment. Maps cleanly to existing `transaction_type` enum.
+
+**Mapping to ChoreGami 2026**:
+
+| Old App Filter | 2026 `transaction_type` | Status |
+|---------------|------------------------|--------|
+| Chore Completed | `chore_completed` | Exists |
+| Cash Out | `payout` | New |
+| Bonus | `bonus_award` | Exists |
+| Penalty | `manual_adjustment` (negative) | Exists |
+| Adjustment | `manual_adjustment` | Exists |
+
+Only `payout` transaction type needs adding.
+
+### Validated: Points Configuration Exists
+
+Old app has "Quick Points Setup" with exchange rate picker (25¢/50¢/$1) and
+cash-out approval toggle. Also advanced mode with Payment Policy, Special
+Bonuses, and granular Approval Settings.
+
+**For 2026**: Reduce to 2 settings fields in Family Settings:
+
+```typescript
+// families.settings.apps.choregami.finance
+{
+  points_per_dollar: 100, // cents per point (25/50/100)
+  payout_requires_approval: true
+}
+```
+
+No dedicated "Points Configuration" page needed.
+
+---
+
+## UX Fixes Catalog (Old App → 2026)
+
+| Old App Pattern | Problem | 2026 Fix |
+|----------------|---------|----------|
+| `-$17.00` in red | Negative framing discourages | "Claimed: Book" in green/blue |
+| Red progress bars on goals | Red = danger, not progress | Green/primary progress bars |
+| Mixed pts/$ in same view | "174 pts" next to "$7.00" confuses | Show conversion or pick one per context |
+| Browser `prompt()` for Pay Out | Janky, breaks mobile UX | Proper in-app modal |
+| "Cash Out" in reward catalog | Withdrawal != purchase | Separate action on Balance screen |
+| Tiny edit/delete icons | Touch targets too small (< 44px) | Swipe actions or detail page |
+| "Buy" button on rewards | Spending language | "Claim" button |
+| "Recent Purchases" header | Implies money lost | "Rewards Claimed" |
+| Yellow star cards for transactions | Over-decorated | Simple list items with color-coded amounts |
+| 5-tab navigation | Too complex for kid-facing app | 2-dashboard architecture with sub-routes |
+
+---
+
+## Pareto Principle vs Market Reality vs Moat
+
+### The Balance
+
+Building a product requires balancing three tensions:
+
+| Principle | Says... | Risk if over-indexed |
+|-----------|---------|---------------------|
+| **Pareto (80/20)** | Ship minimum viable features first | Under-differentiated, lost in commodity space |
+| **Market fit** | Build what competitors lack | Over-engineering, never ships |
+| **Moat** | Invest in hard-to-copy advantages | Gold-plating features nobody needs yet |
+
+### How We're Balancing
+
+**Pareto applied correctly**:
+- 0 new database tables (all exist)
+- ~1350 total lines across 5 priorities
+- Each priority is independently shippable
+- Behavioral insights (P1) is literally just read queries on existing data
+- Rewards (P2) reuses 2 existing tables + existing transaction service
+
+**Market factors respected**:
+- Dollar-denominated rewards (not abstract points) — financial education angle
+- Savings goals — the feature competitors charge for
+- Exchange rate flexibility — serves both "money families" and "gamification families"
+- Positive framing — psychological differentiation from red-negative competitors
+
+**Moat identified and invested in**:
+- Real-time WebSocket gamification (FamilyScore) — NO competitor has this
+- Behavioral insights (habit formation proof) — competitors show history, not trends
+- Hybrid points+dollars — competitors are points-only OR money-only, not both
+- No banking dependency — lower barrier than BusyKid/Greenlight, same educational outcome
+
+### What We're NOT Building (Pareto says skip)
+
+| Feature | Why Skip | Market Pressure |
+|---------|----------|-----------------|
+| Debit cards | Banking compliance, partnerships | BusyKid/Greenlight own this; can't compete |
+| Offline-first | Architectural rework for edge case | Few families truly offline |
+| Smart-home integration | Huge effort, fragmented ecosystem | No competitor has cracked this either |
+| Co-parent split household | Auth/permissions rework | Real pain but too complex for MVP |
+| Advanced approval workflows | Over-engineering | One toggle (approval on/off) covers 95% |
+| Special bonus categories | Inflexible hardcoded list | Manual bonus awards already exist |
+| Multi-screen config wizards | UX bloat | 2-3 fields in Settings suffice |
+
+### The Moat Test
+
+For each feature, ask: **"If a competitor copies our feature list tomorrow,
+what still makes us better?"**
+
+1. **Real-time updates** — requires WebSocket architecture + FamilyScore integration.
+   Competitors can't retrofit this onto polling-based apps.
+
+2. **Behavioral insights** — requires accumulated transaction history + smart queries.
+   New apps have no data; existing apps haven't built the analytics layer.
+
+3. **Hybrid points/dollars** — requires architectural flexibility in the transaction
+   system. Competitors are locked into one currency model.
+
+4. **Positive UX framing** — requires intentional design discipline.
+   Competitors have shipped "spend/buy/negative" language for years; changing
+   it means retraining their entire user base.
+
+### Verdict
+
+The current plan is correctly balanced:
+- **Pareto**: Each priority is minimal viable (200-320 lines, 0 migrations)
+- **Market**: Features address the "why pay $5/month?" question directly
+- **Moat**: Real-time + insights + hybrid model = hard to replicate quickly
+
+The one risk: shipping P1-P3 without validating willingness to pay.
+Consider a beta cohort or waitlist before building P4-P5.
 
 ---
 
@@ -466,4 +622,5 @@ All priorities use existing DB tables. No migrations needed.
 ---
 
 *Document created: January 25, 2026*
-*Status: Strategic roadmap approved, awaiting implementation priority decision*
+*Last updated: January 25, 2026 (added screenshot validation, UX fixes, Pareto/market/moat analysis)*
+*Status: Strategic roadmap complete, ready for implementation*
