@@ -44,15 +44,19 @@ interface FamilySettingsProps {
     apps?: any;
   };
   digestChannel?: "email" | "sms" | null;
+  hasBothChannels?: boolean;
   notificationPrefs?: { weekly_summary?: boolean; digest_channel?: string; sms_limit_hit?: boolean };
 }
 
-export default function FamilySettings({ family, members, settings, digestChannel, notificationPrefs }: FamilySettingsProps) {
+export default function FamilySettings({ family, members, settings, digestChannel, hasBothChannels, notificationPrefs }: FamilySettingsProps) {
   // Shared PIN modal state - lifted to orchestrator level
   const [pinModalMember, setPinModalMember] = useState<{ id: string; name: string; role: string } | null>(null);
 
   // Notification preferences state
   const [weeklyDigest, setWeeklyDigest] = useState(notificationPrefs?.weekly_summary ?? false);
+  const [selectedChannel, setSelectedChannel] = useState<"email" | "sms">(
+    (notificationPrefs?.digest_channel as "email" | "sms") || digestChannel || "email"
+  );
   const [savingDigest, setSavingDigest] = useState(false);
   const smsLimitHit = notificationPrefs?.sms_limit_hit ?? false;
 
@@ -105,7 +109,7 @@ export default function FamilySettings({ family, members, settings, digestChanne
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           weekly_summary: newValue,
-          digest_channel: digestChannel || "email",
+          digest_channel: selectedChannel,
         }),
       });
 
@@ -116,6 +120,33 @@ export default function FamilySettings({ family, members, settings, digestChanne
       }
     } catch (error) {
       console.error('Error saving notification setting:', error);
+      alert('Failed to save setting. Please try again.');
+    } finally {
+      setSavingDigest(false);
+    }
+  };
+
+  const handleChannelChange = async (channel: "email" | "sms") => {
+    setSelectedChannel(channel);
+    setSavingDigest(true);
+
+    try {
+      const response = await fetch('/api/settings/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          weekly_summary: true,
+          digest_channel: channel,
+        }),
+      });
+
+      if (!response.ok) {
+        setSelectedChannel(selectedChannel === "email" ? "sms" : "email");
+        alert('Failed to save channel preference. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error saving channel preference:', error);
+      setSelectedChannel(selectedChannel === "email" ? "sms" : "email");
       alert('Failed to save setting. Please try again.');
     } finally {
       setSavingDigest(false);
@@ -295,11 +326,13 @@ export default function FamilySettings({ family, members, settings, digestChanne
           }}>
             <div>
               <div style={{ fontWeight: "500", marginBottom: "0.25rem" }}>
-                Weekly digest via {digestChannel}
+                {hasBothChannels ? "Weekly digest" : `Weekly digest via ${digestChannel}`}
               </div>
               <div style={{ fontSize: "0.75rem", color: "var(--color-text-light)" }}>
                 {weeklyDigest
-                  ? `✅ Sends to your registered ${digestChannel === "email" ? "email" : "phone"}`
+                  ? hasBothChannels
+                    ? `Sends to your registered ${selectedChannel === "email" ? "email" : "phone"}`
+                    : `Sends to your registered ${digestChannel === "email" ? "email" : "phone"}`
                   : `Upcoming events, chore stats, and family highlights`}
               </div>
             </div>
@@ -333,6 +366,45 @@ export default function FamilySettings({ family, members, settings, digestChanne
               />
             </button>
           </div>
+
+          {weeklyDigest && hasBothChannels && (
+            <div style={{
+              marginTop: "0.75rem",
+              display: "flex",
+              alignItems: "center",
+              gap: "1rem",
+              padding: "0.75rem",
+              backgroundColor: "var(--color-bg)",
+              borderRadius: "0.5rem",
+              fontSize: "0.875rem",
+            }}>
+              <span style={{ fontWeight: "500", color: "var(--color-text)" }}>Send via:</span>
+              <label style={{ display: "flex", alignItems: "center", gap: "0.375rem", cursor: savingDigest ? "not-allowed" : "pointer" }}>
+                <input
+                  type="radio"
+                  name="digest_channel"
+                  value="email"
+                  checked={selectedChannel === "email"}
+                  onChange={() => handleChannelChange("email")}
+                  disabled={savingDigest}
+                  style={{ accentColor: "var(--color-primary)" }}
+                />
+                <span>Email</span>
+              </label>
+              <label style={{ display: "flex", alignItems: "center", gap: "0.375rem", cursor: savingDigest ? "not-allowed" : "pointer" }}>
+                <input
+                  type="radio"
+                  name="digest_channel"
+                  value="sms"
+                  checked={selectedChannel === "sms"}
+                  onChange={() => handleChannelChange("sms")}
+                  disabled={savingDigest}
+                  style={{ accentColor: "var(--color-primary)" }}
+                />
+                <span>SMS</span>
+              </label>
+            </div>
+          )}
 
           {weeklyDigest && (
             <div style={{
