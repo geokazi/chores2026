@@ -68,6 +68,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | TBD | [~~FCM Push Notifications~~](./milestones/20260122_fcm_push_notifications_plan.md) | ⏸️ Deferred | Over-engineered; revisit when demand validated |
 | 2026-01-23 | [**Weekly Digest Enhancement**](./marketing/20260123_weekly_digest_enhancement.md) | ✅ Complete | Personalized family scorecard: leaderboard, streaks, goals, insights |
 | — | [**Testing Notifications Guide**](./testing-notifications.md) | 📖 Guide | How to test email/SMS digest manually (SQL + curl) |
+| TBD | [**SMS 10DLC Compliance**](./planned/20260123_sms_10dlc_compliance.md) | ⚠️ Blocked | Carrier blocks SMS; 10DLC brand+campaign registration required |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 

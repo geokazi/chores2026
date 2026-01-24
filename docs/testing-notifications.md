@@ -144,6 +144,7 @@ WHERE user_id = 'YOUR_USER_ID';
 | `{"sent": 0, "skipped": 0, "errors": 0}` | Not opted in | Run opt-in SQL above |
 | `{"error": "budget_exceeded"}` | Global cap hit | Check `GLOBAL_EMAIL_BUDGET` in `config/feature-limits.ts` |
 | SMS not received | SMS monthly limit | Check `FEATURE_LIMITS.free.sms_per_month` (default 4/month) |
+| SMS `sent:1` but not received | Carrier blocked (error 30034) | 10DLC registration required — see [SMS 10DLC Compliance](./planned/20260123_sms_10dlc_compliance.md) |
 | Email to wrong address | Placeholder email | User has `@phone.` email — set `digest_channel: "email"` only if they have a real email |
 
 ### Check logs (Fly.io)
@@ -168,3 +169,4 @@ The digest resolves contact info at send time from `auth.users`:
 - [Weekly Digest Enhancement](./marketing/20260123_weekly_digest_enhancement.md) — 7-section scorecard design
 - [JSONB Settings Architecture](./20260114_JSONB_settings_architecture.md) — `preferences.notifications` schema
 - [Usage Queries](../sql/20260122_notifications_usage_queries.sql) — SQL for checking usage counters
+- [SMS 10DLC Compliance](./planned/20260123_sms_10dlc_compliance.md) — Carrier registration required for SMS delivery
