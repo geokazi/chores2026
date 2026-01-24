@@ -10,6 +10,18 @@ import { getPresetByKey } from "../data/rotation-presets.ts";
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
+/** Get the hour (0-23) of a UTC timestamp in a given IANA timezone. */
+function getLocalHour(isoTimestamp: string, timezone: string): number {
+  const date = new Date(isoTimestamp);
+  const parts = new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    hour12: false,
+    timeZone: timezone,
+  }).formatToParts(date);
+  const hourPart = parts.find(p => p.type === "hour");
+  return parseInt(hourPart?.value || "0", 10);
+}
+
 export interface WeekTrend {
   weekStart: string;
   activeDays: number;
@@ -279,11 +291,12 @@ export class InsightsService {
 
   /**
    * Routine breakdown: morning vs evening completions.
-   * Uses created_at hour as heuristic (before noon = morning).
+   * Uses created_at hour in the family's local timezone (before noon = morning).
    */
   async getRoutineBreakdown(
     familyId: string,
-    childProfiles: Array<{ id: string; name: string }>
+    childProfiles: Array<{ id: string; name: string }>,
+    timezone = "UTC"
   ): Promise<RoutineData[]> {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -299,7 +312,7 @@ export class InsightsService {
     return childProfiles.map(kid => {
       const kidTx = ((txData as any[]) || []).filter(tx => tx.profile_id === kid.id);
       const morningCount = kidTx.filter(tx => {
-        const hour = new Date(tx.created_at).getHours();
+        const hour = getLocalHour(tx.created_at, timezone);
         return hour < 12;
       }).length;
       const eveningCount = kidTx.length - morningCount;

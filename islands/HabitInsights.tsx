@@ -127,7 +127,6 @@ export default function HabitInsights({ trends, streaks, routines }: Props) {
         <p class="section-desc">Morning vs evening completions (30 days)</p>
         <div class="routine-cards">
           {routines.map(kid => {
-            const total = kid.morningCount + kid.eveningCount;
             return (
               <div class="routine-card" key={kid.profileId}>
                 <span class="routine-name">{kid.name}</span>

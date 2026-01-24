@@ -4,6 +4,7 @@
  */
 
 import { Handlers, PageProps } from "$fresh/server.ts";
+import { createClient } from "@supabase/supabase-js";
 import { getAuthenticatedSession } from "../../lib/auth/session.ts";
 import { InsightsService } from "../../lib/services/insights-service.ts";
 import HabitInsights from "../../islands/HabitInsights.tsx";
@@ -40,11 +41,27 @@ export const handler: Handlers<InsightsData> = {
     }
 
     try {
+      // Get parent's timezone for accurate routine breakdown
+      let timezone = "UTC";
+      const profileId = session.user?.profileId;
+      if (profileId) {
+        const supabase = createClient(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+        );
+        const { data: profile } = await supabase
+          .from("family_profiles")
+          .select("preferences")
+          .eq("id", profileId)
+          .single();
+        timezone = profile?.preferences?.timezone || "UTC";
+      }
+
       const insightsService = new InsightsService();
       const [trends, streaks, routines] = await Promise.all([
         insightsService.getConsistencyTrend(familyId, familySettings, childProfiles),
         insightsService.getStreaks(familyId, familySettings, childProfiles),
-        insightsService.getRoutineBreakdown(familyId, childProfiles),
+        insightsService.getRoutineBreakdown(familyId, childProfiles, timezone),
       ]);
 
       return ctx.render({
