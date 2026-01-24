@@ -57,13 +57,15 @@ export const handler: Handlers<ParentSettingsData> = {
     let notificationPrefs: any = null;
     const parentProfile = family.members.find((m: any) => m.id === session.user?.profileId) as any;
 
-    if (parentProfile?.user_id) {
+    const authUserId = session.user?.id;
+
+    if (authUserId) {
       try {
         const supabase = createClient(
           Deno.env.get("SUPABASE_URL")!,
           Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
         );
-        const { data: { user } } = await supabase.auth.admin.getUserById(parentProfile.user_id);
+        const { data: { user } } = await supabase.auth.admin.getUserById(authUserId);
         if (user) {
           const hasEmail = hasRealEmail(user.email);
           const hasPhone = !!resolvePhone(user);
@@ -73,7 +75,24 @@ export const handler: Handlers<ParentSettingsData> = {
       } catch (e) {
         console.warn("Failed to detect digest channel:", e);
       }
-      notificationPrefs = parentProfile.preferences?.notifications || {};
+    }
+
+    // Load notification prefs from profile (requires separate query since session doesn't include preferences)
+    if (parentProfile?.id) {
+      try {
+        const supabase = createClient(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+        );
+        const { data: profileWithPrefs } = await supabase
+          .from("family_profiles")
+          .select("preferences")
+          .eq("id", parentProfile.id)
+          .single();
+        notificationPrefs = profileWithPrefs?.preferences?.notifications || {};
+      } catch (e) {
+        console.warn("Failed to load notification prefs:", e);
+      }
     }
 
     return ctx.render({
