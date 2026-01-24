@@ -908,7 +908,7 @@ No email/phone input — uses contact info from `auth.users` registration.
 └───────────────────────────────────────────────┘
 ```
 
-### 6.5c Digest — Parent with Both Email + Phone
+### 6.5c Digest — Parent with Both Email + Phone ✅ Implemented (Jan 23)
 
 ```
 ┌───────────────────────────────────────────────┐
@@ -1049,7 +1049,7 @@ auth.users             preferences.notifications    │               │
 | Feature | User config needed? | Where configured? | Behavior |
 |---------|--------------------|--------------------|----------|
 | ICS Export | None | — | Link always visible on event cards |
-| Weekly Digest | Toggle only | `/parent/settings` (per-user) | Off by default, channel auto-detected |
+| Weekly Digest | Toggle + channel selector | `/parent/settings` (per-user) | Off by default; single-channel auto-detected, dual-channel shows radio buttons |
 | In-App Badge | None | — | Automatic when event today/tomorrow |
 
 ---
@@ -1096,6 +1096,7 @@ auth.users             preferences.notifications    │               │
 - [x] In `routes/parent/settings.tsx` handler: detect channel from `auth.users`, pass to island
 - [x] Store preference in `family_profiles.preferences.notifications` JSONB (`{ weekly_summary, digest_channel, last_sent_at }`)
 - [x] Create `routes/api/settings/notifications.ts` — POST endpoint for saving preferences
+- [x] Radio buttons for dual-channel users (both email + phone): `hasBothChannels` prop + channel selector UI (mockup 6.5c)
 
 **Tests:**
 - [x] Channel detection (email-registered → email, phone-registered → SMS, null) — `lib/services/email-digest_test.ts`
@@ -1204,8 +1205,8 @@ auth.users             preferences.notifications    │               │
 |------|-------|--------|
 | `routes/login.tsx` | P0 | `createSessionResponse()` → HTML with localStorage write |
 | `routes/register.tsx` | P0 | Same pattern for signup flow |
-| `routes/parent/settings.tsx` | P2 | Pass `digestChannel` + `notificationPrefs` from `auth.users` |
-| `islands/FamilySettings.tsx` | P2 | Notifications section with toggle + SMS limit banner |
+| `routes/parent/settings.tsx` | P2 | Pass `digestChannel` + `hasBothChannels` + `notificationPrefs` from `auth.users` |
+| `islands/FamilySettings.tsx` | P2 | Notifications section with toggle, SMS limit banner, and dual-channel radio selector |
 | `islands/EventsList.tsx` | P1 | "Add to Calendar" link on every event card |
 | `islands/AppHeader.tsx` | P3 | Event badge dot with pulse animation |
 | `main.ts` | P2 | `Deno.cron("weekly-digest", "0 6 * * 0", ...)` |
