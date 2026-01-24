@@ -32,7 +32,7 @@ interface DigestContent {
     prevWeekTotal: number;
     topEarner?: { name: string; points: number };
   };
-  leaderboard: Array<{ name: string; totalPoints: number; weeklyPoints: number; streak: number }>;
+  leaderboard: Array<{ name: string; totalPoints: number; weeklyPoints: number; streak: number; consistency: number }>;
   weeklyEarnings: number;
   goalProgress?: {
     target: number;
@@ -185,7 +185,7 @@ export async function sendWeeklyDigests(): Promise<DigestResult> {
 
 /**
  * Calculate streak (consecutive days with completions) for a profile.
- * A streak ends when there's a gap day with no completions.
+ * Allows 1-day recovery gap (diffDays <= 2) to avoid penalizing minor misses.
  */
 function calculateStreak(transactionDates: string[]): number {
   if (transactionDates.length === 0) return 0;
@@ -205,7 +205,7 @@ function calculateStreak(transactionDates: string[]): number {
     const curr = new Date(uniqueDates[i - 1] + "T00:00:00");
     const prev = new Date(uniqueDates[i] + "T00:00:00");
     const diffDays = (curr.getTime() - prev.getTime()) / 86_400_000;
-    if (diffDays === 1) {
+    if (diffDays <= 2) { // Allow 1 gap day (streak recovery)
       streak++;
     } else {
       break;
@@ -215,11 +215,24 @@ function calculateStreak(transactionDates: string[]): number {
 }
 
 /**
+ * Calculate 30-day consistency % (active days / expected days).
+ */
+function calculateConsistency(transactionDates: string[]): number {
+  if (transactionDates.length === 0) return 0;
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10);
+  const recentDates = [...new Set(transactionDates.map(d => d.slice(0, 10)))]
+    .filter(d => d >= thirtyDaysAgo);
+  // Expected 7 days/week over ~4.3 weeks = ~30 days
+  const expected = 30;
+  return Math.min(100, Math.round((recentDates.length / expected) * 100));
+}
+
+/**
  * Generate personalized insight one-liners from digest data.
  */
 function generateInsights(content: {
   stats: { choresCompleted: number; choresTotal: number; prevWeekCompleted: number; prevWeekTotal: number };
-  leaderboard: Array<{ name: string; streak: number; weeklyPoints: number }>;
+  leaderboard: Array<{ name: string; streak: number; weeklyPoints: number; consistency: number }>;
   goalProgress?: { achieved: boolean };
 }): string[] {
   const insights: string[] = [];
@@ -257,6 +270,12 @@ function generateInsights(content: {
     if (!insights.some((i) => i.includes(s.name))) {
       insights.push(`${s.name} started a new 3-day streak!`);
     }
+  }
+
+  // High consistency (habit forming)
+  const highConsistency = leaderboard.filter(m => m.consistency >= 80).sort((a, b) => b.consistency - a.consistency);
+  if (highConsistency.length > 0 && !insights.some(i => i.includes(highConsistency[0].name))) {
+    insights.push(`${highConsistency[0].name} has ${highConsistency[0].consistency}% consistency — habit forming!`);
   }
 
   return insights.slice(0, 2); // Max 2 insights
@@ -370,12 +389,13 @@ async function buildDigestContent(
     streakDatesMap.set(t.profile_id, dates);
   });
 
-  // Build leaderboard with weekly points and streaks
+  // Build leaderboard with weekly points, streaks, and consistency
   const leaderboard = (members as any[] || []).map((m: any) => ({
     name: m.name as string,
     totalPoints: m.current_points as number,
     weeklyPoints: weeklyEarnerMap.get(m.id) || 0,
     streak: calculateStreak(streakDatesMap.get(m.id) || []),
+    consistency: calculateConsistency(streakDatesMap.get(m.id) || []),
   }));
 
   // Calculate total weekly earnings
@@ -548,12 +568,13 @@ function buildEmailHtml(content: DigestContent): string {
     ? content.leaderboard.map((m, i) => {
       const medal = i < 3 ? medals[i] : `${i + 1}.`;
       const streakStr = m.streak > 0 ? `<span style="color:#f59e0b;">🔥${m.streak}d</span>` : "";
+      const consistencyStr = m.consistency > 0 ? `<span style="color:#10b981;font-size:0.8em;">${m.consistency}%</span>` : "";
       const weeklyStr = m.weeklyPoints > 0 ? `<span style="color:#888;font-size:0.85em;">(+${m.weeklyPoints} this week)</span>` : "";
       return `<tr>
         <td style="padding:6px 8px;font-size:1.1em;">${medal}</td>
         <td style="padding:6px 8px;font-weight:600;">${m.name}</td>
         <td style="padding:6px 8px;text-align:right;">${m.totalPoints} pts ${weeklyStr}</td>
-        <td style="padding:6px 8px;text-align:right;">${streakStr}</td>
+        <td style="padding:6px 8px;text-align:right;">${streakStr} ${consistencyStr}</td>
       </tr>`;
     }).join("")
     : `<tr><td style="padding:8px;color:#888;">No activity yet</td></tr>`;
@@ -668,7 +689,8 @@ function buildSmsBody(content: DigestContent): string {
   const medals = ["🥇", "🥈", "🥉"];
   content.leaderboard.slice(0, 3).forEach((m, i) => {
     const streakStr = m.streak > 0 ? ` 🔥${m.streak}d` : "";
-    body += `\n${medals[i]} ${m.name} ${m.totalPoints}pts${streakStr}`;
+    const consistencyStr = m.consistency > 0 ? ` ${m.consistency}%` : "";
+    body += `\n${medals[i]} ${m.name} ${m.totalPoints}pts${streakStr}${consistencyStr}`;
   });
 
   // Weekly earnings
