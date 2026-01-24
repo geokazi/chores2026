@@ -183,6 +183,7 @@ The fix ensures all clients use default 'public' schema, with explicit `.schema(
 - [Session Management Guide](../session-management.md) - Multi-user browser session architecture
 - [Parent PIN Security Implementation](../20260111_parent_pin_security_implementation.md) - PIN protection system
 - [JSONB Settings Architecture](../20260114_JSONB_settings_architecture.md) - Settings storage pattern
+- [OAuth Signup Redirect Fix](./20260123_oauth_signup_redirect_fix.md) - Fixed OAuth-specific signup redirect loop
 
 ---
 

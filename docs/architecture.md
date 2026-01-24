@@ -240,21 +240,31 @@ export class ActiveKidSessionManager {
 
 ### Authentication Flow
 ```
-1. Parent OAuth Login
-   ├─ Google OAuth 2.0
-   ├─ Meta (Facebook) OAuth  
-   ├─ Email/Password
-   └─ Phone/SMS Verification (Twilio)
+1. Parent Login
+   ├─ Email/Password → Server-side session creation
+   ├─ Phone/SMS OTP → Twilio Verify → local token extraction
+   └─ Social OAuth (Google/Meta) → Implicit flow with fragment handling
    ↓
-2. JWT Session Creation (httpOnly cookie)
+2. OAuth Fragment Handling (Social only)
+   ├─ Browser returns to /login#access_token=...&refresh_token=...
+   ├─ oauth-fragment-handler.js parses tokens client-side
+   ├─ Sets sb-access-token + sb-refresh-token cookies
+   ├─ Stores user data in localStorage
+   └─ Redirects to /setup (client-side routing, no server dependency)
    ↓
-3. Family Context Loading
+3. Profile Setup (new users) or Home Redirect (existing users)
+   ├─ /setup: Creates family + parent profile → redirects to /
+   └─ /setup: If profile exists → redirects to /
    ↓
-4. Member Selection (Kids + Parents)
+4. JWT Session Active (httpOnly cookie)
    ↓
-5. Session Storage (Browser Tab Isolation)
+5. Family Context Loading
    ↓
-6. Role-Based Dashboard Access
+6. Member Selection (Kids + Parents)
+   ↓
+7. Session Storage (Browser Tab Isolation)
+   ↓
+8. Role-Based Dashboard Access
 ```
 
 ### Security Layers
