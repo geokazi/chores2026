@@ -123,6 +123,7 @@ export const handler: Handlers<SetupPageData> = {
       // Create kid profiles (optional)
       const kidNames = formData.getAll("kidName") as string[];
       const kidProfileIds: string[] = [];
+      const kidErrors: string[] = [];
       for (const name of kidNames) {
         if (name.trim()) {
           const { data: kidProfile, error: kidError } = await supabase
@@ -137,15 +138,29 @@ export const handler: Handlers<SetupPageData> = {
             .select("id")
             .single();
 
-          if (!kidError && kidProfile) {
+          if (kidError) {
+            console.error(`Failed to create kid "${name.trim()}":`, kidError.message);
+            kidErrors.push(name.trim());
+          } else if (kidProfile) {
             kidProfileIds.push(kidProfile.id);
           }
         }
       }
 
+      // If any kids failed, redirect with warning (family + parent still created)
+      if (kidErrors.length > 0 && kidProfileIds.length === 0) {
+        const notice = encodeURIComponent(`Couldn't add ${kidErrors.join(", ")}. Add them in Settings.`);
+        return new Response(null, { status: 303, headers: { Location: `/?notice=${notice}` } });
+      }
+
       // Activate template if selected (and kids exist)
-      const template = formData.get("template") as string;
+      let template = formData.get("template") as string;
       if (template && template !== "skip" && kidProfileIds.length > 0) {
+        // daily_basics requires exactly 2 kids — fall back to dynamic_daily
+        if (template === "daily_basics" && kidProfileIds.length !== 2) {
+          template = "dynamic_daily";
+        }
+
         const childSlots = kidProfileIds.map((id, i) => ({
           slot: `Child ${String.fromCharCode(65 + i)}`, // "Child A", "Child B"
           profile_id: id,
@@ -260,7 +275,7 @@ export default function SetupPage({ data }: PageProps<SetupPageData>) {
             <label class="template-option">
               <input type="radio" name="template" value="daily_basics" />
               <span class="template-label">🌱 Daily Basics</span>
-              <span class="template-desc">Simple morning + evening routine</span>
+              <span class="template-desc">Simple morning + evening routine (2 kids)</span>
             </label>
             <label class="template-option">
               <input type="radio" name="template" value="skip" checked />
