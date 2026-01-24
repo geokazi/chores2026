@@ -333,29 +333,35 @@ const hasPhone = !!resolvedPhone;
 
 ### Settings UI: Server-Side Pass-Through (Option 3)
 
-The settings route handler already calls `supabase.auth.getUser(accessToken)` for auth.
-Pass contact channel info as props to the island — zero client-side API calls:
+Use `session.user.id` (from the auth token) to call `getUserById` for contact detection.
+Pass channel info as props to the island — zero client-side API calls.
+
+> **Note**: The session's cached `family.members` intentionally excludes `user_id` and
+> `preferences` columns (security: no auth IDs or hashes exposed to client). Use
+> `session.user.id` directly instead.
 
 ```typescript
 // In routes/parent/settings.tsx handler
-const { data: { user } } = await supabase.auth.getUser(accessToken);
-const hasRealEmail = user.email && !/\@phone\./i.test(user.email);
-// Resolve phone: explicit field or extracted from placeholder email
-let resolvedPhone = user.phone || null;
-if (!resolvedPhone && user.email) {
-  const phoneMatch = user.email.match(/^(\+?\d+)@phone\./);
-  if (phoneMatch) resolvedPhone = phoneMatch[1];
-}
-const hasPhone = !!resolvedPhone;
+import { hasRealEmail, resolvePhone } from "../../lib/utils/resolve-phone.ts";
+
+const authUserId = session.user?.id; // Auth user ID from session (NOT from member data)
+const { data: { user } } = await supabase.auth.admin.getUserById(authUserId);
+
+const hasEmail = hasRealEmail(user.email);
+const hasPhone = !!resolvePhone(user);
+const hasBothChannels = hasEmail && hasPhone;
+const digestChannel = hasEmail ? "email" : hasPhone ? "sms" : null;
 
 // Pass to island
 return ctx.render({
   ...existingProps,
-  digestChannel: hasRealEmail ? "email" : hasPhone ? "sms" : null,
+  digestChannel,
+  hasBothChannels, // Shows radio buttons when both channels available
 });
 ```
 
-The island receives `digestChannel` and renders the correct checkbox label.
+The island receives `digestChannel` and renders the correct toggle label.
+When `hasBothChannels` is true, radio buttons allow choosing between Email and SMS (mockup 6.5c).
 
 ### Fix: Write `chores2026_user_data` on All Login Methods
 
