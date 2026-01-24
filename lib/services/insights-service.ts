@@ -15,7 +15,7 @@ function getLocalHour(isoTimestamp: string, timezone: string): number {
   const date = new Date(isoTimestamp);
   const parts = new Intl.DateTimeFormat("en-US", {
     hour: "numeric",
-    hour12: false,
+    hourCycle: "h23",
     timeZone: timezone,
   }).formatToParts(date);
   const hourPart = parts.find(p => p.type === "hour");
