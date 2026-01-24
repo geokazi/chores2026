@@ -120,7 +120,73 @@ export const handler: Handlers<SetupPageData> = {
         return ctx.render({ error: `Failed to create profile: ${profileError.message}` });
       }
 
-      console.log("✅ Family created:", { familyId: family.id, parentName, familyName, userId: user.id });
+      // Create kid profiles (optional)
+      const kidNames = formData.getAll("kidName") as string[];
+      const kidProfileIds: string[] = [];
+      const kidErrors: string[] = [];
+      for (const name of kidNames) {
+        if (name.trim()) {
+          const { data: kidProfile, error: kidError } = await supabase
+            .from("family_profiles")
+            .insert({
+              family_id: family.id,
+              name: name.trim(),
+              role: "child",
+              current_points: 0,
+              is_deleted: false,
+            })
+            .select("id")
+            .single();
+
+          if (kidError) {
+            console.error(`Failed to create kid "${name.trim()}":`, kidError.message);
+            kidErrors.push(name.trim());
+          } else if (kidProfile) {
+            kidProfileIds.push(kidProfile.id);
+          }
+        }
+      }
+
+      // If any kids failed, redirect with warning (family + parent still created)
+      if (kidErrors.length > 0 && kidProfileIds.length === 0) {
+        const notice = encodeURIComponent(`Couldn't add ${kidErrors.join(", ")}. Add them in Settings.`);
+        return new Response(null, { status: 303, headers: { Location: `/?notice=${notice}` } });
+      }
+
+      // Activate template if selected (and kids exist)
+      let template = formData.get("template") as string;
+      if (template && template !== "skip" && kidProfileIds.length > 0) {
+        // daily_basics requires exactly 2 kids — fall back to dynamic_daily
+        if (template === "daily_basics" && kidProfileIds.length !== 2) {
+          template = "dynamic_daily";
+        }
+
+        const childSlots = kidProfileIds.map((id, i) => ({
+          slot: `Child ${String.fromCharCode(65 + i)}`, // "Child A", "Child B"
+          profile_id: id,
+        }));
+
+        const rotationConfig = {
+          active_preset: template,
+          child_slots: childSlots,
+          start_date: new Date().toISOString().split("T")[0],
+        };
+
+        await supabase
+          .from("families")
+          .update({
+            settings: {
+              _version: 1,
+              apps: { choregami: { rotation: rotationConfig } },
+            },
+          })
+          .eq("id", family.id);
+      }
+
+      console.log("✅ Family created:", {
+        familyId: family.id, parentName, familyName, userId: user.id,
+        kids: kidProfileIds.length, template: template || "skip",
+      });
 
       // Success -> redirect to home
       return new Response(null, { status: 303, headers: { Location: "/" } });
@@ -175,11 +241,54 @@ export default function SetupPage({ data }: PageProps<SetupPageData>) {
             />
           </div>
 
+          <div class="section-divider">
+            <span>Kids (optional)</span>
+          </div>
+
+          <div class="form-group">
+            <input
+              type="text"
+              name="kidName"
+              class="form-input"
+              placeholder="First kid's name"
+            />
+          </div>
+          <div class="form-group">
+            <input
+              type="text"
+              name="kidName"
+              class="form-input"
+              placeholder="Second kid's name"
+            />
+          </div>
+
+          <div class="section-divider">
+            <span>Chore Template (optional)</span>
+          </div>
+
+          <div class="template-options">
+            <label class="template-option">
+              <input type="radio" name="template" value="dynamic_daily" />
+              <span class="template-label">🔄 Daily Routines</span>
+              <span class="template-desc">Personal + rotating shared chores</span>
+            </label>
+            <label class="template-option">
+              <input type="radio" name="template" value="daily_basics" />
+              <span class="template-label">🌱 Daily Basics</span>
+              <span class="template-desc">Simple morning + evening routine (2 kids)</span>
+            </label>
+            <label class="template-option">
+              <input type="radio" name="template" value="skip" checked />
+              <span class="template-label">⏭️ Skip for now</span>
+              <span class="template-desc">Set up chores later in Settings</span>
+            </label>
+          </div>
+
           <button type="submit" class="setup-button">Get Started</button>
         </form>
 
         <div class="setup-footer">
-          <p class="help-note">You can add kids later in Settings</p>
+          <p class="help-note">You can add more kids, change templates, or set a parent PIN in Settings</p>
         </div>
 
         <AppFooter />
@@ -291,6 +400,59 @@ export default function SetupPage({ data }: PageProps<SetupPageData>) {
           color: #666;
           font-size: 0.875rem;
           margin: 0;
+        }
+        .section-divider {
+          text-align: center;
+          margin: 0.5rem 0;
+          position: relative;
+        }
+        .section-divider::before {
+          content: '';
+          position: absolute;
+          top: 50%;
+          left: 0;
+          right: 0;
+          border-top: 1px solid #e5e5e5;
+        }
+        .section-divider span {
+          background: var(--color-card, white);
+          padding: 0 0.75rem;
+          position: relative;
+          color: #666;
+          font-size: 0.8rem;
+        }
+        .template-options {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+        .template-option {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.5rem 0.75rem;
+          border: 1px solid #e5e5e5;
+          border-radius: 8px;
+          cursor: pointer;
+          flex-wrap: wrap;
+        }
+        .template-option:has(input:checked) {
+          border-color: var(--color-primary, #10b981);
+          background: #f0fdf4;
+        }
+        .template-option input[type="radio"] {
+          accent-color: var(--color-primary, #10b981);
+        }
+        .template-label {
+          font-weight: 600;
+          font-size: 0.875rem;
+          color: var(--color-text, #064e3b);
+        }
+        .template-desc {
+          font-size: 0.75rem;
+          color: #666;
+          width: 100%;
+          padding-left: 1.5rem;
         }
       `}</style>
     </div>

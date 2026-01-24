@@ -150,7 +150,7 @@ The SMS sending code in `lib/services/email-digest.ts` is **correct and function
 
 ```
 sendWeeklyDigests()
-  → resolvePhone(user)           # Correctly extracts +15551234567
+  → resolvePhone(user)           # Correctly extracts +16179030249
   → sendSmsDigest(phone, content)
     → Twilio API POST             # HTTP 200, message queued
     → Carrier delivery            # ❌ BLOCKED (error 30034)

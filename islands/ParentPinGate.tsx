@@ -76,10 +76,10 @@ export default function ParentPinGate({
       // Check if parent has PIN set (use has_pin boolean from session, not pin_hash)
       const hasPin = parent.has_pin || !!parent.pin_hash;
       if (!hasPin) {
-        console.log('🔐 Parent has no PIN set, requiring setup');
-        setNeedsSetup(true); // First-time setup mode
-        setNeedsPin(true);
-        if (onPinRequired) onPinRequired();
+        // No PIN set - allow access (PIN is voluntary, set from Settings)
+        console.log('🔐 No PIN set, allowing access (PIN is optional)');
+        setLoading(false);
+        return;
       } else {
         console.log('🔐 Parent PIN verification required for:', operation);
         setNeedsSetup(false); // PIN exists, verify mode
