@@ -1049,6 +1049,7 @@ Template auto-appears in selection modal.
 ## Template Customization
 
 **Status**: ✅ **COMPLETE** (January 19, 2026)
+**Enhanced**: Planned (January 25, 2026) - See [Inline Chores & Assignment Mode](./milestones/20260125_template_customization_inline_chores.md)
 
 Families may want to tweak templates (adjust points, disable chores, add custom chores). The **Override Layer Pattern** enables this with minimal complexity:
 
@@ -1123,5 +1124,6 @@ See [Implementation Gaps Document](./chore-templates-gaps.md) for detailed imple
 - [Seasonal Templates Implementation](./milestones/20260116_seasonal-templates-implementation.md) - Summer Break + School Year templates
 - [Implementation Gaps & Completion](./milestones/20260115_chore-templates-gaps.md) - Detailed implementation notes
 - [JSONB Schema Design](./milestones/20260115_chore-templates-jsonb-schema.md) - Database schema and customization design
+- [**Template Customization: Inline Chores & Assignment Mode**](./milestones/20260125_template_customization_inline_chores.md) - Beta user feedback: add custom chores inline, manual assignment mode, hide/show chores (Planned)
 - [Existing JSONB Settings](./20260114_JSONB_settings_architecture.md)
 - [SQL Migration](../sql/20260114_jsonb_settings.sql)

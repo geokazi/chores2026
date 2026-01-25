@@ -76,6 +76,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-24 | **Rewards UX Polish** | ✅ Complete | Family-friendly language, realistic pricing, grouped catalog sections, inline point editing for defaults |
 | 2026-01-24 | **Kid Goals Page Polish** | ✅ Complete | Fun empty state with bouncing icon, goal ideas with prices (🍦10/🎮50/🎧60/🎢80 pts), parent-assist CTA |
 | 2026-01-24 | **Reward Approval Flow** | ✅ Complete | Points deducted on parent fulfill (not kid claim), starter templates for empty catalog, kid UX with encouraging messages |
+| 2026-01-25 | [**Template Customization: Inline Chores**](./milestones/20260125_template_customization_inline_chores.md) | Planned | Add custom chores inline, assignment mode (rotation vs manual), hide/show chores |
 | 2026-01-24 | **Weekly Digest P1-P4** | ✅ Complete | Digest includes Behavioral Insights (trend, consistency), Balances, Rewards, Goals, Payouts |
 | TBD | [**SMS 10DLC Compliance**](./planned/20260123_sms_10dlc_compliance.md) | ⚠️ Blocked | Carrier blocks SMS; 10DLC brand+campaign registration required |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
