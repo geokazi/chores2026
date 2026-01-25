@@ -242,17 +242,125 @@ for the "earn + spend wisely" story.
 - Positive framing ("Claim" not "Buy", no red amounts)
 - Integrate into kid dashboard as sub-route, not separate tab
 
-**Implementation** (per existing rewards_system.md):
+#### Legacy Repo Reference
+
+**Source**: `/Users/georgekariuki/repos/deno2/fresh-auth/`
+
+| Legacy File | Lines | What to Extract |
+|-------------|-------|-----------------|
+| `migrations/chore-tracker-v2/015_create_rewards_system.sql` | 241 | Schema reference (tables exist in prod) |
+| `lib/services/chore-tracker-v2/types.ts` | 342-446 | Type definitions for rewards |
+| `lib/services/chore-tracker-v2/rewards.service.ts` | 916 | Core methods (simplify to ~50 lines) |
+| `routes/api/chore-tracker-v2/rewards.ts` | 500 | API patterns |
+| `islands/chore-tracker-v2/RewardsScreen.tsx` | — | UI patterns (redesign needed) |
+
+#### Production Database Schema (Already Exists)
+
+```sql
+-- choretracker.available_rewards
+id, family_id, name, description, icon, point_cost,
+category (gaming|entertainment|food|activities|other),
+is_active, max_per_week, max_per_month, created_at
+
+-- choretracker.reward_purchases
+id, family_id, profile_id, reward_id, transaction_id,
+point_cost, status (purchased|fulfilled|cancelled),
+fulfilled_at, fulfilled_by_profile_id, created_at
+
+-- Also exists (for Priority 3):
+-- choretracker.savings_goals
+-- choretracker.reward_requests
 ```
-routes/rewards.tsx             # ~80 lines
-islands/RewardsCatalog.tsx     # ~70 lines
-routes/api/rewards/claim.ts    # ~60 lines
-lib/services/chore-service.ts  # +50 lines (getRewards, claimReward)
+
+#### Type Definitions to Copy
+
+```typescript
+// From legacy types.ts — simplified for 2026
+interface AvailableReward {
+  id: string;
+  familyId: string;
+  name: string;
+  description?: string;
+  icon: string;           // Emoji, default '🎁'
+  pointCost: number;
+  category: "gaming" | "entertainment" | "food" | "activities" | "other";
+  isActive: boolean;
+  maxPerWeek?: number;
+  maxPerMonth?: number;
+}
+
+interface RewardPurchase {
+  id: string;
+  profileId: string;
+  rewardId: string;
+  transactionId: string;  // Links to chore_transactions
+  pointCost: number;
+  status: "purchased" | "fulfilled" | "cancelled";
+  rewardName?: string;    // Computed join
+  rewardIcon?: string;    // Computed join
+}
+
+interface ClaimRewardPayload {
+  rewardId: string;
+  pointCost: number;
+  profileId?: string;     // Kid claiming (defaults to session)
+}
+```
+
+#### Service Methods to Implement
+
+```typescript
+// In lib/services/rewards-service.ts (~50 lines)
+class RewardsService {
+  // Fetch active rewards for family
+  async getAvailableRewards(familyId: string): Promise<AvailableReward[]>
+
+  // Validate points, create transaction, record purchase
+  async claimReward(payload: ClaimRewardPayload): Promise<RewardPurchase>
+
+  // Fetch last N purchases with reward names
+  async getRecentPurchases(familyId: string, limit = 10): Promise<RewardPurchase[]>
+}
+```
+
+#### Transaction Integration
+
+Reward claims create `reward_redemption` transactions (type already exists):
+```typescript
+// Uses existing TransactionService
+await transactionService.recordTransaction({
+  familyId,
+  profileId: kidProfileId,
+  transactionType: "reward_redemption",  // Already in allowed types
+  pointsChange: -pointCost,              // Negative = deduction
+  description: `Claimed: ${reward.name}`,
+  metadata: { rewardId: reward.id, rewardIcon: reward.icon }
+});
+```
+
+#### UX Redesign (vs Legacy)
+
+| Legacy Pattern | 2026 Redesign |
+|----------------|---------------|
+| Browser `prompt()` for amounts | Proper modal with balance display |
+| "Buy" button with red `-$17.00` | "Claim" button, green confirmation |
+| "Cash Out" in rewards catalog | Separate Pay Out action (Priority 4) |
+| 5-tab navigation (Rewards tab) | Sub-route `/kid/rewards` from dashboard |
+| 916-line service with all features | ~50 lines (just catalog + claim) |
+| Complex status tracking | Simple: claimed → parent fulfills IRL |
+
+#### Implementation Plan
+
+```
+routes/kid/rewards.tsx              # ~80 lines (catalog page)
+islands/RewardsCatalog.tsx          # ~100 lines (grid + claim modal)
+routes/api/rewards/claim.ts         # ~60 lines (validate + transact)
+lib/services/rewards-service.ts     # ~50 lines (getRewards, claimReward)
 ```
 
 **DB**: Already exists (`choretracker.available_rewards`, `choretracker.reward_purchases`)
 
-**Effort**: ~260 lines, 0 new tables
+**Effort**: ~290 lines, 0 new tables, 0 migrations
 **Timeline dependency**: None, can ship independently
 
 ---
@@ -269,6 +377,42 @@ app had this as placeholder — promoting to real feature.
 - Auto-updates as points/dollars accumulate
 - Celebration when goal achieved
 - Parent can "boost" (contribute toward goal)
+
+#### Legacy Repo Reference
+
+**Source**: `/Users/georgekariuki/repos/deno2/fresh-auth/`
+
+```sql
+-- choretracker.savings_goals (already in production)
+id, family_id, profile_id, goal_name, description,
+target_amount, current_amount, icon,
+category (toys|electronics|experiences|books|other),
+is_achieved, achieved_at, target_date, created_at
+
+-- Constraint: current_amount cannot exceed target_amount
+```
+
+**Type definition** (from legacy):
+```typescript
+interface SavingsGoal {
+  id: string;
+  profileId: string;
+  goalName: string;
+  targetAmount: number;
+  currentAmount: number;
+  icon: string;           // Default '🎯'
+  category: "toys" | "electronics" | "experiences" | "books" | "other";
+  isAchieved: boolean;
+  achievedAt?: string;
+  targetDate?: string;
+  progressPercentage?: number;  // Computed
+}
+```
+
+**Key methods** (from legacy `rewards.service.ts`):
+- `getSavingsGoals()` — fetch all goals with progress %
+- `createSavingsGoal(params)` — create goal for self
+- `updateSavingsGoalProgress(goalId, amountToAdd)` — add points toward goal
 
 **Implementation**:
 ```
@@ -853,5 +997,5 @@ Based on research, these adjustments strengthen the plan:
 ---
 
 *Document created: January 25, 2026*
-*Last updated: January 25, 2026 (nav integration, new user UX polish, exchange rate doc fix)*
+*Last updated: January 25, 2026 (P2/P3 legacy repo reference, nav integration, new user UX)*
 *Status: P1 shipped, P2-P5 ready for implementation*
