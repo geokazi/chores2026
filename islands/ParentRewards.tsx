@@ -67,6 +67,10 @@ export default function ParentRewards({
 
   const [boostAmount, setBoostAmount] = useState(50);
 
+  // Inline point editing for starter rewards
+  const [editingStarterName, setEditingStarterName] = useState<string | null>(null);
+  const [starterPointOverrides, setStarterPointOverrides] = useState<Record<string, number>>({});
+
   // ─────────────────────────────────────────────────────────────
   // Handlers
   // ─────────────────────────────────────────────────────────────
@@ -200,16 +204,53 @@ export default function ParentRewards({
     setRewardForm({ name: "", description: "", icon: "🎁", pointCost: 100, category: "other" });
   };
 
-  // Open add modal pre-filled with starter reward (allows customizing points)
-  const handleAddStarter = (starter: typeof STARTER_REWARDS[number]) => {
-    setRewardForm({
+  // Quick add starter with custom points (inline editing)
+  const handleQuickAddStarter = async (starter: typeof STARTER_REWARDS[number]) => {
+    setIsProcessing(true);
+    const customPoints = starterPointOverrides[starter.name] ?? starter.pointCost;
+
+    const payload = {
+      id: crypto.randomUUID(),
       name: starter.name,
       description: starter.description,
       icon: starter.icon,
-      pointCost: starter.pointCost,
+      pointCost: customPoints,
       category: starter.category,
-    });
-    setShowAddReward(true);
+      isActive: true,
+      familyId,
+    };
+
+    try {
+      const res = await fetch("/api/rewards/catalog", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setCatalog([...catalog, data.reward]);
+        // Clear the override for this starter
+        const newOverrides = { ...starterPointOverrides };
+        delete newOverrides[starter.name];
+        setStarterPointOverrides(newOverrides);
+        setEditingStarterName(null);
+        setMessage(`Added "${starter.name}" (${customPoints} pts)!`);
+        setTimeout(() => setMessage(""), 2000);
+      }
+    } catch (e) {
+      console.error("Quick add error:", e);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Handle inline point change for starter
+  const handleStarterPointChange = (starterName: string, value: string) => {
+    const numValue = parseInt(value, 10);
+    if (!isNaN(numValue) && numValue > 0) {
+      setStarterPointOverrides({ ...starterPointOverrides, [starterName]: numValue });
+    }
   };
 
   // ─────────────────────────────────────────────────────────────
@@ -298,23 +339,26 @@ export default function ParentRewards({
             Pick from popular options below, or tap "+ Add" to create your own.
           </div>
 
-          {/* Family's custom rewards */}
+          {/* Family's rewards - kids can claim these */}
           {catalog.length > 0 && (
-            <div class="list">
-              {catalog.map(r => (
-                <div key={r.id} class="reward-card">
-                  <span class="icon">{r.icon}</span>
-                  <div class="info">
-                    <div class="name">{r.name}</div>
-                    <div class="meta">{r.pointCost} pts • {r.category}</div>
+            <>
+              <p class="group-label">✅ Your Family's Rewards <span class="group-hint">— kids can claim these</span></p>
+              <div class="list">
+                {catalog.map(r => (
+                  <div key={r.id} class="reward-card">
+                    <span class="icon">{r.icon}</span>
+                    <div class="info">
+                      <div class="name">{r.name}</div>
+                      <div class="meta">{r.pointCost} pts • {r.category}</div>
+                    </div>
+                    <div class="actions">
+                      <button class="edit-btn" onClick={() => openEditReward(r)}>✏️</button>
+                      <button class="del-btn" onClick={() => handleDeleteReward(r.id)}>🗑️</button>
+                    </div>
                   </div>
-                  <div class="actions">
-                    <button class="edit-btn" onClick={() => openEditReward(r)}>✏️</button>
-                    <button class="del-btn" onClick={() => handleDeleteReward(r.id)}>🗑️</button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            </>
           )}
 
           {/* Show starter rewards that aren't already in catalog */}
@@ -328,25 +372,60 @@ export default function ParentRewards({
 
             return (
               <div class="starter-section">
-                <p class="starter-intro">
-                  {catalog.length > 0 ? "➕ Add more popular rewards:" : "✨ Popular rewards to get started:"}
+                <p class="group-label">
+                  {catalog.length > 0
+                    ? "➕ Popular Rewards to Add"
+                    : "✨ Popular Rewards to Get Started"}
+                  <span class="group-hint"> — tap to customize points, then add</span>
                 </p>
                 <div class="starter-list">
-                  {availableStarters.map(starter => (
-                    <div key={starter.name} class="starter-card">
-                      <span class="icon">{starter.icon}</span>
-                      <div class="info">
-                        <div class="name">{starter.name}</div>
-                        <div class="meta">{starter.pointCost} pts</div>
+                  {availableStarters.map(starter => {
+                    const isEditing = editingStarterName === starter.name;
+                    const currentPoints = starterPointOverrides[starter.name] ?? starter.pointCost;
+
+                    return (
+                      <div key={starter.name} class="starter-card">
+                        <span class="icon">{starter.icon}</span>
+                        <div class="info">
+                          <div class="name">{starter.name}</div>
+                          <div class="meta points-row">
+                            {isEditing ? (
+                              <>
+                                <input
+                                  type="number"
+                                  class="inline-points-input"
+                                  value={currentPoints}
+                                  onInput={(e) => handleStarterPointChange(starter.name, (e.target as HTMLInputElement).value)}
+                                  onBlur={() => setEditingStarterName(null)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") setEditingStarterName(null);
+                                  }}
+                                  min="1"
+                                  autoFocus
+                                />
+                                <span> pts</span>
+                              </>
+                            ) : (
+                              <span
+                                class="editable-points"
+                                onClick={() => setEditingStarterName(starter.name)}
+                                title="Tap to change points"
+                              >
+                                {currentPoints} pts ✏️
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <button
+                          class="quick-add-btn"
+                          onClick={() => handleQuickAddStarter(starter)}
+                          disabled={isProcessing}
+                        >
+                          + Add
+                        </button>
                       </div>
-                      <button
-                        class="quick-add-btn"
-                        onClick={() => handleAddStarter(starter)}
-                      >
-                        + Add
-                      </button>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             );
@@ -365,11 +444,11 @@ export default function ParentRewards({
               <p class="empty-icon">🎯</p>
               <p class="empty-title">No goals yet</p>
               <p class="empty-desc">
-                Ask your kids what they're saving for!<br />
-                They can create goals from <strong>🎯 My Goals</strong> on their dashboard.
+                Sit down with your kids and help them set a savings goal!<br />
+                Go to <strong>🎯 My Goals</strong> on their dashboard together.
               </p>
               <p class="empty-hint">
-                Common goals: Gaming 🎮 • Electronics 📱 • Experiences 🎢
+                💡 Tip: Let them pick what they're excited about — gaming 🎮, electronics 📱, or experiences 🎢
               </p>
             </div>
           ) : (
@@ -564,9 +643,15 @@ export default function ParentRewards({
         }
         .info-box strong { color: #0c4a6e; }
 
-        /* Starter rewards for empty state */
-        .starter-section { padding: 0.5rem 0; }
-        .starter-intro { color: #555; font-weight: 500; margin-bottom: 0.75rem; }
+        /* Group labels for catalog sections */
+        .group-label {
+          font-weight: 600; color: #333; margin: 1rem 0 0.5rem; font-size: 0.9375rem;
+        }
+        .group-label:first-of-type { margin-top: 0; }
+        .group-hint { font-weight: 400; color: #888; font-size: 0.8125rem; }
+
+        /* Starter rewards section */
+        .starter-section { padding: 0.5rem 0; margin-top: 0.5rem; }
         .starter-list { display: flex; flex-direction: column; gap: 0.5rem; }
         .starter-card {
           display: flex; align-items: center; gap: 0.75rem;
@@ -580,6 +665,20 @@ export default function ParentRewards({
         }
         .quick-add-btn:disabled { opacity: 0.5; }
         .starter-footer { color: #888; font-size: 0.8125rem; margin-top: 1rem; text-align: center; }
+
+        /* Inline point editing */
+        .points-row { display: flex; align-items: center; gap: 0.25rem; }
+        .editable-points {
+          cursor: pointer; color: #059669; font-weight: 500;
+          padding: 0.125rem 0.25rem; border-radius: 4px;
+          transition: background 0.15s;
+        }
+        .editable-points:hover { background: rgba(16, 185, 129, 0.1); }
+        .inline-points-input {
+          width: 50px; padding: 0.25rem 0.375rem; border: 1px solid #10b981;
+          border-radius: 4px; font-size: 0.75rem; text-align: center;
+        }
+        .inline-points-input:focus { outline: none; box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2); }
 
         /* Empty goals state */
         .empty-goals { text-align: center; padding: 1.5rem; }

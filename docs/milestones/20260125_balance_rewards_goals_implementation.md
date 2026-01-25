@@ -275,6 +275,40 @@ Updated starter rewards to reflect realistic 1 pt = $1 conversion:
 | Store Trip ($10) | 500 pts | 10 pts |
 | Stay Up Late | 100 pts | **Removed** |
 
+### Catalog UX Improvements (Jan 24, 2026)
+
+**Grouped sections with clear labels:**
+- **"✅ Your Family's Rewards"** — rewards kids can claim (with edit/delete)
+- **"➕ Popular Rewards to Add"** — default templates to pick from
+
+**Inline point editing for defaults:**
+- Tap points value (e.g., "5 pts ✏️") to edit inline before adding
+- No modal needed for simple point adjustments
+- Custom points preserved when adding to family catalog
+
+**Goals tab empty state:**
+- Encourages parents to sit down with kids together
+- "Go to 🎯 My Goals on their dashboard together"
+
+### Kid Goals Page Polish (Jan 24, 2026)
+
+Enhanced `/kid/goals` empty state with fun, engaging design:
+
+**Visual improvements:**
+- Bouncing 🎯 target icon animation
+- Gradient mint background with dashed border
+- White pill badges with hover effects
+
+**Concrete goal examples with realistic prices:**
+| Goal | Points |
+|------|--------|
+| 🍦 Ice cream | 10 pts |
+| 🎮 Video game | 50 pts |
+| 🎧 Headphones | 60 pts |
+| 🎢 Theme park | 80 pts |
+
+**Call-to-action:** "👨‍👩‍👧 Ask a parent to help you get started!"
+
 ---
 
 ## Completed Features ✅
@@ -364,4 +398,4 @@ Parents can add any starter with one tap, or create custom rewards.
 ---
 
 *Implemented: January 25, 2026*
-*Updated: January 24, 2026 (Reward approval flow, kid UX improvements, starter templates)*
+*Updated: January 24, 2026 (Catalog UX, inline point editing, kid goals polish, parent-assist messaging)*

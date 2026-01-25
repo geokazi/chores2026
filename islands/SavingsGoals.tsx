@@ -211,9 +211,19 @@ export default function SavingsGoals({
         </div>
 
         {activeGoals.length === 0 ? (
-          <div class="empty-goals">
-            <p>No goals yet!</p>
-            <p class="hint">Create a goal to start saving for something special</p>
+          <div class="empty-goals fun">
+            <div class="empty-icon-bounce">🎯</div>
+            <p class="empty-title">No goals yet!</p>
+            <p class="empty-subtitle">What are you saving for?</p>
+            <div class="goal-ideas">
+              <span class="idea">🍦 Ice cream <em>10 pts</em></span>
+              <span class="idea">🎮 Video game <em>50 pts</em></span>
+              <span class="idea">🎧 Headphones <em>60 pts</em></span>
+              <span class="idea">🎢 Theme park <em>80 pts</em></span>
+            </div>
+            <p class="hint-cta">
+              👨‍👩‍👧 Ask a parent to help you get started!
+            </p>
           </div>
         ) : (
           <div class="goals-list">
@@ -542,9 +552,72 @@ export default function SavingsGoals({
           border-radius: 12px;
           color: var(--color-text-light);
         }
+        .empty-goals.fun {
+          background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #d1fae5 100%);
+          border: 2px dashed #86efac;
+          padding: 2rem 1.5rem;
+        }
+        .empty-icon-bounce {
+          font-size: 3rem;
+          margin-bottom: 0.5rem;
+          animation: bounce 2s ease-in-out infinite;
+        }
+        @keyframes bounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-8px); }
+        }
+        .empty-goals .empty-title {
+          font-size: 1.5rem;
+          font-weight: 700;
+          color: #065f46;
+          margin-bottom: 0.25rem;
+        }
+        .empty-goals .empty-subtitle {
+          font-size: 1.125rem;
+          color: #047857;
+          margin-bottom: 1.25rem;
+        }
+        .empty-goals .goal-ideas {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 0.625rem;
+          margin-bottom: 1.25rem;
+        }
+        .empty-goals .idea {
+          background: white;
+          padding: 0.5rem 0.875rem;
+          border-radius: 24px;
+          font-size: 0.875rem;
+          white-space: nowrap;
+          box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
+          border: 1px solid #d1fae5;
+          transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .empty-goals .idea:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+        }
+        .empty-goals .idea em {
+          font-style: normal;
+          color: #10b981;
+          font-weight: 600;
+          margin-left: 0.25rem;
+        }
+        .empty-goals .hint-cta {
+          font-size: 0.9375rem;
+          color: #065f46;
+          background: white;
+          display: inline-block;
+          padding: 0.625rem 1rem;
+          border-radius: 8px;
+          font-weight: 500;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        }
         .empty-goals .hint {
           font-size: 0.875rem;
           opacity: 0.8;
+          margin-top: 0.5rem;
         }
         .goals-list {
           display: flex;

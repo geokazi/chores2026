@@ -235,10 +235,103 @@ The digest was enhanced as part of [Priority 1: Behavioral Insights](../planned/
 
 ---
 
+### January 24, 2026 — P1-P4 Financial Features Integration
+
+The digest was enhanced to include all four financial education features:
+
+**New Sections Added (in priority order)**:
+
+| Priority | Section | Data Source | Content |
+|----------|---------|-------------|---------|
+| P1 | **Behavioral Insights** | `chore_transactions` | Trend direction (📈/📉/➡️), avg consistency %, active days, top performer |
+| P2 | **Kid Balances** | `family_profiles.current_points` | Per-kid point balance + dollar value |
+| P3 | **Rewards This Week** | `choretracker.reward_purchases` | Pending + fulfilled rewards |
+| P4 | **Savings Goals** | `family_profiles.preferences` | Goal progress bars with percentages |
+| P2 | **Payouts This Week** | `chore_transactions` (cash_out) | Total payouts with per-kid breakdown |
+
+**Updated DigestContent Interface**:
+
+```typescript
+interface DigestContent {
+  // ... existing fields ...
+
+  // P1-P4: Financial education features
+  behavioralInsights: {
+    trendDirection: "improving" | "stable" | "declining";
+    avgConsistency: number;
+    totalActiveDays: number;
+    topPerformer?: { name: string; consistency: number };
+  };
+  balances: Array<{ name: string; points: number; dollars: number }>;
+  rewardsThisWeek: {
+    pending: Array<{ kidName: string; rewardName: string; icon: string }>;
+    fulfilled: Array<{ kidName: string; rewardName: string; icon: string }>;
+  };
+  savingsGoals: Array<{ kidName: string; goalName: string; icon: string; current: number; target: number; percent: number }>;
+  payoutsThisWeek: Array<{ kidName: string; amount: number }>;
+  dollarValuePerPoint: number;
+}
+```
+
+**New Insight One-Liners**:
+
+| Condition | Insight |
+|-----------|---------|
+| Trend improving + 70%+ consistency | "📈 Family habits are improving — X% consistency!" |
+| Trend declining | "📉 Consistency dropped this week — a fresh start awaits!" |
+| Savings goal ≥90% | "🎯 [Name] is X% away from [goal]!" |
+| Rewards pending | "🎁 X reward(s) waiting to be given!" |
+
+**Section Order in Email (Behavioral Insights FIRST)**:
+
+1. 📊 Behavioral Insights (P1 - MOST IMPORTANT)
+2. 📋 Weekly Scorecard
+3. 🏆 Family Leaderboard
+4. ⭐ Top Earner This Week
+5. 💰 Kid Balances (P2)
+6. 🎁 Rewards This Week (P3)
+7. 🎯 Savings Goals (P4)
+8. 💸 Payouts This Week (P2)
+9. 🎯 Family Goal Progress
+10. 📅 Upcoming Events
+11. 💡 Insights
+
+**SMS Template (Updated)**:
+
+```
+📊 Kariuki Family Scorecard
+
+📈 78% consistency (🌟Julia)
+✅ 18/22 chores (82%) ↑15%
+🥇 Julia 320pts 🔥5d 85%
+🥈 Ciku 285pts 🔥3d 72%
+💰 Total: $95.00
+🎁 2 rewards pending
+🎯 1 goal almost reached!
+💸 $10.00 paid out
+$95 earned
+
+📅 Mon: 🏀 Basketball 6:30PM
+📅 Wed: 🎹 Piano 4PM
+```
+
+**Technical Changes**:
+
+| File | Change |
+|------|--------|
+| `lib/services/email-digest.ts` | Added queries for reward_purchases, cash_out transactions |
+| `lib/services/email-digest.ts` | Added P1-P4 fields to buildDigestContent() |
+| `lib/services/email-digest.ts` | Updated buildEmailHtml() with P1-P4 sections |
+| `lib/services/email-digest.ts` | Updated buildSmsBody() with condensed P1-P4 summary |
+| `lib/services/email-digest.ts` | Updated generateInsights() with P1-P4 aware insights |
+
+---
+
 ## Cross-References
 
 - **Implementation**: [Notifications: Calendar + Email + Badges](../milestones/20260122_notifications_calendar_email_badges.md) — Base digest service
 - **Behavioral Insights**: [Rewards Market Strategy (P1)](../planned/20260125_rewards_market_strategy.md) — Consistency % and streak recovery
+- **Balance & Rewards**: [Balance, Rewards & Goals Implementation](../milestones/20260125_balance_rewards_goals_implementation.md) — P2-P4 features
 - **Family Goals**: [Collaborative Family Goals](../milestones/20260114_collaborative_family_goals_bonus_system.md) — Goal progress data
 - **Reports**: [Family Reports & Analytics](../20260114_family_reports_analytics_implementation.md) — Savings/earnings calculations
 - **Weekly Patterns**: [Weekly Patterns Analysis](../milestones/20260114_weekly_patterns_analysis.md) — Streak insights
@@ -247,4 +340,5 @@ The digest was enhanced as part of [Priority 1: Behavioral Insights](../planned/
 ---
 
 *Created: January 23, 2026*
+*Updated: January 24, 2026 (P1-P4 Financial Features)*
 *Author: Claude Code AI Assistant*
