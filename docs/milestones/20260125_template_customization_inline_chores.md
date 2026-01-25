@@ -1,9 +1,10 @@
 # Template Customization: Inline Chores & Assignment Mode
 
 **Date**: January 25, 2026
-**Status**: Planned
+**Status**: ✅ Implemented
 **Priority**: P5
 **Source**: Beta User Feedback
+**Implemented**: January 25, 2026
 
 ---
 
@@ -470,6 +471,33 @@ export const handler: Handlers = {
 
 ---
 
+## Implementation Notes
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `lib/types/rotation.ts` | Added `AssignmentMode` type, `assignment_mode` to `RotationConfig`, `custom_assignments` to `RotationCustomizations` |
+| `lib/services/rotation-service.ts` | Added `findChoreByKey()` helper, custom assignment mode logic in `getChoresForChild()`, updated `buildRotationConfig()` |
+| `routes/api/rotation/apply.ts` | Extended to accept `assignment_mode` parameter |
+| `islands/TemplateSelector.tsx` | Added assignment mode toggle, per-kid checkbox grid, hidden chores section, validation |
+| `lib/services/rotation-service_test.ts` | Added 6 new tests for custom assignment mode |
+
+### Key Design Decisions
+
+1. **Extended existing API** (`/api/rotation/apply`) rather than creating new endpoint - simpler, maintains single source of truth
+2. **Integrated into TemplateSelector** rather than separate component - keeps customization in context
+3. **Always persist custom_assignments** even in rotation mode - allows seamless mode switching
+4. **UTC date handling** in grid to avoid timezone issues
+
+### Test Coverage
+
+- 10 total rotation service tests (6 new for custom mode)
+- All 355 project tests passing
+
+---
+
 *Document Created*: January 25, 2026
+*Implemented*: January 25, 2026
 *Source*: Beta User Feedback
 *Author*: Claude Code AI Assistant

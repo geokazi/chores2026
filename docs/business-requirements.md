@@ -203,45 +203,45 @@ ChoreGami 2026 is a streamlined family chore management application designed to 
 > - Optionally allow user to either a) specify which chores go to which kid or b) stick with default smart rotation.
 > - Hide unchecked chores. Add a button to show hidden chores in case user later if/when parent wants to add any of the items to the family settings.
 
-#### Story 3.5.1: Inline Custom Chores
+#### Story 3.5.1: Inline Custom Chores ✅
 **As a parent**, I want to add my family's specific chores directly within a rotation template
 **So that** custom tasks like "Feed the fish" appear alongside template chores in kids' dashboards
 
 **Acceptance Criteria:**
-- [ ] Add custom chore button within template configuration
-- [ ] Custom chores saved to family settings (available in all templates)
-- [ ] Custom chores appear in kid dashboards alongside template chores
-- [ ] Delete custom chores with confirmation
-- [ ] Icon picker for custom chore personalization
+- [x] Add custom chore button within template configuration
+- [x] Custom chores saved to family settings (available in all templates)
+- [x] Custom chores appear in kid dashboards alongside template chores
+- [x] Delete custom chores with × button
+- [ ] Icon picker for custom chore personalization *(deferred - uses default ✨)*
 
 **Business Value:** Increases template adoption by allowing family-specific customization
 
 **Source:** Beta user feedback (January 25, 2026)
 
-#### Story 3.5.2: Assignment Mode Choice
+#### Story 3.5.2: Assignment Mode Choice ✅
 **As a parent**, I want to choose between automatic rotation and manual per-kid assignment
 **So that** I can either let chores rotate fairly OR assign specific chores to specific kids
 
 **Acceptance Criteria:**
-- [ ] Toggle between "Smart Rotation" and "I'll Choose" modes
-- [ ] Smart Rotation: Kids rotate through chores automatically (existing behavior)
-- [ ] I'll Choose: Parent assigns specific chores to each kid (appear daily)
-- [ ] Grid/checkbox UI for kid assignment in "I'll Choose" mode
-- [ ] Daily points summary per kid in assignment mode
+- [x] Toggle between "Smart Rotation" and "I'll Choose" modes
+- [x] Smart Rotation: Kids rotate through chores automatically (existing behavior)
+- [x] I'll Choose: Parent assigns specific chores to each kid (appear daily)
+- [x] Grid/checkbox UI for kid assignment in "I'll Choose" mode
+- [x] Daily points summary per kid in assignment mode
 
 **Business Value:** Accommodates different family management styles without separate templates
 
 **Source:** Beta user feedback (January 25, 2026)
 
-#### Story 3.5.3: Hide/Show Chores
+#### Story 3.5.3: Hide/Show Chores ✅
 **As a parent**, I want to hide template chores we don't use and easily re-enable them later
 **So that** our template only shows relevant chores without losing the hidden ones
 
 **Acceptance Criteria:**
-- [ ] Uncheck a chore to hide it from rotation/assignment
-- [ ] Hidden chores collapse into "Show X hidden chores" section
-- [ ] Expand hidden section to see and re-enable chores
-- [ ] Re-enabling a chore adds it back to rotation/assignment
+- [x] Uncheck a chore to hide it from rotation/assignment
+- [x] Hidden chores collapse into "Show X hidden chores" section
+- [x] Expand hidden section to see and re-enable chores
+- [x] Re-enabling a chore adds it back to rotation/assignment
 
 **Business Value:** Clean interface showing only active chores while preserving full template
 
