@@ -947,13 +947,22 @@ export class ChoreService {
         console.error("Error fetching transactions for analytics:", txError);
       }
 
+      // Use UTC consistently for date boundaries (avoids server timezone issues)
       const now = new Date();
-      const weekStart = new Date(now);
-      weekStart.setDate(now.getDate() - now.getDay());
-      weekStart.setHours(0, 0, 0, 0);
+      const nowUtc = now.toISOString();
 
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      const ytdStart = new Date(now.getFullYear(), 0, 1); // Jan 1 of current year
+      // Week start: Sunday of current week at 00:00:00 UTC
+      const dayOfWeek = now.getUTCDay(); // 0=Sun in UTC
+      const weekStartDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - dayOfWeek));
+      const weekStartUtc = weekStartDate.toISOString();
+
+      // Month start: 1st of current month at 00:00:00 UTC
+      const monthStartDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+      const monthStartUtc = monthStartDate.toISOString();
+
+      // YTD start: Jan 1 of current year at 00:00:00 UTC
+      const ytdStartDate = new Date(Date.UTC(now.getUTCFullYear(), 0, 1));
+      const ytdStartUtc = ytdStartDate.toISOString();
 
       const typedMembers = (members || []) as MemberRow[];
       const typedTx = (transactions || []) as TxRow[];
@@ -962,15 +971,15 @@ export class ChoreService {
         const memberTx = typedTx.filter((tx: TxRow) => tx.profile_id === member.id);
 
         const earned_week = memberTx
-          .filter((tx: TxRow) => new Date(tx.created_at) >= weekStart)
+          .filter((tx: TxRow) => tx.created_at >= weekStartUtc)
           .reduce((sum: number, tx: TxRow) => sum + tx.points_change, 0);
 
         const earned_month = memberTx
-          .filter((tx: TxRow) => new Date(tx.created_at) >= monthStart)
+          .filter((tx: TxRow) => tx.created_at >= monthStartUtc)
           .reduce((sum: number, tx: TxRow) => sum + tx.points_change, 0);
 
         const earned_ytd = memberTx
-          .filter((tx: TxRow) => new Date(tx.created_at) >= ytdStart)
+          .filter((tx: TxRow) => tx.created_at >= ytdStartUtc)
           .reduce((sum: number, tx: TxRow) => sum + tx.points_change, 0);
 
         const earned_all_time = memberTx
@@ -1047,11 +1056,11 @@ export class ChoreService {
       return { achieved: false };
     }
 
-    // Get week start (Sunday)
+    // Get week start (Sunday) - use UTC consistently to avoid server timezone issues
     const now = new Date();
-    const weekStart = new Date(now);
-    weekStart.setDate(now.getDate() - now.getDay());
-    weekStart.setHours(0, 0, 0, 0);
+    const dayOfWeek = now.getUTCDay();
+    const weekStartDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - dayOfWeek));
+    const weekStartUtc = weekStartDate.toISOString();
 
     // Get week earnings from transactions
     const { data: txns, error: txError } = await this.client
@@ -1060,7 +1069,7 @@ export class ChoreService {
       .select("points_change")
       .eq("family_id", familyId)
       .eq("transaction_type", "chore_completed")
-      .gte("created_at", weekStart.toISOString())
+      .gte("created_at", weekStartUtc)
       .gt("points_change", 0);
 
     if (txError) {
@@ -1079,7 +1088,7 @@ export class ChoreService {
       .select("id")
       .eq("family_id", familyId)
       .eq("transaction_type", "bonus_awarded")
-      .gte("created_at", weekStart.toISOString())
+      .gte("created_at", weekStartUtc)
       .ilike("description", "%weekly_goal%")
       .limit(1);
 
@@ -1174,11 +1183,11 @@ export class ChoreService {
       return null; // Goal not enabled
     }
 
-    // Get week start
+    // Get week start - use UTC consistently to avoid server timezone issues
     const now = new Date();
-    const weekStart = new Date(now);
-    weekStart.setDate(now.getDate() - now.getDay());
-    weekStart.setHours(0, 0, 0, 0);
+    const dayOfWeek = now.getUTCDay();
+    const weekStartDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - dayOfWeek));
+    const weekStartUtc = weekStartDate.toISOString();
 
     // Get week earnings
     const { data: txns } = await this.client
@@ -1187,7 +1196,7 @@ export class ChoreService {
       .select("points_change")
       .eq("family_id", familyId)
       .eq("transaction_type", "chore_completed")
-      .gte("created_at", weekStart.toISOString())
+      .gte("created_at", weekStartUtc)
       .gt("points_change", 0);
 
     const pointsPerDollar = settings.points_per_dollar || 1;
@@ -1201,7 +1210,7 @@ export class ChoreService {
       .select("id")
       .eq("family_id", familyId)
       .eq("transaction_type", "bonus_awarded")
-      .gte("created_at", weekStart.toISOString())
+      .gte("created_at", weekStartUtc)
       .ilike("description", "%weekly_goal%")
       .limit(1);
 
@@ -1275,7 +1284,7 @@ export class ChoreService {
 
     for (const tx of data as any[]) {
       const name = childProfileMap.get(tx.profile_id) || "Unknown";
-      const dayNum = new Date(tx.created_at).getDay();
+      const dayNum = new Date(tx.created_at).getUTCDay(); // Use UTC for consistency
 
       if (!personDayMap.has(name)) {
         personDayMap.set(name, new Map());
