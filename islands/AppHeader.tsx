@@ -129,6 +129,19 @@ export default function AppHeader({
             <a href="/reports" class={currentPage === "reports" ? "active" : ""}>
               📊 Reports
             </a>
+
+            {/* Kid-only financial features */}
+            {!isParent && (
+              <>
+                <a href="/kid/rewards" class={currentPage === "rewards" ? "active" : ""}>
+                  🎁 Rewards
+                </a>
+                <a href="/kid/goals" class={currentPage === "goals" ? "active" : ""}>
+                  🎯 My Goals
+                </a>
+              </>
+            )}
+
             {isParent && (
               <>
                 <a
@@ -149,6 +162,9 @@ export default function AppHeader({
                   {hasUpcomingEvents && (
                     <span class="event-badge-dot" />
                   )}
+                </a>
+                <a href="/parent/balances" class={currentPage === "balances" ? "active" : ""}>
+                  💰 Balances
                 </a>
                 <a href="/parent/insights" class={currentPage === "insights" ? "active" : ""}>
                   🧠 Habit Insights
