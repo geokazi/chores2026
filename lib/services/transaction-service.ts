@@ -503,6 +503,237 @@ export class TransactionService {
   }
 
   /**
+   * Records reward redemption (kid claims a reward)
+   * Returns transaction ID for linking to reward_purchases
+   */
+  async recordRewardRedemption(
+    profileId: string,
+    familyId: string,
+    pointCost: number,
+    rewardName: string,
+    metadata?: Record<string, unknown>,
+  ): Promise<{ transactionId: string; newBalance: number }> {
+    console.log("🎁 Recording reward redemption:", {
+      profileId,
+      pointCost,
+      rewardName,
+      familyId,
+    });
+
+    // Get current balance
+    const { data: profile } = await this.client
+      .from("family_profiles")
+      .select("current_points")
+      .eq("id", profileId)
+      .single();
+
+    const currentBalance = profile?.current_points || 0;
+    const newBalance = currentBalance - pointCost;
+
+    // Create transaction with metadata
+    const transactionData = {
+      family_id: familyId,
+      profile_id: profileId,
+      transaction_type: "reward_redemption",
+      points_change: -pointCost,
+      balance_after_transaction: newBalance,
+      description: `Claimed: ${rewardName}`,
+      week_ending: this.getWeekEnding(new Date()),
+      metadata: {
+        source: "chores2026",
+        timestamp: new Date().toISOString(),
+        ...metadata,
+      },
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data: txResult, error } = await this.client
+      .schema("choretracker")
+      .from("chore_transactions")
+      .insert(transactionData)
+      .select("id")
+      .single();
+
+    if (error) {
+      console.error("❌ Reward redemption transaction failed:", error);
+      throw new Error(`Failed to record reward redemption: ${error.message}`);
+    }
+
+    // Update balance
+    await this.updateProfileBalance(profileId, -pointCost);
+
+    // Sync to FamilyScore
+    try {
+      await this.notifyFamilyScore({
+        profileId,
+        familyId,
+        transactionType: "reward_redemption",
+        pointsChange: -pointCost,
+        description: `Claimed: ${rewardName}`,
+        metadata,
+      }, newBalance);
+    } catch (fsError) {
+      console.warn("⚠️ FamilyScore sync failed for reward redemption (non-critical):", fsError);
+    }
+
+    return { transactionId: txResult.id, newBalance };
+  }
+
+  /**
+   * Records cash out (parent pays out kid's balance)
+   */
+  async recordCashOut(
+    profileId: string,
+    familyId: string,
+    pointAmount: number,
+    dollarAmount: number,
+    approvedBy: string,
+  ): Promise<{ transactionId: string; newBalance: number }> {
+    console.log("💸 Recording cash out:", {
+      profileId,
+      pointAmount,
+      dollarAmount,
+      approvedBy,
+      familyId,
+    });
+
+    // Get current balance
+    const { data: profile } = await this.client
+      .from("family_profiles")
+      .select("current_points")
+      .eq("id", profileId)
+      .single();
+
+    const currentBalance = profile?.current_points || 0;
+    const newBalance = currentBalance - pointAmount;
+
+    const transactionData = {
+      family_id: familyId,
+      profile_id: profileId,
+      transaction_type: "cash_out",
+      points_change: -pointAmount,
+      balance_after_transaction: newBalance,
+      description: `Paid out $${dollarAmount.toFixed(2)}`,
+      week_ending: this.getWeekEnding(new Date()),
+      metadata: {
+        source: "chores2026",
+        payoutAmountCents: Math.round(dollarAmount * 100),
+        approvedBy,
+        timestamp: new Date().toISOString(),
+      },
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    const { data: txResult, error } = await this.client
+      .schema("choretracker")
+      .from("chore_transactions")
+      .insert(transactionData)
+      .select("id")
+      .single();
+
+    if (error) {
+      console.error("❌ Cash out transaction failed:", error);
+      throw new Error(`Failed to record cash out: ${error.message}`);
+    }
+
+    // Update balance
+    await this.updateProfileBalance(profileId, -pointAmount);
+
+    // Sync to FamilyScore
+    try {
+      await this.notifyFamilyScore({
+        profileId,
+        familyId,
+        transactionType: "cash_out",
+        pointsChange: -pointAmount,
+        description: `Paid out $${dollarAmount.toFixed(2)}`,
+      }, newBalance);
+    } catch (fsError) {
+      console.warn("⚠️ FamilyScore sync failed for cash out (non-critical):", fsError);
+    }
+
+    return { transactionId: txResult.id, newBalance };
+  }
+
+  /**
+   * Records goal contribution (transfer from balance to savings goal)
+   */
+  async recordGoalContribution(
+    profileId: string,
+    familyId: string,
+    pointAmount: number,
+    goalName: string,
+    goalId: string,
+  ): Promise<{ newBalance: number }> {
+    console.log("🎯 Recording goal contribution:", {
+      profileId,
+      pointAmount,
+      goalName,
+      goalId,
+      familyId,
+    });
+
+    // Get current balance
+    const { data: profile } = await this.client
+      .from("family_profiles")
+      .select("current_points")
+      .eq("id", profileId)
+      .single();
+
+    const currentBalance = profile?.current_points || 0;
+    const newBalance = currentBalance - pointAmount;
+
+    const transactionData = {
+      family_id: familyId,
+      profile_id: profileId,
+      transaction_type: "adjustment",
+      points_change: -pointAmount,
+      balance_after_transaction: newBalance,
+      description: `Saved to goal: ${goalName}`,
+      week_ending: this.getWeekEnding(new Date()),
+      metadata: {
+        source: "chores2026",
+        goalId,
+        goalName,
+        savingsTransfer: true,
+        timestamp: new Date().toISOString(),
+      },
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    const { error } = await this.client
+      .schema("choretracker")
+      .from("chore_transactions")
+      .insert(transactionData);
+
+    if (error) {
+      console.error("❌ Goal contribution transaction failed:", error);
+      throw new Error(`Failed to record goal contribution: ${error.message}`);
+    }
+
+    // Update balance
+    await this.updateProfileBalance(profileId, -pointAmount);
+
+    // Sync to FamilyScore
+    try {
+      await this.notifyFamilyScore({
+        profileId,
+        familyId,
+        transactionType: "adjustment",
+        pointsChange: -pointAmount,
+        description: `Saved to goal: ${goalName}`,
+      }, newBalance);
+    } catch (fsError) {
+      console.warn("⚠️ FamilyScore sync failed for goal contribution (non-critical):", fsError);
+    }
+
+    return { newBalance };
+  }
+
+  /**
    * 🔄 FAMILYSCORE SYNC METHODS
    * Methods for synchronizing local state with FamilyScore to resolve discrepancies
    */

@@ -4,9 +4,11 @@
  *
  * Storage: JSONB in family_profiles.preferences.apps.choregami.goals
  * Per-kid goals stored in profile preferences (not family-level)
+ * Uses TransactionService for FamilyScore sync
  */
 
 import { createClient } from "@supabase/supabase-js";
+import { TransactionService } from "./transaction-service.ts";
 import type {
   BoostGoalPayload,
   CreateGoalPayload,
@@ -19,9 +21,11 @@ const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 export class GoalsService {
   private client: any;
+  private transactionService: TransactionService;
 
   constructor() {
     this.client = createClient(supabaseUrl, supabaseServiceKey);
+    this.transactionService = new TransactionService();
   }
 
   /**
@@ -114,6 +118,7 @@ export class GoalsService {
 
   /**
    * Add points to a goal (from kid's balance or parent boost)
+   * Uses TransactionService for FamilyScore sync when deducting from balance
    */
   async addToGoal(
     profileId: string,
@@ -165,55 +170,64 @@ export class GoalsService {
       achievedAt: isAchieved ? new Date().toISOString() : undefined,
     };
 
-    // Deduct from balance if from kid's points
+    // Deduct from balance if from kid's points via TransactionService
     let newBalance = profile.current_points;
     if (fromBalance) {
-      newBalance = profile.current_points - amount;
+      try {
+        const result = await this.transactionService.recordGoalContribution(
+          profileId,
+          profile.family_id,
+          amount,
+          goal.name,
+          goal.id,
+        );
+        newBalance = result.newBalance;
+      } catch (txError) {
+        console.error("❌ Goal contribution transaction failed:", txError);
+        return { success: false, error: "Failed to transfer points to goal" };
+      }
 
-      // Record transaction for the transfer to savings
-      await this.client
-        .schema("choretracker")
-        .from("chore_transactions")
-        .insert({
-          family_id: profile.family_id,
-          profile_id: profileId,
-          transaction_type: "adjustment",
-          points_change: -amount,
-          balance_after_transaction: newBalance,
-          description: `Saved to goal: ${goal.name}`,
-          week_ending: this.getWeekEnding(new Date()),
-          metadata: {
-            source: "chores2026",
-            goalId: goal.id,
-            goalName: goal.name,
-            savingsTransfer: true,
-            timestamp: new Date().toISOString(),
-          },
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-    }
-
-    // Update profile
-    const { error: updateError } = await this.client
-      .from("family_profiles")
-      .update({
-        current_points: newBalance,
-        preferences: {
-          ...prefs,
-          apps: {
-            ...apps,
-            choregami: {
-              ...choregami,
-              goals,
+      // Update only the goal progress (balance already updated by TransactionService)
+      const { error: updateError } = await this.client
+        .from("family_profiles")
+        .update({
+          preferences: {
+            ...prefs,
+            apps: {
+              ...apps,
+              choregami: {
+                ...choregami,
+                goals,
+              },
             },
           },
-        },
-      })
-      .eq("id", profileId);
+        })
+        .eq("id", profileId);
 
-    if (updateError) {
-      return { success: false, error: updateError.message };
+      if (updateError) {
+        return { success: false, error: updateError.message };
+      }
+    } else {
+      // Parent boost - no balance deduction, just update goal progress
+      const { error: updateError } = await this.client
+        .from("family_profiles")
+        .update({
+          preferences: {
+            ...prefs,
+            apps: {
+              ...apps,
+              choregami: {
+                ...choregami,
+                goals,
+              },
+            },
+          },
+        })
+        .eq("id", profileId);
+
+      if (updateError) {
+        return { success: false, error: updateError.message };
+      }
     }
 
     console.log("✅ Added to goal:", {
@@ -338,13 +352,5 @@ export class GoalsService {
       .eq("id", profileId);
 
     return !updateError;
-  }
-
-  private getWeekEnding(date: Date): string {
-    const dayOfWeek = date.getDay();
-    const daysUntilSunday = (7 - dayOfWeek) % 7;
-    const weekEnding = new Date(date);
-    weekEnding.setDate(date.getDate() + daysUntilSunday);
-    return weekEnding.toISOString().split("T")[0];
   }
 }

@@ -81,14 +81,14 @@ interface FinanceSettings { dollarValuePerPoint, payoutRequiresPin }
 
 | File | Lines | Purpose |
 |------|-------|---------|
-| `lib/services/balance-service.ts` | 325 | Balance queries, payout processing, PIN verification |
-| `lib/services/rewards-service.ts` | 357 | Catalog CRUD, claim flow, purchase history |
-| `lib/services/goals-service.ts` | 351 | Goal CRUD, add points, parent boost |
+| `lib/services/balance-service.ts` | ~280 | Balance queries, payout via TransactionService |
+| `lib/services/rewards-service.ts` | ~310 | Catalog CRUD, claim via TransactionService |
+| `lib/services/goals-service.ts` | ~340 | Goal CRUD, contributions via TransactionService |
 
 **Key patterns**:
-- Uses `private client: any` for Supabase (matches transaction-service.ts)
+- Uses `TransactionService` for all point-changing operations (FamilyScore sync)
 - Uses `.schema("choretracker")` for transaction tables
-- Inline `getWeekEnding()` helper for transaction metadata
+- No duplicate transaction logic - centralized in TransactionService
 
 ### API Routes
 
@@ -97,6 +97,7 @@ interface FinanceSettings { dollarValuePerPoint, payoutRequiresPin }
 | `routes/api/payout.ts` | POST | Process payout (parent PIN required) |
 | `routes/api/rewards/claim.ts` | POST | Kid claims reward |
 | `routes/api/rewards/catalog.ts` | GET, POST, DELETE | Catalog CRUD (parent only) |
+| `routes/api/rewards/fulfill.ts` | POST | Mark purchase as fulfilled (parent only) |
 | `routes/api/goals/index.ts` | GET, POST, PUT, DELETE | Goal CRUD + boost |
 
 **Authorization patterns**:
@@ -111,6 +112,7 @@ interface FinanceSettings { dollarValuePerPoint, payoutRequiresPin }
 | Route | Purpose |
 |-------|---------|
 | `routes/parent/balances.tsx` | Per-kid balance cards, recent purchases |
+| `routes/parent/rewards.tsx` | Catalog management, fulfillment queue, goal boost |
 | `routes/kid/rewards.tsx` | Rewards catalog for kids |
 | `routes/kid/goals.tsx` | Savings goals for kids |
 
@@ -121,6 +123,7 @@ interface FinanceSettings { dollarValuePerPoint, payoutRequiresPin }
 | `islands/BalanceCards.tsx` | 488 | Balance grid, Pay Out modal, earnings breakdown |
 | `islands/RewardsCatalog.tsx` | 496 | Catalog display, claim modal, celebration |
 | `islands/SavingsGoals.tsx` | 771 | Goal cards, progress bars, create/add/delete modals |
+| `islands/ParentRewards.tsx` | 563 | 3-tab UI: Pending, Catalog, Goals with CRUD + boost |
 
 **UX patterns**:
 - Positive framing: "Claim" not "Buy", green success states
@@ -155,6 +158,7 @@ Added to `islands/AppHeader.tsx`:
 
 {/* Parent financial features */}
 <a href="/parent/balances">💰 Balances</a>
+<a href="/parent/rewards">🎁 Rewards</a>
 ```
 
 ---
@@ -219,14 +223,44 @@ Post-implementation fixes applied:
 
 ---
 
+## FamilyScore Sync Integration (Jan 25, 2026 - Update)
+
+All financial services now use `TransactionService` for point-changing operations, ensuring FamilyScore sync:
+
+| Service Method | TransactionService Method |
+|---------------|---------------------------|
+| `RewardsService.claimReward()` | `recordRewardRedemption()` |
+| `BalanceService.processPayout()` | `recordCashOut()` |
+| `GoalsService.addToGoal()` | `recordGoalContribution()` |
+
+This eliminates duplicate transaction logic and ensures all point changes sync to FamilyScore for real-time leaderboard updates.
+
+---
+
+## Parent Rewards Management (Jan 25, 2026 - Update)
+
+Added `/parent/rewards` page with 3-tab interface:
+
+| Tab | Features |
+|-----|----------|
+| **Pending** | Fulfillment queue with "Done" button |
+| **Catalog** | Add/Edit/Delete rewards, toggle active state |
+| **Goals** | View all kids' goals, parent boost feature |
+
+---
+
+## Completed Features ✅
+
+1. ~~Purchase fulfillment tracking~~ - Parent marks rewards as delivered via `/parent/rewards`
+2. ~~FamilyScore sync for financial transactions~~ - All services use TransactionService
+
 ## Next Steps
 
 1. **P5: Kid-Initiated Reward Requests** - Allow kids to suggest rewards for parent approval
 2. **Weekly allowance auto-deposit** - Optional recurring points addition
 3. **Goal sharing** - Family can see and boost each other's goals
-4. **Purchase fulfillment tracking** - Parent marks rewards as delivered
 
 ---
 
 *Implemented: January 25, 2026*
-*Documented: January 25, 2026*
+*Updated: January 25, 2026 (FamilyScore sync, Parent Rewards page)*

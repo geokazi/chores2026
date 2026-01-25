@@ -157,6 +157,7 @@ export class RewardsService {
 
   /**
    * Claim a reward - validates balance, creates transaction, records purchase
+   * Uses TransactionService for FamilyScore sync
    */
   async claimReward(payload: ClaimRewardPayload): Promise<ClaimResult> {
     const { rewardId, profileId, familyId } = payload;
@@ -187,48 +188,21 @@ export class RewardsService {
       };
     }
 
-    // 3. Create transaction (deducts points)
+    // 3. Create transaction via TransactionService (handles FamilyScore sync)
     try {
-      // Get balance before transaction for calculating new balance
-      const newBalance = profile.current_points - reward.pointCost;
+      const { transactionId, newBalance } = await this.transactionService.recordRewardRedemption(
+        profileId,
+        familyId,
+        reward.pointCost,
+        reward.name,
+        {
+          rewardId: reward.id,
+          rewardIcon: reward.icon,
+          rewardName: reward.name,
+        },
+      );
 
-      // Record the transaction
-      const { data: txResult, error: txError } = await this.client
-        .schema("choretracker")
-        .from("chore_transactions")
-        .insert({
-          family_id: familyId,
-          profile_id: profileId,
-          transaction_type: "reward_redemption",
-          points_change: -reward.pointCost,
-          balance_after_transaction: newBalance,
-          description: `Claimed: ${reward.name}`,
-          week_ending: this.getWeekEnding(new Date()),
-          metadata: {
-            source: "chores2026",
-            rewardId: reward.id,
-            rewardIcon: reward.icon,
-            rewardName: reward.name,
-            timestamp: new Date().toISOString(),
-          },
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .select("id")
-        .single();
-
-      if (txError) {
-        console.error("❌ Transaction failed:", txError);
-        return { success: false, error: "Failed to process claim" };
-      }
-
-      // Update profile balance
-      await this.client
-        .from("family_profiles")
-        .update({ current_points: newBalance })
-        .eq("id", profileId);
-
-      // 4. Record purchase
+      // 4. Record purchase with FK to transaction
       const purchaseId = crypto.randomUUID();
       const { error: purchaseError } = await this.client
         .schema("choretracker")
@@ -238,7 +212,7 @@ export class RewardsService {
           family_id: familyId,
           profile_id: profileId,
           reward_id: rewardId,
-          transaction_id: txResult.id,
+          transaction_id: transactionId,
           point_cost: reward.pointCost,
           status: "purchased",
           reward_snapshot: { name: reward.name, icon: reward.icon },
@@ -262,7 +236,7 @@ export class RewardsService {
           id: purchaseId,
           profileId,
           rewardId,
-          transactionId: txResult.id,
+          transactionId,
           pointCost: reward.pointCost,
           status: "purchased",
           rewardName: reward.name,
@@ -344,13 +318,5 @@ export class RewardsService {
     }
 
     return true;
-  }
-
-  private getWeekEnding(date: Date): string {
-    const dayOfWeek = date.getDay();
-    const daysUntilSunday = (7 - dayOfWeek) % 7;
-    const weekEnding = new Date(date);
-    weekEnding.setDate(date.getDate() + daysUntilSunday);
-    return weekEnding.toISOString().split("T")[0];
   }
 }

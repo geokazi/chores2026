@@ -3,10 +3,11 @@
  * Handles P2: Balance & Pay Out functionality
  *
  * Balance derived from family_profiles.current_points
- * Pay Out creates "cash_out" transaction type
+ * Pay Out uses TransactionService for FamilyScore sync
  */
 
 import { createClient } from "@supabase/supabase-js";
+import { TransactionService } from "./transaction-service.ts";
 import type {
   BalanceInfo,
   FinanceSettings,
@@ -19,9 +20,11 @@ const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 export class BalanceService {
   private client: any;
+  private transactionService: TransactionService;
 
   constructor() {
     this.client = createClient(supabaseUrl, supabaseServiceKey);
+    this.transactionService = new TransactionService();
   }
 
   /**
@@ -173,6 +176,7 @@ export class BalanceService {
 
   /**
    * Process a payout - requires parent PIN verification
+   * Uses TransactionService for FamilyScore sync
    */
   async processPayout(
     request: PayOutRequest,
@@ -208,61 +212,34 @@ export class BalanceService {
       };
     }
 
-    // 3. Create payout transaction
-    const newBalance = profile.current_points - amount;
+    // 3. Create payout transaction via TransactionService (handles FamilyScore sync)
     const dollarAmount = amount * financeSettings.dollarValuePerPoint;
 
-    const { data: txResult, error: txError } = await this.client
-      .schema("choretracker")
-      .from("chore_transactions")
-      .insert({
-        family_id: familyId,
-        profile_id: profileId,
-        transaction_type: "cash_out",
-        points_change: -amount,
-        balance_after_transaction: newBalance,
-        description: `Paid out $${dollarAmount.toFixed(2)}`,
-        week_ending: this.getWeekEnding(new Date()),
-        metadata: {
-          source: "chores2026",
-          payoutAmountCents: Math.round(dollarAmount * 100),
-          approvedBy: parentProfileId,
-          timestamp: new Date().toISOString(),
-        },
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .select("id")
-      .single();
+    try {
+      const { transactionId, newBalance } = await this.transactionService.recordCashOut(
+        profileId,
+        familyId,
+        amount,
+        dollarAmount,
+        parentProfileId,
+      );
 
-    if (txError) {
-      console.error("❌ Payout transaction failed:", txError);
+      console.log("✅ Payout processed:", {
+        kid: profile.name,
+        amount,
+        dollarAmount,
+        newBalance,
+      });
+
+      return {
+        success: true,
+        transactionId,
+        newBalance,
+      };
+    } catch (error) {
+      console.error("❌ Payout transaction failed:", error);
       return { success: false, error: "Failed to process payout" };
     }
-
-    // 4. Update profile balance
-    const { error: updateError } = await this.client
-      .from("family_profiles")
-      .update({ current_points: newBalance })
-      .eq("id", profileId);
-
-    if (updateError) {
-      console.error("❌ Failed to update balance:", updateError);
-      // Transaction was created, so continue
-    }
-
-    console.log("✅ Payout processed:", {
-      kid: profile.name,
-      amount,
-      dollarAmount,
-      newBalance,
-    });
-
-    return {
-      success: true,
-      transactionId: txResult.id,
-      newBalance,
-    };
   }
 
   /**
@@ -314,13 +291,5 @@ export class BalanceService {
 
     // Plaintext PIN comparison
     return parent.pin_hash === pin;
-  }
-
-  private getWeekEnding(date: Date): string {
-    const dayOfWeek = date.getDay();
-    const daysUntilSunday = (7 - dayOfWeek) % 7;
-    const weekEnding = new Date(date);
-    weekEnding.setDate(date.getDate() + daysUntilSunday);
-    return weekEnding.toISOString().split("T")[0];
   }
 }

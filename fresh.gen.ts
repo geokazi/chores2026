@@ -26,6 +26,7 @@ import * as $api_family_set_kid_pin from "./routes/api/family/set-kid-pin.ts";
 import * as $api_familyscore_live_family_id_ from "./routes/api/familyscore/live/[family_id].ts";
 import * as $api_familyscore_sync from "./routes/api/familyscore/sync.ts";
 import * as $api_gift_redeem from "./routes/api/gift/redeem.ts";
+import * as $api_goals_index from "./routes/api/goals/index.ts";
 import * as $api_kids_kid_id_pin from "./routes/api/kids/[kid_id]/pin.ts";
 import * as $api_kids_chores from "./routes/api/kids/chores.ts";
 import * as $api_parent_session from "./routes/api/parent/session.ts";
@@ -34,8 +35,12 @@ import * as $api_parent_set_pin from "./routes/api/parent/set-pin.ts";
 import * as $api_parent_setup_pin_simple from "./routes/api/parent/setup-pin-simple.ts";
 import * as $api_parent_verify_pin_simple from "./routes/api/parent/verify-pin-simple.ts";
 import * as $api_parent_verify_pin from "./routes/api/parent/verify-pin.ts";
+import * as $api_payout from "./routes/api/payout.ts";
 import * as $api_pin_verify from "./routes/api/pin/verify.ts";
 import * as $api_points_adjust from "./routes/api/points/adjust.ts";
+import * as $api_rewards_catalog from "./routes/api/rewards/catalog.ts";
+import * as $api_rewards_claim from "./routes/api/rewards/claim.ts";
+import * as $api_rewards_fulfill from "./routes/api/rewards/fulfill.ts";
 import * as $api_rotation_apply from "./routes/api/rotation/apply.ts";
 import * as $api_rotation_complete from "./routes/api/rotation/complete.ts";
 import * as $api_rotation_status from "./routes/api/rotation/status.ts";
@@ -46,13 +51,17 @@ import * as $api_settings_timezone from "./routes/api/settings/timezone.ts";
 import * as $health from "./routes/health.ts";
 import * as $index from "./routes/index.tsx";
 import * as $kid_dashboard from "./routes/kid/dashboard.tsx";
+import * as $kid_goals from "./routes/kid/goals.tsx";
+import * as $kid_rewards from "./routes/kid/rewards.tsx";
 import * as $login from "./routes/login.tsx";
 import * as $logout from "./routes/logout.ts";
 import * as $parent_activity from "./routes/parent/activity.tsx";
+import * as $parent_balances from "./routes/parent/balances.tsx";
 import * as $parent_dashboard from "./routes/parent/dashboard.tsx";
 import * as $parent_events from "./routes/parent/events.tsx";
 import * as $parent_insights from "./routes/parent/insights.tsx";
 import * as $parent_my_chores from "./routes/parent/my-chores.tsx";
+import * as $parent_rewards from "./routes/parent/rewards.tsx";
 import * as $parent_settings from "./routes/parent/settings.tsx";
 import * as $privacy from "./routes/privacy.tsx";
 import * as $redeem from "./routes/redeem.tsx";
@@ -64,6 +73,7 @@ import * as $AddChoreModal from "./islands/AddChoreModal.tsx";
 import * as $AddEventModal from "./islands/AddEventModal.tsx";
 import * as $AddPrepTasksModal from "./islands/AddPrepTasksModal.tsx";
 import * as $AppHeader from "./islands/AppHeader.tsx";
+import * as $BalanceCards from "./islands/BalanceCards.tsx";
 import * as $ChoreDetail from "./islands/ChoreDetail.tsx";
 import * as $ChoreList from "./islands/ChoreList.tsx";
 import * as $EventMissionGroup from "./islands/EventMissionGroup.tsx";
@@ -80,8 +90,11 @@ import * as $ParentActivityTab from "./islands/ParentActivityTab.tsx";
 import * as $ParentDashboard from "./islands/ParentDashboard.tsx";
 import * as $ParentPinGate from "./islands/ParentPinGate.tsx";
 import * as $ParentPinModal from "./islands/ParentPinModal.tsx";
+import * as $ParentRewards from "./islands/ParentRewards.tsx";
 import * as $PinEntryModal from "./islands/PinEntryModal.tsx";
 import * as $RedeemForm from "./islands/RedeemForm.tsx";
+import * as $RewardsCatalog from "./islands/RewardsCatalog.tsx";
+import * as $SavingsGoals from "./islands/SavingsGoals.tsx";
 import * as $SecureKidDashboard from "./islands/SecureKidDashboard.tsx";
 import * as $SecureParentDashboard from "./islands/SecureParentDashboard.tsx";
 import * as $SocialAuthButtons from "./islands/SocialAuthButtons.tsx";
@@ -130,6 +143,7 @@ const manifest = {
       $api_familyscore_live_family_id_,
     "./routes/api/familyscore/sync.ts": $api_familyscore_sync,
     "./routes/api/gift/redeem.ts": $api_gift_redeem,
+    "./routes/api/goals/index.ts": $api_goals_index,
     "./routes/api/kids/[kid_id]/pin.ts": $api_kids_kid_id_pin,
     "./routes/api/kids/chores.ts": $api_kids_chores,
     "./routes/api/parent/session.ts": $api_parent_session,
@@ -138,8 +152,12 @@ const manifest = {
     "./routes/api/parent/setup-pin-simple.ts": $api_parent_setup_pin_simple,
     "./routes/api/parent/verify-pin-simple.ts": $api_parent_verify_pin_simple,
     "./routes/api/parent/verify-pin.ts": $api_parent_verify_pin,
+    "./routes/api/payout.ts": $api_payout,
     "./routes/api/pin/verify.ts": $api_pin_verify,
     "./routes/api/points/adjust.ts": $api_points_adjust,
+    "./routes/api/rewards/catalog.ts": $api_rewards_catalog,
+    "./routes/api/rewards/claim.ts": $api_rewards_claim,
+    "./routes/api/rewards/fulfill.ts": $api_rewards_fulfill,
     "./routes/api/rotation/apply.ts": $api_rotation_apply,
     "./routes/api/rotation/complete.ts": $api_rotation_complete,
     "./routes/api/rotation/status.ts": $api_rotation_status,
@@ -150,13 +168,17 @@ const manifest = {
     "./routes/health.ts": $health,
     "./routes/index.tsx": $index,
     "./routes/kid/dashboard.tsx": $kid_dashboard,
+    "./routes/kid/goals.tsx": $kid_goals,
+    "./routes/kid/rewards.tsx": $kid_rewards,
     "./routes/login.tsx": $login,
     "./routes/logout.ts": $logout,
     "./routes/parent/activity.tsx": $parent_activity,
+    "./routes/parent/balances.tsx": $parent_balances,
     "./routes/parent/dashboard.tsx": $parent_dashboard,
     "./routes/parent/events.tsx": $parent_events,
     "./routes/parent/insights.tsx": $parent_insights,
     "./routes/parent/my-chores.tsx": $parent_my_chores,
+    "./routes/parent/rewards.tsx": $parent_rewards,
     "./routes/parent/settings.tsx": $parent_settings,
     "./routes/privacy.tsx": $privacy,
     "./routes/redeem.tsx": $redeem,
@@ -170,6 +192,7 @@ const manifest = {
     "./islands/AddEventModal.tsx": $AddEventModal,
     "./islands/AddPrepTasksModal.tsx": $AddPrepTasksModal,
     "./islands/AppHeader.tsx": $AppHeader,
+    "./islands/BalanceCards.tsx": $BalanceCards,
     "./islands/ChoreDetail.tsx": $ChoreDetail,
     "./islands/ChoreList.tsx": $ChoreList,
     "./islands/EventMissionGroup.tsx": $EventMissionGroup,
@@ -186,8 +209,11 @@ const manifest = {
     "./islands/ParentDashboard.tsx": $ParentDashboard,
     "./islands/ParentPinGate.tsx": $ParentPinGate,
     "./islands/ParentPinModal.tsx": $ParentPinModal,
+    "./islands/ParentRewards.tsx": $ParentRewards,
     "./islands/PinEntryModal.tsx": $PinEntryModal,
     "./islands/RedeemForm.tsx": $RedeemForm,
+    "./islands/RewardsCatalog.tsx": $RewardsCatalog,
+    "./islands/SavingsGoals.tsx": $SavingsGoals,
     "./islands/SecureKidDashboard.tsx": $SecureKidDashboard,
     "./islands/SecureParentDashboard.tsx": $SecureParentDashboard,
     "./islands/SocialAuthButtons.tsx": $SocialAuthButtons,
