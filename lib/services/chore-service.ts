@@ -756,43 +756,6 @@ export class ChoreService {
   }
 
   /**
-   * Update member points (add/subtract)
-   */
-  async updateMemberPoints(
-    memberId: string,
-    pointAdjustment: number,
-  ): Promise<boolean> {
-    // First get current points
-    const { data: member, error: fetchError } = await this.client
-      .from("family_profiles")
-      .select("current_points")
-      .eq("id", memberId)
-      .single();
-
-    if (fetchError) {
-      console.error("Error fetching member for point update:", fetchError);
-      return false;
-    }
-
-    const newPoints = Math.max(
-      0,
-      (member.current_points || 0) + pointAdjustment,
-    );
-
-    const { error } = await this.client
-      .from("family_profiles")
-      .update({ current_points: newPoints })
-      .eq("id", memberId);
-
-    if (error) {
-      console.error("Error updating member points:", error);
-      return false;
-    }
-
-    return true;
-  }
-
-  /**
    * Set member PIN hash (works for both kids and parents)
    */
   async setKidPinHash(memberId: string, pinHash: string): Promise<boolean> {

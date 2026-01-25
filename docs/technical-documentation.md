@@ -143,9 +143,8 @@ class ChoreService {
   // PIN Management
   setKidPin(kidId: string, pinHash: string): Promise<boolean>
   getKidPin(kidId: string): Promise<string | null>
-  
-  // Point Management
-  updateMemberPoints(memberId: string, adjustment: number): Promise<boolean>
+
+  // Note: Point management handled by TransactionService
 }
 ```
 
