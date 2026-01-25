@@ -171,18 +171,18 @@ export default function AppHeader({
               </div>
             )}
 
-            {/* Family Selector - go back to choose user */}
+            {/* Switch User - go back to family selector */}
             <button onClick={handleSwitchUser}>
-              🏠 Family
+              👥 Switch User
             </button>
 
-            {/* Manage Family - Parent-only, PIN-protected */}
+            {/* Settings - Parent-only, PIN-protected */}
             <a
               href="/parent/settings"
               class={currentPage === "settings" ? "active" : ""}
               title="Adjust Points, Chore Templates, Weekly Goal, PIN & Security"
             >
-              ⚙️ Manage Family
+              ⚙️ Settings
             </a>
 
             {/* Inline Theme Picker */}
