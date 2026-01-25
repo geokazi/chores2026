@@ -34,6 +34,7 @@ export default function SavingsGoals({
   const [showCreate, setShowCreate] = useState(false);
   const [showAddTo, setShowAddTo] = useState<SavingsGoal | null>(null);
   const [showCelebration, setShowCelebration] = useState<SavingsGoal | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<SavingsGoal | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState("");
 
@@ -146,19 +147,28 @@ export default function SavingsGoals({
     }
   };
 
-  const handleDeleteGoal = async (goalId: string) => {
-    if (!confirm("Are you sure you want to delete this goal?")) return;
+  const handleDeleteGoal = async () => {
+    if (!showDeleteConfirm) return;
 
+    setIsProcessing(true);
     try {
-      const response = await fetch(`/api/goals?goalId=${goalId}&profileId=${profileId}`, {
-        method: "DELETE",
-      });
+      const response = await fetch(
+        `/api/goals?goalId=${showDeleteConfirm.id}&profileId=${profileId}`,
+        { method: "DELETE" },
+      );
 
       if (response.ok) {
-        setLocalGoals(localGoals.filter((g) => g.id !== goalId));
+        setLocalGoals(localGoals.filter((g) => g.id !== showDeleteConfirm.id));
+        setShowDeleteConfirm(null);
+      } else {
+        const data = await response.json();
+        setError(data.error || "Failed to delete goal");
       }
     } catch (err) {
       console.error("Delete failed:", err);
+      setError("Network error. Please try again.");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -221,7 +231,7 @@ export default function SavingsGoals({
                   </div>
                   <button
                     class="delete-btn"
-                    onClick={() => handleDeleteGoal(goal.id)}
+                    onClick={() => setShowDeleteConfirm(goal)}
                     title="Delete goal"
                   >
                     ✕
@@ -431,6 +441,51 @@ export default function SavingsGoals({
               </div>
               <button class="done-btn" onClick={() => setShowCelebration(null)}>
                 Awesome!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div class="modal-overlay" onClick={() => setShowDeleteConfirm(null)}>
+          <div class="modal" onClick={(e) => e.stopPropagation()}>
+            <div class="modal-header">
+              <h2>Delete Goal?</h2>
+              <button class="close-btn" onClick={() => setShowDeleteConfirm(null)}>
+                ✕
+              </button>
+            </div>
+
+            <div class="modal-body">
+              <div class="delete-preview">
+                <span class="goal-icon large">{showDeleteConfirm.icon}</span>
+                <div class="goal-name">{showDeleteConfirm.name}</div>
+                <div class="goal-progress">
+                  {showDeleteConfirm.currentAmount} / {showDeleteConfirm.targetAmount} pts saved
+                </div>
+              </div>
+
+              <p class="delete-warning">
+                This will permanently delete this goal. Any points you've saved will remain in your balance.
+              </p>
+
+              {error && <div class="error-message">{error}</div>}
+
+              <button
+                class="delete-confirm-btn"
+                onClick={handleDeleteGoal}
+                disabled={isProcessing}
+              >
+                {isProcessing ? "Deleting..." : "Yes, Delete Goal"}
+              </button>
+
+              <button
+                class="cancel-btn"
+                onClick={() => setShowDeleteConfirm(null)}
+              >
+                Cancel
               </button>
             </div>
           </div>
@@ -758,6 +813,45 @@ export default function SavingsGoals({
           padding: 1rem;
           background: var(--color-primary);
           color: white;
+          border: none;
+          border-radius: 8px;
+          font-size: 1rem;
+          font-weight: 600;
+          cursor: pointer;
+        }
+        .delete-preview {
+          text-align: center;
+          padding: 1rem;
+          background: var(--color-bg);
+          border-radius: 12px;
+          margin-bottom: 1rem;
+        }
+        .delete-warning {
+          color: var(--color-text-light);
+          font-size: 0.9rem;
+          text-align: center;
+          margin-bottom: 1.5rem;
+        }
+        .delete-confirm-btn {
+          width: 100%;
+          padding: 1rem;
+          background: #dc2626;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-size: 1rem;
+          font-weight: 600;
+          cursor: pointer;
+          margin-bottom: 0.75rem;
+        }
+        .delete-confirm-btn:disabled {
+          opacity: 0.5;
+        }
+        .cancel-btn {
+          width: 100%;
+          padding: 1rem;
+          background: transparent;
+          color: var(--color-text-light);
           border: none;
           border-radius: 8px;
           font-size: 1rem;

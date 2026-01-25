@@ -240,6 +240,20 @@ export const handler: Handlers = {
         );
       }
 
+      // Authorization: only goal owner or parent can delete
+      const currentProfile = session.family.members.find(
+        (m: any) => m.id === session.user?.profileId,
+      );
+      const isOwner = session.user?.profileId === profileId;
+      const isParent = currentProfile?.role === "parent";
+
+      if (!isOwner && !isParent) {
+        return new Response(
+          JSON.stringify({ error: "Only goal owner or parent can delete goals" }),
+          { status: 403, headers: { "Content-Type": "application/json" } },
+        );
+      }
+
       const goalsService = new GoalsService();
       const deleted = await goalsService.deleteGoal(profileId, goalId);
 

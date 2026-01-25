@@ -62,12 +62,9 @@ export default function BalanceCards({ balances, recentPurchases, dollarValuePer
       setShowPayOut(false);
       setPayoutAmount("");
       setParentPin("");
+      setSelectedKid(null);
 
-      // Update local state
-      selectedKid.currentPoints = data.newBalance;
-      selectedKid.dollarValue = data.newBalance * dollarValuePerPoint;
-
-      // Refresh after a moment
+      // Refresh after a moment to show updated balances
       setTimeout(() => {
         window.location.reload();
       }, 2000);
