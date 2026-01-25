@@ -55,27 +55,34 @@ export default function SchedulePreviewTable({
                   </thead>
                   <tbody>
                     {preview.days.map(dayData => (
-                      <tr key={dayData.day} class={dayData.hasEmptySlots ? 'has-empty' : ''}>
+                      <tr key={dayData.day} class={`${dayData.hasEmptySlots ? 'has-empty' : ''} ${dayData.isRestDay ? 'rest-day' : ''}`}>
                         <td class="day-cell">
                           {dayData.dayLabel}
-                          {dayData.hasEmptySlots && <span class="day-warning">⚠️</span>}
+                          {dayData.isRestDay && <span class="rest-badge">🛋️</span>}
+                          {dayData.hasEmptySlots && !dayData.isRestDay && <span class="day-warning">⚠️</span>}
                         </td>
-                        {childNames.map(name => {
-                          const slotData = dayData.slots[name];
-                          const isEmpty = slotData?.isEmpty;
-                          const chores = slotData?.chores || [];
-                          return (
-                            <td key={name} class={`chore-cell ${isEmpty ? 'empty' : ''}`}>
-                              {isEmpty ? (
-                                <span class="no-chores">—</span>
-                              ) : (
-                                <span class="chore-list">
-                                  {chores.join(', ')}
-                                </span>
-                              )}
-                            </td>
-                          );
-                        })}
+                        {dayData.isRestDay ? (
+                          <td colSpan={childNames.length} class="rest-day-cell">
+                            Rest Day — No chores
+                          </td>
+                        ) : (
+                          childNames.map(name => {
+                            const slotData = dayData.slots[name];
+                            const isEmpty = slotData?.isEmpty;
+                            const chores = slotData?.chores || [];
+                            return (
+                              <td key={name} class={`chore-cell ${isEmpty ? 'empty' : ''}`}>
+                                {isEmpty ? (
+                                  <span class="no-chores">—</span>
+                                ) : (
+                                  <span class="chore-list">
+                                    {chores.join(', ')}
+                                  </span>
+                                )}
+                              </td>
+                            );
+                          })
+                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -211,6 +218,19 @@ export default function SchedulePreviewTable({
         }
         .warning-text {
           color: #92400e;
+        }
+        .rest-day td {
+          background: #f5f3ff !important;
+        }
+        .rest-badge {
+          margin-left: 0.25rem;
+          font-size: 0.7rem;
+        }
+        .rest-day-cell {
+          text-align: center;
+          color: #6d28d9;
+          font-style: italic;
+          font-size: 0.8rem;
         }
       `}</style>
     </div>

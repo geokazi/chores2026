@@ -46,8 +46,9 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
   const [customAssignments, setCustomAssignments] = useState<Record<string, string[]>>({});
   const [showHiddenChores, setShowHiddenChores] = useState(false);
 
-  // Daily chores and schedule preview state
+  // Daily chores, rest days, and schedule preview state
   const [dailyChores, setDailyChores] = useState<string[]>([]);
+  const [restDays, setRestDays] = useState<string[]>([]);
   const [showSchedulePreview, setShowSchedulePreview] = useState(false);
 
   // Initialize custom chores from family-level settings (available for ALL templates)
@@ -76,6 +77,9 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
 
       // Load daily chores
       setDailyChores(activeRotation.customizations?.daily_chores || []);
+
+      // Load rest days
+      setRestDays(activeRotation.customizations?.rest_days || []);
     }
   }, [activeRotation?.active_preset, activeRotation?.assignment_mode]);
 
@@ -223,7 +227,7 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
 
     setIsSavingCustomizations(true);
 
-    // Template-specific customizations (chore overrides + custom assignments + daily chores)
+    // Template-specific customizations (chore overrides + custom assignments + daily chores + rest days)
     // Always save custom_assignments so they persist when switching modes
     const customizations: RotationCustomizations = {};
     if (Object.keys(choreOverrides).length > 0) customizations.chore_overrides = choreOverrides;
@@ -232,6 +236,9 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
     }
     if (dailyChores.length > 0) {
       customizations.daily_chores = dailyChores;
+    }
+    if (restDays.length > 0) {
+      customizations.rest_days = restDays as any;  // DayOfWeek[]
     }
 
     const preset = getPresetByKey(activeRotation.active_preset);
@@ -374,6 +381,7 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
             customAssignments, setCustomAssignments,
             customChores, showHiddenChores, setShowHiddenChores,
             dailyChores, setDailyChores,
+            restDays, setRestDays,
             showSchedulePreview, setShowSchedulePreview
           )}
           </div>
@@ -592,6 +600,8 @@ function renderTemplateCustomizePanel(
   setShowHiddenChores: (show: boolean) => void,
   dailyChores: string[],
   setDailyChores: (chores: string[]) => void,
+  restDays: string[],
+  setRestDays: (days: string[]) => void,
   showSchedulePreview: boolean,
   setShowSchedulePreview: (show: boolean) => void
 ) {
@@ -917,6 +927,48 @@ function renderTemplateCustomizePanel(
         </div>
       )}
 
+      {/* Rest Days Section - Only show for rotation mode */}
+      {assignmentMode === 'rotation' && (
+        <div class="rest-days-section">
+          <h4 style={{ marginTop: "1.5rem" }}>🛋️ Rest Days (No Chores)</h4>
+          <p class="slot-hint">Select days when kids get a break from chores</p>
+
+          <div class="rest-days-grid">
+            {(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const).map(day => {
+              const dayLabels: Record<string, string> = {
+                mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun'
+              };
+              const isRest = restDays.includes(day);
+              return (
+                <label key={day} class={`rest-day-checkbox ${isRest ? 'selected' : ''}`}>
+                  <input
+                    type="checkbox"
+                    checked={isRest}
+                    onChange={(e) => {
+                      if (e.currentTarget.checked) {
+                        setRestDays([...restDays, day]);
+                      } else {
+                        setRestDays(restDays.filter(d => d !== day));
+                      }
+                    }}
+                  />
+                  <span>{dayLabels[day]}</span>
+                </label>
+              );
+            })}
+          </div>
+
+          {restDays.length > 0 && (
+            <p class="rest-days-summary">
+              🛋️ No chores on {restDays.map(d => {
+                const labels: Record<string, string> = { mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday', fri: 'Friday', sat: 'Saturday', sun: 'Sunday' };
+                return labels[d];
+              }).join(', ')}
+            </p>
+          )}
+        </div>
+      )}
+
       {/* Schedule Preview - Only show for rotation mode */}
       {assignmentMode === 'rotation' && (() => {
         // Build child names map for preview
@@ -935,6 +987,7 @@ function renderTemplateCustomizePanel(
             ...activeRotation.customizations,
             chore_overrides: choreOverrides,
             daily_chores: dailyChores,
+            rest_days: restDays as any,
           },
         };
 
@@ -1100,4 +1153,13 @@ const styles = `
   .empty-days-notice p { margin: 0 0 0.5rem; font-size: 0.9rem; color: #92400e; }
   .empty-days-notice p:last-child { margin-bottom: 0; }
   .empty-days-notice .notice-hint { font-size: 0.8rem; color: #a16207; }
+
+  /* Rest Days Section */
+  .rest-days-section { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; }
+  .rest-days-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .rest-day-checkbox { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; background: white; border: 2px solid #e5e7eb; border-radius: 6px; cursor: pointer; transition: all 0.2s; min-width: 70px; justify-content: center; }
+  .rest-day-checkbox:hover { border-color: #8b5cf6; }
+  .rest-day-checkbox.selected { border-color: #8b5cf6; background: #f5f3ff; }
+  .rest-day-checkbox input { width: 16px; height: 16px; accent-color: #8b5cf6; }
+  .rest-days-summary { margin-top: 0.75rem; padding: 0.5rem 0.75rem; background: #f5f3ff; border-radius: 6px; font-size: 0.85rem; color: #6d28d9; }
 `;

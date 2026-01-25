@@ -121,6 +121,12 @@ export function getChoresForChild(
 
   const customizations = config.customizations;
 
+  // Check for rest day - no chores on rest days
+  const today = getDayOfWeek(date);
+  if (customizations?.rest_days?.includes(today)) {
+    return [];
+  }
+
   // CUSTOM ASSIGNMENT MODE: Kid sees their assigned chores daily
   if (config.assignment_mode === 'custom') {
     const assignedKeys = customizations?.custom_assignments?.[childProfileId] || [];
@@ -306,6 +312,7 @@ export interface SchedulePreviewDay {
   dayLabel: string;
   slots: Record<string, { chores: string[]; isEmpty: boolean }>;
   hasEmptySlots: boolean;
+  isRestDay: boolean;  // True if this is a designated rest day (no chores)
 }
 
 export interface SchedulePreview {
@@ -337,6 +344,7 @@ export function getSchedulePreview(
 
   const customizations = config.customizations;
   const dailyChoreKeys = customizations?.daily_chores || [];
+  const restDays = customizations?.rest_days || [];
 
   // Get assigned slots (those with a profile_id)
   const assignedSlots = config.child_slots.filter(s => s.profile_id);
@@ -357,8 +365,25 @@ export function getSchedulePreview(
     const emptyDays: { day: string; slots: string[] }[] = [];
 
     for (const day of DAYS_ORDER) {
+      const isRestDay = restDays.includes(day);
       const slots: Record<string, { chores: string[]; isEmpty: boolean }> = {};
       const emptySlots: string[] = [];
+
+      // On rest days, show empty slots for all kids (but not as "empty" warning)
+      if (isRestDay) {
+        for (const slotMapping of assignedSlots) {
+          const childName = childNames[slotMapping.profile_id] || slotMapping.slot;
+          slots[childName] = { chores: [], isEmpty: false };  // Not a warning, intentionally empty
+        }
+        days.push({
+          day,
+          dayLabel: DAY_LABELS[day],
+          slots,
+          hasEmptySlots: false,
+          isRestDay: true,
+        });
+        continue;
+      }
 
       for (const slotMapping of assignedSlots) {
         const scheduleForSlot = scheduleForWeek[slotMapping.slot];
@@ -396,6 +421,7 @@ export function getSchedulePreview(
         dayLabel: DAY_LABELS[day],
         slots,
         hasEmptySlots,
+        isRestDay: false,
       });
 
       if (hasEmptySlots) {

@@ -73,6 +73,8 @@ export interface RotationCustomizations {
   // Daily chores: appear every day for ALL kids (regardless of rotation schedule)
   // Array of chore keys from preset or custom chores
   daily_chores?: string[];
+  // Rest days: no chores appear on these days for any kid
+  rest_days?: DayOfWeek[];
 }
 
 // Assignment mode for rotation
