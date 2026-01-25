@@ -408,11 +408,60 @@ islands/ParentDashboard.tsx         # Added: "Habit Insights" link in actions
 
 ---
 
-### Priority 2: Rewards Marketplace
+### Priority 2: Balance & Pay Out (Real Money Bridge)
 
-**Why second**: Tables already exist in production (`available_rewards`,
-`reward_purchases`). Old app has proven the UX. Pairs with Priority 1
-for the "earn + spend wisely" story.
+**Why second**: This is the **moat**. Pay Out is the real-world bridge that makes
+financial education tangible. "My kid earned $47 this month" is the outcome
+parents will pay for. Without real money, it's just points/gamification.
+
+**Strategic rationale**:
+- Competitors (BusyKid, Greenlight) differentiate on real money outcomes
+- Parents value tangible results over in-app rewards
+- Establishes the money visibility that P3/P4 build upon
+- Lower effort than Rewards (~200 lines vs ~360 lines)
+
+**Features**:
+- Per-kid balance view (points × `dollar_value_per_point` = dollars)
+- Earnings breakdown: chore earnings vs weekly allowance (if enabled)
+- Pay Out action (parent PIN required, proper modal)
+- Transaction history (filtered view of `chore_transactions`)
+- Optional: weekly allowance auto-deposit
+
+**Key design decisions**:
+- Pay Out is on Balance screen, NOT a reward catalog item
+- Amount input is a styled modal, NOT browser `prompt()`
+- Balance is a sub-view of parent dashboard, NOT a top-level tab
+- Derive balance from `SUM(chore_transactions)` — no new column needed
+
+**Implementation**:
+```
+routes/parent/balances.tsx     # ~60 lines (per-kid balance cards)
+islands/BalanceCards.tsx       # ~80 lines (cards + pay out trigger)
+islands/PayOutModal.tsx        # ~60 lines (amount input + PIN)
+routes/api/payout.ts           # ~40 lines (TransactionService call)
+```
+
+**Transaction integration** (uses existing TransactionService):
+```typescript
+await transactionService.createTransaction({
+  profileId: kidProfileId,
+  familyId,
+  transactionType: "payout",  // Already in allowed types
+  pointsChange: -payoutPoints,
+  description: `Paid out $${amount}`,
+  metadata: { payoutAmountCents: amount * 100 }
+});
+```
+
+**Effort**: ~240 lines, 0 new tables, 0 new columns
+**Timeline dependency**: None, can ship independently
+
+---
+
+### Priority 3: Rewards Marketplace
+
+**Why third**: In-app rewards are nice-to-have, not core value. Kids can spend
+points on family-defined rewards, but real money (P2) is the differentiator.
 
 **What to port from old app**:
 - Rewards catalog display (parent-defined, dollar-denominated)
@@ -638,11 +687,11 @@ await supabase.schema("choretracker").from("reward_purchases").insert({
 
 ---
 
-### Priority 3: Savings Goals
+### Savings Goals Implementation (P4 Reference)
 
-**Why third**: Highest-value financial education feature. "I'm saving $40 for
-a game" is concrete, motivating, and teaches delayed gratification. The old
-app had this as placeholder — promoting to real feature.
+**Context**: Detailed implementation guide for Priority 4 (Savings Goals).
+Highest-value financial education feature. "I'm saving $40 for a game" is
+concrete, motivating, and teaches delayed gratification.
 
 **Features**:
 - Kid creates a goal (name, target amount, optional deadline)
@@ -1122,35 +1171,23 @@ understand their balance before setting goals
 
 ---
 
-### Priority 4: Balance & Pay Out
+### Priority 4: Savings Goals
 
-**Why fourth**: Requires the hybrid points/dollars decision to be finalized.
-Pay Out is the real-world bridge that makes the financial education tangible.
+**Why fourth**: Builds on P2's balance visibility. Kids see their real money
+balance and naturally want to save toward concrete goals.
 
 **Features**:
-- Per-kid balance view (earnings breakdown: chore vs weekly allowance)
-- Pay Out action (parent-authenticated, proper modal)
-- Transaction history (filtered view of chore_transactions)
-- Optional: weekly allowance auto-deposit
+- Kid creates a goal (name, target amount, optional deadline)
+- Progress bar shows current vs target
+- Auto-updates as points/dollars accumulate
+- Celebration when goal achieved
+- Parent can "boost" (contribute toward goal)
 
-**What's different from old app**:
-- Pay Out is on Balance screen, NOT a reward catalog item
-- Amount input is a styled modal, NOT browser prompt()
-- Balance is a sub-view of kid dashboard, NOT a top-level tab
+See [Savings Goals Implementation](#savings-goals-implementation-p4-reference) for full
+implementation details and JSONB schema.
 
-**Implementation**:
-```
-routes/parent/balances.tsx     # ~80 lines
-islands/BalanceCards.tsx        # ~100 lines (per-kid cards)
-islands/PayOutModal.tsx         # ~80 lines (amount + PIN)
-routes/api/payout.ts           # ~60 lines
-```
-
-**New column needed**: `family_profiles.balance_cents INTEGER DEFAULT 0`
-(or derive from transaction sum — TBD)
-
-**Effort**: ~320 lines, 1 column addition
-**Timeline dependency**: Priority 2 (Rewards) to establish spending pattern
+**Effort**: ~290 lines, 0 new tables
+**Timeline dependency**: P2 (Balance) for money visibility, P3 (Rewards) optional
 
 ---
 
@@ -1167,7 +1204,7 @@ routes/api/payout.ts           # ~60 lines
 - Approved rewards appear in catalog
 
 **Effort**: ~200 lines, uses existing notification system
-**Timeline dependency**: Priority 2 (Rewards catalog must exist)
+**Timeline dependency**: P3 (Rewards catalog must exist)
 
 ---
 
