@@ -1,0 +1,232 @@
+# Balance, Rewards & Savings Goals Implementation
+
+**Date**: January 25, 2026
+**Status**: ✅ Complete
+**Version**: 1.20
+**Priorities**: P2 (Balance & Pay Out), P3 (Rewards Marketplace), P4 (Savings Goals)
+
+---
+
+## Overview
+
+One-shot implementation of three financial education features for ChoreGami 2026, following the strategy outlined in [Rewards Market Strategy](../planned/20260125_rewards_market_strategy.md).
+
+### Features Delivered
+
+| Priority | Feature | Description |
+|----------|---------|-------------|
+| P2 | Balance & Pay Out | Per-kid balance cards, earnings breakdown, parent PIN-verified payouts |
+| P3 | Rewards Marketplace | Parent-defined catalog, claim flow, positive framing, purchase history |
+| P4 | Savings Goals | Kid-created goals, progress bars, parent boost, achievement celebration |
+
+---
+
+## Architecture
+
+### Hybrid Storage Pattern
+
+Following [JSONB Settings Architecture](../20260114_JSONB_settings_architecture.md):
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         JSONB (Configuration)                           │
+├─────────────────────────────────────────────────────────────────────────┤
+│ families.settings.apps.choregami.rewards.catalog[]                      │
+│   → Parent-defined rewards (name, icon, pointCost, category, limits)    │
+│                                                                         │
+│ families.settings.apps.choregami.finance                                │
+│   → dollarValuePerPoint, payoutRequiresPin                              │
+│                                                                         │
+│ family_profiles.preferences.apps.choregami.goals[]                      │
+│   → Per-kid savings goals (name, target, current, icon, category)       │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                      Relational (Transactions)                          │
+├─────────────────────────────────────────────────────────────────────────┤
+│ choretracker.chore_transactions                                         │
+│   → All point changes (cash_out, reward_redemption, adjustment)         │
+│                                                                         │
+│ choretracker.reward_purchases                                           │
+│   → Purchase records linking rewards to transactions                    │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Transaction Types Added
+
+| Type | Use | Points |
+|------|-----|--------|
+| `cash_out` | Parent pays out kid's balance | Negative |
+| `reward_redemption` | Kid claims a reward | Negative |
+| `adjustment` | Transfer to savings goal | Negative |
+
+---
+
+## Files Created
+
+### Types (`lib/types/finance.ts`)
+
+Shared TypeScript interfaces for all three features:
+
+```typescript
+// Key interfaces
+interface BalanceInfo { profileId, profileName, currentPoints, dollarValue, weeklyEarnings, choreEarnings }
+interface AvailableReward { id, name, icon, pointCost, category, isActive, ... }
+interface RewardPurchase { id, profileId, rewardId, transactionId, status, ... }
+interface SavingsGoal { id, name, targetAmount, currentAmount, isAchieved, ... }
+interface FinanceSettings { dollarValuePerPoint, payoutRequiresPin }
+```
+
+### Services
+
+| File | Lines | Purpose |
+|------|-------|---------|
+| `lib/services/balance-service.ts` | 325 | Balance queries, payout processing, PIN verification |
+| `lib/services/rewards-service.ts` | 357 | Catalog CRUD, claim flow, purchase history |
+| `lib/services/goals-service.ts` | 351 | Goal CRUD, add points, parent boost |
+
+**Key patterns**:
+- Uses `private client: any` for Supabase (matches transaction-service.ts)
+- Uses `.schema("choretracker")` for transaction tables
+- Inline `getWeekEnding()` helper for transaction metadata
+
+### API Routes
+
+| Route | Methods | Purpose |
+|-------|---------|---------|
+| `routes/api/payout.ts` | POST | Process payout (parent PIN required) |
+| `routes/api/rewards/claim.ts` | POST | Kid claims reward |
+| `routes/api/rewards/catalog.ts` | GET, POST, DELETE | Catalog CRUD (parent only) |
+| `routes/api/goals/index.ts` | GET, POST, PUT, DELETE | Goal CRUD + boost |
+
+**Authorization patterns**:
+- All routes verify session via `getAuthenticatedSession()`
+- Cross-family access blocked by checking `session.family.members`
+- Payout requires parent role + PIN
+- Boost requires parent role
+- Goal deletion requires owner OR parent
+
+### Page Routes
+
+| Route | Purpose |
+|-------|---------|
+| `routes/parent/balances.tsx` | Per-kid balance cards, recent purchases |
+| `routes/kid/rewards.tsx` | Rewards catalog for kids |
+| `routes/kid/goals.tsx` | Savings goals for kids |
+
+### Islands (Interactive Components)
+
+| Island | Lines | Features |
+|--------|-------|----------|
+| `islands/BalanceCards.tsx` | 488 | Balance grid, Pay Out modal, earnings breakdown |
+| `islands/RewardsCatalog.tsx` | 496 | Catalog display, claim modal, celebration |
+| `islands/SavingsGoals.tsx` | 771 | Goal cards, progress bars, create/add/delete modals |
+
+**UX patterns**:
+- Positive framing: "Claim" not "Buy", green success states
+- Celebration modals with bounce animation
+- Balance preview before actions
+- Custom modals (no browser `confirm()`)
+
+### Tests
+
+| File | Steps | Coverage |
+|------|-------|----------|
+| `tests/services/balance-service.test.ts` | 27 | Types, conversion, validation, PIN |
+| `tests/services/rewards-service.test.ts` | 27 | Types, filtering, claim validation |
+| `tests/services/goals-service.test.ts` | 26 | Types, progress, achievement, boost |
+
+**Total**: 80 test steps, all passing
+
+---
+
+## Navigation Integration
+
+Added to `islands/AppHeader.tsx`:
+
+```tsx
+{/* Kid-only financial features */}
+{!isParent && (
+  <>
+    <a href="/kid/rewards">🎁 Rewards</a>
+    <a href="/kid/goals">🎯 My Goals</a>
+  </>
+)}
+
+{/* Parent financial features */}
+<a href="/parent/balances">💰 Balances</a>
+```
+
+---
+
+## Security Considerations
+
+### Authorization
+
+| Action | Required Role | Additional Check |
+|--------|---------------|------------------|
+| View balances | Parent | Family membership |
+| Process payout | Parent | PIN verification |
+| Claim reward | Any | Balance check |
+| Create goal | Any | Profile ownership |
+| Delete goal | Owner OR Parent | Goal ownership check |
+| Boost goal | Parent | Profile in family |
+
+### Known Limitations
+
+1. **Plaintext PIN fallback**: When bcrypt hash not present, falls back to plaintext comparison (matches existing pattern)
+2. **No rate limiting**: Brute-force PIN protection not implemented
+3. **Non-atomic balance updates**: Potential race condition on simultaneous claims (acceptable for MVP)
+
+---
+
+## Code Review Fixes
+
+Post-implementation fixes applied:
+
+| Issue | Fix | File |
+|-------|-----|------|
+| Prop mutation | Removed direct mutation of `selectedKid` | `BalanceCards.tsx` |
+| Authorization gap | Added owner OR parent check for delete | `routes/api/goals/index.ts` |
+| Browser confirm() | Replaced with custom modal | `SavingsGoals.tsx` |
+
+---
+
+## Cross-References
+
+### Strategy & Design
+- [Rewards Market Strategy](../planned/20260125_rewards_market_strategy.md) - Full market analysis and priority ranking
+- [JSONB Settings Architecture](../20260114_JSONB_settings_architecture.md) - Storage pattern rationale
+
+### Related Features
+- [Behavioral Insights (P1)](../planned/20260125_rewards_market_strategy.md#priority-1-behavioral-insights-highest-pareto) - Habit tracking (shipped same day)
+- [Transaction Service](../../lib/services/transaction-service.ts) - Core point ledger
+
+### UI Mockups
+- See [Rewards Market Strategy - UI Design Mockups](../planned/20260125_rewards_market_strategy.md#ui-design-mockups-p2--p3) for original ASCII mockups
+
+---
+
+## Metrics
+
+| Metric | Value |
+|--------|-------|
+| Total lines added | ~4,600 |
+| New files | 19 |
+| New tables | 0 |
+| New migrations | 0 |
+| Test coverage | 80 steps |
+
+---
+
+## Next Steps
+
+1. **P5: Kid-Initiated Reward Requests** - Allow kids to suggest rewards for parent approval
+2. **Weekly allowance auto-deposit** - Optional recurring points addition
+3. **Goal sharing** - Family can see and boost each other's goals
+4. **Purchase fulfillment tracking** - Parent marks rewards as delivered
+
+---
+
+*Implemented: January 25, 2026*
+*Documented: January 25, 2026*

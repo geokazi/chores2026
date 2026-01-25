@@ -71,9 +71,8 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-23 | [**OAuth Signup Redirect Fix**](./milestones/20260123_oauth_signup_redirect_fix.md) | ✅ Complete | Fixed infinite redirect loop after Google OAuth signup; client-side routing pattern |
 | 2026-01-25 | [**Behavioral Insights (P1)**](./planned/20260125_rewards_market_strategy.md#priority-1-behavioral-insights-highest-pareto) | ✅ Complete | 12-week trends, streaks, routine timing; new user "Getting Started" onboarding |
 | 2026-01-25 | **Navigation & Theme Polish** | ✅ Complete | Habit Insights in nav, clearer menu labels (Switch User/Settings), Ocean Depth slate secondary color |
-| 2026-01-25 | [**Balance & Pay Out (P2)**](./planned/20260125_rewards_market_strategy.md#priority-2-balance--pay-out-real-money-bridge) | ✅ Complete | Per-kid balance cards, earnings breakdown, Pay Out modal with parent PIN |
-| 2026-01-25 | [**Rewards Marketplace (P3)**](./planned/20260125_rewards_market_strategy.md#priority-3-rewards-marketplace) | ✅ Complete | Parent-defined rewards catalog, claim flow with balance check, purchase history |
-| 2026-01-25 | [**Savings Goals (P4)**](./planned/20260125_rewards_market_strategy.md#priority-4-savings-goals) | ✅ Complete | Kid-created goals with progress bars, parent boost, celebration on achievement |
+| 2026-01-25 | [**Balance, Rewards & Goals (P2-P4)**](./milestones/20260125_balance_rewards_goals_implementation.md) | ✅ Complete | Financial education features: balance/payout, rewards marketplace, savings goals |
+| — | [↳ Strategy & Market Analysis](./planned/20260125_rewards_market_strategy.md) | ✅ Complete | Competitor research, architecture decisions, UI mockups |
 | TBD | [**SMS 10DLC Compliance**](./planned/20260123_sms_10dlc_compliance.md) | ⚠️ Blocked | Carrier blocks SMS; 10DLC brand+campaign registration required |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
@@ -110,6 +109,10 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 - **ChoreService**: CRUD operations for chores, families, and assignments
 - **TransactionService**: Production-tested point tracking with FamilyScore sync
 - **AuthenticationService**: Secure session management across devices
+- **BalanceService**: Per-kid balance queries, payout processing, PIN verification
+- **RewardsService**: Catalog management, claim flow, purchase history
+- **GoalsService**: Savings goal CRUD, progress tracking, parent boost
+- **InsightsService**: Behavioral analytics, streaks, consistency trends
 
 #### Real-time Features
 - **LiveLeaderboard**: Family rankings with streak calculations and sub-2-second updates
@@ -250,9 +253,9 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 - ✅ **New User Onboarding**: Users with < 7 days of activity see "Getting Started" view with progress bar, this-week checkmarks, and encouraging messages instead of empty charts
 - ✅ **Navigation Polish**: "🧠 Habit Insights" link in nav menu, clearer labels ("👥 Switch User" + "⚙️ Settings"), AppHeader on insights page
 - ✅ **Ocean Depth Theme**: Slate secondary buttons (`#64748b`) matching stat card aesthetic, proper contrast with blue primary
-- ✅ **Balance & Pay Out (P2)**: Per-kid balance cards showing points × exchange rate = dollars, earnings breakdown, Pay Out modal with parent PIN, transaction history
-- ✅ **Rewards Marketplace (P3)**: Parent-defined rewards catalog in family settings, claim flow with balance check, positive framing ("Claim" not "Buy"), purchase history
-- ✅ **Savings Goals (P4)**: Kid-created goals with target amounts and deadlines, progress bars auto-updating, parent "boost" contributions, celebration on achievement
+- ✅ **Balance & Pay Out (P2)**: Per-kid balance cards (points × exchange rate = dollars), weekly/chore earnings breakdown, Pay Out modal with parent PIN verification, transaction history; routes: `/parent/balances`, `/api/payout`
+- ✅ **Rewards Marketplace (P3)**: Parent-defined JSONB catalog, kid claim flow with balance check, positive framing ("Claim" not "Buy"), purchase history in `reward_purchases` table; routes: `/kid/rewards`, `/api/rewards/*`
+- ✅ **Savings Goals (P4)**: Kid-created goals in profile preferences JSONB, progress bars with auto-update, parent "boost" contributions (no balance deduction), celebration on achievement, custom delete confirmation modal; routes: `/kid/goals`, `/api/goals`
 
 ### Known Limitations
 - **Testing**: Comprehensive test suite not yet implemented
@@ -291,6 +294,8 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 - **FamilyScore**: Integration with existing family gamification platform
 - **Security Implementation**: [Parent PIN System](./20260111_parent_pin_security_implementation.md) - PIN protection architecture
 - **Deployment Guide**: [Fly.io Migration](./20260111_flyio_deployment_migration_guide.md) - Production deployment strategy
+- **Financial Features**: [Balance, Rewards & Goals](./milestones/20260125_balance_rewards_goals_implementation.md) - P2-P4 implementation
+- **Market Strategy**: [Rewards Market Strategy](./planned/20260125_rewards_market_strategy.md) - Competitive analysis and feature prioritization
 
 ### External Dependencies
 - **[Deno Fresh](https://fresh.deno.dev/)**: SSR framework with Islands architecture

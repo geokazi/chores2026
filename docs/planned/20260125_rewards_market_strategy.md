@@ -1,9 +1,10 @@
 # Rewards & Financial Education Strategy - Market-Driven Roadmap
 
 **Date**: January 25, 2026
-**Status**: Planning
+**Status**: ✅ P1-P4 Implemented (P5 Pending)
 **Context**: Market analysis of paid family chore app space (2026) + review of existing ChoreGami rewards implementation
 **Depends On**: `rewards_system.md` (Jan 14 - DB schema + basic plan)
+**Implementation**: [Balance, Rewards & Goals Milestone](../milestones/20260125_balance_rewards_goals_implementation.md)
 
 ---
 
@@ -410,6 +411,8 @@ islands/ParentDashboard.tsx         # Added: "Habit Insights" link in actions
 
 ### Priority 2: Balance & Pay Out (Real Money Bridge)
 
+**Status**: ✅ **IMPLEMENTED** (January 25, 2026)
+
 **Why second**: This is the **moat**. Pay Out is the real-world bridge that makes
 financial education tangible. "My kid earned $47 this month" is the outcome
 parents will pay for. Without real money, it's just points/gamification.
@@ -459,6 +462,8 @@ await transactionService.createTransaction({
 ---
 
 ### Priority 3: Rewards Marketplace
+
+**Status**: ✅ **IMPLEMENTED** (January 25, 2026)
 
 **Why third**: In-app rewards are nice-to-have, not core value. Kids can spend
 points on family-defined rewards, but real money (P2) is the differentiator.
@@ -1173,6 +1178,8 @@ understand their balance before setting goals
 
 ### Priority 4: Savings Goals
 
+**Status**: ✅ **IMPLEMENTED** (January 25, 2026)
+
 **Why fourth**: Builds on P2's balance visibility. Kids see their real money
 balance and naturally want to save toward concrete goals.
 
@@ -1726,9 +1733,11 @@ Based on research, these adjustments strengthen the plan:
 ---
 
 *Document created: January 25, 2026*
-*Last updated: January 25, 2026 (hybrid JSONB architecture, P2/P3 implementation plans)*
+*Last updated: January 25, 2026 (P1-P4 implemented)*
 
 **Related Documentation**:
+- [Balance, Rewards & Goals Implementation](../milestones/20260125_balance_rewards_goals_implementation.md) — Implementation milestone for P2-P4
 - [JSONB Settings Architecture](../20260114_JSONB_settings_architecture.md) — Core JSONB patterns for `families.settings` and `family_profiles.preferences`
 - [Transaction Service](../../lib/services/transaction-service.ts) — Existing service handling all point changes
-*Status: P1 shipped, P2-P5 ready for implementation*
+
+*Status: P1-P4 shipped, P5 (Kid-Initiated Reward Requests) pending*
