@@ -13,7 +13,7 @@ import { createClient } from "@supabase/supabase-js";
 import { FEATURE_LIMITS, GLOBAL_EMAIL_BUDGET } from "../../config/feature-limits.ts";
 import { incrementUsage, getMonthlyUsage } from "./usage-tracker.ts";
 import { resolvePhone, hasRealEmail } from "../utils/resolve-phone.ts";
-import { getExpectedDaysForProfile } from "./insights-service.ts";
+import { getExpectedDaysForProfile, calculateStreak, calculateConsistency } from "./insights-service.ts";
 
 interface DigestResult {
   sent: number;
@@ -182,50 +182,6 @@ export async function sendWeeklyDigests(): Promise<DigestResult> {
 
   console.log(`[digest] Complete: sent=${result.sent}, skipped=${result.skipped}, errors=${result.errors}`);
   return result;
-}
-
-/**
- * Calculate streak (consecutive days with completions) for a profile.
- * Allows 1-day recovery gap (diffDays <= 2) to avoid penalizing minor misses.
- */
-function calculateStreak(transactionDates: string[]): number {
-  if (transactionDates.length === 0) return 0;
-
-  // Get unique dates sorted descending
-  const uniqueDates = [...new Set(transactionDates.map((d) => d.slice(0, 10)))].sort().reverse();
-  if (uniqueDates.length === 0) return 0;
-
-  const today = new Date().toISOString().slice(0, 10);
-  const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
-
-  // Streak must include today or yesterday
-  if (uniqueDates[0] !== today && uniqueDates[0] !== yesterday) return 0;
-
-  let streak = 1;
-  for (let i = 1; i < uniqueDates.length; i++) {
-    const curr = new Date(uniqueDates[i - 1] + "T00:00:00");
-    const prev = new Date(uniqueDates[i] + "T00:00:00");
-    const diffDays = (curr.getTime() - prev.getTime()) / 86_400_000;
-    if (diffDays <= 2) { // Allow 1 gap day (streak recovery)
-      streak++;
-    } else {
-      break;
-    }
-  }
-  return streak;
-}
-
-/**
- * Calculate 30-day consistency % (active days / expected days).
- * Template-aware: uses expectedPerWeek to compute expected days over 30 days.
- */
-function calculateConsistency(transactionDates: string[], expectedPerWeek = 7): number {
-  if (transactionDates.length === 0) return 0;
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10);
-  const recentDates = [...new Set(transactionDates.map(d => d.slice(0, 10)))]
-    .filter(d => d >= thirtyDaysAgo);
-  const expected = Math.round(expectedPerWeek * (30 / 7));
-  return expected > 0 ? Math.min(100, Math.round((recentDates.length / expected) * 100)) : 0;
 }
 
 /**

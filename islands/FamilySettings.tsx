@@ -127,6 +127,7 @@ export default function FamilySettings({ family, members, settings, digestChanne
   };
 
   const handleChannelChange = async (channel: "email" | "sms") => {
+    const previousChannel = selectedChannel; // Capture previous value for rollback
     setSelectedChannel(channel);
     setSavingDigest(true);
 
@@ -141,12 +142,12 @@ export default function FamilySettings({ family, members, settings, digestChanne
       });
 
       if (!response.ok) {
-        setSelectedChannel(selectedChannel === "email" ? "sms" : "email");
+        setSelectedChannel(previousChannel); // Revert to previous value
         alert('Failed to save channel preference. Please try again.');
       }
     } catch (error) {
       console.error('Error saving channel preference:', error);
-      setSelectedChannel(selectedChannel === "email" ? "sms" : "email");
+      setSelectedChannel(previousChannel); // Revert to previous value
       alert('Failed to save setting. Please try again.');
     } finally {
       setSavingDigest(false);

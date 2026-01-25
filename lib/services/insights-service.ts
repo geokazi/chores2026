@@ -23,7 +23,7 @@ interface AssignmentRow {
 }
 
 /** Get the hour (0-23) of a UTC timestamp in a given IANA timezone. */
-function getLocalHour(isoTimestamp: string, timezone: string): number {
+export function getLocalHour(isoTimestamp: string, timezone: string): number {
   const date = new Date(isoTimestamp);
   const parts = new Intl.DateTimeFormat("en-US", {
     hour: "numeric",
@@ -32,6 +32,21 @@ function getLocalHour(isoTimestamp: string, timezone: string): number {
   }).formatToParts(date);
   const hourPart = parts.find(p => p.type === "hour");
   return parseInt(hourPart?.value || "0", 10);
+}
+
+/** Get the local date (YYYY-MM-DD) of a UTC timestamp in a given IANA timezone. */
+export function getLocalDate(isoTimestamp: string, timezone: string): string {
+  const date = new Date(isoTimestamp);
+  const parts = new Intl.DateTimeFormat("en-CA", { // en-CA gives YYYY-MM-DD format
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    timeZone: timezone,
+  }).formatToParts(date);
+  const year = parts.find(p => p.type === "year")?.value || "1970";
+  const month = parts.find(p => p.type === "month")?.value || "01";
+  const day = parts.find(p => p.type === "day")?.value || "01";
+  return `${year}-${month}-${day}`;
 }
 
 export interface WeekTrend {
@@ -139,7 +154,7 @@ export class InsightsService {
 
     // Compute all three in parallel (CPU-only, no more DB calls)
     const [trends, streaks, routines] = await Promise.all([
-      this.computeConsistencyTrend(txData, manualAssignments, familySettings, childProfiles, config),
+      this.computeConsistencyTrend(txData, manualAssignments, familySettings, childProfiles, config, timezone),
       this.computeStreaks(txData, familySettings, childProfiles),
       this.computeRoutineBreakdown(txData, childProfiles, timezone),
     ]);
@@ -149,46 +164,27 @@ export class InsightsService {
 
   /**
    * Get expected days per week for a kid based on family's template.
-   * Exported as static for use by email-digest.
+   * Delegates to the standalone getExpectedDaysForProfile() function.
    */
   getExpectedDaysPerWeek(
     familySettings: Record<string, unknown> | null,
     profileId: string
   ): number {
-    if (!familySettings) return 7; // default assumption
-
-    const config = getRotationConfig(familySettings);
-    if (config) {
-      const hasSlot = config.child_slots.some(s => s.profile_id === profileId);
-      if (hasSlot) {
-        const preset = getPresetByKey(config.active_preset);
-        if (preset) {
-          const weekType = preset.week_types[0];
-          const slotMapping = config.child_slots.find(s => s.profile_id === profileId);
-          if (slotMapping && preset.schedule?.[weekType]?.[slotMapping.slot]) {
-            const schedule = preset.schedule[weekType][slotMapping.slot];
-            return Object.keys(schedule).filter(day => {
-              const chores = schedule[day as keyof typeof schedule];
-              return Array.isArray(chores) && chores.length > 0;
-            }).length;
-          }
-          if (preset.is_dynamic) return 7;
-        }
-      }
-    }
-    return 7;
+    return getExpectedDaysForProfile(familySettings, profileId);
   }
 
   /**
    * 12-week consistency trend per kid (CPU-only, uses pre-fetched data).
+   * Uses timezone-aware date conversion to correctly bucket transactions.
    */
-  private async computeConsistencyTrend(
+  private computeConsistencyTrend(
     txData: TransactionRow[],
     manualAssignments: AssignmentRow[],
     familySettings: Record<string, unknown> | null,
     childProfiles: Array<{ id: string; name: string }>,
-    config: ReturnType<typeof getRotationConfig>
-  ): Promise<KidTrend[]> {
+    config: ReturnType<typeof getRotationConfig>,
+    timezone: string
+  ): KidTrend[] {
     const results: KidTrend[] = [];
     const today = new Date();
     const todayDayOfWeek = today.getDay(); // 0=Sun, 6=Sat
@@ -196,6 +192,11 @@ export class InsightsService {
     for (const kid of childProfiles) {
       try {
         const expectedPerWeek = this.getExpectedDaysPerWeek(familySettings, kid.id);
+
+        // Pre-compute local dates for this kid's transactions (avoids repeated timezone conversion)
+        const kidTxLocalDates = txData
+          .filter(tx => tx.profile_id === kid.id)
+          .map(tx => getLocalDate(tx.created_at, timezone));
 
         const weeks: WeekTrend[] = [];
         for (let w = 11; w >= 0; w--) {
@@ -208,12 +209,9 @@ export class InsightsService {
           const weekStartStr = weekStart.toISOString().split("T")[0];
           const weekEndStr = weekEnd.toISOString().split("T")[0];
 
-          // Count distinct active days this week
+          // Count distinct active days this week (using timezone-aware local dates)
           const activeDays = new Set(
-            txData
-              .filter(tx => tx.profile_id === kid.id)
-              .map(tx => tx.created_at.slice(0, 10))
-              .filter(d => d >= weekStartStr && d < weekEndStr)
+            kidTxLocalDates.filter(d => d >= weekStartStr && d < weekEndStr)
           ).size;
 
           // Expected days: template-based or assignment-based
@@ -234,11 +232,9 @@ export class InsightsService {
             expected = Math.min(expected, daysSoFar);
           }
 
-          const completions = txData
-            .filter(tx => tx.profile_id === kid.id &&
-              tx.created_at.slice(0, 10) >= weekStartStr &&
-              tx.created_at.slice(0, 10) < weekEndStr
-            ).length;
+          // Count completions using timezone-aware local dates
+          const completions = kidTxLocalDates
+            .filter(d => d >= weekStartStr && d < weekEndStr).length;
 
           const pct = expected > 0 ? Math.round((activeDays / expected) * 100) : 0;
           weeks.push({ weekStart: weekStartStr, activeDays, expectedDays: expected, completions, pct: Math.min(pct, 100) });
@@ -272,11 +268,11 @@ export class InsightsService {
   /**
    * Streaks with recovery + consistency % + habit milestones (CPU-only).
    */
-  private async computeStreaks(
+  private computeStreaks(
     txData: TransactionRow[],
     familySettings: Record<string, unknown> | null,
     childProfiles: Array<{ id: string; name: string }>
-  ): Promise<StreakData[]> {
+  ): StreakData[] {
     const results: StreakData[] = [];
 
     for (const kid of childProfiles) {
@@ -367,11 +363,11 @@ export class InsightsService {
   /**
    * Routine breakdown: morning vs evening completions (CPU-only).
    */
-  private async computeRoutineBreakdown(
+  private computeRoutineBreakdown(
     txData: TransactionRow[],
     childProfiles: Array<{ id: string; name: string }>,
     timezone: string
-  ): Promise<RoutineData[]> {
+  ): RoutineData[] {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000).toISOString();
 
     return childProfiles.map(kid => {
@@ -436,4 +432,50 @@ export function getExpectedDaysForProfile(
     }
   }
   return 7;
+}
+
+/**
+ * Calculate streak (consecutive days with completions) from transaction dates.
+ * Allows 1-day recovery gap (diffDays <= 2) to avoid penalizing minor misses.
+ * Shared by InsightsService and email-digest.
+ */
+export function calculateStreak(transactionDates: string[]): number {
+  if (transactionDates.length === 0) return 0;
+
+  // Get unique dates sorted descending
+  const uniqueDates = [...new Set(transactionDates.map((d) => d.slice(0, 10)))].sort().reverse();
+  if (uniqueDates.length === 0) return 0;
+
+  const today = new Date().toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+
+  // Streak must include today or yesterday
+  if (uniqueDates[0] !== today && uniqueDates[0] !== yesterday) return 0;
+
+  let streak = 1;
+  for (let i = 1; i < uniqueDates.length; i++) {
+    const curr = new Date(uniqueDates[i - 1] + "T00:00:00");
+    const prev = new Date(uniqueDates[i] + "T00:00:00");
+    const diffDays = (curr.getTime() - prev.getTime()) / 86_400_000;
+    if (diffDays <= 2) { // Allow 1 gap day (streak recovery)
+      streak++;
+    } else {
+      break;
+    }
+  }
+  return streak;
+}
+
+/**
+ * Calculate 30-day consistency % (active days / expected days).
+ * Template-aware: uses expectedPerWeek to compute expected days over 30 days.
+ * Shared by InsightsService and email-digest.
+ */
+export function calculateConsistency(transactionDates: string[], expectedPerWeek = 7): number {
+  if (transactionDates.length === 0) return 0;
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000).toISOString().slice(0, 10);
+  const recentDates = [...new Set(transactionDates.map(d => d.slice(0, 10)))]
+    .filter(d => d >= thirtyDaysAgo);
+  const expected = Math.round(expectedPerWeek * (30 / 7));
+  return expected > 0 ? Math.min(100, Math.round((recentDates.length / expected) * 100)) : 0;
 }
