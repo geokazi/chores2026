@@ -39,7 +39,7 @@
 /* Ocean Depth Theme */
 [data-theme="ocean"] {
   --color-primary: #1e40af;
-  --color-secondary: #ff6b6b;
+  --color-secondary: #e0e7ff; /* Light indigo - matches stat card borders */
   --color-accent: #34d399;
   --color-bg: #f8fafc;
   --color-card: #ffffff;
@@ -53,6 +53,12 @@
   --gradient-streak: linear-gradient(135deg, #34d399 0%, #10b981 100%);
   --shadow-card: 0 1px 3px rgba(30, 64, 175, 0.1);
   --shadow-button: 0 4px 12px rgba(30, 64, 175, 0.3);
+}
+
+/* Ocean theme: light secondary buttons need dark text */
+[data-theme="ocean"] .btn-secondary {
+  color: #1e40af;
+  border: 1px solid #c7d2fe;
 }
 
 /* Base styles */
