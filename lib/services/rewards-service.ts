@@ -8,6 +8,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { TransactionService } from "./transaction-service.ts";
+import { getActivityService } from "./activity-service.ts";
 import type {
   AvailableReward,
   ClaimRewardPayload,
@@ -229,6 +230,23 @@ export class RewardsService {
         newBalance,
         claimedBy: profile.name,
       });
+
+      // Log activity for the feed
+      try {
+        const activityService = getActivityService();
+        await activityService.logActivity({
+          familyId,
+          actorId: profileId,
+          actorName: profile.name,
+          type: "reward_claimed",
+          title: `${profile.name} claimed "${reward.name}"`,
+          icon: reward.icon || "🎁",
+          points: -reward.pointCost,
+          meta: { rewardId: reward.id, rewardName: reward.name },
+        });
+      } catch (activityError) {
+        console.warn("⚠️ Failed to log reward claim activity (non-critical):", activityError);
+      }
 
       return {
         success: true,

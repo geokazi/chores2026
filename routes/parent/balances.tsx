@@ -108,6 +108,7 @@ export default function BalancesPage({ data }: PageProps<BalancesData>) {
             balances={data.balances}
             recentPurchases={data.recentPurchases}
             dollarValuePerPoint={data.dollarValuePerPoint}
+            members={data.members}
           />
         )}
       </div>

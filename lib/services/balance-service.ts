@@ -8,6 +8,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { TransactionService } from "./transaction-service.ts";
+import { getActivityService } from "./activity-service.ts";
 import type {
   BalanceInfo,
   FinanceSettings,
@@ -229,6 +230,23 @@ export class BalanceService {
         dollarAmount,
         newBalance,
       });
+
+      // Log activity for the feed
+      try {
+        const activityService = getActivityService();
+        await activityService.logActivity({
+          familyId,
+          actorId: profileId,
+          actorName: profile.name,
+          type: "cash_out",
+          title: `${profile.name} received $${dollarAmount.toFixed(2)} payout`,
+          icon: "💵",
+          points: -amount,
+          meta: { dollarAmount, approvedBy: parentProfileId },
+        });
+      } catch (activityError) {
+        console.warn("⚠️ Failed to log payout activity (non-critical):", activityError);
+      }
 
       return {
         success: true,

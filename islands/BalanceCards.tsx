@@ -6,13 +6,22 @@
 import { useState } from "preact/hooks";
 import type { BalanceInfo, RewardPurchase } from "../lib/types/finance.ts";
 
+interface FamilyMember {
+  id: string;
+  name: string;
+  role: string;
+}
+
 interface Props {
   balances: BalanceInfo[];
   recentPurchases: RewardPurchase[];
   dollarValuePerPoint: number;
+  members?: FamilyMember[];
 }
 
-export default function BalanceCards({ balances, recentPurchases, dollarValuePerPoint }: Props) {
+export default function BalanceCards({ balances, recentPurchases, dollarValuePerPoint, members = [] }: Props) {
+  // Create a map of profileId -> name for quick lookup
+  const memberNames = new Map(members.map(m => [m.id, m.name]));
   const [selectedKid, setSelectedKid] = useState<BalanceInfo | null>(null);
   const [showPayOut, setShowPayOut] = useState(false);
   const [payoutAmount, setPayoutAmount] = useState("");
@@ -142,18 +151,24 @@ export default function BalanceCards({ balances, recentPurchases, dollarValuePer
         <div class="recent-section">
           <h3>Recent Rewards Claimed</h3>
           <div class="purchases-list">
-            {recentPurchases.map((purchase) => (
-              <div key={purchase.id} class="purchase-item">
-                <span class="purchase-icon">{purchase.rewardIcon || "🎁"}</span>
-                <div class="purchase-info">
-                  <span class="purchase-name">{purchase.rewardName}</span>
-                  <span class="purchase-date">
-                    {new Date(purchase.createdAt).toLocaleDateString()}
-                  </span>
+            {recentPurchases.map((purchase) => {
+              const claimerName = memberNames.get(purchase.profileId) || "Someone";
+              const rewardName = purchase.rewardName || "Reward";
+              return (
+                <div key={purchase.id} class="purchase-item">
+                  <span class="purchase-icon">{purchase.rewardIcon || "🎁"}</span>
+                  <div class="purchase-info">
+                    <span class="purchase-name">
+                      <strong>{claimerName}</strong> claimed {rewardName}
+                    </span>
+                    <span class="purchase-date">
+                      {new Date(purchase.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <span class="purchase-cost">{purchase.pointCost} pts</span>
                 </div>
-                <span class="purchase-cost">{purchase.pointCost} pts</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
