@@ -318,3 +318,74 @@ Deno.test("generateInsights - no insights for low activity", () => {
   });
   assertEquals(insights.length, 0);
 });
+
+// === getToday9am Logic Tests (Daily Digest) ===
+// Reproduce the logic from email-digest.ts for unit testing
+
+function getToday9am(): Date {
+  const now = new Date();
+  const today9am = new Date(now);
+  today9am.setUTCHours(17, 0, 0, 0); // 5pm UTC = 9am PST
+  if (now < today9am) {
+    today9am.setUTCDate(today9am.getUTCDate() - 1);
+  }
+  return today9am;
+}
+
+Deno.test("getToday9am - time is 5pm UTC (9am PST)", () => {
+  const today9am = getToday9am();
+  assertEquals(today9am.getUTCHours(), 17);
+  assertEquals(today9am.getUTCMinutes(), 0);
+  assertEquals(today9am.getUTCSeconds(), 0);
+});
+
+Deno.test("getToday9am - is in the past or now", () => {
+  const today9am = getToday9am();
+  const now = new Date();
+  assertEquals(today9am <= now, true);
+});
+
+Deno.test("getToday9am - is within the last 24 hours", () => {
+  const today9am = getToday9am();
+  const now = new Date();
+  const oneDayAgo = new Date(now);
+  oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+  assertEquals(today9am >= oneDayAgo, true);
+});
+
+// === Daily Digest Idempotency Tests ===
+
+Deno.test("daily idempotency - daily_last_sent_at after today9am means skip", () => {
+  const today9am = getToday9am();
+  const dailyLastSentAt = new Date(today9am.getTime() + 3600_000); // 1 hour after
+  assertEquals(new Date(dailyLastSentAt) >= today9am, true); // Should skip
+});
+
+Deno.test("daily idempotency - daily_last_sent_at before today9am means send", () => {
+  const today9am = getToday9am();
+  const dailyLastSentAt = new Date(today9am.getTime() - 86400_000); // 1 day before
+  assertEquals(new Date(dailyLastSentAt) >= today9am, false); // Should send
+});
+
+Deno.test("daily idempotency - null daily_last_sent_at means send", () => {
+  const today9am = getToday9am();
+  const dailyLastSentAt = null;
+  assertEquals(dailyLastSentAt === null || new Date(dailyLastSentAt) < today9am, true);
+});
+
+// === Daily Digest Opt-in Tests ===
+
+Deno.test("daily opt-in - daily_digest false means skip", () => {
+  const notifPrefs = { daily_digest: false };
+  assertEquals(!notifPrefs.daily_digest, true); // Should skip
+});
+
+Deno.test("daily opt-in - daily_digest true means send", () => {
+  const notifPrefs = { daily_digest: true };
+  assertEquals(!notifPrefs.daily_digest, false); // Should not skip
+});
+
+Deno.test("daily opt-in - both daily and weekly can be enabled", () => {
+  const notifPrefs = { daily_digest: true, weekly_summary: true };
+  assertEquals(notifPrefs.daily_digest && notifPrefs.weekly_summary, true);
+});

@@ -45,7 +45,7 @@ interface FamilySettingsProps {
   };
   digestChannel?: "email" | "sms" | null;
   hasBothChannels?: boolean;
-  notificationPrefs?: { weekly_summary?: boolean; digest_channel?: string; sms_limit_hit?: boolean };
+  notificationPrefs?: { weekly_summary?: boolean; daily_digest?: boolean; digest_channel?: string; sms_limit_hit?: boolean };
 }
 
 export default function FamilySettings({ family, members, settings, digestChannel, hasBothChannels, notificationPrefs }: FamilySettingsProps) {
@@ -54,6 +54,7 @@ export default function FamilySettings({ family, members, settings, digestChanne
 
   // Notification preferences state
   const [weeklyDigest, setWeeklyDigest] = useState(notificationPrefs?.weekly_summary ?? false);
+  const [dailyDigest, setDailyDigest] = useState(notificationPrefs?.daily_digest ?? false);
   const [selectedChannel, setSelectedChannel] = useState<"email" | "sms">(
     (notificationPrefs?.digest_channel as "email" | "sms") || digestChannel || "email"
   );
@@ -99,7 +100,7 @@ export default function FamilySettings({ family, members, settings, digestChanne
     }
   };
 
-  const handleDigestToggle = async () => {
+  const handleWeeklyDigestToggle = async () => {
     const newValue = !weeklyDigest;
     setSavingDigest(true);
 
@@ -115,6 +116,33 @@ export default function FamilySettings({ family, members, settings, digestChanne
 
       if (response.ok) {
         setWeeklyDigest(newValue);
+      } else {
+        alert('Failed to save notification setting. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error saving notification setting:', error);
+      alert('Failed to save setting. Please try again.');
+    } finally {
+      setSavingDigest(false);
+    }
+  };
+
+  const handleDailyDigestToggle = async () => {
+    const newValue = !dailyDigest;
+    setSavingDigest(true);
+
+    try {
+      const response = await fetch('/api/settings/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          daily_digest: newValue,
+          digest_channel: selectedChannel,
+        }),
+      });
+
+      if (response.ok) {
+        setDailyDigest(newValue);
       } else {
         alert('Failed to save notification setting. Please try again.');
       }
@@ -277,12 +305,12 @@ export default function FamilySettings({ family, members, settings, digestChanne
         )}
       </div>
 
-      {/* 7. Notifications - Weekly Digest */}
+      {/* 7. Notifications - Email Digests */}
       {digestChannel && (
         <div class="card" style={{ marginBottom: "1.5rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
             <span style={{ fontSize: "1.25rem" }}>📧</span>
-            <h3 style={{ fontSize: "1.125rem", fontWeight: "600", margin: 0 }}>Notifications</h3>
+            <h3 style={{ fontSize: "1.125rem", fontWeight: "600", margin: 0 }}>Email Digests</h3>
           </div>
 
           {/* SMS limit hit banner */}
@@ -317,6 +345,58 @@ export default function FamilySettings({ family, members, settings, digestChanne
             </div>
           )}
 
+          {/* Daily Digest Toggle */}
+          <div style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: "0.75rem",
+            backgroundColor: "var(--color-bg)",
+            borderRadius: "0.5rem",
+            marginBottom: "0.75rem",
+          }}>
+            <div>
+              <div style={{ fontWeight: "500", marginBottom: "0.25rem" }}>
+                Daily digest
+              </div>
+              <div style={{ fontSize: "0.75rem", color: "var(--color-text-light)" }}>
+                {dailyDigest
+                  ? "Yesterday's activity summary, sent each morning"
+                  : "Quick recap of yesterday's chores and points"}
+              </div>
+            </div>
+            <button
+              onClick={handleDailyDigestToggle}
+              disabled={savingDigest}
+              style={{
+                width: "50px",
+                height: "28px",
+                borderRadius: "14px",
+                border: "none",
+                backgroundColor: dailyDigest ? "var(--color-primary)" : "#ccc",
+                cursor: savingDigest ? "not-allowed" : "pointer",
+                position: "relative",
+                transition: "background-color 0.2s",
+                opacity: savingDigest ? 0.7 : 1,
+              }}
+            >
+              <div
+                style={{
+                  width: "24px",
+                  height: "24px",
+                  borderRadius: "50%",
+                  backgroundColor: "white",
+                  position: "absolute",
+                  top: "2px",
+                  left: dailyDigest ? "24px" : "2px",
+                  transition: "left 0.2s",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                }}
+              />
+            </button>
+          </div>
+
+          {/* Weekly Digest Toggle */}
           <div style={{
             display: "flex",
             justifyContent: "space-between",
@@ -327,18 +407,16 @@ export default function FamilySettings({ family, members, settings, digestChanne
           }}>
             <div>
               <div style={{ fontWeight: "500", marginBottom: "0.25rem" }}>
-                {hasBothChannels ? "Weekly digest" : `Weekly digest via ${digestChannel}`}
+                Weekly digest
               </div>
               <div style={{ fontSize: "0.75rem", color: "var(--color-text-light)" }}>
                 {weeklyDigest
-                  ? hasBothChannels
-                    ? `Sends to your registered ${selectedChannel === "email" ? "email" : "phone"}`
-                    : `Sends to your registered ${digestChannel === "email" ? "email" : "phone"}`
-                  : `Upcoming events, chore stats, and family highlights`}
+                  ? "Full weekly scorecard, sent Sunday mornings"
+                  : "Upcoming events, chore stats, and family highlights"}
               </div>
             </div>
             <button
-              onClick={handleDigestToggle}
+              onClick={handleWeeklyDigestToggle}
               disabled={savingDigest}
               style={{
                 width: "50px",
@@ -368,7 +446,8 @@ export default function FamilySettings({ family, members, settings, digestChanne
             </button>
           </div>
 
-          {weeklyDigest && hasBothChannels && (
+          {/* Channel selector - show when either digest is enabled */}
+          {(weeklyDigest || dailyDigest) && hasBothChannels && (
             <div style={{
               marginTop: "0.75rem",
               display: "flex",
@@ -407,7 +486,8 @@ export default function FamilySettings({ family, members, settings, digestChanne
             </div>
           )}
 
-          {weeklyDigest && (
+          {/* Info box when any digest is enabled */}
+          {(weeklyDigest || dailyDigest) && (
             <div style={{
               marginTop: "0.75rem",
               padding: "0.75rem",
@@ -416,7 +496,11 @@ export default function FamilySettings({ family, members, settings, digestChanne
               fontSize: "0.875rem",
               color: "var(--color-text)",
             }}>
-              Includes upcoming events, chore stats, streaks, and family highlights. Sent Sunday mornings.
+              {dailyDigest && weeklyDigest
+                ? "Daily: Quick activity recap each morning. Weekly: Full family scorecard on Sundays."
+                : dailyDigest
+                  ? "Quick activity recap sent each morning at 9am."
+                  : "Full family scorecard with stats, streaks, and highlights. Sent Sunday mornings."}
             </div>
           )}
         </div>

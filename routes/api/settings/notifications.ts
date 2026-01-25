@@ -17,7 +17,7 @@ export const handler: Handlers = {
 
     const profileId = session.user.profileId;
     const body = await req.json();
-    const { weekly_summary, digest_channel, sms_limit_hit } = body;
+    const { weekly_summary, daily_digest, digest_channel, sms_limit_hit } = body;
 
     const supabase = getServiceSupabaseClient();
 
@@ -39,6 +39,7 @@ export const handler: Handlers = {
     const updatedNotifications = {
       ...notifications,
       ...(weekly_summary !== undefined && { weekly_summary }),
+      ...(daily_digest !== undefined && { daily_digest }),
       ...(digest_channel !== undefined && { digest_channel }),
       ...(sms_limit_hit !== undefined && { sms_limit_hit }),
     };

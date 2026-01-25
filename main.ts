@@ -5,7 +5,19 @@ import manifest from "./fresh.gen.ts";
 import config from "./fresh.config.ts";
 
 import "@std/dotenv/load";
-import { sendWeeklyDigests } from "./lib/services/email-digest.ts";
+import { sendWeeklyDigests, sendDailyDigests } from "./lib/services/email-digest.ts";
+
+// Daily digest cron — every day at 9am PST (5pm UTC)
+// Note: During PDT (summer), this fires at 10am Pacific
+Deno.cron("daily-digest", "0 17 * * *", async () => {
+  console.log("[cron] Daily digest triggered at:", new Date().toISOString());
+  try {
+    const result = await sendDailyDigests();
+    console.log("[cron] Daily digest result:", result);
+  } catch (err) {
+    console.error("[cron] Daily digest failed:", err);
+  }
+});
 
 // Weekly digest cron — Sunday 9am PST (5pm UTC)
 // Note: During PDT (summer), this fires at 10am Pacific

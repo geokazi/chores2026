@@ -23,7 +23,7 @@ interface ParentSettingsData {
   parentProfileId?: string;
   digestChannel?: "email" | "sms" | null;
   hasBothChannels?: boolean;
-  notificationPrefs?: { weekly_summary?: boolean; digest_channel?: string; sms_limit_hit?: boolean };
+  notificationPrefs?: { weekly_summary?: boolean; daily_digest?: boolean; digest_channel?: string; sms_limit_hit?: boolean };
   error?: string;
 }
 

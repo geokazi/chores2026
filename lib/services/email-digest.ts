@@ -200,6 +200,488 @@ export async function sendWeeklyDigests(): Promise<DigestResult> {
 }
 
 /**
+ * Daily digest entry point — called by Deno.cron daily.
+ * Idempotent: checks daily_last_sent_at per profile before sending.
+ */
+export async function sendDailyDigests(): Promise<DigestResult> {
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  );
+
+  // Global email budget cap
+  const { data: allParents } = await supabase
+    .from("family_profiles")
+    .select("preferences")
+    .eq("role", "parent")
+    .not("preferences->notifications->daily_digest", "is", null);
+
+  const totalSentThisMonth = allParents?.reduce((sum, p) => {
+    return sum + (p.preferences?.notifications?.usage?.this_month_digests || 0);
+  }, 0) || 0;
+
+  if (totalSentThisMonth >= GLOBAL_EMAIL_BUDGET) {
+    console.error("[daily-digest] GLOBAL EMAIL BUDGET REACHED:", totalSentThisMonth);
+    return { sent: 0, skipped: 0, errors: 0, error: "budget_exceeded" };
+  }
+
+  // Get eligible parents (opted-in to daily, not yet sent today)
+  const today9am = getToday9am();
+  const todayISO = today9am.toISOString();
+
+  const { data: profiles, error: profileError } = await supabase
+    .from("family_profiles")
+    .select("id, name, user_id, family_id, preferences")
+    .eq("role", "parent")
+    .not("user_id", "is", null);
+
+  if (profileError || !profiles) {
+    console.error("[daily-digest] Failed to fetch profiles:", profileError);
+    return { sent: 0, skipped: 0, errors: 1, error: "db_error" };
+  }
+
+  const result: DigestResult = { sent: 0, skipped: 0, errors: 0 };
+
+  for (const profile of profiles) {
+    const notifPrefs = profile.preferences?.notifications;
+
+    // Skip if not opted in to daily digest
+    if (!notifPrefs?.daily_digest) {
+      continue;
+    }
+
+    // Idempotency: skip if already sent today
+    const dailyLastSentAt = notifPrefs?.daily_last_sent_at;
+    if (dailyLastSentAt && new Date(dailyLastSentAt) >= today9am) {
+      result.skipped++;
+      continue;
+    }
+
+    try {
+      // Resolve contact info from auth.users
+      const { data: { user } } = await supabase.auth.admin.getUserById(profile.user_id);
+      if (!user) {
+        console.warn(`[daily-digest] No auth user for profile ${profile.id}`);
+        result.errors++;
+        continue;
+      }
+
+      const emailValid = hasRealEmail(user.email);
+      const resolvedPhone = resolvePhone(user);
+      let channel = notifPrefs.digest_channel || (emailValid ? "email" : "sms");
+
+      // SMS gate: check monthly limit, auto-fallback to email
+      if (channel === "sms") {
+        const tier = (profile as any).subscription?.tier || "free";
+        const limit = FEATURE_LIMITS[tier as keyof typeof FEATURE_LIMITS]?.sms_per_month ?? FEATURE_LIMITS.free.sms_per_month;
+        const monthlyUsage = getMonthlyUsage(profile, "digests");
+
+        if (monthlyUsage >= limit) {
+          console.log(`[daily-digest] [${profile.name}] SMS limit reached. Falling back to email.`);
+          if (emailValid) {
+            channel = "email";
+          } else {
+            result.skipped++;
+            continue;
+          }
+        }
+      }
+
+      // Build daily digest content (simpler than weekly)
+      const content = await buildDailyDigestContent(supabase, profile);
+
+      // Send based on channel
+      let sendSuccess = false;
+      if (channel === "email" && emailValid) {
+        sendSuccess = await sendDailyEmailDigest(user.email!, content);
+      } else if (channel === "sms" && resolvedPhone) {
+        sendSuccess = await sendDailySmsDigest(resolvedPhone, content);
+      } else if (emailValid) {
+        sendSuccess = await sendDailyEmailDigest(user.email!, content);
+      }
+
+      if (sendSuccess) {
+        // Record daily_last_sent_at + increment usage
+        await supabase.from("family_profiles").update({
+          preferences: {
+            ...profile.preferences,
+            notifications: {
+              ...notifPrefs,
+              daily_last_sent_at: new Date().toISOString(),
+            },
+          },
+        }).eq("id", profile.id);
+
+        await incrementUsage(profile.id, "digests");
+        result.sent++;
+      } else {
+        result.errors++;
+      }
+    } catch (err) {
+      console.error(`[daily-digest] Error for profile ${profile.id}:`, err);
+      result.errors++;
+    }
+  }
+
+  console.log(`[daily-digest] Complete: sent=${result.sent}, skipped=${result.skipped}, errors=${result.errors}`);
+  return result;
+}
+
+interface DailyDigestContent {
+  familyName: string;
+  parentName: string;
+  yesterdayStats: {
+    choresCompleted: number;
+    choresTotal: number;
+    pointsEarned: number;
+  };
+  topPerformer?: { name: string; points: number };
+  completions: Array<{ kidName: string; choreName: string; points: number }>;
+  streakUpdates: Array<{ name: string; streak: number; isNew: boolean }>;
+  todayReminder: { choresCount: number; kidsWithChores: string[] };
+}
+
+/**
+ * Build simplified daily digest content (yesterday's activity).
+ */
+async function buildDailyDigestContent(
+  supabase: any,
+  profile: { id: string; name: string; family_id: string },
+): Promise<DailyDigestContent> {
+  // Get family name
+  const { data: family } = await supabase
+    .from("families")
+    .select("name")
+    .eq("id", profile.family_id)
+    .single();
+
+  // Get all family members
+  const { data: members } = await supabase
+    .from("family_profiles")
+    .select("id, name, role")
+    .eq("family_id", profile.family_id)
+    .eq("is_deleted", false);
+
+  const profileNameMap = new Map((members as any[] || []).map((m: any) => [m.id, m.name]));
+
+  // Yesterday's date range
+  const now = new Date();
+  const yesterdayStart = new Date(now);
+  yesterdayStart.setDate(yesterdayStart.getDate() - 1);
+  yesterdayStart.setHours(0, 0, 0, 0);
+  const yesterdayEnd = new Date(yesterdayStart);
+  yesterdayEnd.setHours(23, 59, 59, 999);
+
+  // Get yesterday's transactions
+  const { data: transactions } = await supabase
+    .schema("choretracker")
+    .from("chore_transactions")
+    .select("profile_id, points_change, description, created_at")
+    .eq("family_id", profile.family_id)
+    .eq("transaction_type", "chore_completed")
+    .gte("created_at", yesterdayStart.toISOString())
+    .lte("created_at", yesterdayEnd.toISOString());
+
+  // Get yesterday's assignments
+  const { data: assignments } = await supabase
+    .schema("choretracker")
+    .from("chore_assignments")
+    .select("id, assigned_to_profile_id")
+    .eq("family_id", profile.family_id)
+    .eq("assigned_date", yesterdayStart.toISOString().slice(0, 10));
+
+  // Get today's assignments for reminder
+  const todayStr = now.toISOString().slice(0, 10);
+  const { data: todayAssignments } = await supabase
+    .schema("choretracker")
+    .from("chore_assignments")
+    .select("id, assigned_to_profile_id")
+    .eq("family_id", profile.family_id)
+    .eq("assigned_date", todayStr)
+    .eq("status", "pending");
+
+  // Calculate yesterday's stats
+  const choresCompleted = (transactions as any[] || []).length;
+  const choresTotal = (assignments as any[] || []).length;
+  const pointsEarned = (transactions as any[] || []).reduce((sum: number, t: any) => sum + t.points_change, 0);
+
+  // Build completions list
+  const completions = (transactions as any[] || []).map((t: any) => ({
+    kidName: profileNameMap.get(t.profile_id) || "Unknown",
+    choreName: t.description?.replace("Completed: ", "") || "Chore",
+    points: t.points_change,
+  }));
+
+  // Find top performer
+  const earnerMap = new Map<string, number>();
+  (transactions as any[] || []).forEach((t: any) => {
+    earnerMap.set(t.profile_id, (earnerMap.get(t.profile_id) || 0) + t.points_change);
+  });
+  let topPerformer: { name: string; points: number } | undefined;
+  let maxPoints = 0;
+  earnerMap.forEach((points, profileId) => {
+    if (points > maxPoints) {
+      maxPoints = points;
+      topPerformer = { name: profileNameMap.get(profileId) || "Unknown", points };
+    }
+  });
+
+  // Get streak data for streak updates
+  const thirtyDaysAgo = new Date(now);
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const { data: streakTransactions } = await supabase
+    .schema("choretracker")
+    .from("chore_transactions")
+    .select("profile_id, created_at")
+    .eq("family_id", profile.family_id)
+    .eq("transaction_type", "chore_completed")
+    .gte("created_at", thirtyDaysAgo.toISOString());
+
+  // Calculate streaks per member
+  const streakDatesMap = new Map<string, string[]>();
+  (streakTransactions as any[] || []).forEach((t: any) => {
+    const dates = streakDatesMap.get(t.profile_id) || [];
+    dates.push(t.created_at);
+    streakDatesMap.set(t.profile_id, dates);
+  });
+
+  const childMembers = (members as any[] || []).filter((m: any) => m.role === "child");
+  const streakUpdates: Array<{ name: string; streak: number; isNew: boolean }> = [];
+  for (const child of childMembers) {
+    const streak = calculateStreak(streakDatesMap.get(child.id) || []);
+    if (streak >= 3) {
+      streakUpdates.push({
+        name: child.name,
+        streak,
+        isNew: streak === 3, // Just hit 3-day streak
+      });
+    }
+  }
+
+  // Today's reminder
+  const todayChoresCount = (todayAssignments as any[] || []).length;
+  const kidsWithChores = [...new Set((todayAssignments as any[] || []).map((a: any) =>
+    profileNameMap.get(a.assigned_to_profile_id) || "Unknown"
+  ))];
+
+  return {
+    familyName: (family as any)?.name || "Your Family",
+    parentName: profile.name,
+    yesterdayStats: {
+      choresCompleted,
+      choresTotal,
+      pointsEarned,
+    },
+    topPerformer,
+    completions,
+    streakUpdates,
+    todayReminder: {
+      choresCount: todayChoresCount,
+      kidsWithChores,
+    },
+  };
+}
+
+/**
+ * Send daily digest via Resend email.
+ */
+async function sendDailyEmailDigest(
+  toEmail: string,
+  content: DailyDigestContent,
+): Promise<boolean> {
+  const apiKey = Deno.env.get("RESEND_API_KEY");
+  if (!apiKey) {
+    console.error("[daily-digest] RESEND_API_KEY not set");
+    return false;
+  }
+
+  const resend = new Resend(apiKey);
+  const html = buildDailyEmailHtml(content);
+
+  try {
+    const { error } = await resend.emails.send({
+      from: "ChoreGami <noreply@choregami.com>",
+      to: toEmail,
+      subject: `Yesterday's Recap — ${content.familyName}`,
+      html,
+    });
+
+    if (error) {
+      console.error("[daily-digest] Resend error:", error);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    console.error("[daily-digest] Email send failed:", err);
+    return false;
+  }
+}
+
+/**
+ * Send daily digest via Twilio SMS.
+ */
+async function sendDailySmsDigest(
+  toPhone: string,
+  content: DailyDigestContent,
+): Promise<boolean> {
+  const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
+  const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
+  const fromPhone = Deno.env.get("TWILIO_PHONE_NUMBER");
+
+  if (!accountSid || !authToken || !fromPhone) {
+    console.error("[daily-digest] Twilio credentials not set");
+    return false;
+  }
+
+  const smsBody = buildDailySmsBody(content);
+
+  try {
+    const response = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Authorization": "Basic " + btoa(`${accountSid}:${authToken}`),
+        },
+        body: new URLSearchParams({
+          From: fromPhone,
+          To: toPhone,
+          Body: smsBody,
+        }),
+      },
+    );
+
+    if (!response.ok) {
+      const err = await response.text();
+      console.error("[daily-digest] Twilio error:", err);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    console.error("[daily-digest] SMS send failed:", err);
+    return false;
+  }
+}
+
+function buildDailyEmailHtml(content: DailyDigestContent): string {
+  const { yesterdayStats, topPerformer, completions, streakUpdates, todayReminder } = content;
+  const completionPercent = yesterdayStats.choresTotal > 0
+    ? Math.round((yesterdayStats.choresCompleted / yesterdayStats.choresTotal) * 100)
+    : 0;
+
+  // Completions list
+  const completionsHtml = completions.length > 0
+    ? completions.slice(0, 5).map(c =>
+      `<tr><td style="padding:4px 8px;">${c.kidName}</td><td style="padding:4px 8px;">${c.choreName}</td><td style="padding:4px 8px;text-align:right;color:#10b981;">+${c.points}</td></tr>`
+    ).join("")
+    : `<tr><td style="padding:8px;color:#888;">No chores completed yesterday</td></tr>`;
+
+  // Streak updates
+  let streakHtml = "";
+  if (streakUpdates.length > 0) {
+    const streakItems = streakUpdates.map(s =>
+      s.isNew
+        ? `<p style="margin:4px 0;color:#f59e0b;">${s.name} started a ${s.streak}-day streak!</p>`
+        : `<p style="margin:4px 0;">${s.name}: ${s.streak}-day streak</p>`
+    ).join("");
+    streakHtml = `
+    <div class="section" style="background:#fffbeb;">
+      <h2 style="color:#f59e0b;">Streak Updates</h2>
+      ${streakItems}
+    </div>`;
+  }
+
+  // Today's reminder
+  let reminderHtml = "";
+  if (todayReminder.choresCount > 0) {
+    reminderHtml = `
+    <div class="section" style="background:#f0fdf4;border-left:4px solid #10b981;">
+      <h2 style="color:#10b981;">Today's Chores</h2>
+      <p style="margin:4px 0;">${todayReminder.choresCount} chore${todayReminder.choresCount > 1 ? "s" : ""} assigned to: ${todayReminder.kidsWithChores.join(", ")}</p>
+    </div>`;
+  }
+
+  return `<!DOCTYPE html>
+<html>
+<head><style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
+  .container { max-width: 480px; margin: 0 auto; padding: 20px; }
+  h2 { color: #10b981; margin: 0 0 8px 0; font-size: 1rem; }
+  .section { margin: 16px 0; padding: 16px; background: #f8fffe; border-radius: 8px; }
+  table { width: 100%; border-collapse: collapse; }
+  .footer { text-align: center; color: #888; font-size: 12px; margin-top: 24px; padding-top: 16px; border-top: 1px solid #eee; }
+</style></head>
+<body>
+<div class="container">
+  <h1 style="color:#10b981;text-align:center;margin-bottom:4px;font-size:1.25rem;">Yesterday's Recap</h1>
+  <p style="text-align:center;color:#666;margin-top:0;font-size:0.9rem;">Hi ${content.parentName}!</p>
+
+  <div class="section">
+    <h2>Summary</h2>
+    <p style="margin:4px 0;font-size:1.1em;font-weight:600;">${yesterdayStats.choresCompleted}/${yesterdayStats.choresTotal} chores (${completionPercent}%)</p>
+    ${yesterdayStats.pointsEarned > 0 ? `<p style="margin:4px 0;color:#10b981;">+${yesterdayStats.pointsEarned} points earned</p>` : ""}
+    ${topPerformer ? `<p style="margin:4px 0;">Top earner: <strong>${topPerformer.name}</strong> (+${topPerformer.points} pts)</p>` : ""}
+  </div>
+
+  <div class="section">
+    <h2>Completions</h2>
+    <table>${completionsHtml}</table>
+  </div>
+
+  ${streakHtml}
+
+  ${reminderHtml}
+
+  <div class="footer">
+    <p>ChoreGami Daily Digest<br/>Manage in Settings → Email Digests</p>
+  </div>
+</div>
+</body>
+</html>`;
+}
+
+function buildDailySmsBody(content: DailyDigestContent): string {
+  const { yesterdayStats, topPerformer, todayReminder } = content;
+  const percent = yesterdayStats.choresTotal > 0
+    ? Math.round((yesterdayStats.choresCompleted / yesterdayStats.choresTotal) * 100)
+    : 0;
+
+  let body = `${content.familyName} - Yesterday\n`;
+  body += `${yesterdayStats.choresCompleted}/${yesterdayStats.choresTotal} chores (${percent}%)`;
+
+  if (yesterdayStats.pointsEarned > 0) {
+    body += `\n+${yesterdayStats.pointsEarned} pts`;
+  }
+
+  if (topPerformer) {
+    body += `\nTop: ${topPerformer.name} (+${topPerformer.points})`;
+  }
+
+  if (todayReminder.choresCount > 0) {
+    body += `\nToday: ${todayReminder.choresCount} chores`;
+  }
+
+  return body;
+}
+
+/**
+ * Get today at 9am PST (5pm UTC) for daily idempotency check.
+ */
+function getToday9am(): Date {
+  const now = new Date();
+  const today9am = new Date(now);
+  today9am.setUTCHours(17, 0, 0, 0); // 5pm UTC = 9am PST
+  // If it's before 9am PST today, use yesterday's 9am as the boundary
+  if (now < today9am) {
+    today9am.setUTCDate(today9am.getUTCDate() - 1);
+  }
+  return today9am;
+}
+
+/**
  * Generate personalized insight one-liners from digest data.
  * Prioritizes behavioral insights (P1) as most important.
  */
