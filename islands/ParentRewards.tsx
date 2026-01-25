@@ -270,9 +270,9 @@ export default function ParentRewards({
       {/* ─────────────────────────────────────────────────────── */}
       {activeTab === "pending" && (
         <div class="section">
-          <h3>Awaiting Fulfillment</h3>
+          <h3>Rewards to Give</h3>
           {pending.length === 0 ? (
-            <p class="empty">No pending rewards to fulfill</p>
+            <p class="empty">All caught up! No rewards owed right now.</p>
           ) : (
             <div class="list">
               {pending.map(p => {
@@ -289,9 +289,9 @@ export default function ParentRewards({
                       class="fulfill-btn"
                       onClick={() => handleFulfill(p.id)}
                       disabled={isProcessing}
-                      title="Mark as given when you've delivered this reward"
+                      title="Click when you've delivered this reward"
                     >
-                      ✓ Given
+                      Mark Done
                     </button>
                   </div>
                 );
