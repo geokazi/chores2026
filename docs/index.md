@@ -86,6 +86,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 
 | Date | Decision | Status | Summary |
 |------|----------|--------|---------|
+| 2026-01-25 | [Large Family Smart Rotation](./decisions/20260125_large_family_smart_rotation.md) | 📋 Proposed | Future paid template for 5-12 kids using dynamic distribution |
 | 2026-01-20 | [Feedback Strategy](./decisions/20260120_feedback_strategy.md) | ✅ Decided | Google Form now, in-app JSONB at 100+ users |
 | 2026-01-20 | [Analytics Strategy](./decisions/20260120_analytics_strategy.md) | ✅ Decided | External analytics (Plausible) + existing data; don't extend FamilyScore |
 | 2026-01-20 | [Kid Event Creation](./decisions/20260120_kid_event_creation.md) | ✅ Decided | Allow kids to create events with parent visibility, gated by existing PIN |

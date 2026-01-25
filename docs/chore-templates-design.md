@@ -1124,6 +1124,7 @@ See [Implementation Gaps Document](./chore-templates-gaps.md) for detailed imple
 - [Seasonal Templates Implementation](./milestones/20260116_seasonal-templates-implementation.md) - Summer Break + School Year templates
 - [Implementation Gaps & Completion](./milestones/20260115_chore-templates-gaps.md) - Detailed implementation notes
 - [JSONB Schema Design](./milestones/20260115_chore-templates-jsonb-schema.md) - Database schema and customization design
-- [**Template Customization: Inline Chores & Assignment Mode**](./milestones/20260125_template_customization_inline_chores.md) - Beta user feedback: add custom chores inline, manual assignment mode, hide/show chores (Planned)
+- [**Template Customization: Inline Chores & Assignment Mode**](./milestones/20260125_template_customization_inline_chores.md) - Beta user feedback: add custom chores inline, manual assignment mode, hide/show chores (Implemented)
+- [**Large Family Smart Rotation**](./decisions/20260125_large_family_smart_rotation.md) - Proposed future paid template for 5-12 kids using dynamic distribution
 - [Existing JSONB Settings](./20260114_JSONB_settings_architecture.md)
 - [SQL Migration](../sql/20260114_jsonb_settings.sql)
