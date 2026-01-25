@@ -165,13 +165,20 @@ routine consistency went from 40% to 85% over 6 weeks."
 
 **Implementation** (actual):
 ```
-routes/parent/insights.tsx          # ~121 lines (server handler, uses InsightsService for timezone)
-islands/HabitInsights.tsx           # ~317 lines (pure CSS bars, streak cards, routine split)
-lib/services/insights-service.ts    # ~480 lines (template-aware analytics engine + shared utilities)
+routes/parent/insights.tsx          # ~136 lines (server handler, new user detection)
+islands/HabitInsights.tsx           # ~541 lines (Getting Started + full 12-week views)
+lib/services/insights-service.ts    # ~546 lines (analytics engine + thisWeekActivity)
 lib/services/insights-service_test.ts # 21 unit tests for date math, timezone, streaks, consistency
 lib/services/email-digest.ts        # Enhanced: imports shared streak/consistency from insights-service
 islands/ParentDashboard.tsx         # Added: "Habit Insights" link in actions
 ```
+
+**New user experience** (January 25, 2026):
+- Detects new users (< 7 days of activity) and shows "Getting Started" view
+- Progress bar: "Day X of 7" toward unlocking full analytics
+- This Week view: Mon-Sun checkmarks for current week per kid
+- Encouraging messages based on streak length ("🔥 2-day streak — keep it up!")
+- Auto-transitions to full 12-week view once user has 7+ days of data
 
 **Shared utility exports** (insights-service.ts):
 - `getLocalHour(isoTimestamp, timezone)` — extract hour (0-23) in family timezone
@@ -206,7 +213,7 @@ islands/ParentDashboard.tsx         # Added: "Habit Insights" link in actions
 - [Weekly Patterns Analysis](../milestones/20260114_weekly_patterns_analysis.md) — 60-day heatmap (separate feature)
 - [JSONB Settings Architecture](../20260114_JSONB_settings_architecture.md) — `families.settings` structure
 
-**Effort**: ~880 lines (service + island + route), 0 new tables
+**Effort**: ~1220 lines (service + island + route + new user UX), 0 new tables
 **Timeline dependency**: None, can ship independently
 
 ---

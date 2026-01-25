@@ -5,7 +5,7 @@
 
 import { Handlers, PageProps } from "$fresh/server.ts";
 import { getAuthenticatedSession } from "../../lib/auth/session.ts";
-import { InsightsService, KidTrend, StreakData, RoutineData } from "../../lib/services/insights-service.ts";
+import { InsightsService, KidTrend, StreakData, RoutineData, ThisWeekActivity } from "../../lib/services/insights-service.ts";
 import HabitInsights from "../../islands/HabitInsights.tsx";
 import AppFooter from "../../components/AppFooter.tsx";
 
@@ -13,6 +13,8 @@ interface InsightsData {
   trends: KidTrend[];
   streaks: StreakData[];
   routines: RoutineData[];
+  totalActiveDays: number;
+  thisWeekActivity: ThisWeekActivity[];
   familyName: string;
   error?: string;
 }
@@ -34,6 +36,7 @@ export const handler: Handlers<InsightsData> = {
     if (childProfiles.length === 0) {
       return ctx.render({
         trends: [], streaks: [], routines: [],
+        totalActiveDays: 0, thisWeekActivity: [],
         familyName: session.family.name,
         error: "No kids in family yet. Add kids in Settings first.",
       });
@@ -49,18 +52,19 @@ export const handler: Handlers<InsightsData> = {
         : "UTC";
 
       // Single call fetches transactions once, computes all insights
-      const { trends, streaks, routines } = await insightsService.getInsights(
+      const { trends, streaks, routines, totalActiveDays, thisWeekActivity } = await insightsService.getInsights(
         familyId, familySettings, childProfiles, timezone
       );
 
       return ctx.render({
-        trends, streaks, routines,
+        trends, streaks, routines, totalActiveDays, thisWeekActivity,
         familyName: session.family.name,
       });
     } catch (error) {
       console.error("Insights error:", error);
       return ctx.render({
         trends: [], streaks: [], routines: [],
+        totalActiveDays: 0, thisWeekActivity: [],
         familyName: session.family.name,
         error: "Failed to load insights. Please try again.",
       });
@@ -69,17 +73,28 @@ export const handler: Handlers<InsightsData> = {
 };
 
 export default function InsightsPage({ data }: PageProps<InsightsData>) {
+  const isNewUser = data.totalActiveDays < 7;
+  const subtitle = isNewUser
+    ? `${data.familyName} — Getting started`
+    : `${data.familyName} — 12-week view`;
+
   return (
     <div class="insights-page">
       <div class="insights-header">
         <a href="/parent/dashboard" class="back-link">← Back</a>
         <h1>Habit Insights</h1>
-        <p class="subtitle">{data.familyName} — 12-week view</p>
+        <p class="subtitle">{subtitle}</p>
       </div>
 
       {data.error
         ? <div class="insights-error">{data.error}</div>
-        : <HabitInsights trends={data.trends} streaks={data.streaks} routines={data.routines} />
+        : <HabitInsights
+            trends={data.trends}
+            streaks={data.streaks}
+            routines={data.routines}
+            totalActiveDays={data.totalActiveDays}
+            thisWeekActivity={data.thisWeekActivity}
+          />
       }
 
       <AppFooter />

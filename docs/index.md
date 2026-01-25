@@ -1,8 +1,8 @@
 # ChoreGami 2026 Documentation
 
-**Version**: 1.15
+**Version**: 1.16
 **Status**: ✅ Production Ready
-**Last Updated**: January 23, 2026 (Weekly Digest Enhancement)
+**Last Updated**: January 25, 2026 (Behavioral Insights + New User Onboarding)
 
 **Project Overview**: A simplified, real-time chore completion system built with Deno Fresh, transforming routine family chores into an engaging, competitive experience with sub-second real-time updates across all family devices.
 
@@ -69,6 +69,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-23 | [**Weekly Digest Enhancement**](./marketing/20260123_weekly_digest_enhancement.md) | ✅ Complete | Personalized family scorecard: leaderboard, streaks, goals, insights |
 | — | [**Testing Notifications Guide**](./testing-notifications.md) | 📖 Guide | How to test email/SMS digest manually (SQL + curl) |
 | 2026-01-23 | [**OAuth Signup Redirect Fix**](./milestones/20260123_oauth_signup_redirect_fix.md) | ✅ Complete | Fixed infinite redirect loop after Google OAuth signup; client-side routing pattern |
+| 2026-01-25 | [**Behavioral Insights (P1)**](./planned/20260125_rewards_market_strategy.md#priority-1-behavioral-insights-highest-pareto) | ✅ Complete | 12-week trends, streaks, routine timing; new user "Getting Started" onboarding |
 | TBD | [**SMS 10DLC Compliance**](./planned/20260123_sms_10dlc_compliance.md) | ⚠️ Blocked | Carrier blocks SMS; 10DLC brand+campaign registration required |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
@@ -241,6 +242,8 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 - ✅ **0-Point Chores**: Allow chores with 0 points for non-reward tasks (useful for family responsibilities without gamification)
 - ✅ **Kids Can Add Prep Tasks**: Kids can add prep tasks to events from their dashboard; chore creation remains parent-only (API validates parent role)
 - ✅ **Modal Header Action Buttons**: Shared ModalHeader component with Back/Primary/Close buttons in header row; consistent UX across all form modals
+- ✅ **Behavioral Insights**: Parent-facing habit analytics with 12-week consistency trends, streaks with 1-day recovery, morning vs evening routine breakdown, template-aware consistency %
+- ✅ **New User Onboarding**: Users with < 7 days of activity see "Getting Started" view with progress bar, this-week checkmarks, and encouraging messages instead of empty charts
 
 ### Known Limitations
 - **Testing**: Comprehensive test suite not yet implemented
@@ -286,5 +289,5 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 
 ---
 
-*Last updated: January 23, 2026*
+*Last updated: January 25, 2026*
 *Maintained by: Claude Code AI Assistant*

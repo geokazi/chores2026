@@ -26,6 +26,11 @@
 > - `getLocalDate(timestamp, timezone)` — timezone-safe date extraction
 > - `getLocalHour(timestamp, timezone)` — timezone-safe hour extraction (0-23)
 >
+> **New user onboarding** (2026-01-25): Users with < 7 days of activity see a
+> "Getting Started" view instead of empty 12-week charts. Shows progress toward
+> unlocking insights (Day X of 7), current week day-by-day checkmarks, and
+> encouraging messages based on streak length.
+>
 > **Not yet implemented from this doc**: kid-facing streak UI, celebration
 > animations on milestone, daily streak notifications, perfect day streaks.
 

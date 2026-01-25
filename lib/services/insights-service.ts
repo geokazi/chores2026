@@ -82,11 +82,21 @@ export interface RoutineData {
   morningPct: number;
 }
 
+/** This week's day-by-day activity for each kid. */
+export interface ThisWeekActivity {
+  profileId: string;
+  name: string;
+  days: Array<{ date: string; dayName: string; done: boolean }>;
+  totalDone: number;
+}
+
 /** Combined result from the single getInsights() call. */
 export interface InsightsResult {
   trends: KidTrend[];
   streaks: StreakData[];
   routines: RoutineData[];
+  totalActiveDays: number; // Unique days with any activity (for new user detection)
+  thisWeekActivity: ThisWeekActivity[]; // Day-by-day for current week
 }
 
 export class InsightsService {
@@ -159,7 +169,62 @@ export class InsightsService {
       this.computeRoutineBreakdown(txData, childProfiles, timezone),
     ]);
 
-    return { trends, streaks, routines };
+    // Compute new user metrics
+    const totalActiveDays = new Set(txData.map(tx => tx.created_at.slice(0, 10))).size;
+    const thisWeekActivity = this.computeThisWeekActivity(txData, childProfiles, timezone);
+
+    return { trends, streaks, routines, totalActiveDays, thisWeekActivity };
+  }
+
+  /**
+   * Compute day-by-day activity for the current week (Mon-Sun).
+   * Used for "Getting Started" view for new users.
+   */
+  private computeThisWeekActivity(
+    txData: TransactionRow[],
+    childProfiles: Array<{ id: string; name: string }>,
+    timezone: string
+  ): ThisWeekActivity[] {
+    const today = new Date();
+    const dayOfWeek = today.getDay(); // 0=Sun, 6=Sat
+    // Calculate Monday of this week
+    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const monday = new Date(today);
+    monday.setDate(today.getDate() + mondayOffset);
+    monday.setHours(0, 0, 0, 0);
+
+    const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    const weekDates: Array<{ date: string; dayName: string }> = [];
+
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      weekDates.push({
+        date: d.toISOString().slice(0, 10),
+        dayName: dayNames[i],
+      });
+    }
+
+    return childProfiles.map(kid => {
+      const kidTxDates = new Set(
+        txData
+          .filter(tx => tx.profile_id === kid.id)
+          .map(tx => getLocalDate(tx.created_at, timezone))
+      );
+
+      const days = weekDates.map(({ date, dayName }) => ({
+        date,
+        dayName,
+        done: kidTxDates.has(date),
+      }));
+
+      return {
+        profileId: kid.id,
+        name: kid.name,
+        days,
+        totalDone: days.filter(d => d.done).length,
+      };
+    });
   }
 
   /**

@@ -313,10 +313,11 @@ ChoreGami 2026 is a streamlined family chore management application designed to 
 ### Phase 2: Enhancement (Q1 2026)
 - ✅ Events Calendar integration (event-linked chores as "missions")
 - ✅ Prep Tasks feature (lightweight checklist items for events)
+- ✅ Behavioral Insights (habit trends, streaks, routine patterns)
+- ✅ New user onboarding (Getting Started view for users < 7 days)
 - Advanced chore management for parents
 - Photo verification for task completion
 - Achievement system and badges
-- Detailed analytics and reporting
 
 ### Phase 3: Advanced Features (Q2 2026)
 - Integration with smart home devices
@@ -413,6 +414,6 @@ ChoreGami 2026 is a streamlined family chore management application designed to 
 
 **Document Owner**: Product Team
 **Review Cycle**: Monthly
-**Last Updated**: January 20, 2026
-**Next Review**: February 20, 2026
+**Last Updated**: January 25, 2026
+**Next Review**: February 25, 2026
 **Stakeholders**: Engineering, Design, Marketing, Customer Success

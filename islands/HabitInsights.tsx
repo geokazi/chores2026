@@ -1,6 +1,7 @@
 /**
  * HabitInsights Island - Behavioral analytics visualization
  * Pure CSS bars (no chart library), template-aware metrics
+ * Shows "Getting Started" view for new users (< 7 days of activity)
  */
 
 interface WeekTrend {
@@ -36,10 +37,25 @@ interface RoutineData {
   morningPct: number;
 }
 
+interface ThisWeekDay {
+  date: string;
+  dayName: string;
+  done: boolean;
+}
+
+interface ThisWeekActivity {
+  profileId: string;
+  name: string;
+  days: ThisWeekDay[];
+  totalDone: number;
+}
+
 interface Props {
   trends: KidTrend[];
   streaks: StreakData[];
   routines: RoutineData[];
+  totalActiveDays: number;
+  thisWeekActivity: ThisWeekActivity[];
 }
 
 const MILESTONE_LABELS: Record<StreakData["milestone"], { label: string; icon: string }> = {
@@ -50,7 +66,215 @@ const MILESTONE_LABELS: Record<StreakData["milestone"], { label: string; icon: s
   formed: { label: "Habit formed! (30+)", icon: "⭐" },
 };
 
-export default function HabitInsights({ trends, streaks, routines }: Props) {
+/** Encouraging message based on streak/activity */
+function getEncouragement(streak: number, totalDone: number): string {
+  if (streak >= 3) return `🔥 ${streak}-day streak — great momentum!`;
+  if (streak === 2) return `🔥 ${streak}-day streak — keep it up!`;
+  if (streak === 1) return "🌟 Nice start! One more day for a streak.";
+  if (totalDone > 0) return "🌟 Off to a good start!";
+  return "Ready to begin!";
+}
+
+export default function HabitInsights({ trends, streaks, routines, totalActiveDays, thisWeekActivity }: Props) {
+  const isNewUser = totalActiveDays < 7;
+
+  // New user: show "Getting Started" view
+  if (isNewUser) {
+    return (
+      <div class="habit-insights">
+        <section class="getting-started-card">
+          <div class="gs-header">
+            <span class="gs-icon">🌱</span>
+            <h2>Building Your Insights</h2>
+          </div>
+          <p class="gs-desc">
+            Complete chores for 7 days to unlock full analytics:
+          </p>
+          <ul class="gs-features">
+            <li class={totalActiveDays >= 7 ? "unlocked" : ""}>
+              {totalActiveDays >= 7 ? "✓" : "○"} 12-week consistency trends
+            </li>
+            <li class={totalActiveDays >= 7 ? "unlocked" : ""}>
+              {totalActiveDays >= 7 ? "✓" : "○"} Habit formation milestones
+            </li>
+            <li class={totalActiveDays >= 7 ? "unlocked" : ""}>
+              {totalActiveDays >= 7 ? "✓" : "○"} Morning vs evening patterns
+            </li>
+          </ul>
+          <div class="gs-progress">
+            <div class="gs-progress-bar">
+              <div
+                class="gs-progress-fill"
+                style={{ width: `${Math.min(100, (totalActiveDays / 7) * 100)}%` }}
+              />
+            </div>
+            <span class="gs-progress-label">Day {totalActiveDays} of 7</span>
+          </div>
+        </section>
+
+        <section class="insights-section">
+          <h2>This Week</h2>
+          <p class="section-desc">Day-by-day progress</p>
+          <div class="this-week-cards">
+            {thisWeekActivity.map(kid => {
+              const kidStreak = streaks.find(s => s.profileId === kid.profileId);
+              const encouragement = getEncouragement(kidStreak?.currentStreak || 0, kid.totalDone);
+              return (
+                <div class="this-week-card" key={kid.profileId}>
+                  <div class="tw-header">
+                    <span class="tw-name">{kid.name}</span>
+                  </div>
+                  <div class="tw-days">
+                    {kid.days.map(day => (
+                      <div class={`tw-day ${day.done ? "done" : ""}`} key={day.date}>
+                        <span class="tw-day-icon">{day.done ? "✓" : "○"}</span>
+                        <span class="tw-day-name">{day.dayName}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div class="tw-encouragement">{encouragement}</div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        <style>{`
+          .getting-started-card {
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+            border: 1px solid #a7f3d0;
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+          }
+          .gs-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+          }
+          .gs-icon {
+            font-size: 1.5rem;
+          }
+          .gs-header h2 {
+            margin: 0;
+            font-size: 1.1rem;
+            color: #065f46;
+          }
+          .gs-desc {
+            margin: 0 0 0.75rem;
+            font-size: 0.875rem;
+            color: #047857;
+          }
+          .gs-features {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 1rem;
+          }
+          .gs-features li {
+            font-size: 0.875rem;
+            color: #6b7280;
+            padding: 0.25rem 0;
+          }
+          .gs-features li.unlocked {
+            color: #059669;
+          }
+          .gs-progress {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+          }
+          .gs-progress-bar {
+            height: 8px;
+            background: #d1fae5;
+            border-radius: 4px;
+            overflow: hidden;
+          }
+          .gs-progress-fill {
+            height: 100%;
+            background: #10b981;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+          }
+          .gs-progress-label {
+            font-size: 0.75rem;
+            color: #065f46;
+            font-weight: 500;
+          }
+
+          .this-week-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+          }
+          .this-week-card {
+            background: var(--color-card, #fff);
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+          }
+          .tw-header {
+            margin-bottom: 0.5rem;
+          }
+          .tw-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+          }
+          .tw-days {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+          }
+          .tw-day {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+            padding: 0.35rem 0;
+            border-radius: 6px;
+            background: #f9fafb;
+          }
+          .tw-day.done {
+            background: #ecfdf5;
+          }
+          .tw-day-icon {
+            font-size: 1rem;
+            color: #d1d5db;
+          }
+          .tw-day.done .tw-day-icon {
+            color: #10b981;
+          }
+          .tw-day-name {
+            font-size: 0.6rem;
+            color: #9ca3af;
+            text-transform: uppercase;
+          }
+          .tw-encouragement {
+            font-size: 0.8rem;
+            color: #6b7280;
+          }
+
+          .habit-insights {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+          }
+          .insights-section h2 {
+            font-size: 1.1rem;
+            margin: 0 0 0.25rem;
+            color: var(--color-text, #064e3b);
+          }
+          .section-desc {
+            font-size: 0.75rem;
+            color: #888;
+            margin: 0 0 0.75rem;
+          }
+        `}</style>
+      </div>
+    );
+  }
+
+  // Established user: show full 12-week view
   return (
     <div class="habit-insights">
       {/* Section 1: 12-Week Consistency Trend */}
