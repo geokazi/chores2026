@@ -224,6 +224,15 @@ The digest was enhanced as part of [Priority 1: Behavioral Insights](../planned/
 - **SMS template**: Appends consistency % after streak count.
 - **Insight one-liner**: High consistency (80%+) generates "habit forming!" insight.
 
+**January 25, 2026 — Shared Utility Consolidation**
+
+- **No duplicate code**: `email-digest.ts` now imports `calculateStreak`, `calculateConsistency`,
+  and `getExpectedDaysForProfile` from `insights-service.ts` instead of defining local copies.
+  Single source of truth for all date math — if the streak algorithm changes, it updates
+  everywhere automatically.
+- **Unit tests**: 21 tests in `insights-service_test.ts` cover the shared utilities,
+  including edge cases for timezone conversion, gap-day recovery, and deduplication.
+
 ---
 
 ## Cross-References

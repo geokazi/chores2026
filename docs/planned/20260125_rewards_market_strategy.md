@@ -165,12 +165,20 @@ routine consistency went from 40% to 85% over 6 weeks."
 
 **Implementation** (actual):
 ```
-routes/parent/insights.tsx       # ~121 lines (server handler, uses InsightsService for timezone)
-islands/HabitInsights.tsx        # ~317 lines (pure CSS bars, streak cards, routine split)
-lib/services/insights-service.ts # ~439 lines (template-aware analytics engine)
-lib/services/email-digest.ts     # Enhanced: streak recovery + template-aware consistency + insights
-islands/ParentDashboard.tsx      # Added: "Habit Insights" link in actions
+routes/parent/insights.tsx          # ~121 lines (server handler, uses InsightsService for timezone)
+islands/HabitInsights.tsx           # ~317 lines (pure CSS bars, streak cards, routine split)
+lib/services/insights-service.ts    # ~480 lines (template-aware analytics engine + shared utilities)
+lib/services/insights-service_test.ts # 21 unit tests for date math, timezone, streaks, consistency
+lib/services/email-digest.ts        # Enhanced: imports shared streak/consistency from insights-service
+islands/ParentDashboard.tsx         # Added: "Habit Insights" link in actions
 ```
+
+**Shared utility exports** (insights-service.ts):
+- `getLocalHour(isoTimestamp, timezone)` — extract hour (0-23) in family timezone
+- `getLocalDate(isoTimestamp, timezone)` — extract YYYY-MM-DD in family timezone
+- `calculateStreak(transactionDates)` — current streak with 1-day recovery
+- `calculateConsistency(transactionDates, expectedPerWeek)` — template-aware 30-day %
+- `getExpectedDaysForProfile(familySettings, profileId)` — expected days from rotation config
 
 **Key design decisions**:
 - **Single DB query**: `getInsights()` fetches 90 days of transactions once, passes in-memory data
@@ -180,6 +188,8 @@ islands/ParentDashboard.tsx      # Added: "Habit Insights" link in actions
 - **Template-aware consistency** (both insights page AND email digest): Uses
   `getExpectedDaysForProfile()` to compute expected days from family rotation settings.
   Weekend Warrior (5d/week) families see accurate % in both views.
+- **Timezone-aware trend calculation**: `getLocalDate()` converts UTC timestamps to family timezone
+  before week bucketing, preventing off-by-one day errors around midnight.
 - Pure CSS bars — no chart library dependency
 - `Intl.DateTimeFormat` with `hourCycle: "h23"` for timezone-safe hour extraction
 - Streak recovery: `diffDays <= 2` allows 1 gap day (aligned with gamification research)
@@ -187,6 +197,8 @@ islands/ParentDashboard.tsx      # Added: "Habit Insights" link in actions
 - Per-kid error handling: malformed data for one kid doesn't crash the whole page
 - Typed interfaces (`TransactionRow`, `AssignmentRow`) replace `any[]` casts
 - Single Supabase client: route reuses `InsightsService.getTimezone()` instead of creating a second client
+- **No duplicate logic**: `email-digest.ts` imports streak/consistency functions from insights-service
+  (single source of truth for all date math)
 
 **Cross-references**:
 - [Streak Brainstorm UX](20260114_streak_brainstorm_ux.md) — original design exploration

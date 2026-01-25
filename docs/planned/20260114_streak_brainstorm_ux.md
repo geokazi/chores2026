@@ -18,6 +18,14 @@
 > Typed interfaces (`TransactionRow`, `AssignmentRow`). Template-aware expected
 > days via `getExpectedDaysForProfile()` — consistent between insights page and digest.
 >
+> **Shared utilities** (2026-01-25): Core streak/consistency logic extracted to
+> `insights-service.ts` as exported functions. `email-digest.ts` imports these
+> instead of duplicating the algorithm. Unit tests in `insights-service_test.ts`:
+> - `calculateStreak(dates)` — 1-day recovery, must include today/yesterday
+> - `calculateConsistency(dates, expectedPerWeek)` — template-aware 30-day %
+> - `getLocalDate(timestamp, timezone)` — timezone-safe date extraction
+> - `getLocalHour(timestamp, timezone)` — timezone-safe hour extraction (0-23)
+>
 > **Not yet implemented from this doc**: kid-facing streak UI, celebration
 > animations on milestone, daily streak notifications, perfect day streaks.
 
