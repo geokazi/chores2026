@@ -80,11 +80,15 @@ export const handler: Handlers<ReportsData> = {
 
       const pointsPerDollar = session.family.points_per_dollar;
 
+      // Get timezone from URL query param (sent by browser) or default to America/Los_Angeles
+      const url = new URL(req.url);
+      const timezone = url.searchParams.get("tz") || "America/Los_Angeles";
+
       const [analytics, goalsAchieved, goalStatus, weeklyPatterns] = await Promise.all([
-        choreService.getFamilyAnalytics(familyId, pointsPerDollar),
+        choreService.getFamilyAnalytics(familyId, pointsPerDollar, timezone),
         choreService.getGoalsAchieved(familyId),
         choreService.getFamilyGoalStatus(familyId),
-        choreService.getWeeklyPatterns(familyId),
+        choreService.getWeeklyPatterns(familyId, timezone),
       ]);
 
       console.log("✅ Family reports loaded for:", session.family.name);
@@ -112,8 +116,23 @@ export const handler: Handlers<ReportsData> = {
 export default function ReportsPage({ data }: PageProps<ReportsData>) {
   const { family, analytics, goalsAchieved, goalStatus, weeklyPatterns, error } = data;
 
+  // Script to detect browser timezone and reload with it if needed
+  const timezoneScript = `
+    (function() {
+      const url = new URL(window.location.href);
+      if (!url.searchParams.has('tz')) {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        url.searchParams.set('tz', tz);
+        window.location.replace(url.toString());
+      }
+    })();
+  `;
+
   return (
     <div class="container">
+      {/* Auto-detect and pass browser timezone */}
+      <script dangerouslySetInnerHTML={{ __html: timezoneScript }} />
+
       <AppHeader
         currentPage="reports"
         pageTitle="Family Progress"

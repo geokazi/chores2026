@@ -263,10 +263,10 @@ export default function FamilyReports({ analytics, goalsAchieved, pointsPerDolla
                 </div>
                 <div style={{ textAlign: "right" }}>
                   <div style={{ fontWeight: "600", fontFamily: "monospace" }}>
-                    {person.totalPoints} pts
+                    {person.totalPoints} pts (${(person.totalPoints / pointsPerDollar).toFixed(0)})
                   </div>
                   <div style={{ fontSize: "0.8rem", color: "var(--color-text-light)" }}>
-                    {person.rewardCount} reward{person.rewardCount !== 1 ? "s" : ""} claimed
+                    {person.rewardCount} reward{person.rewardCount !== 1 ? "s" : ""} earned
                   </div>
                 </div>
               </div>
@@ -286,9 +286,9 @@ export default function FamilyReports({ analytics, goalsAchieved, pointsPerDolla
           }}>
             <span>Family Total</span>
             <div style={{ textAlign: "right" }}>
-              <span style={{ fontFamily: "monospace" }}>{goalsAchieved.familyTotal.totalPoints} pts</span>
+              <span style={{ fontFamily: "monospace" }}>{goalsAchieved.familyTotal.totalPoints} pts (${(goalsAchieved.familyTotal.totalPoints / pointsPerDollar).toFixed(0)})</span>
               <span style={{ fontSize: "0.8rem", color: "var(--color-text-light)", marginLeft: "0.5rem" }}>
-                ({goalsAchieved.familyTotal.rewardCount} rewards)
+                ({goalsAchieved.familyTotal.rewardCount} rewards earned)
               </span>
             </div>
           </div>

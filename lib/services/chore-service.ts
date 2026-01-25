@@ -5,6 +5,7 @@
 
 import { createClient } from "@supabase/supabase-js";
 import { notifyGoalAchieved } from "./email-service.ts";
+import { getLocalDate } from "./insights-service.ts";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -892,8 +893,9 @@ export class ChoreService {
    * Returns all family members with their savings and points earned
    * Periods: Week, Month, YTD (Year to Date), All Time
    * @param pointsPerDollar - Conversion rate from session (avoids extra DB query)
+   * @param timezone - IANA timezone (e.g. "America/Los_Angeles") for local week/month boundaries
    */
-  async getFamilyAnalytics(familyId: string, pointsPerDollar: number = 1): Promise<{
+  async getFamilyAnalytics(familyId: string, pointsPerDollar: number = 1, timezone: string = "America/Los_Angeles"): Promise<{
     members: Array<{
       id: string;
       name: string;
@@ -947,22 +949,27 @@ export class ChoreService {
         console.error("Error fetching transactions for analytics:", txError);
       }
 
-      // Use UTC consistently for date boundaries (avoids server timezone issues)
+      // Calculate date boundaries in user's local timezone
+      // Get today's date in the user's timezone
       const now = new Date();
-      const nowUtc = now.toISOString();
+      const todayLocal = getLocalDate(now.toISOString(), timezone); // YYYY-MM-DD in user's TZ
+      const [yearStr, monthStr, dayStr] = todayLocal.split("-");
+      const year = parseInt(yearStr, 10);
+      const month = parseInt(monthStr, 10); // 1-12
+      const day = parseInt(dayStr, 10);
 
-      // Week start: Sunday of current week at 00:00:00 UTC
-      const dayOfWeek = now.getUTCDay(); // 0=Sun in UTC
-      const weekStartDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - dayOfWeek));
-      const weekStartUtc = weekStartDate.toISOString();
+      // Week start: Find Sunday of current week in user's timezone
+      // Create a date object for today in local context
+      const todayDate = new Date(year, month - 1, day); // month is 0-indexed
+      const dayOfWeek = todayDate.getDay(); // 0=Sun in local context
+      const weekStartLocal = new Date(year, month - 1, day - dayOfWeek);
+      const weekStartStr = `${weekStartLocal.getFullYear()}-${String(weekStartLocal.getMonth() + 1).padStart(2, "0")}-${String(weekStartLocal.getDate()).padStart(2, "0")}`;
 
-      // Month start: 1st of current month at 00:00:00 UTC
-      const monthStartDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-      const monthStartUtc = monthStartDate.toISOString();
+      // Month start: 1st of current month in user's timezone
+      const monthStartStr = `${year}-${String(month).padStart(2, "0")}-01`;
 
-      // YTD start: Jan 1 of current year at 00:00:00 UTC
-      const ytdStartDate = new Date(Date.UTC(now.getUTCFullYear(), 0, 1));
-      const ytdStartUtc = ytdStartDate.toISOString();
+      // YTD start: Jan 1 of current year in user's timezone
+      const ytdStartStr = `${year}-01-01`;
 
       const typedMembers = (members || []) as MemberRow[];
       const typedTx = (transactions || []) as TxRow[];
@@ -970,16 +977,17 @@ export class ChoreService {
       const memberAnalytics = typedMembers.map((member: MemberRow) => {
         const memberTx = typedTx.filter((tx: TxRow) => tx.profile_id === member.id);
 
+        // Convert each transaction's timestamp to local date and compare
         const earned_week = memberTx
-          .filter((tx: TxRow) => tx.created_at >= weekStartUtc)
+          .filter((tx: TxRow) => getLocalDate(tx.created_at, timezone) >= weekStartStr)
           .reduce((sum: number, tx: TxRow) => sum + tx.points_change, 0);
 
         const earned_month = memberTx
-          .filter((tx: TxRow) => tx.created_at >= monthStartUtc)
+          .filter((tx: TxRow) => getLocalDate(tx.created_at, timezone) >= monthStartStr)
           .reduce((sum: number, tx: TxRow) => sum + tx.points_change, 0);
 
         const earned_ytd = memberTx
-          .filter((tx: TxRow) => tx.created_at >= ytdStartUtc)
+          .filter((tx: TxRow) => getLocalDate(tx.created_at, timezone) >= ytdStartStr)
           .reduce((sum: number, tx: TxRow) => sum + tx.points_change, 0);
 
         const earned_all_time = memberTx
@@ -1226,8 +1234,9 @@ export class ChoreService {
   /**
    * Get weekly activity patterns for the family (last 60 days)
    * Shows which days of the week are most active per kid
+   * @param timezone - IANA timezone (e.g. "America/Los_Angeles") for local day-of-week
    */
-  async getWeeklyPatterns(familyId: string): Promise<{
+  async getWeeklyPatterns(familyId: string, timezone: string = "America/Los_Angeles"): Promise<{
     familyBusiestDay: { day: string; count: number } | null;
     familySlowestDays: string[];
     byPerson: Array<{
@@ -1284,7 +1293,10 @@ export class ChoreService {
 
     for (const tx of data as any[]) {
       const name = childProfileMap.get(tx.profile_id) || "Unknown";
-      const dayNum = new Date(tx.created_at).getUTCDay(); // Use UTC for consistency
+      // Get day-of-week in user's local timezone
+      const localDateStr = getLocalDate(tx.created_at, timezone); // YYYY-MM-DD
+      const [y, m, d] = localDateStr.split("-").map(Number);
+      const dayNum = new Date(y, m - 1, d).getDay(); // 0=Sun in local context
 
       if (!personDayMap.has(name)) {
         personDayMap.set(name, new Map());
