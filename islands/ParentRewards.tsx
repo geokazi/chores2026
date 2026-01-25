@@ -1,0 +1,563 @@
+/**
+ * ParentRewards - Catalog management + fulfillment + goal boosting
+ * ~450 lines, 3 sections: Pending | Catalog | Kids' Goals
+ */
+
+import { useState } from "preact/hooks";
+import type { AvailableReward, RewardPurchase, SavingsGoal } from "../lib/types/finance.ts";
+
+interface KidWithGoals {
+  id: string;
+  name: string;
+  avatar_emoji: string;
+  goals: SavingsGoal[];
+}
+
+interface Props {
+  catalog: AvailableReward[];
+  pendingPurchases: RewardPurchase[];
+  kidsWithGoals: KidWithGoals[];
+  familyId: string;
+  currentProfileId: string;
+}
+
+const ICONS = ["🎬", "🍕", "🎮", "📱", "🛒", "🎁", "🏖️", "🎪", "📚", "🎨"];
+const CATEGORIES = ["entertainment", "gaming", "food", "activities", "other"] as const;
+
+export default function ParentRewards({
+  catalog: initialCatalog,
+  pendingPurchases: initialPending,
+  kidsWithGoals: initialKids,
+  familyId,
+  currentProfileId,
+}: Props) {
+  const [catalog, setCatalog] = useState(initialCatalog);
+  const [pending, setPending] = useState(initialPending);
+  const [kidsGoals, setKidsGoals] = useState(initialKids);
+  const [activeTab, setActiveTab] = useState<"pending" | "catalog" | "goals">(
+    initialPending.length > 0 ? "pending" : "catalog"
+  );
+
+  // Modal states
+  const [showAddReward, setShowAddReward] = useState(false);
+  const [editingReward, setEditingReward] = useState<AvailableReward | null>(null);
+  const [boostingGoal, setBoostingGoal] = useState<{ kid: KidWithGoals; goal: SavingsGoal } | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [message, setMessage] = useState("");
+
+  // Form state for add/edit reward
+  const [rewardForm, setRewardForm] = useState({
+    name: "",
+    description: "",
+    icon: "🎁",
+    pointCost: 100,
+    category: "other" as typeof CATEGORIES[number],
+  });
+
+  const [boostAmount, setBoostAmount] = useState(50);
+
+  // ─────────────────────────────────────────────────────────────
+  // Handlers
+  // ─────────────────────────────────────────────────────────────
+
+  const handleFulfill = async (purchaseId: string) => {
+    setIsProcessing(true);
+    try {
+      const res = await fetch("/api/rewards/fulfill", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ purchaseId, fulfilledByProfileId: currentProfileId }),
+      });
+      if (res.ok) {
+        setPending(pending.filter(p => p.id !== purchaseId));
+        setMessage("Marked as fulfilled!");
+        setTimeout(() => setMessage(""), 2000);
+      }
+    } catch (e) {
+      console.error("Fulfill error:", e);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleSaveReward = async () => {
+    if (!rewardForm.name || rewardForm.pointCost <= 0) return;
+    setIsProcessing(true);
+
+    const payload = {
+      ...rewardForm,
+      id: editingReward?.id || crypto.randomUUID(),
+      isActive: true,
+      familyId,
+    };
+
+    try {
+      const res = await fetch("/api/rewards/catalog", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (editingReward) {
+          setCatalog(catalog.map(r => r.id === data.reward.id ? data.reward : r));
+        } else {
+          setCatalog([...catalog, data.reward]);
+        }
+        closeRewardModal();
+        setMessage(editingReward ? "Reward updated!" : "Reward added!");
+        setTimeout(() => setMessage(""), 2000);
+      }
+    } catch (e) {
+      console.error("Save reward error:", e);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleDeleteReward = async (rewardId: string) => {
+    setIsProcessing(true);
+    try {
+      const res = await fetch(`/api/rewards/catalog?rewardId=${rewardId}&familyId=${familyId}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setCatalog(catalog.filter(r => r.id !== rewardId));
+        setMessage("Reward removed");
+        setTimeout(() => setMessage(""), 2000);
+      }
+    } catch (e) {
+      console.error("Delete error:", e);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleBoost = async () => {
+    if (!boostingGoal || boostAmount <= 0) return;
+    setIsProcessing(true);
+
+    try {
+      const res = await fetch("/api/goals", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "boost",
+          goalId: boostingGoal.goal.id,
+          profileId: boostingGoal.kid.id,
+          amount: boostAmount,
+          boosterId: currentProfileId,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        // Update local state
+        setKidsGoals(kidsGoals.map(kid => {
+          if (kid.id !== boostingGoal.kid.id) return kid;
+          return {
+            ...kid,
+            goals: kid.goals.map(g => g.id === data.goal.id ? data.goal : g),
+          };
+        }));
+        setBoostingGoal(null);
+        setMessage(`Boosted ${boostingGoal.kid.name}'s goal by ${boostAmount} pts!`);
+        setTimeout(() => setMessage(""), 3000);
+      }
+    } catch (e) {
+      console.error("Boost error:", e);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const openEditReward = (reward: AvailableReward) => {
+    setRewardForm({
+      name: reward.name,
+      description: reward.description || "",
+      icon: reward.icon,
+      pointCost: reward.pointCost,
+      category: reward.category as typeof CATEGORIES[number],
+    });
+    setEditingReward(reward);
+  };
+
+  const closeRewardModal = () => {
+    setShowAddReward(false);
+    setEditingReward(null);
+    setRewardForm({ name: "", description: "", icon: "🎁", pointCost: 100, category: "other" });
+  };
+
+  // ─────────────────────────────────────────────────────────────
+  // Render
+  // ─────────────────────────────────────────────────────────────
+
+  return (
+    <div class="parent-rewards">
+      {/* Success message */}
+      {message && <div class="success-toast">{message}</div>}
+
+      {/* Tab navigation */}
+      <div class="tabs">
+        <button
+          class={`tab ${activeTab === "pending" ? "active" : ""}`}
+          onClick={() => setActiveTab("pending")}
+        >
+          📋 Pending {pending.length > 0 && <span class="badge">{pending.length}</span>}
+        </button>
+        <button
+          class={`tab ${activeTab === "catalog" ? "active" : ""}`}
+          onClick={() => setActiveTab("catalog")}
+        >
+          🎁 Catalog
+        </button>
+        <button
+          class={`tab ${activeTab === "goals" ? "active" : ""}`}
+          onClick={() => setActiveTab("goals")}
+        >
+          🎯 Goals
+        </button>
+      </div>
+
+      {/* ─────────────────────────────────────────────────────── */}
+      {/* PENDING TAB */}
+      {/* ─────────────────────────────────────────────────────── */}
+      {activeTab === "pending" && (
+        <div class="section">
+          <h3>Awaiting Fulfillment</h3>
+          {pending.length === 0 ? (
+            <p class="empty">No pending rewards to fulfill</p>
+          ) : (
+            <div class="list">
+              {pending.map(p => (
+                <div key={p.id} class="purchase-card">
+                  <span class="icon">{p.rewardIcon || "🎁"}</span>
+                  <div class="info">
+                    <div class="name">{p.rewardName}</div>
+                    <div class="meta">{p.pointCost} pts</div>
+                  </div>
+                  <button
+                    class="fulfill-btn"
+                    onClick={() => handleFulfill(p.id)}
+                    disabled={isProcessing}
+                  >
+                    ✓ Done
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────────────── */}
+      {/* CATALOG TAB */}
+      {/* ─────────────────────────────────────────────────────── */}
+      {activeTab === "catalog" && (
+        <div class="section">
+          <div class="section-header">
+            <h3>Rewards Catalog</h3>
+            <button class="add-btn" onClick={() => setShowAddReward(true)}>+ Add</button>
+          </div>
+
+          {catalog.length === 0 ? (
+            <p class="empty">No rewards yet. Add some for your kids to claim!</p>
+          ) : (
+            <div class="list">
+              {catalog.map(r => (
+                <div key={r.id} class="reward-card">
+                  <span class="icon">{r.icon}</span>
+                  <div class="info">
+                    <div class="name">{r.name}</div>
+                    <div class="meta">{r.pointCost} pts • {r.category}</div>
+                  </div>
+                  <div class="actions">
+                    <button class="edit-btn" onClick={() => openEditReward(r)}>✏️</button>
+                    <button class="del-btn" onClick={() => handleDeleteReward(r.id)}>🗑️</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────────────── */}
+      {/* GOALS TAB */}
+      {/* ─────────────────────────────────────────────────────── */}
+      {activeTab === "goals" && (
+        <div class="section">
+          <h3>Kids' Savings Goals</h3>
+          {kidsGoals.every(k => k.goals.length === 0) ? (
+            <p class="empty">No goals yet. Kids can create goals from their dashboard.</p>
+          ) : (
+            kidsGoals.map(kid => kid.goals.length > 0 && (
+              <div key={kid.id} class="kid-goals">
+                <div class="kid-header">
+                  <span>{kid.avatar_emoji} {kid.name}</span>
+                </div>
+                {kid.goals.filter(g => !g.isAchieved).map(goal => (
+                  <div key={goal.id} class="goal-card">
+                    <span class="icon">{goal.icon}</span>
+                    <div class="info">
+                      <div class="name">{goal.name}</div>
+                      <div class="progress-bar">
+                        <div
+                          class="progress-fill"
+                          style={{ width: `${Math.min(100, (goal.currentAmount / goal.targetAmount) * 100)}%` }}
+                        />
+                      </div>
+                      <div class="meta">
+                        {goal.currentAmount} / {goal.targetAmount} pts
+                      </div>
+                    </div>
+                    <button
+                      class="boost-btn"
+                      onClick={() => { setBoostingGoal({ kid, goal }); setBoostAmount(50); }}
+                    >
+                      💪 Boost
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────────────── */}
+      {/* ADD/EDIT REWARD MODAL */}
+      {/* ─────────────────────────────────────────────────────── */}
+      {(showAddReward || editingReward) && (
+        <div class="modal-overlay" onClick={closeRewardModal}>
+          <div class="modal" onClick={e => e.stopPropagation()}>
+            <div class="modal-header">
+              <h2>{editingReward ? "Edit Reward" : "Add Reward"}</h2>
+              <button class="close-btn" onClick={closeRewardModal}>✕</button>
+            </div>
+
+            <div class="modal-body">
+              <label>Icon</label>
+              <div class="icon-grid">
+                {ICONS.map(icon => (
+                  <button
+                    key={icon}
+                    type="button"
+                    class={`icon-btn ${rewardForm.icon === icon ? "selected" : ""}`}
+                    onClick={() => setRewardForm({ ...rewardForm, icon })}
+                  >
+                    {icon}
+                  </button>
+                ))}
+              </div>
+
+              <label>Name</label>
+              <input
+                type="text"
+                value={rewardForm.name}
+                onInput={e => setRewardForm({ ...rewardForm, name: (e.target as HTMLInputElement).value })}
+                placeholder="e.g., Movie Night Pick"
+              />
+
+              <label>Points</label>
+              <input
+                type="number"
+                value={rewardForm.pointCost}
+                onInput={e => setRewardForm({ ...rewardForm, pointCost: Number((e.target as HTMLInputElement).value) })}
+                min="1"
+              />
+
+              <label>Category</label>
+              <select
+                value={rewardForm.category}
+                onChange={e => setRewardForm({ ...rewardForm, category: (e.target as HTMLSelectElement).value as any })}
+              >
+                {CATEGORIES.map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+
+              <button
+                class="save-btn"
+                onClick={handleSaveReward}
+                disabled={isProcessing || !rewardForm.name}
+              >
+                {isProcessing ? "Saving..." : "Save Reward"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────────────── */}
+      {/* BOOST MODAL */}
+      {/* ─────────────────────────────────────────────────────── */}
+      {boostingGoal && (
+        <div class="modal-overlay" onClick={() => setBoostingGoal(null)}>
+          <div class="modal" onClick={e => e.stopPropagation()}>
+            <div class="modal-header">
+              <h2>Boost Goal</h2>
+              <button class="close-btn" onClick={() => setBoostingGoal(null)}>✕</button>
+            </div>
+
+            <div class="modal-body center">
+              <div class="boost-preview">
+                <span class="big-icon">{boostingGoal.goal.icon}</span>
+                <div class="goal-name">{boostingGoal.goal.name}</div>
+                <div class="kid-name">for {boostingGoal.kid.name}</div>
+                <div class="goal-progress">
+                  {boostingGoal.goal.currentAmount} / {boostingGoal.goal.targetAmount} pts
+                </div>
+              </div>
+
+              <label>Boost Amount</label>
+              <div class="quick-amounts">
+                {[25, 50, 100, 200].map(amt => (
+                  <button
+                    key={amt}
+                    type="button"
+                    class={`amt-btn ${boostAmount === amt ? "selected" : ""}`}
+                    onClick={() => setBoostAmount(amt)}
+                  >
+                    {amt}
+                  </button>
+                ))}
+              </div>
+
+              <input
+                type="number"
+                value={boostAmount}
+                onInput={e => setBoostAmount(Number((e.target as HTMLInputElement).value))}
+                min="1"
+              />
+
+              <button
+                class="save-btn"
+                onClick={handleBoost}
+                disabled={isProcessing || boostAmount <= 0}
+              >
+                {isProcessing ? "Boosting..." : `Boost ${boostAmount} pts`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        .parent-rewards { max-width: 600px; margin: 0 auto; padding: 1rem; }
+        .success-toast {
+          position: fixed; top: 80px; left: 50%; transform: translateX(-50%);
+          background: var(--color-success, #22c55e); color: white;
+          padding: 0.75rem 1.5rem; border-radius: 8px; z-index: 1000;
+          animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-50%) translateY(-10px); } }
+
+        .tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+        .tab {
+          flex: 1; padding: 0.75rem; border: none; border-radius: 8px;
+          background: var(--color-card, #fff); cursor: pointer;
+          font-size: 0.875rem; transition: all 0.2s;
+        }
+        .tab.active { background: var(--color-primary, #10b981); color: white; }
+        .tab .badge {
+          background: #ef4444; color: white; border-radius: 10px;
+          padding: 0.125rem 0.5rem; font-size: 0.75rem; margin-left: 0.25rem;
+        }
+
+        .section { background: var(--color-card, #fff); border-radius: 12px; padding: 1rem; }
+        .section h3 { margin: 0 0 1rem; font-size: 1rem; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .section-header h3 { margin: 0; }
+        .add-btn {
+          background: var(--color-primary, #10b981); color: white;
+          border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer;
+        }
+
+        .empty { color: #888; text-align: center; padding: 2rem; }
+
+        .list { display: flex; flex-direction: column; gap: 0.75rem; }
+        .purchase-card, .reward-card, .goal-card {
+          display: flex; align-items: center; gap: 0.75rem;
+          padding: 0.75rem; background: var(--color-bg, #f0fdf4); border-radius: 8px;
+        }
+        .icon { font-size: 1.5rem; }
+        .info { flex: 1; }
+        .name { font-weight: 600; }
+        .meta { font-size: 0.75rem; color: #666; }
+
+        .fulfill-btn, .boost-btn {
+          background: var(--color-primary, #10b981); color: white;
+          border: none; padding: 0.5rem 0.75rem; border-radius: 6px; cursor: pointer;
+          font-size: 0.875rem;
+        }
+        .fulfill-btn:disabled { opacity: 0.5; }
+
+        .actions { display: flex; gap: 0.25rem; }
+        .edit-btn, .del-btn {
+          background: transparent; border: none; cursor: pointer; font-size: 1rem;
+          padding: 0.25rem;
+        }
+
+        .kid-goals { margin-bottom: 1rem; }
+        .kid-header { font-weight: 600; margin-bottom: 0.5rem; }
+        .progress-bar {
+          height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden;
+          margin: 0.25rem 0;
+        }
+        .progress-fill {
+          height: 100%; background: var(--color-primary, #10b981);
+          transition: width 0.3s ease;
+        }
+
+        /* Modal */
+        .modal-overlay {
+          position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+          display: flex; align-items: center; justify-content: center; z-index: 1000;
+        }
+        .modal {
+          background: white; border-radius: 12px; width: 90%; max-width: 400px;
+          max-height: 90vh; overflow-y: auto;
+        }
+        .modal-header {
+          display: flex; justify-content: space-between; align-items: center;
+          padding: 1rem; border-bottom: 1px solid #eee;
+        }
+        .modal-header h2 { margin: 0; font-size: 1.125rem; }
+        .close-btn { background: none; border: none; font-size: 1.25rem; cursor: pointer; }
+        .modal-body { padding: 1rem; }
+        .modal-body label { display: block; margin: 0.75rem 0 0.25rem; font-size: 0.875rem; color: #666; }
+        .modal-body input, .modal-body select {
+          width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;
+          font-size: 1rem;
+        }
+        .icon-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .icon-btn {
+          width: 40px; height: 40px; border: 2px solid #eee; border-radius: 8px;
+          background: white; font-size: 1.25rem; cursor: pointer;
+        }
+        .icon-btn.selected { border-color: var(--color-primary, #10b981); background: #f0fdf4; }
+        .save-btn {
+          width: 100%; padding: 1rem; margin-top: 1rem;
+          background: var(--color-primary, #10b981); color: white;
+          border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer;
+        }
+        .save-btn:disabled { opacity: 0.5; }
+
+        .center { text-align: center; }
+        .boost-preview { margin-bottom: 1rem; }
+        .big-icon { font-size: 3rem; }
+        .goal-name { font-size: 1.25rem; font-weight: 600; }
+        .kid-name { color: #666; }
+        .goal-progress { margin-top: 0.5rem; color: #888; }
+        .quick-amounts { display: flex; gap: 0.5rem; justify-content: center; margin-bottom: 0.5rem; }
+        .amt-btn {
+          padding: 0.5rem 1rem; border: 2px solid #eee; border-radius: 8px;
+          background: white; cursor: pointer;
+        }
+        .amt-btn.selected { border-color: var(--color-primary, #10b981); background: #f0fdf4; }
+      `}</style>
+    </div>
+  );
+}

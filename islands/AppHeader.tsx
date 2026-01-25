@@ -166,6 +166,9 @@ export default function AppHeader({
                 <a href="/parent/balances" class={currentPage === "balances" ? "active" : ""}>
                   💰 Balances
                 </a>
+                <a href="/parent/rewards" class={currentPage === "rewards" ? "active" : ""}>
+                  🎁 Rewards
+                </a>
                 <a href="/parent/insights" class={currentPage === "insights" ? "active" : ""}>
                   🧠 Habit Insights
                 </a>
