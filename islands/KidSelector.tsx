@@ -217,7 +217,7 @@ export default function KidSelector({ family, familyMembers }: Props) {
               </div>
             )}
 
-            {(!family.children_pins_enabled && member.role === "child") || member.role === "parent" && (
+            {((!family.children_pins_enabled && member.role === "child") || member.role === "parent") && (
               <div
                 style={{
                   fontSize: "0.875rem",
