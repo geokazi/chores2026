@@ -93,6 +93,9 @@ export default function RewardsCatalog({
 
       {/* Rewards Grid */}
       <div class="section-header">🎁 Available Rewards</div>
+      <div class="info-tip">
+        When you claim a reward, a parent will see it and give it to you.
+      </div>
       <div class="rewards-grid">
         {rewards.map((reward) => (
           <div
@@ -108,17 +111,22 @@ export default function RewardsCatalog({
             </div>
             <div class="reward-footer">
               <span class="reward-cost">{reward.pointCost} pts</span>
-              <button
-                class="claim-btn"
-                onClick={() => {
-                  setSelectedReward(reward);
-                  setShowConfirm(true);
-                  setError("");
-                }}
-                disabled={!canAfford(reward.pointCost)}
-              >
-                {canAfford(reward.pointCost) ? "Claim" : "Not enough pts"}
-              </button>
+              {canAfford(reward.pointCost) ? (
+                <button
+                  class="claim-btn"
+                  onClick={() => {
+                    setSelectedReward(reward);
+                    setShowConfirm(true);
+                    setError("");
+                  }}
+                >
+                  Claim
+                </button>
+              ) : (
+                <span class="earn-more">
+                  Earn {reward.pointCost - currentBalance} more pts 💪
+                </span>
+              )}
             </div>
           </div>
         ))}
@@ -155,15 +163,9 @@ export default function RewardsCatalog({
                 <div class="confirm-cost">{selectedReward.pointCost} pts</div>
               </div>
 
-              <div class="balance-preview">
-                <div class="preview-row">
-                  <span>Your balance:</span>
-                  <span>{currentBalance} pts</span>
-                </div>
-                <div class="preview-row after">
-                  <span>After claim:</span>
-                  <span>{currentBalance - selectedReward.pointCost} pts</span>
-                </div>
+              <div class="confirm-note">
+                A parent will see your request and give you this reward.
+                Points will be deducted when they mark it done.
               </div>
 
               {error && <div class="error-message">{error}</div>}
@@ -173,7 +175,7 @@ export default function RewardsCatalog({
                 onClick={handleClaim}
                 disabled={isProcessing}
               >
-                {isProcessing ? "Claiming..." : "Yes, Claim!"}
+                {isProcessing ? "Requesting..." : "Yes, Claim!"}
               </button>
 
               <button
@@ -193,7 +195,7 @@ export default function RewardsCatalog({
           <div class="modal celebration" onClick={(e) => e.stopPropagation()}>
             <div class="celebration-content">
               <div class="celebration-emoji">🎉</div>
-              <div class="celebration-title">Reward Claimed!</div>
+              <div class="celebration-title">Request Sent!</div>
 
               <div class="claimed-reward">
                 <div class="claimed-icon">{claimedReward.icon}</div>
@@ -201,7 +203,8 @@ export default function RewardsCatalog({
               </div>
 
               <div class="celebration-note">
-                Ask a parent to fulfill your reward
+                A parent will see your request.<br />
+                They'll give you this reward soon!
               </div>
 
               <button
@@ -211,7 +214,7 @@ export default function RewardsCatalog({
                   setClaimedReward(null);
                 }}
               >
-                Done
+                Got it!
               </button>
             </div>
           </div>
@@ -248,6 +251,14 @@ export default function RewardsCatalog({
           font-size: 1rem;
           font-weight: 600;
           color: var(--color-text);
+        }
+        .info-tip {
+          background: #e0f2fe;
+          color: #0369a1;
+          padding: 0.625rem 0.875rem;
+          border-radius: 8px;
+          font-size: 0.8125rem;
+          margin-top: 0.5rem;
         }
         .rewards-grid {
           display: flex;
@@ -304,6 +315,11 @@ export default function RewardsCatalog({
         }
         .claim-btn:hover:not(:disabled) {
           opacity: 0.9;
+        }
+        .earn-more {
+          font-size: 0.8125rem;
+          color: var(--color-text-light);
+          font-weight: 500;
         }
         .recent-section {
           margin-top: 1rem;
@@ -381,6 +397,15 @@ export default function RewardsCatalog({
         .confirm-cost {
           color: var(--color-primary);
           font-weight: 600;
+        }
+        .confirm-note {
+          background: #f0fdf4;
+          color: #166534;
+          padding: 0.875rem;
+          border-radius: 8px;
+          font-size: 0.875rem;
+          margin-bottom: 1.25rem;
+          line-height: 1.4;
         }
         .balance-preview {
           background: var(--color-bg);
