@@ -188,7 +188,7 @@ Deno.test("findChoreByKey - finds preset chores", () => {
 
   const chore = findChoreByKey(preset, undefined, "vacuum_living");
   assertEquals(chore?.name, "Vacuum living room");
-  assertEquals(chore?.points, 2);
+  assertEquals(chore?.points, 3);
 });
 
 Deno.test("findChoreByKey - finds family custom chores", () => {

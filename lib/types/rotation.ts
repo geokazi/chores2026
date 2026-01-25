@@ -70,6 +70,9 @@ export interface RotationCustomizations {
   // Custom per-kid assignments (only when assignment_mode = 'custom')
   // Maps profileId -> choreKeys[] (chores appear daily for that kid)
   custom_assignments?: Record<string, string[]>;
+  // Daily chores: appear every day for ALL kids (regardless of rotation schedule)
+  // Array of chore keys from preset or custom chores
+  daily_chores?: string[];
 }
 
 // Assignment mode for rotation

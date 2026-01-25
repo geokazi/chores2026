@@ -138,6 +138,10 @@ export function getChoresForChild(
       }));
     }
 
+    // Add daily chores (appear every day for all kids)
+    const dailyChores = getDailyChores(preset, customizations, familyCustomChores);
+    chores = [...chores, ...dailyChores];
+
     return chores;
   }
 
@@ -149,6 +153,9 @@ export function getChoresForChild(
     let chores = getDynamicChoresForChild(preset, participantIds, childProfileId, date);
     // Apply customizations + family custom chores
     chores = getChoresWithCustomizations(chores, config.customizations, familyCustomChores);
+    // Add daily chores (appear every day for all kids)
+    const dailyChores = getDailyChores(preset, config.customizations, familyCustomChores);
+    chores = [...chores, ...dailyChores];
     return chores;
   }
 
@@ -178,6 +185,10 @@ export function getChoresForChild(
   // Apply customizations + family custom chores
   chores = getChoresWithCustomizations(chores, config.customizations, familyCustomChores);
 
+  // Add daily chores (appear every day for all kids)
+  const dailyChores = getDailyChores(preset, config.customizations, familyCustomChores);
+  chores = [...chores, ...dailyChores];
+
   return chores;
 }
 
@@ -191,9 +202,9 @@ export function getWeekTypeBadge(config: RotationConfig): { badge: string; conte
   // Template-specific badge logic
   switch (preset.key) {
     case 'smart_rotation':
-      return weekType === 'cleaning'
-        ? { badge: '🧹 CLEANING WEEK', context: 'Week 1 of 2' }
-        : { badge: '🌿 MAINTENANCE WEEK', context: 'Week 2 of 2' };
+      return weekType === 'week_a'
+        ? { badge: '🔄 ROTATION A', context: 'Week 1 of 2 - Chores swap next week!' }
+        : { badge: '🔄 ROTATION B', context: 'Week 2 of 2 - Chores swap next week!' };
 
     case 'weekend_warrior': {
       const isWeekend = ['sat', 'sun'].includes(getDayOfWeek(new Date()));
@@ -263,4 +274,143 @@ export function getChoresWithCustomizations(
   }
 
   return chores;
+}
+
+/**
+ * Get daily chores that appear every day for all kids
+ * These bypass the rotation schedule
+ */
+export function getDailyChores(
+  preset: RotationPreset,
+  customizations?: RotationCustomizations,
+  familyCustomChores?: CustomChore[]
+): PresetChore[] {
+  const dailyKeys = customizations?.daily_chores || [];
+  if (dailyKeys.length === 0) return [];
+
+  return dailyKeys
+    .map(key => findChoreByKey(preset, familyCustomChores, key))
+    .filter((c): c is PresetChore => c !== undefined)
+    .map(c => ({
+      ...c,
+      // Apply point overrides if any
+      points: customizations?.chore_overrides?.[c.key]?.points ?? c.points,
+    }));
+}
+
+/**
+ * Schedule preview data for UI display
+ */
+export interface SchedulePreviewDay {
+  day: DayOfWeek;
+  dayLabel: string;
+  slots: Record<string, { chores: string[]; isEmpty: boolean }>;
+  hasEmptySlots: boolean;
+}
+
+export interface SchedulePreview {
+  weekType: string;
+  weekLabel: string;
+  days: SchedulePreviewDay[];
+  emptyDays: { day: string; slots: string[] }[];
+  hasEmptyDays: boolean;
+}
+
+const DAY_LABELS: Record<DayOfWeek, string> = {
+  mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun'
+};
+
+const DAYS_ORDER: DayOfWeek[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+
+/**
+ * Generate schedule preview for UI showing what chores each kid gets each day
+ * Accounts for disabled chores and shows empty day warnings
+ * familyCustomChores: optional family-level custom chores (for resolving daily chore names)
+ */
+export function getSchedulePreview(
+  config: RotationConfig,
+  childNames: Record<string, string>,  // Maps profile_id -> child name
+  familyCustomChores?: CustomChore[]
+): SchedulePreview[] {
+  const preset = getPresetByKey(config.active_preset);
+  if (!preset) return [];
+
+  const customizations = config.customizations;
+  const dailyChoreKeys = customizations?.daily_chores || [];
+
+  // Get assigned slots (those with a profile_id)
+  const assignedSlots = config.child_slots.filter(s => s.profile_id);
+
+  const previews: SchedulePreview[] = [];
+
+  for (const weekType of preset.week_types) {
+    const weekLabel = weekType === 'cleaning' ? 'Cleaning Week' :
+                      weekType === 'non-cleaning' ? 'Maintenance Week' :
+                      weekType === 'week_a' ? 'Week A (Rotation 1)' :
+                      weekType === 'week_b' ? 'Week B (Rotation 2)' :
+                      weekType.charAt(0).toUpperCase() + weekType.slice(1);
+
+    const scheduleForWeek = preset.schedule[weekType];
+    if (!scheduleForWeek) continue;
+
+    const days: SchedulePreviewDay[] = [];
+    const emptyDays: { day: string; slots: string[] }[] = [];
+
+    for (const day of DAYS_ORDER) {
+      const slots: Record<string, { chores: string[]; isEmpty: boolean }> = {};
+      const emptySlots: string[] = [];
+
+      for (const slotMapping of assignedSlots) {
+        const scheduleForSlot = scheduleForWeek[slotMapping.slot];
+        const choreKeys = scheduleForSlot?.[day] || [];
+
+        // Filter to enabled chores only
+        const enabledChoreKeys = choreKeys.filter(key =>
+          customizations?.chore_overrides?.[key]?.enabled !== false
+        );
+
+        // Map to chore names
+        const choreNames = enabledChoreKeys
+          .map(key => preset.chores.find(c => c.key === key)?.name)
+          .filter((n): n is string => !!n);
+
+        // Add daily chores (always appear) - includes family custom chores
+        const dailyChoreNames = dailyChoreKeys
+          .map(key => findChoreByKey(preset, familyCustomChores, key)?.name)
+          .filter((n): n is string => !!n);
+
+        const allChores = [...choreNames, ...dailyChoreNames];
+        const childName = childNames[slotMapping.profile_id] || slotMapping.slot;
+        const isEmpty = allChores.length === 0;
+
+        slots[childName] = { chores: allChores, isEmpty };
+
+        if (isEmpty) {
+          emptySlots.push(childName);
+        }
+      }
+
+      const hasEmptySlots = emptySlots.length > 0;
+      days.push({
+        day,
+        dayLabel: DAY_LABELS[day],
+        slots,
+        hasEmptySlots,
+      });
+
+      if (hasEmptySlots) {
+        emptyDays.push({ day: DAY_LABELS[day], slots: emptySlots });
+      }
+    }
+
+    previews.push({
+      weekType,
+      weekLabel,
+      days,
+      emptyDays,
+      hasEmptyDays: emptyDays.length > 0,
+    });
+  }
+
+  return previews;
 }

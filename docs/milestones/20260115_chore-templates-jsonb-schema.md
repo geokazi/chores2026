@@ -9,7 +9,7 @@
 
 | Template | Key | Cycle | Kids | Description |
 |----------|-----|-------|------|-------------|
-| 🎯 Smart Family Rotation | `smart_rotation` | Biweekly | 2-4 | Cleaning week + maintenance week |
+| 🎯 Smart Family Rotation | `smart_rotation` | Biweekly | 2-4 | Two-week cycle where kids swap chores for fairness |
 | ⚡ Weekend Warrior | `weekend_warrior` | Weekly | 2-6 | Light weekdays, heavy weekends |
 | 🌱 Daily Basics | `daily_basics` | Daily | 2-3 | Same simple routine every day |
 
@@ -240,7 +240,7 @@ export interface RotationPreset {
 
   // Schedule structure
   cycle_type: 'daily' | 'weekly' | 'biweekly';
-  week_types: string[];            // ['cleaning', 'non-cleaning'] or ['standard']
+  week_types: string[];            // ['week_a', 'week_b'] (kids swap) or ['standard']
 
   // Categories for display
   categories: ChoreCategory[];
@@ -344,7 +344,7 @@ export const SMART_ROTATION_CHORES: ChoreDefinition[] = [
 export const SMART_ROTATION_PRESET: RotationPreset = {
   key: 'smart_rotation',
   name: 'Smart Family Rotation',
-  description: 'Two-week cycle balancing cleaning intensity with lighter maintenance weeks.',
+  description: 'Two-week cycle where kids swap chores for fairness. Same chores, different assignments each week.',
   icon: '🎯',
   color: '#10b981',                // Emerald green
 
@@ -355,7 +355,7 @@ export const SMART_ROTATION_PRESET: RotationPreset = {
   min_age: 8,
 
   cycle_type: 'biweekly',
-  week_types: ['cleaning', 'non-cleaning'],
+  week_types: ['week_a', 'week_b'],  // Kids swap chore assignments each week
 
   categories: [
     { key: 'kitchen', name: 'Kitchen & Dining', icon: '🍽️', chore_count: 5, point_range: '1-3', time_range: '5-15 min' },
@@ -365,81 +365,82 @@ export const SMART_ROTATION_PRESET: RotationPreset = {
   ],
 
   schedule: {
-    cleaning: {
+    // WEEK A: Child A gets "Set 1" chores, Child B gets "Set 2" chores
+    week_a: {
       'Child A': {
-        1: ['dishes', 'vacuum_car', 'walk_dog'],           // Monday
-        2: ['brush_dog', 'walk_dog'],                       // Tuesday
-        3: ['dishes', 'make_bed', 'organize_room'],         // Wednesday
-        4: ['brush_dog', 'dishes', 'tidy_bathroom'],        // Thursday
-        5: ['dishes', 'sort_laundry', 'walk_dog', 'vacuum_carpet'], // Friday
-        6: ['brush_dog', 'make_bed', 'organize_room'],      // Saturday
-        0: ['dust_surfaces'],                               // Sunday
+        1: ['vacuum_living', 'take_trash'],      // Monday - cleaning heavy
+        2: ['mop_kitchen'],                       // Tuesday
+        3: ['dust_surfaces', 'tidy_room'],       // Wednesday - mixed
+        4: ['feed_pet', 'water_plants'],         // Thursday - light day
+        5: ['vacuum_bedroom'],                    // Friday
+        6: ['clean_bathroom'],                    // Saturday - big chore
+        0: ['sort_laundry'],                      // Sunday - easy day
       },
       'Child B': {
-        1: ['brush_dog', 'fold_laundry', 'walk_dog'],
-        2: ['dishes', 'sort_laundry'],
-        3: ['brush_dog', 'dust_surfaces', 'vacuum_floor'],
-        4: ['dishes', 'walk_dog', 'vacuum_carpet'],
-        5: ['brush_dog', 'walk_dog'],
-        6: ['dishes', 'walk_dog'],
-        0: ['tidy_bathroom'],
+        1: ['dust_surfaces', 'feed_pet'],        // Monday - lighter start
+        2: ['tidy_room', 'water_plants'],        // Tuesday
+        3: ['vacuum_living', 'take_trash'],      // Wednesday - cleaning heavy
+        4: ['mop_kitchen'],                       // Thursday
+        5: ['clean_bathroom'],                    // Friday - big chore
+        6: ['vacuum_bedroom'],                    // Saturday
+        0: ['sort_laundry'],                      // Sunday - easy day
       },
       'Child C': {
-        1: ['dishes', 'make_bed'],
-        2: ['walk_dog', 'dust_surfaces'],
-        3: ['dishes', 'vacuum_floor'],
-        4: ['brush_dog', 'make_bed'],
-        5: ['dishes', 'tidy_bathroom'],
-        6: ['walk_dog', 'organize_room'],
-        0: ['make_bed'],
+        1: ['tidy_room', 'water_plants'],
+        2: ['vacuum_living', 'take_trash'],
+        3: ['feed_pet'],
+        4: ['dust_surfaces', 'tidy_room'],
+        5: ['mop_kitchen'],
+        6: ['sort_laundry'],
+        0: ['clean_bathroom'],
       },
       'Child D': {
-        1: ['walk_dog', 'make_bed'],
-        2: ['dishes', 'make_bed'],
-        3: ['walk_dog', 'make_bed'],
-        4: ['dishes', 'walk_dog'],
-        5: ['make_bed', 'organize_room'],
-        6: ['dishes', 'make_bed'],
-        0: ['walk_dog'],
+        1: ['feed_pet'],
+        2: ['dust_surfaces', 'tidy_room'],
+        3: ['mop_kitchen'],
+        4: ['vacuum_living', 'take_trash'],
+        5: ['tidy_room', 'water_plants'],
+        6: ['clean_bathroom'],
+        0: ['vacuum_bedroom'],
       },
     },
-    'non-cleaning': {
+    // WEEK B: SWAPPED - Child A gets "Set 2" chores, Child B gets "Set 1" chores
+    week_b: {
       'Child A': {
-        1: ['dishes', 'brush_dog', 'dust_surfaces', 'walk_dog'],
-        2: ['dishes', 'sort_laundry', 'vacuum_floor'],
-        3: ['dishes', 'make_bed', 'organize_room'],
-        4: ['brush_dog', 'tidy_bathroom', 'organize_room'],
-        5: ['dishes', 'vacuum_floor', 'make_bed', 'brush_dog'],
-        6: ['wipe_counters', 'walk_dog'],
-        0: ['dust_surfaces'],
+        1: ['dust_surfaces', 'feed_pet'],        // Was Child B's Mon
+        2: ['tidy_room', 'water_plants'],        // Was Child B's Tue
+        3: ['vacuum_living', 'take_trash'],      // Was Child B's Wed
+        4: ['mop_kitchen'],                       // Was Child B's Thu
+        5: ['clean_bathroom'],                    // Was Child B's Fri
+        6: ['vacuum_bedroom'],                    // Was Child B's Sat
+        0: ['sort_laundry'],                      // Same - everyone does
       },
       'Child B': {
-        1: ['brush_dog', 'vacuum_carpet', 'walk_dog'],
-        2: ['brush_dog', 'tidy_bathroom', 'walk_dog'],
-        3: ['brush_dog', 'clean_stove'],
-        4: ['dishes', 'vacuum_carpet', 'sort_laundry'],
-        5: ['walk_dog'],
-        6: ['make_bed'],
-        0: ['fold_laundry'],
+        1: ['vacuum_living', 'take_trash'],      // Was Child A's Mon
+        2: ['mop_kitchen'],                       // Was Child A's Tue
+        3: ['dust_surfaces', 'tidy_room'],       // Was Child A's Wed
+        4: ['feed_pet', 'water_plants'],         // Was Child A's Thu
+        5: ['vacuum_bedroom'],                    // Was Child A's Fri
+        6: ['clean_bathroom'],                    // Was Child A's Sat
+        0: ['sort_laundry'],                      // Same - everyone does
       },
-      // Child C and D have lighter schedules in non-cleaning week
       'Child C': {
-        1: ['make_bed', 'walk_dog'],
-        2: ['dishes', 'make_bed'],
-        3: ['walk_dog'],
-        4: ['make_bed'],
-        5: ['dishes'],
-        6: ['walk_dog'],
-        0: ['make_bed'],
+        1: ['feed_pet'],                          // Was Child D's Mon
+        2: ['dust_surfaces', 'tidy_room'],       // Was Child D's Tue
+        3: ['mop_kitchen'],                       // Was Child D's Wed
+        4: ['vacuum_living', 'take_trash'],      // Was Child D's Thu
+        5: ['tidy_room', 'water_plants'],        // Was Child D's Fri
+        6: ['clean_bathroom'],                    // Was Child D's Sat
+        0: ['vacuum_bedroom'],                    // Was Child D's Sun
       },
       'Child D': {
-        1: ['make_bed'],
-        2: ['walk_dog'],
-        3: ['make_bed'],
-        4: ['walk_dog'],
-        5: ['make_bed'],
-        6: ['walk_dog'],
-        0: ['make_bed'],
+        1: ['tidy_room', 'water_plants'],        // Was Child C's Mon
+        2: ['vacuum_living', 'take_trash'],      // Was Child C's Tue
+        3: ['feed_pet'],                          // Was Child C's Wed
+        4: ['dust_surfaces', 'tidy_room'],       // Was Child C's Thu
+        5: ['mop_kitchen'],                       // Was Child C's Fri
+        6: ['sort_laundry'],                      // Was Child C's Sat
+        0: ['clean_bathroom'],                    // Was Child C's Sun
       },
     },
   },
@@ -806,7 +807,7 @@ function getCurrentWeekType(startDate: string, weekTypes: string[]): string {
 │  │ getPreset("smart_rotation")             │                   │
 │  └─────────────────────────────────────────┘                   │
 │       │                                                         │
-│       │ preset.schedule["cleaning"]["Child A"][1]              │
+│       │ preset.schedule["week_a"]["Child A"][1]                │
 │       │ = ["dishes", "vacuum_car", "walk_dog"]                 │
 │       │                                                         │
 │       ▼                                                         │

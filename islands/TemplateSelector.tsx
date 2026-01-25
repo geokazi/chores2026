@@ -5,10 +5,11 @@
 
 import { useState, useEffect } from "preact/hooks";
 import { ROTATION_PRESETS, getPresetByKey, getPresetSlots, getPresetsByCategory } from "../lib/data/rotation-presets.ts";
-import { getRotationConfig, getChoresWithCustomizations } from "../lib/services/rotation-service.ts";
+import { getRotationConfig, getChoresWithCustomizations, getSchedulePreview, findChoreByKey } from "../lib/services/rotation-service.ts";
 import { canAccessTemplate, hasPaidPlan, getPlan, FREE_TEMPLATES } from "../lib/plan-gate.ts";
-import type { RotationPreset, ChildSlotMapping, RotationCustomizations, CustomChore } from "../lib/types/rotation.ts";
+import type { RotationPreset, ChildSlotMapping, RotationCustomizations, CustomChore, RotationConfig } from "../lib/types/rotation.ts";
 import ModalHeader from "../components/ModalHeader.tsx";
+import SchedulePreviewTable from "../components/SchedulePreviewTable.tsx";
 
 interface Props {
   settings: any;
@@ -45,6 +46,10 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
   const [customAssignments, setCustomAssignments] = useState<Record<string, string[]>>({});
   const [showHiddenChores, setShowHiddenChores] = useState(false);
 
+  // Daily chores and schedule preview state
+  const [dailyChores, setDailyChores] = useState<string[]>([]);
+  const [showSchedulePreview, setShowSchedulePreview] = useState(false);
+
   // Initialize custom chores from family-level settings (available for ALL templates)
   useEffect(() => {
     const familyCustomChores = settings?.apps?.choregami?.custom_chores || [];
@@ -68,6 +73,9 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
       // Load assignment mode and custom assignments
       setAssignmentMode(activeRotation.assignment_mode || 'rotation');
       setCustomAssignments(activeRotation.customizations?.custom_assignments || {});
+
+      // Load daily chores
+      setDailyChores(activeRotation.customizations?.daily_chores || []);
     }
   }, [activeRotation?.active_preset, activeRotation?.assignment_mode]);
 
@@ -215,12 +223,15 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
 
     setIsSavingCustomizations(true);
 
-    // Template-specific customizations (chore overrides + custom assignments)
+    // Template-specific customizations (chore overrides + custom assignments + daily chores)
     // Always save custom_assignments so they persist when switching modes
     const customizations: RotationCustomizations = {};
     if (Object.keys(choreOverrides).length > 0) customizations.chore_overrides = choreOverrides;
     if (Object.keys(customAssignments).length > 0) {
       customizations.custom_assignments = customAssignments;
+    }
+    if (dailyChores.length > 0) {
+      customizations.daily_chores = dailyChores;
     }
 
     const preset = getPresetByKey(activeRotation.active_preset);
@@ -361,7 +372,9 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
             handleSaveCustomizations, isSavingCustomizations,
             assignmentMode, setAssignmentMode,
             customAssignments, setCustomAssignments,
-            customChores, showHiddenChores, setShowHiddenChores
+            customChores, showHiddenChores, setShowHiddenChores,
+            dailyChores, setDailyChores,
+            showSchedulePreview, setShowSchedulePreview
           )}
           </div>
         );
@@ -565,7 +578,7 @@ function renderSlotMapping(
 // Template-specific customization panel with assignment mode toggle
 // Custom chores are now family-level and shown separately
 function renderTemplateCustomizePanel(
-  activeRotation: any, children: any[], inlineChildSlots: Record<string, string>,
+  activeRotation: RotationConfig, children: any[], inlineChildSlots: Record<string, string>,
   setInlineChildSlots: (s: Record<string, string>) => void,
   choreOverrides: Record<string, any>, setChoreOverrides: (o: Record<string, any>) => void,
   handleSaveCustomizations: () => Promise<void>,
@@ -576,7 +589,11 @@ function renderTemplateCustomizePanel(
   setCustomAssignments: (a: Record<string, string[]>) => void,
   customChores: CustomChore[],
   showHiddenChores: boolean,
-  setShowHiddenChores: (show: boolean) => void
+  setShowHiddenChores: (show: boolean) => void,
+  dailyChores: string[],
+  setDailyChores: (chores: string[]) => void,
+  showSchedulePreview: boolean,
+  setShowSchedulePreview: (show: boolean) => void
 ) {
   const preset = getPresetByKey(activeRotation.active_preset);
   if (!preset) return null;
@@ -836,6 +853,121 @@ function renderTemplateCustomizePanel(
         </div>
       )}
 
+      {/* Daily Chores Section - Only show for rotation mode */}
+      {assignmentMode === 'rotation' && (
+        <div class="daily-chores-toggle-section">
+          <h4 style={{ marginTop: "1.5rem" }}>📅 Daily Chores (Every Day)</h4>
+          <p class="slot-hint">Check chores that should appear every day for all kids, regardless of the rotation schedule</p>
+
+          <div class="daily-chores-list">
+            {/* Enabled preset chores */}
+            {enabledChores.map(chore => {
+              const override = choreOverrides[chore.key] || {};
+              const points = override.points ?? chore.points;
+              const isDaily = dailyChores.includes(chore.key);
+              return (
+                <label key={chore.key} class={`daily-chore-row ${isDaily ? 'selected' : ''}`}>
+                  <input
+                    type="checkbox"
+                    checked={isDaily}
+                    onChange={(e) => {
+                      if (e.currentTarget.checked) {
+                        setDailyChores([...dailyChores, chore.key]);
+                      } else {
+                        setDailyChores(dailyChores.filter(k => k !== chore.key));
+                      }
+                    }}
+                  />
+                  <span class="chore-icon">{chore.icon}</span>
+                  <span class="chore-name">{chore.name}</span>
+                  <span class="chore-points-badge">{points}pt</span>
+                </label>
+              );
+            })}
+
+            {/* Family custom chores */}
+            {customChores.map(chore => {
+              const isDaily = dailyChores.includes(chore.key);
+              return (
+                <label key={chore.key} class={`daily-chore-row ${isDaily ? 'selected' : ''}`}>
+                  <input
+                    type="checkbox"
+                    checked={isDaily}
+                    onChange={(e) => {
+                      if (e.currentTarget.checked) {
+                        setDailyChores([...dailyChores, chore.key]);
+                      } else {
+                        setDailyChores(dailyChores.filter(k => k !== chore.key));
+                      }
+                    }}
+                  />
+                  <span class="chore-icon">{chore.icon || '✨'}</span>
+                  <span class="chore-name">{chore.name}</span>
+                  <span class="chore-points-badge">{chore.points}pt</span>
+                </label>
+              );
+            })}
+          </div>
+
+          {dailyChores.length > 0 && (
+            <p class="daily-chores-summary">
+              ✓ {dailyChores.length} chore{dailyChores.length !== 1 ? 's' : ''} will appear every day for all kids
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Schedule Preview - Only show for rotation mode */}
+      {assignmentMode === 'rotation' && (() => {
+        // Build child names map for preview
+        const childNames: Record<string, string> = {};
+        children.forEach(child => {
+          childNames[child.id] = child.name;
+        });
+
+        // Build a preview config with current state
+        const previewConfig: RotationConfig = {
+          ...activeRotation,
+          child_slots: Object.entries(inlineChildSlots)
+            .filter(([_, id]) => id)
+            .map(([slot, profile_id]) => ({ slot, profile_id })),
+          customizations: {
+            ...activeRotation.customizations,
+            chore_overrides: choreOverrides,
+            daily_chores: dailyChores,
+          },
+        };
+
+        const previews = getSchedulePreview(previewConfig, childNames, customChores);
+        const hasEmptyDays = previews.some(p => p.hasEmptyDays);
+
+        // Get child names in order of slots
+        const assignedChildNames = Object.values(inlineChildSlots)
+          .filter(id => id)
+          .map(id => children.find(c => c.id === id)?.name || 'Unknown');
+
+        return (
+          <>
+            <SchedulePreviewTable
+              previews={previews}
+              childNames={assignedChildNames}
+              collapsed={!showSchedulePreview}
+              onToggleCollapse={() => setShowSchedulePreview(!showSchedulePreview)}
+            />
+
+            {hasEmptyDays && showSchedulePreview && (
+              <div class="empty-days-notice">
+                <p><strong>Some days have no scheduled chores.</strong></p>
+                <p class="notice-hint">
+                  This is okay if intentional (e.g., "We take Sundays off").
+                  Consider adding Daily Chores above if you want chores every day.
+                </p>
+              </div>
+            )}
+          </>
+        );
+      })()}
+
       <div class="customize-actions">
         <button class="btn btn-primary" onClick={handleSaveCustomizations} disabled={isSaving}>
           {isSaving ? 'Saving...' : 'Save Template Settings'}
@@ -953,4 +1085,19 @@ const styles = `
   .btn-toggle-hidden { background: none; border: none; color: var(--color-text-light); cursor: pointer; font-size: 0.9rem; padding: 0.5rem 0; text-align: left; width: 100%; }
   .btn-toggle-hidden:hover { color: var(--color-text); }
   .hidden-chores-list { margin-top: 0.75rem; padding: 0.75rem; background: #f9fafb; border-radius: 8px; border: 1px dashed #e5e7eb; }
+
+  /* Daily Chores Toggle Section */
+  .daily-chores-toggle-section { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; }
+  .daily-chores-list { display: flex; flex-direction: column; gap: 0.5rem; }
+  .daily-chore-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; background: white; border: 2px solid #e5e7eb; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+  .daily-chore-row:hover { border-color: #3b82f6; }
+  .daily-chore-row.selected { border-color: #3b82f6; background: #eff6ff; }
+  .daily-chore-row input { width: 18px; height: 18px; accent-color: #3b82f6; }
+  .daily-chores-summary { margin-top: 0.75rem; padding: 0.5rem 0.75rem; background: #eff6ff; border-radius: 6px; font-size: 0.85rem; color: #1d4ed8; }
+
+  /* Empty Days Notice */
+  .empty-days-notice { margin-top: 1rem; padding: 0.75rem 1rem; background: #fef3c7; border-radius: 8px; border-left: 4px solid #f59e0b; }
+  .empty-days-notice p { margin: 0 0 0.5rem; font-size: 0.9rem; color: #92400e; }
+  .empty-days-notice p:last-child { margin-bottom: 0; }
+  .empty-days-notice .notice-hint { font-size: 0.8rem; color: #a16207; }
 `;

@@ -112,7 +112,7 @@ The `active_preset` field determines which schedule:
 ```typescript
 // When rotation.active_preset === "smart_rotation"
 const preset = getPresetByKey("smart_rotation");
-// → SMART_ROTATION_PRESET: biweekly (cleaning/non-cleaning weeks)
+// → SMART_ROTATION_PRESET: biweekly (week_a/week_b - kids swap chores for fairness)
 
 // When rotation.active_preset === "weekend_warrior"
 const preset = getPresetByKey("weekend_warrior");

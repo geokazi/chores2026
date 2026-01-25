@@ -8,9 +8,9 @@
 
 ## Context
 
-The current Smart Family Rotation template supports 2-4 kids using static slot-based schedules (`Child A`, `Child B`, `Child C`, `Child D`). Each slot has hand-tuned daily chore assignments for both cleaning and non-cleaning weeks.
+The current Smart Family Rotation template supports 2-4 kids using static slot-based schedules (`Child A`, `Child B`, `Child C`, `Child D`). The biweekly rotation swaps chore assignments between kids each week for fairness (Week A: Kid A does Set 1, Kid B does Set 2; Week B: they swap).
 
-Beta feedback and market analysis suggest demand for supporting larger families (5-12 kids) while maintaining the popular biweekly cleaning/non-cleaning cycle.
+Beta feedback and market analysis suggest demand for supporting larger families (5-12 kids) while maintaining the popular biweekly chore-swapping rotation for fairness.
 
 ---
 
@@ -47,16 +47,16 @@ Beta feedback and market analysis suggest demand for supporting larger families 
   max_children: 12,
   min_age: 6,
   cycle_type: 'biweekly',
-  week_types: ['cleaning', 'non-cleaning'],
+  week_types: ['week_a', 'week_b'],  // Swapped assignments each week
   is_dynamic: true,  // Key difference: uses distribution tags
   chores: [
-    // Cleaning week - heavier chores rotate
+    // Heavier chores - rotate among kids
     { key: 'vacuum_living', distribution: 'rotate', ... },
     { key: 'mop_kitchen', distribution: 'rotate', ... },
     { key: 'clean_bathroom', distribution: 'rotate', ... },
-    // Daily chores - everyone
+    // Daily chores - everyone does
     { key: 'tidy_room', distribution: 'all', ... },
-    // Maintenance - rotate
+    // Lighter chores - rotate
     { key: 'take_trash', distribution: 'rotate', ... },
     { key: 'feed_pet', distribution: 'rotate', ... },
   ],
@@ -79,11 +79,11 @@ The `getDynamicChoresForChild()` function in `rotation-service.ts` already handl
 
 ### Week Type Handling
 
-Extend dynamic logic to respect `week_types`:
-- **Cleaning week**: Include heavy cleaning chores in rotation
-- **Non-cleaning week**: Only light maintenance chores rotate
+For large families, the `week_a`/`week_b` rotation works by shifting the assignment offset:
+- **Week A**: Kid index + chore index determines assignment
+- **Week B**: Same formula with week offset, effectively swapping assignments
 
-This requires minor enhancement to `getDynamicChoresForChild()` to filter chores by week type.
+All kids get the same chores over a two-week period, just at different times for fairness.
 
 ---
 

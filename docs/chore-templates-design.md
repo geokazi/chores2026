@@ -13,7 +13,7 @@ Chore Templates allow families to pick and apply pre-built chore schedules that 
 
 | Category | Template | Description | Kids | Cycle |
 |----------|----------|-------------|------|-------|
-| Everyday | 🎯 Smart Family Rotation | Two-week cleaning/maintenance cycle | 2-4 | Biweekly |
+| Everyday | 🎯 Smart Family Rotation | Two-week cycle where kids swap chores for fairness | 2-4 | Biweekly |
 | Everyday | ⚡ Weekend Warrior | Light weekdays, intensive weekends | 2-6 | Weekly |
 | Everyday | 🌱 Daily Basics | Same simple routine every day | 2-3 | Daily |
 | Seasonal | ☀️ Summer Break | Outdoor-focused, more chores when kids have time | 2-4 | Weekly |
@@ -136,8 +136,8 @@ Templates are grouped by `preset_category` field in the UI. See [Seasonal Templa
 │  🎯 Smart Rotation      ⚡ Weekend Warrior    🌱 Daily Basics   │
 │  ══════════════════     ══════════════════    ════════════════  │
 │                                                                 │
-│  Week 1: Heavy          Mon-Thu: Light        Same every day    │
-│  Week 2: Light          Fri-Sun: Heavy        Simple routine    │
+│  Week A: Set 1          Mon-Thu: Light        Same every day    │
+│  Week B: Set 2 (swap)   Fri-Sun: Heavy        Simple routine    │
 │                                                                 │
 │  Mon: ████████░░        Mon: ██░░░░░░░░       Mon: ████░░░░░░   │
 │  Tue: ██████░░░░        Tue: ██░░░░░░░░       Tue: ████░░░░░░   │
@@ -264,10 +264,10 @@ Templates are grouped by `preset_category` field in the UI. See [Seasonal Templa
 │  ─────────────────────────────────────────────────────   │
 │                                                          │
 │  ┌───────────────────┐    ┌───────────────────┐         │
-│  │   WEEK 1          │    │   WEEK 2          │         │
-│  │   🧹 Cleaning     │ ──▶│   🌿 Maintenance  │ ──▶ ... │
-│  │   More chores     │    │   Lighter load    │         │
-│  │   ~45 min/day     │    │   ~20 min/day     │         │
+│  │   WEEK A          │    │   WEEK B          │         │
+│  │   🔄 Rotation 1   │ ──▶│   🔄 Rotation 2   │ ──▶ ... │
+│  │   Kid A: Set 1    │    │   Kid A: Set 2    │         │
+│  │   Kid B: Set 2    │    │   Kid B: Set 1    │  SWAP!  │
 │  └───────────────────┘    └───────────────────┘         │
 │                                                          │
 │  INCLUDED CHORES (17 total)                              │
@@ -451,7 +451,7 @@ Templates are grouped by `preset_category` field in the UI. See [Seasonal Templa
 │        ┌────────────────────────────────┐               │
 │        │  🎯 Smart Family Rotation      │               │
 │        │                                │               │
-│        │  Starting: 🧹 Cleaning Week    │               │
+│        │  Starting: 🔄 Rotation A       │               │
 │        │                                │               │
 │        │  👧 Ciku → Child A schedule    │               │
 │        │  👦 Julia → Child B schedule   │               │
@@ -476,7 +476,7 @@ Templates are grouped by `preset_category` field in the UI. See [Seasonal Templa
 
 ## Kid Experience by Template
 
-### 🎯 Smart Rotation - Cleaning Week (Monday)
+### 🎯 Smart Rotation - Week A (Monday)
 
 ```
 ┌──────────────────────────────────────────────────────────┐
@@ -484,8 +484,8 @@ Templates are grouped by `preset_category` field in the UI. See [Seasonal Templa
 ├──────────────────────────────────────────────────────────┤
 │                                                          │
 │  ┌────────────────────────────────────────────────────┐  │
-│  │  🧹 CLEANING WEEK                      Monday      │  │
-│  │  Week 1 of 2                                       │  │
+│  │  🔄 ROTATION A                         Monday      │  │
+│  │  Week 1 of 2 - Chores swap next week!              │  │
 │  └────────────────────────────────────────────────────┘  │
 │                                                          │
 │  TODAY'S CHORES                           6 pts total   │
@@ -525,7 +525,7 @@ Templates are grouped by `preset_category` field in the UI. See [Seasonal Templa
 └──────────────────────────────────────────────────────────┘
 ```
 
-### 🎯 Smart Rotation - Maintenance Week (Monday)
+### 🎯 Smart Rotation - Week B (Monday)
 
 ```
 ┌──────────────────────────────────────────────────────────┐
@@ -533,8 +533,8 @@ Templates are grouped by `preset_category` field in the UI. See [Seasonal Templa
 ├──────────────────────────────────────────────────────────┤
 │                                                          │
 │  ┌────────────────────────────────────────────────────┐  │
-│  │  🌿 MAINTENANCE WEEK                   Monday      │  │
-│  │  Week 2 of 2 • Lighter load this week!             │  │
+│  │  🔄 ROTATION B                         Monday      │  │
+│  │  Week 2 of 2 - Your chores swapped from last week! │  │
 │  └────────────────────────────────────────────────────┘  │
 │                                                          │
 │  TODAY'S CHORES                           5 pts total   │
@@ -727,7 +727,7 @@ Templates are grouped by `preset_category` field in the UI. See [Seasonal Templa
 │  │  │  🎯 Smart Family Rotation                    │  │  │
 │  │  │                                              │  │  │
 │  │  │  ┌──────────────────┐                        │  │  │
-│  │  │  │ 🧹 CLEANING WEEK │  Week 1 of 2          │  │  │
+│  │  │  │ 🔄 ROTATION A    │  Week 1 of 2          │  │  │
 │  │  │  └──────────────────┘                        │  │  │
 │  │  │                                              │  │  │
 │  │  │  Today's chores:                             │  │  │
@@ -962,8 +962,8 @@ Get the current rotation configuration for the family.
     "cycle_type": "biweekly"
   },
   "start_date": "2026-01-15",
-  "current_week_type": "cleaning",
-  "badge": { "badge": "🧹 CLEANING WEEK", "context": "Week 1 of 2" },
+  "current_week_type": "week_a",
+  "badge": { "badge": "🔄 ROTATION A", "context": "Week 1 of 2 - Chores swap next week!" },
   "child_mappings": [
     { "slot": "Child A", "profile_id": "...", "name": "Emma" },
     { "slot": "Child B", "profile_id": "...", "name": "Noah" }
@@ -987,7 +987,7 @@ All three templates use the same kid dashboard UI. Only the badge changes:
 
 | Template | Badge | Context |
 |----------|-------|---------|
-| Smart Rotation | `🧹 CLEANING WEEK` or `🌿 MAINTENANCE WEEK` | "Week 1 of 2" |
+| Smart Rotation | `🔄 ROTATION A` or `🔄 ROTATION B` | "Week 1 of 2 - Chores swap next week!" |
 | Weekend Warrior | `📚 SCHOOL DAY` or `💪 POWER WEEKEND` | "Light day" or "Big chore day!" |
 | Daily Basics | `🌟 DAILY ROUTINE` | "Same helpful habits every day!" |
 
