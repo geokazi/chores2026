@@ -53,17 +53,22 @@ export const handler: Handlers = {
           }, { status: 400 });
         }
       } else {
-        // Slot-based presets: require exact slot count
-        const requiredSlots = getRequiredSlotCount(preset_key);
-        if (child_slots.length !== requiredSlots) {
+        // Slot-based presets: count assigned slots (not empty ones)
+        const assignedSlots = child_slots.filter(s => s.profile_id).length;
+        if (assignedSlots < preset.min_children) {
           return Response.json({
-            error: `Preset requires exactly ${requiredSlots} children assigned`
+            error: `Preset requires at least ${preset.min_children} children assigned`
+          }, { status: 400 });
+        }
+        if (assignedSlots > preset.max_children) {
+          return Response.json({
+            error: `Preset supports at most ${preset.max_children} children`
           }, { status: 400 });
         }
       }
 
-      // Validate no duplicate profile_ids
-      const profileIds = child_slots.map(s => s.profile_id);
+      // Validate no duplicate profile_ids (only check assigned slots)
+      const profileIds = child_slots.map(s => s.profile_id).filter(id => id);
       const uniqueProfileIds = new Set(profileIds);
       if (uniqueProfileIds.size !== profileIds.length) {
         return Response.json({
