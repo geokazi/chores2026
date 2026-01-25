@@ -34,6 +34,50 @@ polling with sub-second WebSocket broadcasts. Features comprehensive
 /Users/georgekariuki/repos/deno2/chores2026/
 ```
 
+## 🎯 Development Principles
+
+### Core Values
+
+| Principle | Description |
+|-----------|-------------|
+| **Pareto (80/20)** | 20% effort for 80% value. Ship minimum viable, iterate based on feedback. |
+| **No Code Bloat** | Every line must earn its place. Delete before you add. |
+| **Reuse First** | Copy existing patterns from mealplanner/FamilyScore before writing new code. |
+| **Simplicity** | Low cognitive load for users AND developers. If it needs explanation, simplify it. |
+| **UX Ease** | Zero friction. One tap to complete a chore. No unnecessary screens. |
+| **Maintainability** | Code that's easy to read, test, and modify. Future you is a user too. |
+| **Flexibility** | Architecture supports growth without rewrites. JSONB > rigid schemas. |
+
+### Code Constraints
+
+| Constraint | Enforcement |
+|------------|-------------|
+| **Max 500 lines per module** | If exceeded, immediately refactor using composition and single responsibility. |
+| **Small testable modules** | Each module does one thing. Easy to unit test in isolation. |
+| **Composition over inheritance** | Build complex behavior from simple, reusable pieces. |
+| **Single source of truth** | One place for each piece of logic (e.g., `calculateStreak` in insights-service.ts). |
+
+### Decision Framework
+
+Before writing code, ask:
+
+1. **Does this already exist?** Check mealplanner, FamilyScore, existing services.
+2. **Is this the simplest solution?** Can we solve 80% of the problem with 20% of the complexity?
+3. **Will this exceed 500 lines?** If yes, split into smaller modules first.
+4. **Is this testable in isolation?** If not, refactor for dependency injection.
+5. **Does the user need this?** If uncertain, validate before building.
+
+### Anti-Patterns to Avoid
+
+- ❌ Gold-plating features nobody asked for
+- ❌ Premature abstraction ("we might need this later")
+- ❌ Monolithic files that do everything
+- ❌ Duplicate logic in multiple places
+- ❌ Complex solutions when simple ones work
+- ❌ Adding dependencies when stdlib suffices
+
+---
+
 ## 🚨 CRITICAL: REUSE EXISTING INFRASTRUCTURE
 
 ### ✅ **USE EXISTING CREDENTIALS (DO NOT CREATE NEW)**
