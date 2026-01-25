@@ -16,7 +16,7 @@ const CHORES: PresetChore[] = [
   { key: 'take_trash', name: 'Take out trash', points: 1, minutes: 5, category: 'maintenance', icon: '🗑️' },
   { key: 'water_plants', name: 'Water plants', points: 1, minutes: 5, category: 'maintenance', icon: '🌱' },
   { key: 'feed_pet', name: 'Feed pet', points: 1, minutes: 5, category: 'maintenance', icon: '🐕' },
-  { key: 'tidy_room', name: 'Tidy bedroom', points: 0, minutes: 10, category: 'maintenance', icon: '🛏️' },
+  { key: 'tidy_room', name: 'Tidy bedroom', points: 1, minutes: 10, category: 'maintenance', icon: '🛏️' },
   { key: 'sort_laundry', name: 'Sort laundry', points: 1, minutes: 10, category: 'maintenance', icon: '👕' },
 ];
 
@@ -34,7 +34,7 @@ export const SMART_ROTATION_PRESET: RotationPreset = {
   preset_category: 'everyday',
   difficulty: 'beginner',
   min_children: 2,
-  max_children: 2,  // Only 2 slots defined (Child A, B)
+  max_children: 4,
   min_age: 8,
   cycle_type: 'biweekly',
   week_types: ['cleaning', 'non-cleaning'],
@@ -60,6 +60,24 @@ export const SMART_ROTATION_PRESET: RotationPreset = {
         sat: ['vacuum_bedroom'],
         sun: ['feed_pet'],
       },
+      'Child C': {
+        mon: ['tidy_room'],
+        tue: ['feed_pet'],
+        wed: ['take_trash'],
+        thu: ['dust_surfaces'],
+        fri: ['tidy_room'],
+        sat: ['water_plants'],
+        sun: ['tidy_room'],
+      },
+      'Child D': {
+        mon: ['feed_pet'],
+        tue: ['tidy_room'],
+        wed: ['water_plants'],
+        thu: ['tidy_room'],
+        fri: ['feed_pet'],
+        sat: ['tidy_room'],
+        sun: ['take_trash'],
+      },
     },
     'non-cleaning': {
       'Child A': {
@@ -79,6 +97,24 @@ export const SMART_ROTATION_PRESET: RotationPreset = {
         fri: ['feed_pet'],
         sat: ['sort_laundry'],
         sun: ['tidy_room'],
+      },
+      'Child C': {
+        mon: ['tidy_room'],
+        tue: ['feed_pet'],
+        wed: ['tidy_room'],
+        thu: ['water_plants'],
+        fri: ['tidy_room'],
+        sat: ['feed_pet'],
+        sun: ['water_plants'],
+      },
+      'Child D': {
+        mon: ['feed_pet'],
+        tue: ['tidy_room'],
+        wed: ['feed_pet'],
+        thu: ['tidy_room'],
+        fri: ['water_plants'],
+        sat: ['tidy_room'],
+        sun: ['feed_pet'],
       },
     },
   },
