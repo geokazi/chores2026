@@ -137,6 +137,190 @@ dollars drive financial education.
 
 ---
 
+## Hybrid Storage Architecture
+
+**Decision**: Use JSONB for configuration, relational tables for transactions.
+
+### Why Hybrid?
+
+| Data Type | JSONB | Relational | Reasoning |
+|-----------|-------|------------|-----------|
+| **Rewards catalog** | ✅ | — | Small, family-specific, flexible schema |
+| **Savings goals** | ✅ | — | Per-kid config, rarely queried across families |
+| **Pending requests** | ✅ | — | Low volume, workflow state |
+| **Purchases** | — | ✅ | Needs FK to transactions, audit trail |
+| **Transactions** | — | ✅ | Core ledger, already exists |
+
+### Storage Mapping
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         JSONB (Configuration)                           │
+├─────────────────────────────────────────────────────────────────────────┤
+│ families.settings.apps.choregami.rewards.catalog[]                      │
+│   → Parent-defined rewards (name, icon, pointCost, category, limits)    │
+│                                                                         │
+│ families.settings.apps.choregami.rewards.pending_requests[]             │
+│   → Kid-initiated reward requests awaiting parent approval              │
+│                                                                         │
+│ family_profiles.preferences.apps.choregami.goals[]                      │
+│   → Per-kid savings goals (name, target, current, icon)                 │
+└─────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│                      Relational (Transactions)                          │
+├─────────────────────────────────────────────────────────────────────────┤
+│ choretracker.chore_transactions                                         │
+│   → All point changes (chore_completed, reward_redemption, etc.)        │
+│   → FK: profile_id → family_profiles.id                                 │
+│                                                                         │
+│ choretracker.reward_purchases                                           │
+│   → Purchase records linking rewards to transactions                    │
+│   → FK: transaction_id → chore_transactions.id                          │
+│   → FK: profile_id → family_profiles.id                                 │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### JSONB Schema: Rewards Catalog
+
+```jsonc
+// families.settings.apps.choregami.rewards
+{
+  "catalog": [
+    {
+      "id": "uuid-1",           // Generated client-side
+      "name": "Movie Night Pick",
+      "description": "Choose the family movie",
+      "icon": "🎬",
+      "pointCost": 600,         // In points (converted to dollars in UI)
+      "category": "entertainment",
+      "isActive": true,
+      "maxPerWeek": null,       // Optional limit
+      "maxPerMonth": null,
+      "createdAt": "2026-01-25T10:00:00Z"
+    },
+    {
+      "id": "uuid-2",
+      "name": "Extra Gaming Time",
+      "description": "1 hour of extra screen time",
+      "icon": "🎮",
+      "pointCost": 500,
+      "category": "gaming",
+      "isActive": true
+    }
+  ],
+  "pending_requests": [
+    {
+      "id": "req-uuid-1",
+      "requestedBy": "kid-profile-uuid",
+      "rewardName": "Sleepover",
+      "suggestedPointCost": 2000,
+      "suggestedIcon": "🏠",
+      "reason": "For getting all A's",
+      "requestedAt": "2026-01-25T14:00:00Z",
+      "status": "pending"       // pending | approved | rejected
+    }
+  ]
+}
+```
+
+### JSONB Schema: Savings Goals
+
+```jsonc
+// family_profiles.preferences.apps.choregami.goals
+{
+  "goals": [
+    {
+      "id": "goal-uuid-1",
+      "name": "Nintendo Game",
+      "description": "Save for new Mario game",
+      "targetAmount": 5000,     // Points
+      "currentAmount": 2300,    // Updated on each contribution
+      "icon": "🎮",
+      "category": "gaming",
+      "targetDate": "2026-03-01",
+      "isAchieved": false,
+      "achievedAt": null,
+      "createdAt": "2026-01-15T10:00:00Z"
+    }
+  ]
+}
+```
+
+### Transaction Integration
+
+Reward claims use the existing `TransactionService` (same pattern as chore completions):
+
+```typescript
+// lib/services/transaction-service.ts already supports reward_redemption
+
+// When kid claims a reward:
+await transactionService.createTransaction({
+  profileId: kidProfileId,
+  familyId,
+  transactionType: "reward_redemption",  // Already in allowed types
+  pointsChange: -reward.pointCost,        // Negative = deduction
+  description: `Claimed: ${reward.name}`,
+  metadata: {
+    rewardId: reward.id,
+    rewardIcon: reward.icon,
+    rewardName: reward.name,
+    category: reward.category
+  }
+});
+
+// TransactionService automatically:
+// 1. Updates family_profiles.current_points
+// 2. Syncs to FamilyScore via notifyFamilyScore()
+// 3. Creates audit trail in chore_transactions
+```
+
+### Purchase Record (Relational)
+
+After transaction succeeds, record the purchase for history/fulfillment:
+
+```typescript
+// Insert into reward_purchases table
+await supabase
+  .schema("choretracker")
+  .from("reward_purchases")
+  .insert({
+    family_id: familyId,
+    profile_id: kidProfileId,
+    reward_id: reward.id,           // References JSONB catalog item
+    transaction_id: transactionId,  // FK to chore_transactions
+    point_cost: reward.pointCost,
+    status: "purchased",            // purchased | fulfilled | cancelled
+    reward_snapshot: {              // Denormalized for history
+      name: reward.name,
+      icon: reward.icon,
+      category: reward.category
+    }
+  });
+```
+
+### Why This Hybrid Works
+
+| Benefit | Explanation |
+|---------|-------------|
+| **Flexible catalog** | Add new reward fields without migrations |
+| **Per-family customization** | Each family defines their own rewards |
+| **Transactional integrity** | Purchases tied to ledger via FK |
+| **Audit trail** | All point changes in `chore_transactions` |
+| **FamilyScore sync** | Existing TransactionService handles sync |
+| **No cross-family queries** | Rewards are family-specific anyway |
+
+### Migration Path
+
+1. **Keep `reward_purchases` table** — already exists, handles transactions
+2. **Deprecate `available_rewards` table** — move to JSONB catalog
+3. **Deprecate `savings_goals` table** — move to JSONB preferences
+4. **Deprecate `reward_requests` table** — move to JSONB pending_requests
+
+**Note**: Tables remain in DB for historical data; new data goes to JSONB.
+
+---
+
 ## Feature Priority (Effort-to-Value Ranked)
 
 ### Priority 1: Behavioral Insights (Highest Pareto)
@@ -404,18 +588,52 @@ await transactionService.recordTransaction({
 
 **Never use red for spending** — it implies negativity and discourages healthy reward claiming.
 
-#### Implementation Plan
+#### Implementation Plan (Hybrid Architecture)
 
 ```
-routes/kid/rewards.tsx              # ~80 lines (catalog page)
+routes/kid/rewards.tsx              # ~80 lines (catalog page, reads JSONB)
 islands/RewardsCatalog.tsx          # ~100 lines (grid + claim modal)
-routes/api/rewards/claim.ts         # ~60 lines (validate + transact)
-lib/services/rewards-service.ts     # ~50 lines (getRewards, claimReward)
+routes/api/rewards/claim.ts         # ~60 lines (TransactionService + purchase record)
+routes/api/rewards/catalog.ts       # ~40 lines (CRUD for JSONB catalog)
+lib/services/rewards-service.ts     # ~80 lines (JSONB helpers + claim logic)
 ```
 
-**DB**: Already exists (`choretracker.available_rewards`, `choretracker.reward_purchases`)
+**Storage**:
+- **Catalog**: `families.settings.apps.choregami.rewards.catalog[]` (JSONB)
+- **Purchases**: `choretracker.reward_purchases` (relational, keeps FK to transactions)
+- **Transactions**: `choretracker.chore_transactions` (existing ledger)
 
-**Effort**: ~290 lines, 0 new tables, 0 migrations
+**Claim Flow**:
+```typescript
+// 1. Validate reward exists in JSONB catalog
+const catalog = family.settings.apps?.choregami?.rewards?.catalog || [];
+const reward = catalog.find(r => r.id === rewardId && r.isActive);
+
+// 2. Check balance
+if (profile.current_points < reward.pointCost) throw new Error("Insufficient points");
+
+// 3. Create transaction (uses existing TransactionService)
+const txResult = await transactionService.createTransaction({
+  profileId, familyId,
+  transactionType: "reward_redemption",
+  pointsChange: -reward.pointCost,
+  description: `Claimed: ${reward.name}`,
+  metadata: { rewardId: reward.id, rewardIcon: reward.icon }
+});
+
+// 4. Record purchase (relational, for history/fulfillment)
+await supabase.schema("choretracker").from("reward_purchases").insert({
+  family_id: familyId,
+  profile_id: profileId,
+  reward_id: reward.id,
+  transaction_id: txResult.id,
+  point_cost: reward.pointCost,
+  status: "purchased",
+  reward_snapshot: { name: reward.name, icon: reward.icon }
+});
+```
+
+**Effort**: ~360 lines, 0 new tables, 0 migrations
 **Timeline dependency**: None, can ship independently
 
 ---
@@ -433,53 +651,90 @@ app had this as placeholder — promoting to real feature.
 - Celebration when goal achieved
 - Parent can "boost" (contribute toward goal)
 
-#### Legacy Repo Reference
+#### Hybrid Architecture (JSONB)
 
-**Source**: `/Users/georgekariuki/repos/deno2/fresh-auth/`
+**Storage**: `family_profiles.preferences.apps.choregami.goals[]`
 
-```sql
--- choretracker.savings_goals (already in production)
-id, family_id, profile_id, goal_name, description,
-target_amount, current_amount, icon,
-category (toys|electronics|experiences|books|other),
-is_achieved, achieved_at, target_date, created_at
+Per-kid savings goals stored in profile preferences (not family-level).
+See [Hybrid Storage Architecture](#hybrid-storage-architecture) for rationale.
 
--- Constraint: current_amount cannot exceed target_amount
+**JSONB Schema**:
+```jsonc
+// family_profiles.preferences.apps.choregami.goals
+{
+  "goals": [
+    {
+      "id": "goal-uuid-1",
+      "name": "Nintendo Game",
+      "description": "Save for new Mario game",
+      "targetAmount": 5000,
+      "currentAmount": 2300,
+      "icon": "🎮",
+      "category": "gaming",     // toys | electronics | experiences | books | other
+      "targetDate": "2026-03-01",
+      "isAchieved": false,
+      "achievedAt": null,
+      "createdAt": "2026-01-15T10:00:00Z"
+    }
+  ]
+}
 ```
 
-**Type definition** (from legacy):
+**Type Definition**:
 ```typescript
 interface SavingsGoal {
   id: string;
-  profileId: string;
-  goalName: string;
+  name: string;
+  description?: string;
   targetAmount: number;
   currentAmount: number;
   icon: string;           // Default '🎯'
   category: "toys" | "electronics" | "experiences" | "books" | "other";
+  targetDate?: string;
   isAchieved: boolean;
   achievedAt?: string;
-  targetDate?: string;
-  progressPercentage?: number;  // Computed
+  createdAt: string;
 }
 ```
 
-**Key methods** (from legacy `rewards.service.ts`):
-- `getSavingsGoals()` — fetch all goals with progress %
-- `createSavingsGoal(params)` — create goal for self
-- `updateSavingsGoalProgress(goalId, amountToAdd)` — add points toward goal
+**Key Operations**:
+```typescript
+// Get goals for a kid
+const goals = profile.preferences?.apps?.choregami?.goals || [];
+
+// Add to goal (JSONB update)
+const updatedGoals = goals.map(g => {
+  if (g.id !== goalId) return g;
+  const newAmount = Math.min(g.currentAmount + points, g.targetAmount);
+  const isAchieved = newAmount >= g.targetAmount;
+  return {
+    ...g,
+    currentAmount: newAmount,
+    isAchieved,
+    achievedAt: isAchieved ? new Date().toISOString() : null
+  };
+});
+
+await supabase.from("family_profiles")
+  .update({ preferences: { ...prefs, apps: { ...apps, choregami: { ...cg, goals: updatedGoals }}}})
+  .eq("id", profileId);
+```
 
 **Implementation**:
 ```
-routes/kid/goals.tsx           # ~80 lines
+routes/kid/goals.tsx           # ~80 lines (goals page, reads JSONB)
 islands/SavingsGoals.tsx       # ~100 lines (create/view goals)
 islands/GoalProgress.tsx       # ~50 lines (progress bar + celebration)
-routes/api/goals/index.ts      # ~60 lines (CRUD)
+routes/api/goals/index.ts      # ~60 lines (JSONB CRUD)
 ```
 
-**DB**: Already exists (`choretracker.savings_goals`)
+**DB**: JSONB in `family_profiles.preferences` (no new tables)
 
-**Effort**: ~290 lines, 0 new tables
+**Migration from legacy table**:
+- `choretracker.savings_goals` table exists but will be deprecated
+- New goals go to JSONB; existing data migrated on first access
+
+**Effort**: ~290 lines, 0 new tables, 0 migrations
 **Timeline dependency**: Rewards (Priority 2) should exist first so kids
 understand their balance before setting goals
 
@@ -1052,5 +1307,9 @@ Based on research, these adjustments strengthen the plan:
 ---
 
 *Document created: January 25, 2026*
-*Last updated: January 25, 2026 (P2/P3 legacy repo reference, nav integration, new user UX)*
+*Last updated: January 25, 2026 (hybrid JSONB architecture, P2/P3 implementation plans)*
+
+**Related Documentation**:
+- [JSONB Settings Architecture](../20260114_JSONB_settings_architecture.md) — Core JSONB patterns for `families.settings` and `family_profiles.preferences`
+- [Transaction Service](../../lib/services/transaction-service.ts) — Existing service handling all point changes
 *Status: P1 shipped, P2-P5 ready for implementation*
