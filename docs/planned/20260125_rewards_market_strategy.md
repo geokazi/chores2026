@@ -349,6 +349,61 @@ await transactionService.recordTransaction({
 | 916-line service with all features | ~50 lines (just catalog + claim) |
 | Complex status tracking | Simple: claimed → parent fulfills IRL |
 
+#### UI Mockup
+
+```
+┌─────────────────────────────────────────────────┐
+│ ← Back              Rewards Store               │
+├─────────────────────────────────────────────────┤
+│                                                 │
+│ 💰 Your Balance: 107 pts ($107.00)              │
+│                                                 │
+│ ┌─────────────────────────────────────────────┐ │
+│ │ 🎬 Movie Night Pick                         │ │
+│ │ Choose the family movie                     │ │
+│ │                              $6.00  [Claim] │ │
+│ └─────────────────────────────────────────────┘ │
+│                                                 │
+│ ┌─────────────────────────────────────────────┐ │
+│ │ 🍕 Pizza Night Choice                       │ │
+│ │ Pick the family pizza toppings              │ │
+│ │                              $8.00  [Claim] │ │
+│ └─────────────────────────────────────────────┘ │
+│                                                 │
+│ ┌─────────────────────────────────────────────┐ │
+│ │ 🎮 Extra Gaming Time                        │ │
+│ │ 1 hour of extra screen time                 │ │
+│ │                              $5.00  [Claim] │ │
+│ └─────────────────────────────────────────────┘ │
+│                                                 │
+└─────────────────────────────────────────────────┘
+```
+
+**Note**: No "Cash Out" in catalog — that's a separate Pay Out action (Priority 4).
+
+#### Psychological Framing
+
+**Language guidelines** (positive framing for kids):
+
+| Avoid (Negative) | Use Instead (Positive) |
+|------------------|------------------------|
+| "Spend" | "Claim" or "Redeem" |
+| "Purchase" | "Reward Claimed" |
+| "Cost" | "Value" or "Points" |
+| "-$17.00" (red) | "$17.00 claimed" (green) |
+| "Recent Purchases" | "Rewards Claimed" |
+| "You spent" | "You earned and claimed" |
+
+**Color coding**:
+
+| Action | Color | Rationale |
+|--------|-------|-----------|
+| Points earned | Green | Positive reinforcement |
+| Rewards claimed | Green or Blue | Achievement, not loss |
+| Balance | Primary color | Neutral, informational |
+
+**Never use red for spending** — it implies negativity and discourages healthy reward claiming.
+
 #### Implementation Plan
 
 ```

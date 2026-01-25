@@ -1,7 +1,23 @@
 # Rewards System - Future Implementation Plan
 
+> **⚠️ DEPRECATED (January 25, 2026)**
+>
+> This document has been superseded by the comprehensive rewards strategy:
+> **[Rewards & Financial Education Strategy](./20260125_rewards_market_strategy.md)**
+>
+> The strategy doc includes:
+> - Market research and competitor analysis
+> - 5-priority roadmap (Insights → Rewards → Goals → Payouts → Requests)
+> - Hybrid points/dollars model decision
+> - Detailed legacy repo references
+> - UI mockup and psychological framing (merged from this doc)
+>
+> **This file is kept for historical reference only.**
+
+---
+
 **Date**: January 14, 2026
-**Status**: Planned (Not Implemented)
+**Status**: ~~Planned~~ → **DEPRECATED** (superseded by strategy doc)
 **Priority**: Phase 2 (after core features stable)
 **Estimated Effort**: ~250 lines total
 
