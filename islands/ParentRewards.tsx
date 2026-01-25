@@ -247,8 +247,9 @@ export default function ParentRewards({
                       class="fulfill-btn"
                       onClick={() => handleFulfill(p.id)}
                       disabled={isProcessing}
+                      title="Mark as given when you've delivered this reward"
                     >
-                      ✓ Done
+                      ✓ Given
                     </button>
                   </div>
                 );
