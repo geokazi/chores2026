@@ -9,6 +9,7 @@ import * as $api_auth_validate_oauth from "./routes/api/auth/validate-oauth.ts";
 import * as $api_chores_chore_id_complete from "./routes/api/chores/[chore_id]/complete.ts";
 import * as $api_chores_by_events from "./routes/api/chores/by-events.ts";
 import * as $api_chores_create from "./routes/api/chores/create.ts";
+import * as $api_cron_daily_digest from "./routes/api/cron/daily-digest.ts";
 import * as $api_cron_weekly_digest from "./routes/api/cron/weekly-digest.ts";
 import * as $api_debug_session from "./routes/api/debug/session.ts";
 import * as $api_events from "./routes/api/events.ts";
@@ -124,6 +125,7 @@ const manifest = {
     "./routes/api/chores/[chore_id]/complete.ts": $api_chores_chore_id_complete,
     "./routes/api/chores/by-events.ts": $api_chores_by_events,
     "./routes/api/chores/create.ts": $api_chores_create,
+    "./routes/api/cron/daily-digest.ts": $api_cron_daily_digest,
     "./routes/api/cron/weekly-digest.ts": $api_cron_weekly_digest,
     "./routes/api/debug/session.ts": $api_debug_session,
     "./routes/api/events.ts": $api_events,

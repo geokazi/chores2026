@@ -3,8 +3,9 @@
  */
 
 import { assertEquals } from "https://deno.land/std@0.220.0/assert/mod.ts";
-import { getDynamicChoresForChild, getDayOfYear } from "./rotation-service.ts";
+import { getDynamicChoresForChild, getDayOfYear, getChoresForChild, findChoreByKey } from "./rotation-service.ts";
 import { getPresetByKey } from "../data/rotation-presets.ts";
+import type { RotationConfig, CustomChore } from "../types/rotation.ts";
 
 Deno.test("getDayOfYear - returns correct day number", () => {
   // Jan 1 should be day 1
@@ -81,4 +82,133 @@ Deno.test("getDynamicChoresForChild - returns empty for non-participant", () => 
   // Kid3 is not in the participant list
   const kid3Chores = getDynamicChoresForChild(preset, participantIds, "kid3", date);
   assertEquals(kid3Chores.length, 0);
+});
+
+// Custom Assignment Mode Tests
+Deno.test("getChoresForChild - custom mode returns only assigned chores", () => {
+  const config: RotationConfig = {
+    active_preset: "smart_rotation",
+    start_date: "2026-01-01",
+    child_slots: [
+      { slot: "Child A", profile_id: "kid1" },
+      { slot: "Child B", profile_id: "kid2" },
+    ],
+    assignment_mode: "custom",
+    customizations: {
+      custom_assignments: {
+        "kid1": ["vacuum_living", "take_trash"],
+        "kid2": ["mop_kitchen", "feed_pet"],
+      },
+    },
+  };
+
+  const date = new Date("2026-01-17T12:00:00");
+
+  // Kid1 should only get vacuum_living and take_trash
+  const kid1Chores = getChoresForChild(config, "kid1", date);
+  const kid1Keys = kid1Chores.map(c => c.key);
+  assertEquals(kid1Keys.length, 2);
+  assertEquals(kid1Keys.includes("vacuum_living"), true);
+  assertEquals(kid1Keys.includes("take_trash"), true);
+  assertEquals(kid1Keys.includes("mop_kitchen"), false);
+
+  // Kid2 should only get mop_kitchen and feed_pet
+  const kid2Chores = getChoresForChild(config, "kid2", date);
+  const kid2Keys = kid2Chores.map(c => c.key);
+  assertEquals(kid2Keys.length, 2);
+  assertEquals(kid2Keys.includes("mop_kitchen"), true);
+  assertEquals(kid2Keys.includes("feed_pet"), true);
+  assertEquals(kid2Keys.includes("vacuum_living"), false);
+});
+
+Deno.test("getChoresForChild - custom mode includes family custom chores", () => {
+  const familyCustomChores: CustomChore[] = [
+    { key: "custom_feed_fish", name: "Feed the fish", points: 1 },
+  ];
+
+  const config: RotationConfig = {
+    active_preset: "smart_rotation",
+    start_date: "2026-01-01",
+    child_slots: [
+      { slot: "Child A", profile_id: "kid1" },
+    ],
+    assignment_mode: "custom",
+    customizations: {
+      custom_assignments: {
+        "kid1": ["vacuum_living", "custom_feed_fish"],
+      },
+    },
+  };
+
+  const date = new Date("2026-01-17T12:00:00");
+  const chores = getChoresForChild(config, "kid1", date, familyCustomChores);
+  const keys = chores.map(c => c.key);
+
+  assertEquals(keys.length, 2);
+  assertEquals(keys.includes("vacuum_living"), true);
+  assertEquals(keys.includes("custom_feed_fish"), true);
+
+  // Custom chore should have correct properties
+  const fishChore = chores.find(c => c.key === "custom_feed_fish");
+  assertEquals(fishChore?.name, "Feed the fish");
+  assertEquals(fishChore?.points, 1);
+});
+
+Deno.test("getChoresForChild - custom mode applies point overrides", () => {
+  const config: RotationConfig = {
+    active_preset: "smart_rotation",
+    start_date: "2026-01-01",
+    child_slots: [
+      { slot: "Child A", profile_id: "kid1" },
+    ],
+    assignment_mode: "custom",
+    customizations: {
+      chore_overrides: {
+        "vacuum_living": { points: 5 },  // Override from 2 to 5
+      },
+      custom_assignments: {
+        "kid1": ["vacuum_living", "take_trash"],
+      },
+    },
+  };
+
+  const date = new Date("2026-01-17T12:00:00");
+  const chores = getChoresForChild(config, "kid1", date);
+
+  const vacuumChore = chores.find(c => c.key === "vacuum_living");
+  assertEquals(vacuumChore?.points, 5);  // Should be overridden
+
+  const trashChore = chores.find(c => c.key === "take_trash");
+  assertEquals(trashChore?.points, 1);  // Should be original
+});
+
+Deno.test("findChoreByKey - finds preset chores", () => {
+  const preset = getPresetByKey("smart_rotation");
+  if (!preset) throw new Error("Preset not found");
+
+  const chore = findChoreByKey(preset, undefined, "vacuum_living");
+  assertEquals(chore?.name, "Vacuum living room");
+  assertEquals(chore?.points, 2);
+});
+
+Deno.test("findChoreByKey - finds family custom chores", () => {
+  const preset = getPresetByKey("smart_rotation");
+  if (!preset) throw new Error("Preset not found");
+
+  const familyCustomChores: CustomChore[] = [
+    { key: "custom_homework", name: "Do homework", points: 3 },
+  ];
+
+  const chore = findChoreByKey(preset, familyCustomChores, "custom_homework");
+  assertEquals(chore?.name, "Do homework");
+  assertEquals(chore?.points, 3);
+  assertEquals(chore?.category, "custom");
+});
+
+Deno.test("findChoreByKey - returns undefined for unknown key", () => {
+  const preset = getPresetByKey("smart_rotation");
+  if (!preset) throw new Error("Preset not found");
+
+  const chore = findChoreByKey(preset, undefined, "nonexistent_chore");
+  assertEquals(chore, undefined);
 });

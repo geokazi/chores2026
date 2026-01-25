@@ -125,10 +125,14 @@ Deno.test("calculateStreak - streak can start from yesterday", () => {
 });
 
 Deno.test("calculateStreak - handles duplicate timestamps for same day", () => {
-  const today = new Date();
-  const todayMorning = new Date(today.setHours(8, 0, 0, 0)).toISOString();
-  const todayEvening = new Date(today.setHours(20, 0, 0, 0)).toISOString();
-  const yesterday = new Date(Date.now() - 86_400_000).toISOString();
+  // Use UTC date strings to avoid timezone issues
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const yesterdayStr = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+
+  // Create timestamps with guaranteed same UTC date prefix
+  const todayMorning = `${todayStr}T08:00:00.000Z`;
+  const todayEvening = `${todayStr}T20:00:00.000Z`;
+  const yesterday = `${yesterdayStr}T12:00:00.000Z`;
 
   // Multiple completions on same day should count as 1 day
   assertEquals(calculateStreak([todayMorning, todayEvening, yesterday]), 2);

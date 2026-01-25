@@ -63,7 +63,8 @@ export function buildRotationConfig(
   presetKey: string,
   childSlots: ChildSlotMapping[],
   customizations?: RotationCustomizations,
-  startDate?: string
+  startDate?: string,
+  assignmentMode?: 'rotation' | 'custom'
 ): RotationConfig {
   const config: RotationConfig = {
     active_preset: presetKey,
@@ -73,7 +74,38 @@ export function buildRotationConfig(
   if (customizations) {
     config.customizations = customizations;
   }
+  if (assignmentMode) {
+    config.assignment_mode = assignmentMode;
+  }
   return config;
+}
+
+/**
+ * Find a chore by key from preset or family custom chores
+ */
+export function findChoreByKey(
+  preset: RotationPreset,
+  familyCustomChores: CustomChore[] | undefined,
+  key: string
+): PresetChore | undefined {
+  // Check preset chores first
+  const presetChore = preset.chores.find(c => c.key === key);
+  if (presetChore) return presetChore;
+
+  // Check family custom chores
+  const customChore = familyCustomChores?.find(c => c.key === key);
+  if (customChore) {
+    return {
+      key: customChore.key,
+      name: customChore.name,
+      points: customChore.points,
+      icon: customChore.icon || '✨',
+      minutes: 5,
+      category: 'custom',
+    };
+  }
+
+  return undefined;
 }
 
 // Get chores for a specific child on a given date
@@ -86,6 +118,30 @@ export function getChoresForChild(
 ): PresetChore[] {
   const preset = getPresetByKey(config.active_preset);
   if (!preset) return [];
+
+  const customizations = config.customizations;
+
+  // CUSTOM ASSIGNMENT MODE: Kid sees their assigned chores daily
+  if (config.assignment_mode === 'custom') {
+    const assignedKeys = customizations?.custom_assignments?.[childProfileId] || [];
+
+    // Map keys to chore definitions (from preset + family custom)
+    let chores = assignedKeys
+      .map(key => findChoreByKey(preset, familyCustomChores, key))
+      .filter((c): c is PresetChore => c !== undefined);
+
+    // Apply point overrides only (enabled filter already handled by assignment)
+    if (customizations?.chore_overrides) {
+      chores = chores.map(c => ({
+        ...c,
+        points: customizations.chore_overrides?.[c.key]?.points ?? c.points,
+      }));
+    }
+
+    return chores;
+  }
+
+  // ROTATION MODE (default): use template schedules
 
   // Dynamic templates: use distribution-based generation
   if (preset.is_dynamic) {

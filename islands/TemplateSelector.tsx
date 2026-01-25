@@ -40,6 +40,11 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
   const [isSavingCustomizations, setIsSavingCustomizations] = useState(false);
   const [inlineChildSlots, setInlineChildSlots] = useState<Record<string, string>>({});
 
+  // Assignment mode state (NEW)
+  const [assignmentMode, setAssignmentMode] = useState<'rotation' | 'custom'>('rotation');
+  const [customAssignments, setCustomAssignments] = useState<Record<string, string[]>>({});
+  const [showHiddenChores, setShowHiddenChores] = useState(false);
+
   // Initialize custom chores from family-level settings (available for ALL templates)
   useEffect(() => {
     const familyCustomChores = settings?.apps?.choregami?.custom_chores || [];
@@ -59,8 +64,12 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
         }
       });
       setInlineChildSlots(existing);
+
+      // Load assignment mode and custom assignments
+      setAssignmentMode(activeRotation.assignment_mode || 'rotation');
+      setCustomAssignments(activeRotation.customizations?.custom_assignments || {});
     }
-  }, [activeRotation?.active_preset]);
+  }, [activeRotation?.active_preset, activeRotation?.assignment_mode]);
 
   const handleTemplateClick = (preset: RotationPreset) => {
     // Check if template is gated
@@ -194,11 +203,25 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
 
   const handleSaveCustomizations = async () => {
     if (!activeRotation) return;
+
+    // Validate custom mode has at least one assignment
+    if (assignmentMode === 'custom') {
+      const totalAssignments = Object.values(customAssignments).reduce((sum, arr) => sum + arr.length, 0);
+      if (totalAssignments === 0) {
+        alert('Please assign at least one chore to a kid in "I\'ll Choose" mode.');
+        return;
+      }
+    }
+
     setIsSavingCustomizations(true);
 
-    // Template-specific customizations (chore overrides only - custom chores are family-level)
+    // Template-specific customizations (chore overrides + custom assignments)
+    // Always save custom_assignments so they persist when switching modes
     const customizations: RotationCustomizations = {};
     if (Object.keys(choreOverrides).length > 0) customizations.chore_overrides = choreOverrides;
+    if (Object.keys(customAssignments).length > 0) {
+      customizations.custom_assignments = customAssignments;
+    }
 
     const preset = getPresetByKey(activeRotation.active_preset);
     let childSlotsToSave: { slot: string; profile_id: string }[];
@@ -229,7 +252,7 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
         return;
       }
 
-      // Save template-specific customizations (chore overrides, child slots)
+      // Save template-specific customizations (chore overrides, child slots, assignment mode)
       const response = await fetch('/api/rotation/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -238,6 +261,7 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
           child_slots: childSlotsToSave,
           customizations: Object.keys(customizations).length > 0 ? customizations : null,
           start_date: activeRotation.start_date,
+          assignment_mode: assignmentMode,
         }),
       });
 
@@ -334,7 +358,10 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
           {showCustomize && renderTemplateCustomizePanel(
             activeRotation, children, inlineChildSlots, setInlineChildSlots,
             choreOverrides, setChoreOverrides,
-            handleSaveCustomizations, isSavingCustomizations
+            handleSaveCustomizations, isSavingCustomizations,
+            assignmentMode, setAssignmentMode,
+            customAssignments, setCustomAssignments,
+            customChores, showHiddenChores, setShowHiddenChores
           )}
           </div>
         );
@@ -535,20 +562,37 @@ function renderSlotMapping(
   );
 }
 
-// Template-specific customization panel (kid assignments + chore overrides only)
+// Template-specific customization panel with assignment mode toggle
 // Custom chores are now family-level and shown separately
 function renderTemplateCustomizePanel(
   activeRotation: any, children: any[], inlineChildSlots: Record<string, string>,
   setInlineChildSlots: (s: Record<string, string>) => void,
   choreOverrides: Record<string, any>, setChoreOverrides: (o: Record<string, any>) => void,
   handleSaveCustomizations: () => Promise<void>,
-  isSaving: boolean
+  isSaving: boolean,
+  assignmentMode: 'rotation' | 'custom',
+  setAssignmentMode: (mode: 'rotation' | 'custom') => void,
+  customAssignments: Record<string, string[]>,
+  setCustomAssignments: (a: Record<string, string[]>) => void,
+  customChores: CustomChore[],
+  showHiddenChores: boolean,
+  setShowHiddenChores: (show: boolean) => void
 ) {
   const preset = getPresetByKey(activeRotation.active_preset);
   if (!preset) return null;
 
   const slots = getPresetSlots(preset);
   const isDynamic = preset.is_dynamic;
+
+  // Get all enabled chores (preset + family custom)
+  const enabledChores = preset.chores.filter(c => choreOverrides[c.key]?.enabled !== false);
+  const hiddenChores = preset.chores.filter(c => choreOverrides[c.key]?.enabled === false);
+
+  // Combine preset chores with family custom chores for assignment grid
+  const allChoresForAssignment = [
+    ...enabledChores,
+    ...customChores.map(c => ({ ...c, icon: c.icon || '✨', minutes: 5, category: 'custom' }))
+  ];
 
   // For slot-based templates, track which kids are already assigned to other slots
   const getUsedIdsExcludingSlot = (currentSlot: string) =>
@@ -557,83 +601,188 @@ function renderTemplateCustomizePanel(
       .map(([_, id]) => id)
       .filter(Boolean);
 
+  // Toggle chore assignment for a kid
+  const toggleChoreAssignment = (kidId: string, choreKey: string) => {
+    const current = customAssignments[kidId] || [];
+    const newAssignments = current.includes(choreKey)
+      ? current.filter(k => k !== choreKey)
+      : [...current, choreKey];
+    setCustomAssignments({ ...customAssignments, [kidId]: newAssignments });
+  };
+
+  // Calculate daily points for a kid
+  const getKidPoints = (kidId: string) => {
+    const assignments = customAssignments[kidId] || [];
+    return assignments.reduce((total, choreKey) => {
+      const chore = allChoresForAssignment.find(c => c.key === choreKey);
+      const override = choreOverrides[choreKey];
+      return total + (override?.points ?? chore?.points ?? 0);
+    }, 0);
+  };
+
   return (
     <div class="customize-content">
-      <h4>Kid Assignment</h4>
-      {isDynamic ? (
-        // Dynamic templates: show checkboxes for kid selection
-        <div class="dynamic-kid-customize">
-          <p class="slot-hint">Select which kids participate in this template:</p>
-          <div class="dynamic-kid-list">
-            {children.map(child => {
-              const isSelected = Object.values(inlineChildSlots).includes(child.id);
-              return (
-                <label key={child.id} class={`dynamic-kid-checkbox ${isSelected ? 'selected' : ''}`}>
-                  <input
-                    type="checkbox"
-                    checked={isSelected}
-                    onChange={(e) => {
-                      if (e.currentTarget.checked) {
-                        const nextIndex = Object.keys(inlineChildSlots).length;
-                        setInlineChildSlots({ ...inlineChildSlots, [`participant_${nextIndex}`]: child.id });
-                      } else {
-                        const remaining = Object.entries(inlineChildSlots)
-                          .filter(([_, id]) => id !== child.id)
-                          .map(([_, id]) => id);
-                        const newSlots: Record<string, string> = {};
-                        remaining.forEach((id, i) => { newSlots[`participant_${i}`] = id; });
-                        setInlineChildSlots(newSlots);
-                      }
-                    }}
-                  />
-                  <span>{child.name}</span>
-                </label>
-              );
-            })}
+      {/* Assignment Mode Toggle */}
+      <h4>How should chores be assigned?</h4>
+      <div class="assignment-mode-toggle">
+        <label class={`mode-option ${assignmentMode === 'rotation' ? 'selected' : ''}`}>
+          <input
+            type="radio"
+            name="assignment-mode-choice"
+            checked={assignmentMode === 'rotation'}
+            onChange={() => setAssignmentMode('rotation')}
+          />
+          <div class="mode-info">
+            <strong>🔄 Smart Rotation</strong>
+            <span>Kids rotate through chores each week automatically</span>
           </div>
-          {Object.keys(inlineChildSlots).length > 0 && (
-            <p class="dynamic-summary">✓ {Object.keys(inlineChildSlots).length} kid{Object.keys(inlineChildSlots).length > 1 ? 's' : ''} participating</p>
-          )}
-        </div>
-      ) : (
-        // Slot-based templates: show dropdowns with duplicate prevention
-        <div class="inline-slot-mapping">
-          {slots.map(slot => {
-            const usedIds = getUsedIdsExcludingSlot(slot);
-            return (
-              <div key={slot} class="inline-slot-row">
-                <span class="slot-label">{slot}:</span>
-                <select
-                  value={inlineChildSlots[slot] || ""}
-                  onChange={(e) => setInlineChildSlots({ ...inlineChildSlots, [slot]: e.currentTarget.value })}
-                  class="slot-select"
-                >
-                  <option value="">Select child...</option>
-                  {children.map(child => (
-                    <option key={child.id} value={child.id} disabled={usedIds.includes(child.id)}>
-                      {child.name}{usedIds.includes(child.id) ? ' (assigned)' : ''}
-                    </option>
-                  ))}
-                </select>
+        </label>
+        <label class={`mode-option ${assignmentMode === 'custom' ? 'selected' : ''}`}>
+          <input
+            type="radio"
+            name="assignment-mode-choice"
+            checked={assignmentMode === 'custom'}
+            onChange={() => setAssignmentMode('custom')}
+          />
+          <div class="mode-info">
+            <strong>✋ I'll Choose</strong>
+            <span>Assign specific chores to each kid</span>
+          </div>
+        </label>
+      </div>
+
+      {/* Kid Slot Assignment (only show for rotation mode) */}
+      {assignmentMode === 'rotation' && (
+        <>
+          <h4 style={{ marginTop: "1.5rem" }}>Kid Assignment</h4>
+          {isDynamic ? (
+            <div class="dynamic-kid-customize">
+              <p class="slot-hint">Select which kids participate in this template:</p>
+              <div class="dynamic-kid-list">
+                {children.map(child => {
+                  const isSelected = Object.values(inlineChildSlots).includes(child.id);
+                  return (
+                    <label key={child.id} class={`dynamic-kid-checkbox ${isSelected ? 'selected' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={(e) => {
+                          if (e.currentTarget.checked) {
+                            const nextIndex = Object.keys(inlineChildSlots).length;
+                            setInlineChildSlots({ ...inlineChildSlots, [`participant_${nextIndex}`]: child.id });
+                          } else {
+                            const remaining = Object.entries(inlineChildSlots)
+                              .filter(([_, id]) => id !== child.id)
+                              .map(([_, id]) => id);
+                            const newSlots: Record<string, string> = {};
+                            remaining.forEach((id, i) => { newSlots[`participant_${i}`] = id; });
+                            setInlineChildSlots(newSlots);
+                          }
+                        }}
+                      />
+                      <span>{child.name}</span>
+                    </label>
+                  );
+                })}
               </div>
-            );
-          })}
-        </div>
+              {Object.keys(inlineChildSlots).length > 0 && (
+                <p class="dynamic-summary">✓ {Object.keys(inlineChildSlots).length} kid{Object.keys(inlineChildSlots).length > 1 ? 's' : ''} participating</p>
+              )}
+            </div>
+          ) : (
+            <div class="inline-slot-mapping">
+              {slots.map(slot => {
+                const usedIds = getUsedIdsExcludingSlot(slot);
+                return (
+                  <div key={slot} class="inline-slot-row">
+                    <span class="slot-label">{slot}:</span>
+                    <select
+                      value={inlineChildSlots[slot] || ""}
+                      onChange={(e) => setInlineChildSlots({ ...inlineChildSlots, [slot]: e.currentTarget.value })}
+                      class="slot-select"
+                    >
+                      <option value="">Select child...</option>
+                      {children.map(child => (
+                        <option key={child.id} value={child.id} disabled={usedIds.includes(child.id)}>
+                          {child.name}{usedIds.includes(child.id) ? ' (assigned)' : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </>
       )}
 
-      <h4 style={{ marginTop: "1.5rem" }}>Template Chores</h4>
+      {/* Custom Assignment Grid (only show for custom mode) */}
+      {assignmentMode === 'custom' && (
+        <>
+          <h4 style={{ marginTop: "1.5rem" }}>Assign Chores to Kids</h4>
+          <p class="slot-hint">Check which chores each kid should do daily</p>
+
+          {/* Assignment Grid */}
+          <div class="assignment-grid" style={{ '--kid-count': children.length } as any}>
+            {/* Header row with kid names */}
+            <div class="grid-header" style={{ gridTemplateColumns: `1fr repeat(${children.length}, 60px)` }}>
+              <span class="grid-chore-name">Chore</span>
+              {children.map(child => (
+                <span key={child.id} class="grid-kid-name">{child.name}</span>
+              ))}
+            </div>
+
+            {/* Chore rows */}
+            {allChoresForAssignment.map(chore => {
+              const override = choreOverrides[chore.key] || {};
+              const points = override.points ?? chore.points;
+              return (
+                <div key={chore.key} class="grid-row" style={{ gridTemplateColumns: `1fr repeat(${children.length}, 60px)` }}>
+                  <span class="grid-chore-info">
+                    <span class="chore-icon">{chore.icon}</span>
+                    <span class="chore-name">{chore.name}</span>
+                    <span class="chore-points-badge">{points}pt</span>
+                  </span>
+                  {children.map(child => {
+                    const isAssigned = (customAssignments[child.id] || []).includes(chore.key);
+                    return (
+                      <label key={child.id} class="grid-checkbox">
+                        <input
+                          type="checkbox"
+                          checked={isAssigned}
+                          onChange={() => toggleChoreAssignment(child.id, chore.key)}
+                        />
+                      </label>
+                    );
+                  })}
+                </div>
+              );
+            })}
+
+            {/* Points summary row */}
+            <div class="grid-footer" style={{ gridTemplateColumns: `1fr repeat(${children.length}, 60px)` }}>
+              <span class="grid-chore-name" style={{ fontWeight: 600 }}>Daily Points</span>
+              {children.map(child => (
+                <span key={child.id} class="grid-kid-points">{getKidPoints(child.id)} pts</span>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Template Chores (enable/disable and point overrides) */}
+      <h4 style={{ marginTop: "1.5rem" }}>Active Chores</h4>
       <p class="slot-hint">Enable/disable or adjust point values for this template's chores</p>
       <div class="chore-customize-list">
-        {preset.chores.map(chore => {
+        {enabledChores.map(chore => {
           const override = choreOverrides[chore.key] || {};
-          const isEnabled = override.enabled !== false;
           const points = override.points ?? chore.points;
           return (
-            <div key={chore.key} class={`chore-customize-row ${!isEnabled ? 'disabled' : ''}`}>
+            <div key={chore.key} class="chore-customize-row">
               <label class="chore-enable">
                 <input
                   type="checkbox"
-                  checked={isEnabled}
+                  checked={true}
                   onChange={(e) => setChoreOverrides({ ...choreOverrides, [chore.key]: { ...override, enabled: e.currentTarget.checked } })}
                 />
                 <span class="chore-icon">{chore.icon}</span>
@@ -642,7 +791,6 @@ function renderTemplateCustomizePanel(
               <select
                 value={points}
                 onChange={(e) => setChoreOverrides({ ...choreOverrides, [chore.key]: { ...override, points: parseInt(e.currentTarget.value) } })}
-                disabled={!isEnabled}
                 class="chore-points-select"
               >
                 {[0,1,2,3,4,5,6,7,8,9,10].map(p => <option key={p} value={p}>{p} pt{p !== 1 ? 's' : ''}</option>)}
@@ -651,6 +799,42 @@ function renderTemplateCustomizePanel(
           );
         })}
       </div>
+
+      {/* Hidden Chores (collapsible section) */}
+      {hiddenChores.length > 0 && (
+        <div class="hidden-chores-section">
+          <button
+            class="btn-toggle-hidden"
+            onClick={() => setShowHiddenChores(!showHiddenChores)}
+          >
+            {showHiddenChores ? '▼' : '▶'} {hiddenChores.length} hidden chore{hiddenChores.length !== 1 ? 's' : ''}
+          </button>
+
+          {showHiddenChores && (
+            <div class="hidden-chores-list">
+              <p class="slot-hint">Check to re-enable a chore</p>
+              {hiddenChores.map(chore => {
+                const override = choreOverrides[chore.key] || {};
+                const points = override.points ?? chore.points;
+                return (
+                  <div key={chore.key} class="chore-customize-row disabled">
+                    <label class="chore-enable">
+                      <input
+                        type="checkbox"
+                        checked={false}
+                        onChange={(e) => setChoreOverrides({ ...choreOverrides, [chore.key]: { ...override, enabled: e.currentTarget.checked } })}
+                      />
+                      <span class="chore-icon">{chore.icon}</span>
+                      <span class="chore-name">{chore.name}</span>
+                    </label>
+                    <span class="chore-points">{points} pt{points !== 1 ? 's' : ''}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       <div class="customize-actions">
         <button class="btn btn-primary" onClick={handleSaveCustomizations} disabled={isSaving}>
@@ -739,4 +923,34 @@ const styles = `
   .custom-chores-section h3 { margin: 0 0 0.25rem; font-size: 1.1rem; color: #92400e; }
   .custom-chores-section .section-desc { margin-bottom: 1rem; color: #a16207; }
   .custom-chores-section .custom-chores-list { background: white; padding: 1rem; border-radius: 8px; }
+
+  /* Assignment Mode Toggle */
+  .assignment-mode-toggle { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1rem; }
+  .mode-option { display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.75rem 1rem; background: white; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+  .mode-option:hover { border-color: var(--color-primary); }
+  .mode-option.selected { border-color: var(--color-primary); background: #f0fdf4; }
+  .mode-option input { margin-top: 0.25rem; width: 18px; height: 18px; accent-color: var(--color-primary); }
+  .mode-info { display: flex; flex-direction: column; gap: 0.25rem; }
+  .mode-info strong { font-size: 0.95rem; }
+  .mode-info span { font-size: 0.8rem; color: var(--color-text-light); }
+
+  /* Assignment Grid */
+  .assignment-grid { background: white; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb; }
+  .grid-header, .grid-row, .grid-footer { display: grid; grid-template-columns: 1fr repeat(var(--kid-count, 2), 60px); gap: 0.5rem; padding: 0.5rem 0.75rem; align-items: center; }
+  .grid-header { background: #f9fafb; font-weight: 600; font-size: 0.8rem; color: var(--color-text-light); border-bottom: 2px solid #e5e7eb; }
+  .grid-row { border-bottom: 1px solid #f3f4f6; }
+  .grid-row:last-of-type { border-bottom: none; }
+  .grid-footer { background: #f0fdf4; border-top: 2px solid #e5e7eb; font-weight: 600; }
+  .grid-chore-name { text-align: left; }
+  .grid-kid-name, .grid-kid-points { text-align: center; font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .grid-chore-info { display: flex; align-items: center; gap: 0.5rem; }
+  .chore-points-badge { font-size: 0.7rem; background: #e5e7eb; padding: 0.1rem 0.35rem; border-radius: 4px; color: var(--color-text-light); margin-left: auto; }
+  .grid-checkbox { display: flex; justify-content: center; cursor: pointer; }
+  .grid-checkbox input { width: 20px; height: 20px; accent-color: var(--color-primary); cursor: pointer; }
+
+  /* Hidden Chores Section */
+  .hidden-chores-section { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; }
+  .btn-toggle-hidden { background: none; border: none; color: var(--color-text-light); cursor: pointer; font-size: 0.9rem; padding: 0.5rem 0; text-align: left; width: 100%; }
+  .btn-toggle-hidden:hover { color: var(--color-text); }
+  .hidden-chores-list { margin-top: 0.75rem; padding: 0.75rem; background: #f9fafb; border-radius: 8px; border: 1px dashed #e5e7eb; }
 `;

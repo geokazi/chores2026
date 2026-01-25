@@ -67,7 +67,13 @@ export interface RotationCustomizations {
   }>;
   // Custom chores added by family (appear daily)
   custom_chores?: CustomChore[];
+  // Custom per-kid assignments (only when assignment_mode = 'custom')
+  // Maps profileId -> choreKeys[] (chores appear daily for that kid)
+  custom_assignments?: Record<string, string[]>;
 }
+
+// Assignment mode for rotation
+export type AssignmentMode = 'rotation' | 'custom';
 
 // Dynamic family config (JSONB in Supabase)
 export interface RotationConfig {
@@ -75,6 +81,7 @@ export interface RotationConfig {
   start_date: string;  // ISO date string
   child_slots: ChildSlotMapping[];
   customizations?: RotationCustomizations;
+  assignment_mode?: AssignmentMode;  // 'rotation' = smart rotation (default), 'custom' = manual per-kid
 }
 
 // Child slot mapping

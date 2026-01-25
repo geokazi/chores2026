@@ -16,6 +16,7 @@ interface ApplyRequest {
   child_slots: ChildSlotMapping[];
   customizations?: RotationCustomizations | null;
   start_date?: string;  // Preserve existing start date on customization updates
+  assignment_mode?: 'rotation' | 'custom';  // 'rotation' = smart rotation, 'custom' = manual per-kid
 }
 
 export const handler: Handlers = {
@@ -28,7 +29,7 @@ export const handler: Handlers = {
 
       const familyId = session.family.id;
       const body: ApplyRequest = await req.json();
-      const { preset_key, child_slots, customizations, start_date } = body;
+      const { preset_key, child_slots, customizations, start_date, assignment_mode } = body;
 
       // Validate preset exists
       const preset = getPresetByKey(preset_key);
@@ -99,7 +100,7 @@ export const handler: Handlers = {
       }
 
       // Build rotation config (preserve start_date on customization updates)
-      const config = buildRotationConfig(preset_key, child_slots, customizations || undefined, start_date);
+      const config = buildRotationConfig(preset_key, child_slots, customizations || undefined, start_date, assignment_mode);
 
       // Fetch current settings, merge, then update
       const { data: family, error: fetchError } = await supabase
