@@ -1732,8 +1732,49 @@ Based on research, these adjustments strengthen the plan:
 
 ---
 
+---
+
+## Implementation Notes (Jan 24, 2026)
+
+### Reward Approval Flow
+
+The implemented flow differs from typical e-commerce patterns to support family dynamics:
+
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│  KID CLAIMS REWARD                    PARENT FULFILLS                        │
+│  ────────────────────────────         ──────────────────────────────         │
+│  • Creates "pending" purchase         • Points deducted from kid balance     │
+│  • NO points deducted yet             • Transaction created in ledger        │
+│  • Appears in parent "Rewards to Give"• FamilyScore synced                   │
+│  • Kid sees "Request Sent!" modal     • Activity logged                      │
+│                                       • Status → "fulfilled"                 │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Why parent approval?**
+- Prevents accidental point deductions
+- Aligns with real-world family dynamics (kid asks → parent approves)
+- Gives parents control over timing
+
+### Kid UX Improvements
+
+1. **Info tip**: "When you claim a reward, a parent will see it and give it to you."
+2. **Encouraging unaffordable**: "Earn 3 more pts 💪" instead of disabled button
+3. **Clear confirmation**: Explains parent approval process
+4. **Celebration modal**: "Request Sent!" with "Got it!" button
+
+### Parent UX Improvements
+
+1. **Starter templates**: 4 popular rewards for empty catalog (1-tap add)
+2. **Info box**: Explains the parent-approval flow
+3. **"Mark Done" button**: Clear action (not "✓ Given")
+4. **Family-friendly language**: "Rewards to Give" (not "Awaiting Fulfillment")
+
+---
+
 *Document created: January 25, 2026*
-*Last updated: January 25, 2026 (P1-P4 implemented)*
+*Last updated: January 24, 2026 (Reward approval flow, UX improvements)*
 
 **Related Documentation**:
 - [Balance, Rewards & Goals Implementation](../milestones/20260125_balance_rewards_goals_implementation.md) — Implementation milestone for P2-P4

@@ -315,6 +315,9 @@ ChoreGami 2026 is a streamlined family chore management application designed to 
 - ✅ Prep Tasks feature (lightweight checklist items for events)
 - ✅ Behavioral Insights (habit trends, streaks, routine patterns)
 - ✅ New user onboarding (Getting Started view for users < 7 days)
+- ✅ **Balance & Pay Out (P2)**: Per-kid balance cards, parent PIN-verified payouts
+- ✅ **Rewards Marketplace (P3)**: Parent-defined catalog, parent-approval claim flow, starter templates
+- ✅ **Savings Goals (P4)**: Kid-created goals, progress bars, parent boost
 - Advanced chore management for parents
 - Photo verification for task completion
 - Achievement system and badges

@@ -200,37 +200,16 @@ export default function ParentRewards({
     setRewardForm({ name: "", description: "", icon: "🎁", pointCost: 100, category: "other" });
   };
 
-  const handleQuickAddStarter = async (starter: typeof STARTER_REWARDS[number]) => {
-    setIsProcessing(true);
-    const payload = {
-      id: crypto.randomUUID(),
+  // Open add modal pre-filled with starter reward (allows customizing points)
+  const handleAddStarter = (starter: typeof STARTER_REWARDS[number]) => {
+    setRewardForm({
       name: starter.name,
       description: starter.description,
       icon: starter.icon,
       pointCost: starter.pointCost,
       category: starter.category,
-      isActive: true,
-      familyId,
-    };
-
-    try {
-      const res = await fetch("/api/rewards/catalog", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setCatalog([...catalog, data.reward]);
-        setMessage(`Added "${starter.name}"!`);
-        setTimeout(() => setMessage(""), 2000);
-      }
-    } catch (e) {
-      console.error("Quick add error:", e);
-    } finally {
-      setIsProcessing(false);
-    }
+    });
+    setShowAddReward(true);
   };
 
   // ─────────────────────────────────────────────────────────────
@@ -314,30 +293,13 @@ export default function ParentRewards({
             <button class="add-btn" onClick={() => setShowAddReward(true)}>+ Add</button>
           </div>
 
-          {catalog.length === 0 ? (
-            <div class="starter-section">
-              <p class="starter-intro">✨ Get started with popular rewards:</p>
-              <div class="starter-list">
-                {STARTER_REWARDS.map(starter => (
-                  <div key={starter.name} class="starter-card">
-                    <span class="icon">{starter.icon}</span>
-                    <div class="info">
-                      <div class="name">{starter.name}</div>
-                      <div class="meta">{starter.pointCost} pts</div>
-                    </div>
-                    <button
-                      class="quick-add-btn"
-                      onClick={() => handleQuickAddStarter(starter)}
-                      disabled={isProcessing}
-                    >
-                      + Add
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <p class="starter-footer">Or create your own with the + Add button above.</p>
-            </div>
-          ) : (
+          <div class="info-box">
+            <strong>How it works:</strong> Add rewards your kids can claim with their points.
+            Pick from popular options below, or tap "+ Add" to create your own.
+          </div>
+
+          {/* Family's custom rewards */}
+          {catalog.length > 0 && (
             <div class="list">
               {catalog.map(r => (
                 <div key={r.id} class="reward-card">
@@ -354,6 +316,41 @@ export default function ParentRewards({
               ))}
             </div>
           )}
+
+          {/* Show starter rewards that aren't already in catalog */}
+          {(() => {
+            const catalogNames = new Set(catalog.map(r => r.name.toLowerCase()));
+            const availableStarters = STARTER_REWARDS.filter(
+              s => !catalogNames.has(s.name.toLowerCase())
+            );
+
+            if (availableStarters.length === 0) return null;
+
+            return (
+              <div class="starter-section">
+                <p class="starter-intro">
+                  {catalog.length > 0 ? "➕ Add more popular rewards:" : "✨ Popular rewards to get started:"}
+                </p>
+                <div class="starter-list">
+                  {availableStarters.map(starter => (
+                    <div key={starter.name} class="starter-card">
+                      <span class="icon">{starter.icon}</span>
+                      <div class="info">
+                        <div class="name">{starter.name}</div>
+                        <div class="meta">{starter.pointCost} pts</div>
+                      </div>
+                      <button
+                        class="quick-add-btn"
+                        onClick={() => handleAddStarter(starter)}
+                      >
+                        + Add
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
         </div>
       )}
 

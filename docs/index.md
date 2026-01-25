@@ -1,8 +1,8 @@
 # ChoreGami 2026 Documentation
 
-**Version**: 1.21
+**Version**: 1.22
 **Status**: ✅ Production Ready
-**Last Updated**: January 24, 2026 (Rewards UX polish: family-friendly language, realistic pricing)
+**Last Updated**: January 24, 2026 (Reward approval flow: points deducted on parent fulfill, kid UX improvements)
 
 **Project Overview**: A simplified, real-time chore completion system built with Deno Fresh, transforming routine family chores into an engaging, competitive experience with sub-second real-time updates across all family devices.
 
@@ -74,6 +74,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-25 | [**Balance, Rewards & Goals (P2-P4)**](./milestones/20260125_balance_rewards_goals_implementation.md) | ✅ Complete | Financial education features: balance/payout, rewards marketplace, savings goals |
 | — | [↳ Strategy & Market Analysis](./planned/20260125_rewards_market_strategy.md) | ✅ Complete | Competitor research, architecture decisions, UI mockups |
 | 2026-01-24 | **Rewards UX Polish** | ✅ Complete | Family-friendly language ("Rewards to Give"), realistic starter pricing (1 pt = $1) |
+| 2026-01-24 | **Reward Approval Flow** | ✅ Complete | Points deducted on parent fulfill (not kid claim), starter templates for empty catalog, kid UX with encouraging messages |
 | TBD | [**SMS 10DLC Compliance**](./planned/20260123_sms_10dlc_compliance.md) | ⚠️ Blocked | Carrier blocks SMS; 10DLC brand+campaign registration required |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
@@ -255,7 +256,7 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 - ✅ **Navigation Polish**: "🧠 Habit Insights" link in nav menu, clearer labels ("👥 Switch User" + "⚙️ Settings"), AppHeader on insights page
 - ✅ **Ocean Depth Theme**: Slate secondary buttons (`#64748b`) matching stat card aesthetic, proper contrast with blue primary
 - ✅ **Balance & Pay Out (P2)**: Per-kid balance cards (points × exchange rate = dollars), weekly/chore earnings breakdown, Pay Out modal with parent PIN verification, transaction history; routes: `/parent/balances`, `/api/payout`
-- ✅ **Rewards Marketplace (P3)**: Parent-defined JSONB catalog, kid claim flow with balance check, positive framing ("Claim" not "Buy"), family-friendly language ("Rewards to Give" not "Awaiting Fulfillment"), realistic starter pricing (1 pt = $1), purchase history in `reward_purchases` table; routes: `/kid/rewards`, `/parent/rewards`, `/api/rewards/*`
+- ✅ **Rewards Marketplace (P3)**: Parent-defined JSONB catalog, **parent-approval flow** (kid claims → pending request, parent "Mark Done" → points deducted + transaction created), positive framing ("Claim" not "Buy"), family-friendly language ("Rewards to Give"), starter templates for empty catalog, encouraging "Earn X more pts 💪" for unaffordable rewards, purchase history in `reward_purchases` table; routes: `/kid/rewards`, `/parent/rewards`, `/api/rewards/*`
 - ✅ **Savings Goals (P4)**: Kid-created goals in profile preferences JSONB, progress bars with auto-update, parent "boost" contributions (no balance deduction), celebration on achievement, custom delete confirmation modal; routes: `/kid/goals`, `/api/goals`
 
 ### Known Limitations
@@ -305,5 +306,5 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 
 ---
 
-*Last updated: January 24, 2026*
+*Last updated: January 24, 2026 (v1.22)*
 *Maintained by: Claude Code AI Assistant*

@@ -229,11 +229,13 @@ Post-implementation fixes applied:
 
 All financial services now use `TransactionService` for point-changing operations, ensuring FamilyScore sync:
 
-| Service Method | TransactionService Method |
-|---------------|---------------------------|
-| `RewardsService.claimReward()` | `recordRewardRedemption()` |
-| `BalanceService.processPayout()` | `recordCashOut()` |
-| `GoalsService.addToGoal()` | `recordGoalContribution()` |
+| Service Method | TransactionService Method | When Called |
+|---------------|---------------------------|-------------|
+| `RewardsService.fulfillPurchase()` | `recordRewardRedemption()` | Parent marks done |
+| `BalanceService.processPayout()` | `recordCashOut()` | Parent processes payout |
+| `GoalsService.addToGoal()` | `recordGoalContribution()` | Kid adds to goal |
+
+**Note**: `claimReward()` does NOT create a transaction - it only creates a pending purchase request. The transaction is created when the parent fulfills (marks done).
 
 This eliminates duplicate transaction logic and ensures all point changes sync to FamilyScore for real-time leaderboard updates.
 
@@ -288,5 +290,78 @@ Updated starter rewards to reflect realistic 1 pt = $1 conversion:
 
 ---
 
+## Reward Approval Flow (Jan 24, 2026 - BREAKING CHANGE)
+
+The reward claim flow was corrected to require parent approval before points are deducted:
+
+### Old Flow (Incorrect)
+1. Kid claims → Points immediately deducted, transaction created
+2. Parent marks done → Just status update (no financial impact)
+
+### New Flow (Correct)
+1. Kid claims → Creates **pending** request (NO points deducted)
+2. Parent "Mark Done" → Points deducted, transaction created, FamilyScore synced, activity logged
+
+### Why This Change?
+- Gives parents control over when rewards are actually "spent"
+- Prevents accidental point deductions
+- Aligns with real-world approval workflows (kid asks → parent approves)
+
+### Technical Changes
+
+| File | Change |
+|------|--------|
+| `lib/services/rewards-service.ts` | `claimReward()` now only creates pending purchase; `fulfillPurchase()` now creates transaction |
+| `lib/types/finance.ts` | Added `"pending"` to `RewardPurchase.status` type |
+| `lib/services/activity-service.ts` | Added `"reward_fulfilled"` activity type |
+| `routes/api/rewards/fulfill.ts` | Updated to handle new return type with error messages |
+
+### Database Impact
+
+The `reward_purchases` table now uses these statuses:
+- `pending` - Kid claimed, awaiting parent fulfillment
+- `fulfilled` - Parent marked done, points deducted
+- `cancelled` - Request cancelled (future feature)
+
+---
+
+## Kid Rewards UX Improvements (Jan 24, 2026)
+
+Enhanced the kid-facing rewards page (`/kid/rewards`) with helpful messaging:
+
+### Info Tip
+Added explanation under "Available Rewards":
+> "When you claim a reward, a parent will see it and give it to you."
+
+### Encouraging Messages for Unaffordable Rewards
+Instead of disabled "Not enough pts" button, now shows:
+> "Earn 3 more pts 💪"
+
+### Clearer Confirmation Modal
+Updated to explain the approval flow:
+> "A parent will see your request and give you this reward. Points will be deducted when they mark it done."
+
+### Celebration Modal Updates
+- Title: "Request Sent!" (not "Reward Claimed!")
+- Message: "A parent will see your request. They'll give you this reward soon!"
+- Button: "Got it!" (not "Done")
+
+---
+
+## Starter Templates for Empty Catalog (Jan 24, 2026)
+
+Added one-tap starter rewards for new families on `/parent/rewards`:
+
+| Reward | Points | Category |
+|--------|--------|----------|
+| 🎬 Movie Night Pick | 5 pts | entertainment |
+| 🎮 Extra Screen Time | 5 pts | gaming |
+| 🍕 Pizza Topping Choice | 3 pts | food |
+| 🛒 Store Trip ($10) | 10 pts | other |
+
+Parents can add any starter with one tap, or create custom rewards.
+
+---
+
 *Implemented: January 25, 2026*
-*Updated: January 24, 2026 (UX language improvements, realistic starter pricing)*
+*Updated: January 24, 2026 (Reward approval flow, kid UX improvements, starter templates)*
