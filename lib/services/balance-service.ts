@@ -67,11 +67,13 @@ export class BalanceService {
     const financeSettings = await this.getFinanceSettings(familyId);
 
     // Get all child profiles with their current points
+    // Kids are identified by user_id IS NULL (they don't have Supabase auth accounts)
     const { data: profiles, error } = await this.client
       .from("family_profiles")
-      .select("id, name, avatar_emoji, current_points, role")
+      .select("id, name, avatar_emoji, current_points, role, user_id")
       .eq("family_id", familyId)
-      .eq("role", "child");
+      .is("user_id", null)
+      .eq("is_deleted", false);
 
     if (error) {
       console.error("❌ Failed to get family profiles:", error);
