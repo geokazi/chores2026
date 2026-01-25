@@ -40,14 +40,14 @@ export const handler: Handlers = {
       }
 
       const rewardsService = new RewardsService();
-      const success = await rewardsService.fulfillPurchase(
+      const result = await rewardsService.fulfillPurchase(
         purchaseId,
         fulfilledByProfileId || session.user?.profileId,
       );
 
-      if (!success) {
-        return new Response(JSON.stringify({ error: "Failed to fulfill" }), {
-          status: 500,
+      if (!result.success) {
+        return new Response(JSON.stringify({ error: result.error || "Failed to fulfill" }), {
+          status: 400,
           headers: { "Content-Type": "application/json" },
         });
       }

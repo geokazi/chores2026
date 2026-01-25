@@ -18,7 +18,8 @@ export type ActivityType =
   | "linked_chore_created"
   | "point_adjustment"
   | "cash_out"
-  | "reward_claimed";
+  | "reward_claimed"
+  | "reward_fulfilled";
 
 // Target types for polymorphic references
 export type TargetType = "chore" | "event" | "prep_task" | "chore_assignment";
@@ -71,6 +72,7 @@ const DEFAULT_ICONS: Record<ActivityType, string> = {
   point_adjustment: "⚙️",
   cash_out: "💵",
   reward_claimed: "🎁",
+  reward_fulfilled: "✅",
 };
 
 export class ActivityService {

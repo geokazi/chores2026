@@ -49,7 +49,7 @@ export interface RewardPurchase {
   rewardId: string;
   transactionId: string;
   pointCost: number;
-  status: "purchased" | "fulfilled" | "cancelled";
+  status: "pending" | "purchased" | "fulfilled" | "cancelled";
   rewardName?: string;
   rewardIcon?: string;
   createdAt: string;

@@ -127,9 +127,11 @@ interface FinanceSettings { dollarValuePerPoint, payoutRequiresPin }
 
 **UX patterns**:
 - Positive framing: "Claim" not "Buy", green success states
+- Family-friendly language: "Rewards to Give" not "Awaiting Fulfillment"
 - Celebration modals with bounce animation
 - Balance preview before actions
 - Custom modals (no browser `confirm()`)
+- Info boxes explaining reward flow to parents
 
 ### Tests
 
@@ -243,9 +245,33 @@ Added `/parent/rewards` page with 3-tab interface:
 
 | Tab | Features |
 |-----|----------|
-| **Pending** | Fulfillment queue with "Done" button |
-| **Catalog** | Add/Edit/Delete rewards, toggle active state |
+| **Pending** | Rewards to give queue with "Mark Done" button |
+| **Catalog** | Add/Edit/Delete rewards, starter templates |
 | **Goals** | View all kids' goals, parent boost feature |
+
+### UX Language Improvements (Jan 24, 2026)
+
+Replaced corporate/e-commerce jargon with family-friendly language:
+
+| Before | After |
+|--------|-------|
+| "Awaiting Fulfillment" | "Rewards to Give" |
+| "No pending rewards to fulfill" | "All caught up! No rewards owed right now." |
+| "✓ Given" button | "Mark Done" button |
+
+Added info box explaining the flow: "When kids claim a reward, it appears here. Points are only deducted when you tap 'Mark Done' after delivering the reward."
+
+### Starter Rewards Pricing (Jan 24, 2026)
+
+Updated starter rewards to reflect realistic 1 pt = $1 conversion:
+
+| Reward | Old | New |
+|--------|-----|-----|
+| Movie Night Pick | 50 pts | 5 pts |
+| Extra Screen Time | 75 pts | 5 pts |
+| Pizza Topping Choice | 50 pts | 3 pts |
+| Store Trip ($10) | 500 pts | 10 pts |
+| Stay Up Late | 100 pts | **Removed** |
 
 ---
 
@@ -263,4 +289,4 @@ Added `/parent/rewards` page with 3-tab interface:
 ---
 
 *Implemented: January 25, 2026*
-*Updated: January 25, 2026 (FamilyScore sync, Parent Rewards page)*
+*Updated: January 24, 2026 (UX language improvements, realistic starter pricing)*

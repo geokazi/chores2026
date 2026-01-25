@@ -24,13 +24,12 @@ interface Props {
 const ICONS = ["🎬", "🍕", "🎮", "📱", "🛒", "🎁", "🏖️", "🎪", "📚", "🎨"];
 const CATEGORIES = ["entertainment", "gaming", "food", "activities", "other"] as const;
 
-// Starter rewards for empty state - popular family rewards
+// Starter rewards for empty state - popular family rewards (1 pt = $1)
 const STARTER_REWARDS = [
-  { name: "Movie Night Pick", icon: "🎬", pointCost: 50, category: "entertainment" as const, description: "Choose the family movie" },
-  { name: "Extra Screen Time", icon: "🎮", pointCost: 75, category: "gaming" as const, description: "1 hour of extra gaming/TV" },
-  { name: "Pizza Topping Choice", icon: "🍕", pointCost: 50, category: "food" as const, description: "Pick your favorite toppings" },
-  { name: "Stay Up Late", icon: "🌙", pointCost: 100, category: "activities" as const, description: "30 extra minutes before bed" },
-  { name: "Store Trip ($10)", icon: "🛒", pointCost: 500, category: "other" as const, description: "Pick something under $10" },
+  { name: "Movie Night Pick", icon: "🎬", pointCost: 5, category: "entertainment" as const, description: "Choose the family movie" },
+  { name: "Extra Screen Time", icon: "🎮", pointCost: 5, category: "gaming" as const, description: "1 hour of extra gaming/TV" },
+  { name: "Pizza Topping Choice", icon: "🍕", pointCost: 3, category: "food" as const, description: "Pick your favorite toppings" },
+  { name: "Store Trip ($10)", icon: "🛒", pointCost: 10, category: "other" as const, description: "Pick something under $10" },
 ];
 
 export default function ParentRewards({
@@ -271,6 +270,10 @@ export default function ParentRewards({
       {activeTab === "pending" && (
         <div class="section">
           <h3>Rewards to Give</h3>
+          <div class="info-box">
+            <strong>How it works:</strong> When kids claim a reward, it appears here.
+            Points are only deducted when you tap "Mark Done" after delivering the reward.
+          </div>
           {pending.length === 0 ? (
             <p class="empty">All caught up! No rewards owed right now.</p>
           ) : (
@@ -557,6 +560,12 @@ export default function ParentRewards({
         }
 
         .empty { color: #888; text-align: center; padding: 2rem; }
+        .info-box {
+          background: #e0f2fe; color: #0369a1; padding: 0.75rem 1rem;
+          border-radius: 8px; font-size: 0.8125rem; margin-bottom: 1rem;
+          line-height: 1.4;
+        }
+        .info-box strong { color: #0c4a6e; }
 
         /* Starter rewards for empty state */
         .starter-section { padding: 0.5rem 0; }
