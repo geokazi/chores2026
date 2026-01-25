@@ -72,7 +72,7 @@ export class BalanceService {
     // Get all child profiles with their current points
     const { data: profiles, error } = await this.client
       .from("family_profiles")
-      .select("id, name, avatar_emoji, current_points, role")
+      .select("id, name, current_points, role")
       .eq("family_id", familyId)
       .eq("role", "child")
       .eq("is_deleted", false);
@@ -110,7 +110,7 @@ export class BalanceService {
       balances.push({
         profileId: profile.id,
         profileName: profile.name,
-        avatarEmoji: profile.avatar_emoji || "🧒",
+        avatarEmoji: "🧒", // Column doesn't exist in DB
         currentPoints: profile.current_points || 0,
         dollarValue: (profile.current_points || 0) * financeSettings.dollarValuePerPoint,
         weeklyEarnings,
@@ -132,7 +132,7 @@ export class BalanceService {
 
     const { data: profile, error } = await this.client
       .from("family_profiles")
-      .select("id, name, avatar_emoji, current_points")
+      .select("id, name, current_points")
       .eq("id", profileId)
       .single();
 
@@ -165,7 +165,7 @@ export class BalanceService {
     return {
       profileId: profile.id,
       profileName: profile.name,
-      avatarEmoji: profile.avatar_emoji || "🧒",
+      avatarEmoji: "🧒", // Column doesn't exist in DB
       currentPoints: profile.current_points || 0,
       dollarValue: (profile.current_points || 0) * financeSettings.dollarValuePerPoint,
       weeklyEarnings,
