@@ -24,6 +24,15 @@ interface Props {
 const ICONS = ["🎬", "🍕", "🎮", "📱", "🛒", "🎁", "🏖️", "🎪", "📚", "🎨"];
 const CATEGORIES = ["entertainment", "gaming", "food", "activities", "other"] as const;
 
+// Starter rewards for empty state - popular family rewards
+const STARTER_REWARDS = [
+  { name: "Movie Night Pick", icon: "🎬", pointCost: 50, category: "entertainment" as const, description: "Choose the family movie" },
+  { name: "Extra Screen Time", icon: "🎮", pointCost: 75, category: "gaming" as const, description: "1 hour of extra gaming/TV" },
+  { name: "Pizza Topping Choice", icon: "🍕", pointCost: 50, category: "food" as const, description: "Pick your favorite toppings" },
+  { name: "Stay Up Late", icon: "🌙", pointCost: 100, category: "activities" as const, description: "30 extra minutes before bed" },
+  { name: "Store Trip ($10)", icon: "🛒", pointCost: 500, category: "other" as const, description: "Pick something under $10" },
+];
+
 export default function ParentRewards({
   catalog: initialCatalog,
   pendingPurchases: initialPending,
@@ -192,6 +201,39 @@ export default function ParentRewards({
     setRewardForm({ name: "", description: "", icon: "🎁", pointCost: 100, category: "other" });
   };
 
+  const handleQuickAddStarter = async (starter: typeof STARTER_REWARDS[number]) => {
+    setIsProcessing(true);
+    const payload = {
+      id: crypto.randomUUID(),
+      name: starter.name,
+      description: starter.description,
+      icon: starter.icon,
+      pointCost: starter.pointCost,
+      category: starter.category,
+      isActive: true,
+      familyId,
+    };
+
+    try {
+      const res = await fetch("/api/rewards/catalog", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setCatalog([...catalog, data.reward]);
+        setMessage(`Added "${starter.name}"!`);
+        setTimeout(() => setMessage(""), 2000);
+      }
+    } catch (e) {
+      console.error("Quick add error:", e);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   // ─────────────────────────────────────────────────────────────
   // Render
   // ─────────────────────────────────────────────────────────────
@@ -270,7 +312,28 @@ export default function ParentRewards({
           </div>
 
           {catalog.length === 0 ? (
-            <p class="empty">No rewards yet. Add some for your kids to claim!</p>
+            <div class="starter-section">
+              <p class="starter-intro">✨ Get started with popular rewards:</p>
+              <div class="starter-list">
+                {STARTER_REWARDS.map(starter => (
+                  <div key={starter.name} class="starter-card">
+                    <span class="icon">{starter.icon}</span>
+                    <div class="info">
+                      <div class="name">{starter.name}</div>
+                      <div class="meta">{starter.pointCost} pts</div>
+                    </div>
+                    <button
+                      class="quick-add-btn"
+                      onClick={() => handleQuickAddStarter(starter)}
+                      disabled={isProcessing}
+                    >
+                      + Add
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <p class="starter-footer">Or create your own with the + Add button above.</p>
+            </div>
           ) : (
             <div class="list">
               {catalog.map(r => (
@@ -298,7 +361,17 @@ export default function ParentRewards({
         <div class="section">
           <h3>Kids' Savings Goals</h3>
           {kidsGoals.every(k => k.goals.length === 0) ? (
-            <p class="empty">No goals yet. Kids can create goals from their dashboard.</p>
+            <div class="empty-goals">
+              <p class="empty-icon">🎯</p>
+              <p class="empty-title">No goals yet</p>
+              <p class="empty-desc">
+                Ask your kids what they're saving for!<br />
+                They can create goals from <strong>🎯 My Goals</strong> on their dashboard.
+              </p>
+              <p class="empty-hint">
+                Common goals: Gaming 🎮 • Electronics 📱 • Experiences 🎢
+              </p>
+            </div>
           ) : (
             kidsGoals.map(kid => kid.goals.length > 0 && (
               <div key={kid.id} class="kid-goals">
@@ -484,6 +557,30 @@ export default function ParentRewards({
         }
 
         .empty { color: #888; text-align: center; padding: 2rem; }
+
+        /* Starter rewards for empty state */
+        .starter-section { padding: 0.5rem 0; }
+        .starter-intro { color: #555; font-weight: 500; margin-bottom: 0.75rem; }
+        .starter-list { display: flex; flex-direction: column; gap: 0.5rem; }
+        .starter-card {
+          display: flex; align-items: center; gap: 0.75rem;
+          padding: 0.625rem 0.75rem; background: var(--color-bg, #f0fdf4);
+          border-radius: 8px; border: 1px dashed #c6e7d9;
+        }
+        .quick-add-btn {
+          background: var(--color-primary, #10b981); color: white;
+          border: none; padding: 0.375rem 0.75rem; border-radius: 6px;
+          font-size: 0.8125rem; cursor: pointer; white-space: nowrap;
+        }
+        .quick-add-btn:disabled { opacity: 0.5; }
+        .starter-footer { color: #888; font-size: 0.8125rem; margin-top: 1rem; text-align: center; }
+
+        /* Empty goals state */
+        .empty-goals { text-align: center; padding: 1.5rem; }
+        .empty-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        .empty-title { font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem; color: #333; }
+        .empty-desc { color: #666; line-height: 1.5; margin-bottom: 1rem; }
+        .empty-hint { color: #888; font-size: 0.8125rem; }
 
         .list { display: flex; flex-direction: column; gap: 0.75rem; }
         .purchase-card, .reward-card, .goal-card {
