@@ -175,10 +175,16 @@ islands/ParentDashboard.tsx         # Added: "Habit Insights" link in actions
 
 **New user experience** (January 25, 2026):
 - Detects new users (< 7 days of activity) and shows "Getting Started" view
-- Progress bar: "Day X of 7" toward unlocking full analytics
+- Progress bar: "Day X of 7" with rationale ("to build enough data for meaningful trends")
 - This Week view: Mon-Sun checkmarks for current week per kid
 - Encouraging messages based on streak length ("🔥 2-day streak — keep it up!")
+- Zero-activity kids see "✨ Ready when you are!" (not blank card)
 - Auto-transitions to full 12-week view once user has 7+ days of data
+
+**Navigation integration** (January 25, 2026):
+- "🧠 Habit Insights" link added to left nav menu (parent-only)
+- Insights page now has full AppHeader with consistent navigation
+- Clearer menu labels: "👥 Switch User" and "⚙️ Settings"
 
 **Shared utility exports** (insights-service.ts):
 - `getLocalHour(isoTimestamp, timezone)` — extract hour (0-23) in family timezone
@@ -847,5 +853,5 @@ Based on research, these adjustments strengthen the plan:
 ---
 
 *Document created: January 25, 2026*
-*Last updated: January 25, 2026 (deep market research, competitor analysis, pricing validation)*
-*Status: Strategic roadmap complete with market validation, ready for implementation*
+*Last updated: January 25, 2026 (nav integration, new user UX polish, exchange rate doc fix)*
+*Status: P1 shipped, P2-P5 ready for implementation*
