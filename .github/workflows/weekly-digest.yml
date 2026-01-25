@@ -1,7 +1,7 @@
 name: Weekly Digest Fallback
 on:
   schedule:
-    - cron: '0 6 * * 0'  # Sunday 6am UTC = 9am EAT
+    - cron: '0 17 * * 0'  # Sunday 5pm UTC = 9am PST (10am PDT in summer)
   workflow_dispatch:       # Manual trigger for testing
 
 jobs:

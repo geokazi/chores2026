@@ -7,8 +7,9 @@ import config from "./fresh.config.ts";
 import "@std/dotenv/load";
 import { sendWeeklyDigests } from "./lib/services/email-digest.ts";
 
-// Weekly digest cron — Sunday 9am EAT (6am UTC)
-Deno.cron("weekly-digest", "0 6 * * SUN", async () => {
+// Weekly digest cron — Sunday 9am PST (5pm UTC)
+// Note: During PDT (summer), this fires at 10am Pacific
+Deno.cron("weekly-digest", "0 17 * * SUN", async () => {
   console.log("[cron] Weekly digest triggered at:", new Date().toISOString());
   try {
     const result = await sendWeeklyDigests();

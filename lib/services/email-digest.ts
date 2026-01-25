@@ -979,7 +979,8 @@ function formatTime12(time24: string): string {
 }
 
 /**
- * Get last Sunday 6am UTC (= 9am EAT) for idempotency check.
+ * Get last Sunday 5pm UTC (= 9am PST) for idempotency check.
+ * Note: During PDT (summer), this corresponds to 10am Pacific.
  */
 function getLastSunday(): Date {
   const now = new Date();
@@ -987,9 +988,9 @@ function getLastSunday(): Date {
   const diff = day === 0 ? 0 : day; // days since last Sunday
   const lastSunday = new Date(now);
   lastSunday.setUTCDate(now.getUTCDate() - diff);
-  lastSunday.setUTCHours(6, 0, 0, 0); // 6am UTC = 9am EAT
-  // If it's Sunday but before 6am UTC, go back to previous Sunday
-  if (day === 0 && now.getUTCHours() < 6) {
+  lastSunday.setUTCHours(17, 0, 0, 0); // 5pm UTC = 9am PST
+  // If it's Sunday but before 5pm UTC, go back to previous Sunday
+  if (day === 0 && now.getUTCHours() < 17) {
     lastSunday.setUTCDate(lastSunday.getUTCDate() - 7);
   }
   return lastSunday;

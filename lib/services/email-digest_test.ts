@@ -15,8 +15,8 @@ function getLastSunday(): Date {
   const diff = day === 0 ? 0 : day;
   const lastSunday = new Date(now);
   lastSunday.setUTCDate(now.getUTCDate() - diff);
-  lastSunday.setUTCHours(6, 0, 0, 0);
-  if (day === 0 && now.getUTCHours() < 6) {
+  lastSunday.setUTCHours(17, 0, 0, 0); // 5pm UTC = 9am PST
+  if (day === 0 && now.getUTCHours() < 17) {
     lastSunday.setUTCDate(lastSunday.getUTCDate() - 7);
   }
   return lastSunday;
@@ -27,9 +27,9 @@ Deno.test("getLastSunday - returns a Sunday", () => {
   assertEquals(sunday.getUTCDay(), 0);
 });
 
-Deno.test("getLastSunday - time is 6am UTC (9am EAT)", () => {
+Deno.test("getLastSunday - time is 5pm UTC (9am PST)", () => {
   const sunday = getLastSunday();
-  assertEquals(sunday.getUTCHours(), 6);
+  assertEquals(sunday.getUTCHours(), 17);
   assertEquals(sunday.getUTCMinutes(), 0);
   assertEquals(sunday.getUTCSeconds(), 0);
 });
