@@ -7,7 +7,15 @@ import { Handlers, PageProps } from "$fresh/server.ts";
 import { getAuthenticatedSession } from "../../lib/auth/session.ts";
 import { InsightsService, KidTrend, StreakData, RoutineData, ThisWeekActivity } from "../../lib/services/insights-service.ts";
 import HabitInsights from "../../islands/HabitInsights.tsx";
+import AppHeader from "../../islands/AppHeader.tsx";
 import AppFooter from "../../components/AppFooter.tsx";
+
+interface FamilyMember {
+  id: string;
+  name: string;
+  role: "parent" | "child";
+  avatar_emoji?: string;
+}
 
 interface InsightsData {
   trends: KidTrend[];
@@ -16,6 +24,8 @@ interface InsightsData {
   totalActiveDays: number;
   thisWeekActivity: ThisWeekActivity[];
   familyName: string;
+  members: FamilyMember[];
+  currentProfileId?: string;
   error?: string;
 }
 
@@ -33,11 +43,21 @@ export const handler: Handlers<InsightsData> = {
       .filter((m: any) => m.role === "child")
       .map((m: any) => ({ id: m.id, name: m.name }));
 
+    const members: FamilyMember[] = session.family.members.map((m: any) => ({
+      id: m.id,
+      name: m.name,
+      role: m.role,
+      avatar_emoji: m.avatar_emoji,
+    }));
+    const currentProfileId = session.user?.profileId;
+
     if (childProfiles.length === 0) {
       return ctx.render({
         trends: [], streaks: [], routines: [],
         totalActiveDays: 0, thisWeekActivity: [],
         familyName: session.family.name,
+        members,
+        currentProfileId,
         error: "No kids in family yet. Add kids in Settings first.",
       });
     }
@@ -59,6 +79,8 @@ export const handler: Handlers<InsightsData> = {
       return ctx.render({
         trends, streaks, routines, totalActiveDays, thisWeekActivity,
         familyName: session.family.name,
+        members,
+        currentProfileId,
       });
     } catch (error) {
       console.error("Insights error:", error);
@@ -66,6 +88,8 @@ export const handler: Handlers<InsightsData> = {
         trends: [], streaks: [], routines: [],
         totalActiveDays: 0, thisWeekActivity: [],
         familyName: session.family.name,
+        members,
+        currentProfileId,
         error: "Failed to load insights. Please try again.",
       });
     }
@@ -78,24 +102,32 @@ export default function InsightsPage({ data }: PageProps<InsightsData>) {
     ? `${data.familyName} — Getting started`
     : `${data.familyName} — 12-week view`;
 
-  return (
-    <div class="insights-page">
-      <div class="insights-header">
-        <a href="/parent/dashboard" class="back-link">← Back</a>
-        <h1>Habit Insights</h1>
-        <p class="subtitle">{subtitle}</p>
-      </div>
+  const currentUser = data.members.find(m => m.id === data.currentProfileId) || null;
 
-      {data.error
-        ? <div class="insights-error">{data.error}</div>
-        : <HabitInsights
-            trends={data.trends}
-            streaks={data.streaks}
-            routines={data.routines}
-            totalActiveDays={data.totalActiveDays}
-            thisWeekActivity={data.thisWeekActivity}
-          />
-      }
+  return (
+    <div class="container">
+      <AppHeader
+        currentPage="insights"
+        pageTitle="Habit Insights"
+        familyMembers={data.members}
+        currentUser={currentUser}
+        userRole="parent"
+      />
+
+      <div class="insights-page">
+        <p class="subtitle">{subtitle}</p>
+
+        {data.error
+          ? <div class="insights-error">{data.error}</div>
+          : <HabitInsights
+              trends={data.trends}
+              streaks={data.streaks}
+              routines={data.routines}
+              totalActiveDays={data.totalActiveDays}
+              thisWeekActivity={data.thisWeekActivity}
+            />
+        }
+      </div>
 
       <AppFooter />
 
@@ -105,22 +137,9 @@ export default function InsightsPage({ data }: PageProps<InsightsData>) {
           margin: 0 auto;
           padding: 1rem;
         }
-        .insights-header {
-          margin-bottom: 1.5rem;
-        }
-        .insights-header h1 {
-          margin: 0.5rem 0 0.25rem;
-          color: var(--color-primary, #10b981);
-          font-size: 1.5rem;
-        }
         .subtitle {
-          margin: 0;
+          margin: 0 0 1rem;
           color: #666;
-          font-size: 0.875rem;
-        }
-        .back-link {
-          color: var(--color-primary, #10b981);
-          text-decoration: none;
           font-size: 0.875rem;
         }
         .insights-error {

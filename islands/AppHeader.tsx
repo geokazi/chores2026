@@ -130,25 +130,30 @@ export default function AppHeader({
               📊 Reports
             </a>
             {isParent && (
-              <a
-                href="/parent/events"
-                class={currentPage === "events" ? "active" : ""}
-                style={{ position: "relative" }}
-                onClick={() => {
-                  if (hasUpcomingEvents) {
-                    fetch("/api/analytics/event", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ metric: "badges" }),
-                    }).catch(() => {}); // Non-blocking
-                  }
-                }}
-              >
-                📅 Events
-                {hasUpcomingEvents && (
-                  <span class="event-badge-dot" />
-                )}
-              </a>
+              <>
+                <a
+                  href="/parent/events"
+                  class={currentPage === "events" ? "active" : ""}
+                  style={{ position: "relative" }}
+                  onClick={() => {
+                    if (hasUpcomingEvents) {
+                      fetch("/api/analytics/event", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ metric: "badges" }),
+                      }).catch(() => {}); // Non-blocking
+                    }
+                  }}
+                >
+                  📅 Events
+                  {hasUpcomingEvents && (
+                    <span class="event-badge-dot" />
+                  )}
+                </a>
+                <a href="/parent/insights" class={currentPage === "insights" ? "active" : ""}>
+                  🧠 Habit Insights
+                </a>
+              </>
             )}
 
             {/* Kid shortcuts - SECURITY: session-based, no GUIDs in URLs */}
