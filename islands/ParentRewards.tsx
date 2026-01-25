@@ -34,6 +34,9 @@ export default function ParentRewards({
   const [catalog, setCatalog] = useState(initialCatalog);
   const [pending, setPending] = useState(initialPending);
   const [kidsGoals, setKidsGoals] = useState(initialKids);
+
+  // Create name lookup map from kidsWithGoals
+  const kidNames = new Map(initialKids.map(k => [k.id, k.name]));
   const [activeTab, setActiveTab] = useState<"pending" | "catalog" | "goals">(
     initialPending.length > 0 ? "pending" : "catalog"
   );
@@ -230,22 +233,26 @@ export default function ParentRewards({
             <p class="empty">No pending rewards to fulfill</p>
           ) : (
             <div class="list">
-              {pending.map(p => (
-                <div key={p.id} class="purchase-card">
-                  <span class="icon">{p.rewardIcon || "🎁"}</span>
-                  <div class="info">
-                    <div class="name">{p.rewardName}</div>
-                    <div class="meta">{p.pointCost} pts</div>
+              {pending.map(p => {
+                const kidName = kidNames.get(p.profileId) || "Someone";
+                const rewardName = p.rewardName || "Reward";
+                return (
+                  <div key={p.id} class="purchase-card">
+                    <span class="icon">{p.rewardIcon || "🎁"}</span>
+                    <div class="info">
+                      <div class="name"><strong>{kidName}</strong> claimed {rewardName}</div>
+                      <div class="meta">{p.pointCost} pts • {new Date(p.createdAt).toLocaleDateString()}</div>
+                    </div>
+                    <button
+                      class="fulfill-btn"
+                      onClick={() => handleFulfill(p.id)}
+                      disabled={isProcessing}
+                    >
+                      ✓ Done
+                    </button>
                   </div>
-                  <button
-                    class="fulfill-btn"
-                    onClick={() => handleFulfill(p.id)}
-                    disabled={isProcessing}
-                  >
-                    ✓ Done
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
