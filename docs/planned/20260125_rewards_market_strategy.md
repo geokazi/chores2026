@@ -115,9 +115,9 @@ dollars drive financial education.
 ```typescript
 // families.settings.apps.choregami.finance
 {
-  points_per_dollar: 1,        // Exchange rate (default 1:1)
-  weekly_allowance_cents: 500, // Optional base $5/week per kid
-  payout_requires_pin: true    // Parent PIN for cash out
+  dollar_value_per_point: 1.00, // 1 point = $1.00 (default 1:1)
+  weekly_allowance_cents: 500,  // Optional base $5/week per kid
+  payout_requires_pin: true     // Parent PIN for cash out
 }
 ```
 
@@ -527,7 +527,7 @@ Bonuses, and granular Approval Settings.
 ```typescript
 // families.settings.apps.choregami.finance
 {
-  points_per_dollar: 100, // cents per point (25/50/100)
+  dollar_value_per_point: 1.00, // 1 point = $1 (can be 0.25, 0.50, 1.00)
   payout_requires_approval: true
 }
 ```

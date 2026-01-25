@@ -72,7 +72,7 @@ function getEncouragement(streak: number, totalDone: number): string {
   if (streak === 2) return `🔥 ${streak}-day streak — keep it up!`;
   if (streak === 1) return "🌟 Nice start! One more day for a streak.";
   if (totalDone > 0) return "🌟 Off to a good start!";
-  return "Ready to begin!";
+  return "✨ Ready when you are!";
 }
 
 export default function HabitInsights({ trends, streaks, routines, totalActiveDays, thisWeekActivity }: Props) {
@@ -88,7 +88,7 @@ export default function HabitInsights({ trends, streaks, routines, totalActiveDa
             <h2>Building Your Insights</h2>
           </div>
           <p class="gs-desc">
-            Complete chores for 7 days to unlock full analytics:
+            Complete chores for 7 days to build enough data for meaningful trends:
           </p>
           <ul class="gs-features">
             <li class={totalActiveDays >= 7 ? "unlocked" : ""}>
