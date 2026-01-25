@@ -206,9 +206,30 @@ For the digest, calculate actual daily streaks:
 
 ---
 
+## Updates
+
+### January 25, 2026 — Behavioral Insights Integration
+
+The digest was enhanced as part of [Priority 1: Behavioral Insights](../planned/20260125_rewards_market_strategy.md):
+
+- **Streak recovery**: `calculateStreak()` now uses `diffDays <= 2` (allows 1 gap day)
+  instead of strict `diffDays === 1`. Prevents single-miss frustration.
+- **Template-aware consistency %**: `calculateConsistency(dates, expectedPerWeek)` computes
+  30-day consistency as `activeDays / Math.round(expectedPerWeek * 30/7)`. Uses
+  `getExpectedDaysForProfile()` from insights-service to derive expected days from
+  the family's rotation template (e.g., Weekend Warrior = 5d/week, Daily Basics = 7d/week).
+  Ensures consistency % matches the Habit Insights page exactly.
+- **Leaderboard type updated**: `{ name, totalPoints, weeklyPoints, streak, consistency }`
+- **Email template**: Shows consistency % alongside streak badge in leaderboard rows.
+- **SMS template**: Appends consistency % after streak count.
+- **Insight one-liner**: High consistency (80%+) generates "habit forming!" insight.
+
+---
+
 ## Cross-References
 
 - **Implementation**: [Notifications: Calendar + Email + Badges](../milestones/20260122_notifications_calendar_email_badges.md) — Base digest service
+- **Behavioral Insights**: [Rewards Market Strategy (P1)](../planned/20260125_rewards_market_strategy.md) — Consistency % and streak recovery
 - **Family Goals**: [Collaborative Family Goals](../milestones/20260114_collaborative_family_goals_bonus_system.md) — Goal progress data
 - **Reports**: [Family Reports & Analytics](../20260114_family_reports_analytics_implementation.md) — Savings/earnings calculations
 - **Weekly Patterns**: [Weekly Patterns Analysis](../milestones/20260114_weekly_patterns_analysis.md) — Streak insights

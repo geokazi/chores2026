@@ -338,6 +338,13 @@ export default function ParentDashboard(
           >
             📊 View Reports
           </a>
+          <a
+            href="/parent/insights"
+            class="btn btn-secondary"
+            style={{ fontSize: "0.875rem", textDecoration: "none" }}
+          >
+            🧠 Habit Insights
+          </a>
         </div>
         
         {/* Sync Status Message */}
