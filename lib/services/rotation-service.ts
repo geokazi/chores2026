@@ -531,10 +531,12 @@ export function getSchedulePreview(
   const previews: SchedulePreview[] = [];
 
   for (const weekType of preset.week_types) {
+    const periodWeeks = customizations?.rotation_period_weeks || 1;
+    const periodSuffix = periodWeeks > 1 ? ` (${periodWeeks} weeks)` : '';
     const weekLabel = weekType === 'cleaning' ? 'Cleaning Week' :
                       weekType === 'non-cleaning' ? 'Maintenance Week' :
-                      weekType === 'week_a' ? 'Week A (Rotation 1)' :
-                      weekType === 'week_b' ? 'Week B (Rotation 2)' :
+                      weekType === 'week_a' ? `Rotation 1${periodSuffix}` :
+                      weekType === 'week_b' ? `Rotation 2${periodSuffix}` :
                       weekType.charAt(0).toUpperCase() + weekType.slice(1);
 
     const scheduleForWeek = preset.schedule[weekType];
