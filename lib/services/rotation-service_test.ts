@@ -3,7 +3,14 @@
  */
 
 import { assertEquals } from "https://deno.land/std@0.220.0/assert/mod.ts";
-import { getDynamicChoresForChild, getDayOfYear, getChoresForChild, findChoreByKey } from "./rotation-service.ts";
+import {
+  getDynamicChoresForChild,
+  getDayOfYear,
+  getChoresForChild,
+  findChoreByKey,
+  shouldUseDynamicDistribution,
+  getSchedulePreview
+} from "./rotation-service.ts";
 import { getPresetByKey } from "../data/rotation-presets.ts";
 import type { RotationConfig, CustomChore } from "../types/rotation.ts";
 
@@ -211,4 +218,124 @@ Deno.test("findChoreByKey - returns undefined for unknown key", () => {
 
   const chore = findChoreByKey(preset, undefined, "nonexistent_chore");
   assertEquals(chore, undefined);
+});
+
+// Dynamic Distribution Tests (when chores are disabled)
+Deno.test("shouldUseDynamicDistribution - returns false when no chores disabled", () => {
+  const config: RotationConfig = {
+    active_preset: "smart_rotation",
+    start_date: "2026-01-01",
+    child_slots: [
+      { slot: "Child A", profile_id: "kid1" },
+      { slot: "Child B", profile_id: "kid2" },
+    ],
+  };
+
+  const preset = getPresetByKey("smart_rotation");
+  if (!preset) throw new Error("Preset not found");
+
+  assertEquals(shouldUseDynamicDistribution(preset, config), false);
+});
+
+Deno.test("shouldUseDynamicDistribution - returns true when chores are disabled", () => {
+  const config: RotationConfig = {
+    active_preset: "smart_rotation",
+    start_date: "2026-01-01",
+    child_slots: [
+      { slot: "Child A", profile_id: "kid1" },
+      { slot: "Child B", profile_id: "kid2" },
+    ],
+    customizations: {
+      chore_overrides: {
+        "vacuum_bedroom": { enabled: false },
+        "dust_surfaces": { enabled: false },
+      },
+    },
+  };
+
+  const preset = getPresetByKey("smart_rotation");
+  if (!preset) throw new Error("Preset not found");
+
+  assertEquals(shouldUseDynamicDistribution(preset, config), true);
+});
+
+Deno.test("getSchedulePreview - no empty days when chores disabled (dynamic distribution)", () => {
+  const config: RotationConfig = {
+    active_preset: "smart_rotation",
+    start_date: "2026-01-01",
+    child_slots: [
+      { slot: "Child A", profile_id: "kid1" },
+      { slot: "Child B", profile_id: "kid2" },
+    ],
+    customizations: {
+      chore_overrides: {
+        // Disable 6 of 10 chores, leaving 4 active
+        "vacuum_bedroom": { enabled: false },
+        "dust_surfaces": { enabled: false },
+        "tidy_room": { enabled: false },
+        "sort_laundry": { enabled: false },
+        "water_plants": { enabled: false },
+        "clean_bathroom": { enabled: false },
+      },
+      rest_days: ["wed", "sat"],  // 2 rest days
+    },
+  };
+
+  const childNames = { kid1: "Alice", kid2: "Bob" };
+  const previews = getSchedulePreview(config, childNames);
+
+  // Should have 2 weeks (week_a, week_b)
+  assertEquals(previews.length, 2);
+
+  // Check that non-rest days have no empty slots
+  for (const preview of previews) {
+    for (const day of preview.days) {
+      if (day.isRestDay) {
+        // Rest days should be intentionally empty but not flagged as "empty"
+        assertEquals(day.hasEmptySlots, false);
+      } else {
+        // Non-rest days should have chores distributed
+        assertEquals(day.hasEmptySlots, false, `${day.dayLabel} in ${preview.weekLabel} has empty slots`);
+      }
+    }
+    // No empty day warnings
+    assertEquals(preview.hasEmptyDays, false);
+  }
+});
+
+Deno.test("getChoresForChild - uses dynamic distribution when chores disabled", () => {
+  const config: RotationConfig = {
+    active_preset: "smart_rotation",
+    start_date: "2026-01-01",
+    child_slots: [
+      { slot: "Child A", profile_id: "kid1" },
+      { slot: "Child B", profile_id: "kid2" },
+    ],
+    customizations: {
+      chore_overrides: {
+        // Keep only 4 chores enabled
+        "vacuum_bedroom": { enabled: false },
+        "dust_surfaces": { enabled: false },
+        "tidy_room": { enabled: false },
+        "sort_laundry": { enabled: false },
+        "water_plants": { enabled: false },
+        "clean_bathroom": { enabled: false },
+      },
+      rest_days: ["wed", "sat"],
+    },
+  };
+
+  // Test Monday (non-rest day) - should have chores
+  const monday = new Date("2026-01-05T12:00:00"); // A Monday
+  const kid1Monday = getChoresForChild(config, "kid1", monday);
+  const kid2Monday = getChoresForChild(config, "kid2", monday);
+
+  // Both kids combined should have some chores assigned
+  const totalMondayChores = kid1Monday.length + kid2Monday.length;
+  assertEquals(totalMondayChores > 0, true, "Monday should have chores distributed");
+
+  // Test Wednesday (rest day) - should be empty
+  const wednesday = new Date("2026-01-07T12:00:00"); // A Wednesday
+  const kid1Wednesday = getChoresForChild(config, "kid1", wednesday);
+  assertEquals(kid1Wednesday.length, 0, "Rest day should have no chores");
 });
