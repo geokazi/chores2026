@@ -75,6 +75,8 @@ export interface RotationCustomizations {
   daily_chores?: string[];
   // Rest days: no chores appear on these days for any kid
   rest_days?: DayOfWeek[];
+  // Rotation period: how many weeks before chores swap (default: 1 = weekly)
+  rotation_period_weeks?: 1 | 2;
 }
 
 // Assignment mode for rotation

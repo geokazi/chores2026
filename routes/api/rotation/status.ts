@@ -56,7 +56,8 @@ export const handler: Handlers = {
       }
 
       // Get current week type for display
-      const weekType = getCurrentWeekType(preset, config.start_date);
+      const periodWeeks = config.customizations?.rotation_period_weeks || 1;
+      const weekType = getCurrentWeekType(preset, config.start_date, periodWeeks);
       const badge = getWeekTypeBadge(config);
 
       // Fetch child names for the mappings

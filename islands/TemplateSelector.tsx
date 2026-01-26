@@ -46,9 +46,10 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
   const [customAssignments, setCustomAssignments] = useState<Record<string, string[]>>({});
   const [showHiddenChores, setShowHiddenChores] = useState(false);
 
-  // Daily chores, rest days, and schedule preview state
+  // Daily chores, rest days, rotation frequency, and schedule preview state
   const [dailyChores, setDailyChores] = useState<string[]>([]);
   const [restDays, setRestDays] = useState<string[]>([]);
+  const [rotationPeriod, setRotationPeriod] = useState<1 | 2>(1);
   const [showSchedulePreview, setShowSchedulePreview] = useState(false);
 
   // Initialize custom chores from family-level settings (available for ALL templates)
@@ -80,6 +81,9 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
 
       // Load rest days
       setRestDays(activeRotation.customizations?.rest_days || []);
+
+      // Load rotation period
+      setRotationPeriod(activeRotation.customizations?.rotation_period_weeks || 1);
     }
   }, [activeRotation?.active_preset, activeRotation?.assignment_mode]);
 
@@ -240,6 +244,9 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
     if (restDays.length > 0) {
       customizations.rest_days = restDays as any;  // DayOfWeek[]
     }
+    if (rotationPeriod !== 1) {
+      customizations.rotation_period_weeks = rotationPeriod;
+    }
 
     const preset = getPresetByKey(activeRotation.active_preset);
     let childSlotsToSave: { slot: string; profile_id: string }[];
@@ -382,6 +389,7 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
             customChores, showHiddenChores, setShowHiddenChores,
             dailyChores, setDailyChores,
             restDays, setRestDays,
+            rotationPeriod, setRotationPeriod,
             showSchedulePreview, setShowSchedulePreview
           )}
           </div>
@@ -602,6 +610,8 @@ function renderTemplateCustomizePanel(
   setDailyChores: (chores: string[]) => void,
   restDays: string[],
   setRestDays: (days: string[]) => void,
+  rotationPeriod: 1 | 2,
+  setRotationPeriod: (period: 1 | 2) => void,
   showSchedulePreview: boolean,
   setShowSchedulePreview: (show: boolean) => void
 ) {
@@ -927,6 +937,37 @@ function renderTemplateCustomizePanel(
         </div>
       )}
 
+      {/* Rotation Frequency Section - Only show for templates with multiple week types */}
+      {assignmentMode === 'rotation' && preset.week_types.length > 1 && (
+        <div class="rotation-frequency-section">
+          <h4 style={{ marginTop: "1.5rem" }}>🔄 Rotation Frequency</h4>
+          <p class="slot-hint">How often should kids swap chores?</p>
+
+          <div class="rotation-frequency-options">
+            <label class={`frequency-option ${rotationPeriod === 1 ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="rotation-frequency"
+                checked={rotationPeriod === 1}
+                onChange={() => setRotationPeriod(1)}
+              />
+              <span class="frequency-label">Weekly</span>
+              <span class="frequency-desc">Swap chores each week</span>
+            </label>
+            <label class={`frequency-option ${rotationPeriod === 2 ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="rotation-frequency"
+                checked={rotationPeriod === 2}
+                onChange={() => setRotationPeriod(2)}
+              />
+              <span class="frequency-label">Biweekly</span>
+              <span class="frequency-desc">Keep same chores for 2 weeks</span>
+            </label>
+          </div>
+        </div>
+      )}
+
       {/* Rest Days Section - Only show for rotation mode */}
       {assignmentMode === 'rotation' && (
         <div class="rest-days-section">
@@ -988,6 +1029,7 @@ function renderTemplateCustomizePanel(
             chore_overrides: choreOverrides,
             daily_chores: dailyChores,
             rest_days: restDays as any,
+            rotation_period_weeks: rotationPeriod,
           },
         };
 
@@ -1153,6 +1195,17 @@ const styles = `
   .empty-days-notice p { margin: 0 0 0.5rem; font-size: 0.9rem; color: #92400e; }
   .empty-days-notice p:last-child { margin-bottom: 0; }
   .empty-days-notice .notice-hint { font-size: 0.8rem; color: #a16207; }
+
+  /* Rotation Frequency Section */
+  .rotation-frequency-section { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; }
+  .rotation-frequency-options { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+  .frequency-option { display: flex; flex-direction: column; padding: 0.75rem 1rem; background: white; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; transition: all 0.2s; min-width: 140px; }
+  .frequency-option:hover { border-color: #10b981; }
+  .frequency-option.selected { border-color: #10b981; background: #ecfdf5; }
+  .frequency-option input { position: absolute; opacity: 0; }
+  .frequency-label { font-weight: 600; font-size: 0.9rem; color: #064e3b; }
+  .frequency-desc { font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem; }
+  .frequency-option.selected .frequency-label { color: #047857; }
 
   /* Rest Days Section */
   .rest-days-section { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; }

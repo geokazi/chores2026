@@ -188,7 +188,8 @@ export function getChoresForChild(
   if (!slotMapping) return [];
 
   // Get current week type and day
-  const weekType = getCurrentWeekType(preset, config.start_date);
+  const periodWeeks = config.customizations?.rotation_period_weeks || 1;
+  const weekType = getCurrentWeekType(preset, config.start_date, periodWeeks);
   const day = getDayOfWeek(date);
 
   // Look up chore keys from schedule
@@ -220,7 +221,8 @@ export function getWeekTypeBadge(config: RotationConfig): { badge: string; conte
   const preset = getPresetByKey(config.active_preset);
   if (!preset) return null;
 
-  const weekType = getCurrentWeekType(preset, config.start_date);
+  const periodWeeks = config.customizations?.rotation_period_weeks || 1;
+  const weekType = getCurrentWeekType(preset, config.start_date, periodWeeks);
 
   // Template-specific badge logic
   switch (preset.key) {
@@ -484,7 +486,8 @@ export function getDynamicDistributedChores(
   if (todayIndex === -1) return [];
 
   // Determine week type
-  const weekType = getCurrentWeekType(preset, config.start_date);
+  const periodWeeks = config.customizations?.rotation_period_weeks || 1;
+  const weekType = getCurrentWeekType(preset, config.start_date, periodWeeks);
   const weekOffset = weekType === 'week_b' ? 1 : 0;
 
   const numKids = profileIds.length;

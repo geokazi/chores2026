@@ -44,8 +44,12 @@ export function getPresetSlots(preset: RotationPreset): string[] {
   return Object.keys(schedule || {});
 }
 
-// Calculate current week type based on start date
-export function getCurrentWeekType(preset: RotationPreset, startDate: string): string {
+// Calculate current week type based on start date and rotation period
+export function getCurrentWeekType(
+  preset: RotationPreset,
+  startDate: string,
+  periodWeeks: number = 1
+): string {
   if (preset.week_types.length === 1) {
     return preset.week_types[0];
   }
@@ -55,7 +59,9 @@ export function getCurrentWeekType(preset: RotationPreset, startDate: string): s
   const msPerWeek = 7 * 24 * 60 * 60 * 1000;
   const weeksSinceStart = Math.floor((now.getTime() - start.getTime()) / msPerWeek);
 
-  return preset.week_types[weeksSinceStart % preset.week_types.length];
+  // Divide by periodWeeks to get which rotation cycle we're in
+  const cycleIndex = Math.floor(weeksSinceStart / periodWeeks);
+  return preset.week_types[cycleIndex % preset.week_types.length];
 }
 
 // Get day of week from Date
