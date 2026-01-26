@@ -33,7 +33,10 @@ export const handler: Handlers = {
     }
 
     // Get pending one-time assignments (today and future)
-    const today = new Date().toISOString().split("T")[0];
+    // Use local date components to avoid UTC timezone issues
+    // (e.g., 8 PM Sunday local time shouldn't become Monday UTC)
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const { data: assignments, error: assignmentError } = await supabase
       .schema("choretracker")
       .from("chore_assignments")
@@ -75,6 +78,7 @@ export const handler: Handlers = {
       name: t.name,
       points: t.points,
       recurring_days: t.recurring_days,
+      assigned_to_profile_id: t.assigned_to_profile_id,
       assigned_to_name: profileMap.get(t.assigned_to_profile_id) || undefined
     }));
 
@@ -85,6 +89,7 @@ export const handler: Handlers = {
       name: (a.chore_template as any)?.name || 'Unknown',
       points: a.point_value,
       due_date: a.due_date,
+      assigned_to_profile_id: a.assigned_to_profile_id,
       assigned_to_name: profileMap.get(a.assigned_to_profile_id) || undefined
     }));
 

@@ -52,7 +52,7 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
   const [rotationPeriod, setRotationPeriod] = useState<1 | 2>(1);
   const [showSchedulePreview, setShowSchedulePreview] = useState(false);
 
-  // Inline Add Chore form state (for Manual mode)
+  // Inline Add/Edit Chore form state (for Manual mode)
   const [showAddChoreForm, setShowAddChoreForm] = useState(false);
   const [addChoreName, setAddChoreName] = useState("");
   const [addChorePoints, setAddChorePoints] = useState("1");
@@ -61,12 +61,18 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
   const [addChoreAssignedTo, setAddChoreAssignedTo] = useState("");
   const [isAddingChore, setIsAddingChore] = useState(false);
 
+  // Edit mode state
+  const [editingChoreId, setEditingChoreId] = useState<string | null>(null);
+  const [editingChoreType, setEditingChoreType] = useState<'recurring' | 'one_time' | null>(null);
+  const [addChoreDueDate, setAddChoreDueDate] = useState("");
+
   // Existing chores (for Manual mode)
   const [recurringChores, setRecurringChores] = useState<Array<{
     id: string;
     name: string;
     points: number;
     recurring_days: string[];
+    assigned_to_profile_id?: string;
     assigned_to_name?: string;
   }>>([]);
   const [oneTimeChores, setOneTimeChores] = useState<Array<{
@@ -74,6 +80,7 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
     name: string;
     points: number;
     due_date: string;
+    assigned_to_profile_id?: string;
     assigned_to_name?: string;
   }>>([]);
   const [loadingChores, setLoadingChores] = useState(false);
@@ -379,7 +386,46 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
     }
   };
 
-  // Handle adding a new chore (Manual mode inline form)
+  // Helper to reset form state
+  const resetChoreForm = () => {
+    setAddChoreName("");
+    setAddChorePoints("1");
+    setAddChoreIsRecurring(false);
+    setAddChoreRecurringDays([]);
+    setAddChoreAssignedTo("");
+    setAddChoreDueDate("");
+    setEditingChoreId(null);
+    setEditingChoreType(null);
+    setShowAddChoreForm(false);
+  };
+
+  // Start editing a chore - populate form with existing data
+  const handleStartEdit = (chore: any, type: 'recurring' | 'one_time') => {
+    setEditingChoreId(chore.id);
+    setEditingChoreType(type);
+    setAddChoreName(chore.name);
+    setAddChorePoints(String(chore.points));
+    setAddChoreIsRecurring(type === 'recurring');
+
+    if (type === 'recurring') {
+      setAddChoreRecurringDays(chore.recurring_days || []);
+      setAddChoreDueDate("");
+    } else {
+      setAddChoreRecurringDays([]);
+      // Convert due_date to YYYY-MM-DD format for date input
+      if (chore.due_date) {
+        const date = new Date(chore.due_date);
+        const localDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        setAddChoreDueDate(localDate);
+      }
+    }
+
+    // Use assigned_to_profile_id directly (more reliable than name lookup)
+    setAddChoreAssignedTo(chore.assigned_to_profile_id || "");
+    setShowAddChoreForm(true);
+  };
+
+  // Handle adding or editing a chore (Manual mode inline form)
   const handleAddChore = async () => {
     if (!addChoreName.trim() || !addChoreAssignedTo) {
       alert("Please enter a chore name and select a kid");
@@ -393,35 +439,60 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
 
     setIsAddingChore(true);
     try {
-      const today = new Date().toISOString().split("T")[0];
-      const response = await fetch('/api/chores/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          name: addChoreName.trim(),
-          points: parseInt(addChorePoints) || 1,
-          assignedTo: addChoreAssignedTo,
-          dueDate: today + "T23:59:59.999Z",
-          isRecurring: addChoreIsRecurring,
-          recurringDays: addChoreIsRecurring ? addChoreRecurringDays : undefined,
-        }),
-      });
+      // EDIT MODE: Update existing chore
+      if (editingChoreId && editingChoreType) {
+        const response = await fetch(`/api/chores/${editingChoreId}/edit`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            type: editingChoreType,
+            name: addChoreName.trim(),
+            points: parseInt(addChorePoints) || 1,
+            assignedTo: addChoreAssignedTo,
+            ...(editingChoreType === 'recurring'
+              ? { recurringDays: addChoreRecurringDays }
+              : { dueDate: addChoreDueDate ? addChoreDueDate + "T12:00:00" : undefined }),
+          }),
+        });
 
-      const result = await response.json();
-      if (result.success) {
-        alert(`✅ ${result.message}`);
-        // Reset form
-        setAddChoreName("");
-        setAddChorePoints("1");
-        setAddChoreIsRecurring(false);
-        setAddChoreRecurringDays([]);
-        setAddChoreAssignedTo("");
-        setShowAddChoreForm(false);
-        // Refresh chores list
-        fetchManualChores();
-      } else {
-        alert(`❌ ${result.error}`);
+        const result = await response.json();
+        if (result.success) {
+          alert(`✅ ${result.message}`);
+          resetChoreForm();
+          fetchManualChores();
+        } else {
+          alert(`❌ ${result.error}`);
+        }
+      }
+      // ADD MODE: Create new chore
+      else {
+        // Use local date components to avoid UTC conversion issues
+        // e.g., 8:53 PM Sunday in Pacific should stay Sunday, not become Monday UTC
+        const now = new Date();
+        const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        const response = await fetch('/api/chores/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            name: addChoreName.trim(),
+            points: parseInt(addChorePoints) || 1,
+            assignedTo: addChoreAssignedTo,
+            dueDate: localDate + "T12:00:00",  // Noon local, no Z suffix = treated as local time
+            isRecurring: addChoreIsRecurring,
+            recurringDays: addChoreIsRecurring ? addChoreRecurringDays : undefined,
+          }),
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          alert(`✅ ${result.message}`);
+          resetChoreForm();
+          fetchManualChores();
+        } else {
+          alert(`❌ ${result.error}`);
+        }
       }
     } catch (err) {
       alert(`❌ Error: ${err}`);
@@ -502,11 +573,18 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
                                   {chore.points}pt · {chore.assigned_to_name || 'Unassigned'} · {daysDisplay}
                                 </span>
                               </div>
-                              <button
-                                class="btn-delete"
-                                onClick={() => handleDeleteChore(chore.id, 'recurring', chore.name)}
-                                title="Delete"
-                              >×</button>
+                              <div class="chore-actions">
+                                <button
+                                  class="btn-edit"
+                                  onClick={() => handleStartEdit(chore, 'recurring')}
+                                  title="Edit"
+                                >✏️</button>
+                                <button
+                                  class="btn-delete"
+                                  onClick={() => handleDeleteChore(chore.id, 'recurring', chore.name)}
+                                  title="Delete"
+                                >×</button>
+                              </div>
                             </div>
                           );
                         })}
@@ -531,11 +609,18 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
                                   {chore.points}pt · {chore.assigned_to_name || 'Unassigned'} · {dateDisplay}
                                 </span>
                               </div>
-                              <button
-                                class="btn-delete"
-                                onClick={() => handleDeleteChore(chore.id, 'one_time', chore.name)}
-                                title="Delete"
-                              >×</button>
+                              <div class="chore-actions">
+                                <button
+                                  class="btn-edit"
+                                  onClick={() => handleStartEdit(chore, 'one_time')}
+                                  title="Edit"
+                                >✏️</button>
+                                <button
+                                  class="btn-delete"
+                                  onClick={() => handleDeleteChore(chore.id, 'one_time', chore.name)}
+                                  title="Delete"
+                                >×</button>
+                              </div>
                             </div>
                           );
                         })}
@@ -547,13 +632,32 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
 
               <button
                 class="btn btn-outline add-chore-toggle"
-                onClick={() => setShowAddChoreForm(!showAddChoreForm)}
+                onClick={() => {
+                  if (showAddChoreForm && editingChoreId) {
+                    // Cancel edit mode
+                    resetChoreForm();
+                  } else {
+                    setShowAddChoreForm(!showAddChoreForm);
+                    if (!showAddChoreForm) {
+                      // Opening add form - reset edit state
+                      setEditingChoreId(null);
+                      setEditingChoreType(null);
+                    }
+                  }
+                }}
               >
-                {showAddChoreForm ? '▼ Hide Add Chore' : '+ Add Chore'}
+                {showAddChoreForm
+                  ? (editingChoreId ? '✕ Cancel Edit' : '▼ Hide Add Chore')
+                  : '+ Add Chore'}
               </button>
 
               {showAddChoreForm && (
                 <div class="add-chore-form">
+                  {/* Form Header */}
+                  <h4 class="form-header">
+                    {editingChoreId ? '✏️ Edit Chore' : '➕ New Chore'}
+                  </h4>
+
                   {/* Chore Name */}
                   <div class="form-row">
                     <label>Chore Name</label>
@@ -595,15 +699,17 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
                     </select>
                   </div>
 
-                  {/* Recurring Toggle */}
+                  {/* Recurring Toggle (disabled when editing - can't change type) */}
                   <div class="form-row recurring-toggle">
-                    <label class="checkbox-label">
+                    <label class={`checkbox-label ${editingChoreId ? 'disabled' : ''}`}>
                       <input
                         type="checkbox"
                         checked={addChoreIsRecurring}
                         onChange={(e) => setAddChoreIsRecurring(e.currentTarget.checked)}
+                        disabled={!!editingChoreId}
                       />
                       <span>Recurring chore</span>
+                      {editingChoreId && <span class="edit-hint">(type cannot be changed)</span>}
                     </label>
                   </div>
 
@@ -638,13 +744,32 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
                     </div>
                   )}
 
+                  {/* Due Date (show only for one-time chores when editing) */}
+                  {!addChoreIsRecurring && editingChoreType === 'one_time' && (
+                    <div class="form-row">
+                      <label>Due Date</label>
+                      <input
+                        type="date"
+                        value={addChoreDueDate}
+                        onChange={(e) => setAddChoreDueDate(e.currentTarget.value)}
+                        class="form-input"
+                      />
+                    </div>
+                  )}
+
                   {/* Submit Button */}
                   <button
                     class="btn btn-primary add-chore-submit"
                     onClick={handleAddChore}
                     disabled={isAddingChore || !addChoreName.trim() || !addChoreAssignedTo}
                   >
-                    {isAddingChore ? 'Adding...' : addChoreIsRecurring ? 'Create Recurring Chore' : 'Add Chore for Today'}
+                    {isAddingChore
+                      ? (editingChoreId ? 'Saving...' : 'Adding...')
+                      : editingChoreId
+                        ? 'Save Changes'
+                        : addChoreIsRecurring
+                          ? 'Create Recurring Chore'
+                          : 'Add Chore for Today'}
                   </button>
 
                   {addChoreIsRecurring && addChoreRecurringDays.length > 0 && (
@@ -1546,10 +1671,14 @@ const styles = `
   .chore-item .chore-info { display: flex; flex-direction: column; gap: 0.125rem; flex: 1; min-width: 0; }
   .chore-item .chore-name { font-weight: 500; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .chore-item .chore-meta { font-size: 0.75rem; color: var(--color-text-light); }
+  .chore-actions { display: flex; gap: 0.25rem; align-items: center; flex-shrink: 0; }
+  .btn-edit { background: none; border: none; font-size: 0.9rem; cursor: pointer; padding: 0.25rem 0.4rem; border-radius: 4px; transition: all 0.2s; }
+  .btn-edit:hover { background: #dbeafe; }
   .btn-delete { background: none; border: none; color: #9ca3af; font-size: 1.25rem; cursor: pointer; padding: 0.25rem 0.5rem; border-radius: 4px; transition: all 0.2s; flex-shrink: 0; }
   .btn-delete:hover { background: #fee2e2; color: #dc2626; }
   .add-chore-toggle { width: 100%; justify-content: center; }
   .add-chore-form { margin-top: 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
+  .add-chore-form .form-header { margin: 0 0 0.5rem; font-size: 1rem; color: #374151; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.5rem; }
   .form-row { display: flex; flex-direction: column; gap: 0.25rem; }
   .form-row label { font-size: 0.85rem; font-weight: 500; color: #374151; }
   .form-input { padding: 0.5rem 0.75rem; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 0.9rem; }
@@ -1557,6 +1686,8 @@ const styles = `
   .form-select { padding: 0.5rem 0.75rem; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 0.9rem; background: white; }
   .checkbox-label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
   .checkbox-label input { width: 18px; height: 18px; accent-color: var(--color-primary); }
+  .checkbox-label.disabled { opacity: 0.6; cursor: not-allowed; }
+  .checkbox-label .edit-hint { font-size: 0.75rem; color: #9ca3af; margin-left: 0.25rem; }
   .recurring-toggle { padding-top: 0.5rem; border-top: 1px solid #e5e7eb; }
   .recurring-days-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; }
   .day-checkbox { display: flex; align-items: center; gap: 0.25rem; padding: 0.4rem 0.6rem; background: white; border: 2px solid #e5e7eb; border-radius: 6px; cursor: pointer; transition: all 0.2s; font-size: 0.85rem; }

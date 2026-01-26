@@ -6,7 +6,7 @@
 
 import { Handlers } from "$fresh/server.ts";
 import { getAuthenticatedSession } from "../../../../lib/auth/session.ts";
-import { getSupabaseClient } from "../../../../lib/supabase.ts";
+import { getServiceSupabaseClient } from "../../../../lib/supabase.ts";
 
 interface DeleteRequest {
   type: 'recurring' | 'one_time';
@@ -24,7 +24,7 @@ export const handler: Handlers = {
 
     try {
       const body: DeleteRequest = await req.json();
-      const supabase = getSupabaseClient();
+      const supabase = getServiceSupabaseClient();
 
       if (body.type === 'recurring') {
         // Soft-delete the recurring template

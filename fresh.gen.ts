@@ -8,6 +8,7 @@ import * as $api_analytics_event from "./routes/api/analytics/event.ts";
 import * as $api_auth_validate_oauth from "./routes/api/auth/validate-oauth.ts";
 import * as $api_chores_chore_id_complete from "./routes/api/chores/[chore_id]/complete.ts";
 import * as $api_chores_chore_id_delete from "./routes/api/chores/[chore_id]/delete.ts";
+import * as $api_chores_chore_id_edit from "./routes/api/chores/[chore_id]/edit.ts";
 import * as $api_chores_by_events from "./routes/api/chores/by-events.ts";
 import * as $api_chores_create from "./routes/api/chores/create.ts";
 import * as $api_chores_recurring from "./routes/api/chores/recurring.ts";
@@ -126,6 +127,7 @@ const manifest = {
     "./routes/api/auth/validate-oauth.ts": $api_auth_validate_oauth,
     "./routes/api/chores/[chore_id]/complete.ts": $api_chores_chore_id_complete,
     "./routes/api/chores/[chore_id]/delete.ts": $api_chores_chore_id_delete,
+    "./routes/api/chores/[chore_id]/edit.ts": $api_chores_chore_id_edit,
     "./routes/api/chores/by-events.ts": $api_chores_by_events,
     "./routes/api/chores/create.ts": $api_chores_create,
     "./routes/api/chores/recurring.ts": $api_chores_recurring,
