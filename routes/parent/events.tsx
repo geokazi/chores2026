@@ -69,19 +69,20 @@ export const handler: Handlers<EventsPageData> = {
     try {
       const client = getServiceSupabaseClient();
 
-      // Date calculations
+      // Date calculations - use local date components to avoid UTC timezone issues
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const todayStr = today.toISOString().split("T")[0];
+      const toLocalDateStr = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const todayStr = toLocalDateStr(today);
 
       const weekFromNow = new Date(today);
       weekFromNow.setDate(weekFromNow.getDate() + 7);
-      const weekFromNowStr = weekFromNow.toISOString().split("T")[0];
+      const weekFromNowStr = toLocalDateStr(weekFromNow);
 
       // Query end date: 60 days out to capture recurring events
       const queryEnd = new Date(today);
       queryEnd.setDate(queryEnd.getDate() + 60);
-      const queryEndStr = queryEnd.toISOString().split("T")[0];
+      const queryEndStr = toLocalDateStr(queryEnd);
 
       // Fetch events - include events that may have started before today
       // (for recurring events that started in the past but have future occurrences)

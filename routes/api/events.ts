@@ -133,7 +133,8 @@ export const handler: Handlers = {
       const defaultEndDate = (() => {
         const d = new Date(localDate);
         d.setDate(d.getDate() + 30);
-        return d.toISOString().split("T")[0];
+        // Use local date components to avoid UTC timezone issues
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       })();
       const endDate = url.searchParams.get("endDate") || defaultEndDate;
 

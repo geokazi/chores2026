@@ -19,7 +19,8 @@ const getLocalDateString = () => {
 const getDefaultUntilDate = (eventDate: string): string => {
   const date = new Date(eventDate);
   date.setMonth(date.getMonth() + 3);
-  return date.toISOString().split("T")[0];
+  // Use local date components to avoid UTC timezone issues
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 };
 
 interface FamilyMember {

@@ -138,7 +138,7 @@ export default function AddChoreModal({ isOpen, onClose, familyMembers, onSucces
           description: formData.description,
           points: formData.points,
           assignedTo: formData.assignedTo,
-          dueDate: formData.dueDate + "T23:59:59.999Z", // End of day
+          dueDate: formData.dueDate + "T12:00:00", // Noon local, no Z = treated as local time
           category: "household",
           familyEventId: formData.familyEventId || null,
         }),
