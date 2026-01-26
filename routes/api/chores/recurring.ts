@@ -33,10 +33,15 @@ export const handler: Handlers = {
     }
 
     // Get pending one-time assignments (today and future)
-    // Use local date components to avoid UTC timezone issues
-    // (e.g., 8 PM Sunday local time shouldn't become Monday UTC)
-    const now = new Date();
-    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    // Use client's local date from query param to avoid server timezone issues
+    // (Fly.io runs in UTC, so server's "today" may differ from user's local date)
+    const url = new URL(req.url);
+    const clientLocalDate = url.searchParams.get("localDate");
+    const today = clientLocalDate || (() => {
+      // Fallback: use server time (less accurate for cross-timezone users)
+      const now = new Date();
+      return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    })();
     const { data: assignments, error: assignmentError } = await supabase
       .schema("choretracker")
       .from("chore_assignments")

@@ -94,7 +94,10 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
   // Fetch existing chores when in Manual mode
   const fetchManualChores = () => {
     setLoadingChores(true);
-    fetch('/api/chores/recurring', { credentials: 'include' })
+    // Pass client's local date to avoid server timezone issues (Fly.io runs in UTC)
+    const now = new Date();
+    const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    fetch(`/api/chores/recurring?localDate=${localDate}`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
         if (data.success) {
