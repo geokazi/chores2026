@@ -647,17 +647,47 @@ Soft-delete a chore (recurring template or one-time assignment).
 - `type: "recurring"` → Updates `chore_templates` setting `is_deleted=true`, `is_active=false`
 - `type: "one_time"` → Updates `chore_assignments` setting `is_deleted=true`
 
+#### POST /api/chores/[chore_id]/edit
+
+Edit a chore (recurring template or one-time assignment).
+
+**Request Body:**
+```json
+{
+  "type": "recurring" | "one_time",
+  "name": "Updated chore name",        // optional
+  "points": 2,                          // optional
+  "assignedTo": "profile-uuid",         // optional
+  "recurringDays": ["mon", "wed"],      // optional, recurring only
+  "dueDate": "2026-01-26T12:00:00"      // optional, one-time only
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Recurring chore updated" | "Chore updated"
+}
+```
+
+**Edit Logic:**
+- `type: "recurring"` → Updates `chore_templates` (name, points, recurring_days, assigned_to_profile_id)
+- `type: "one_time"` → Updates `chore_assignments` (due_date, point_value, assigned_to_profile_id) and template name
+
 ### Files Modified
 
 | File | Changes |
 |------|---------|
 | `lib/services/chore-service.ts` | Extended `createChoreWithTemplate()` to support recurring chores with `recurringDays[]` |
 | `routes/api/chores/create.ts` | Added `isRecurring` and `recurringDays` request parameters |
-| `routes/api/chores/recurring.ts` | **New** - Fetch existing recurring and one-time manual chores |
+| `routes/api/chores/recurring.ts` | **New** - Fetch existing recurring and one-time manual chores; fixed UTC timezone bug |
 | `routes/api/chores/[chore_id]/delete.ts` | **New** - Soft-delete endpoint for both chore types |
-| `islands/TemplateSelector.tsx` | Added inline form, chore list display, delete functionality |
+| `routes/api/chores/[chore_id]/edit.ts` | **New** - Edit endpoint for updating chore properties |
+| `islands/TemplateSelector.tsx` | Added inline form, chore list display, edit/delete functionality; fixed UTC timezone bug |
 | `lib/services/activity-service.ts` | Added `recurring_chore_created` activity type and `chore_template` target type |
 | `islands/FamilySettings.tsx` | Added page reload after removing rotation to refresh Manual mode chores |
+| `islands/AddChoreModal.tsx` | Fixed UTC timezone bug in due date handling |
 
 ### Key Implementation Details
 
@@ -682,10 +712,41 @@ Soft-delete a chore (recurring template or one-time assignment).
    - New target type: `chore_template` for recurring chores
    - Logged via `ActivityService.logActivity()` after successful creation
 
+5. **Edit Functionality**:
+   - Edit button (✏️) on each chore in the list
+   - Pre-fills form with existing chore data
+   - Can change: name, points, assigned kid, due date (one-time), recurring days (recurring)
+   - Cannot change chore type (recurring ↔ one-time)
+   - Uses service client for database permissions
+
+### UTC Timezone Fix
+
+**Problem**: Using `new Date().toISOString().split("T")[0]` returns the UTC date, not local date. At 8 PM Sunday Pacific time, UTC is already Monday, causing chores to be saved/filtered with wrong dates.
+
+**Solution**: Use local date components instead:
+```typescript
+// ❌ Wrong - returns UTC date
+const today = new Date().toISOString().split("T")[0];
+
+// ✅ Correct - returns local date
+const now = new Date();
+const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+```
+
+**Files Fixed**:
+- `islands/TemplateSelector.tsx` - inline chore creation
+- `islands/AddChoreModal.tsx` - parent dashboard chore creation
+- `islands/AddEventModal.tsx` - event repeat until date
+- `routes/api/chores/recurring.ts` - one-time chores filter
+- `routes/api/rotation/today.ts` - rotation chores today filter
+- `routes/parent/events.tsx` - events page date filters
+- `routes/api/events.ts` - events API end date
+
 ---
 
 *Document Created*: January 25, 2026
 *Implemented*: January 25, 2026
 *Manual Mode Enhanced*: January 25, 2026
+*Edit & Timezone Fixes*: January 25, 2026
 *Source*: Beta User Feedback
 *Author*: Claude Code AI Assistant

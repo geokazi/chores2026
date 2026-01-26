@@ -271,10 +271,15 @@ Response: { success: boolean, choreId?: string, templateId?: string, isRecurring
 GET /api/chores/recurring
 Response: {
   success: boolean,
-  recurring: Array<{ id, type: 'recurring', name, points, recurring_days, assigned_to_name }>,
-  oneTime: Array<{ id, type: 'one_time', name, points, due_date, assigned_to_name }>,
+  recurring: Array<{ id, type: 'recurring', name, points, recurring_days, assigned_to_profile_id, assigned_to_name }>,
+  oneTime: Array<{ id, type: 'one_time', name, points, due_date, assigned_to_profile_id, assigned_to_name }>,
   templates: []  // Deprecated, kept for backwards compat
 }
+
+// Edit a chore (recurring template or one-time assignment)
+POST /api/chores/[chore_id]/edit
+Body: { type: 'recurring' | 'one_time', name?, points?, assignedTo?, recurringDays?, dueDate? }
+Response: { success: boolean, message: string }
 
 // Soft-delete a chore (recurring template or one-time assignment)
 POST /api/chores/[chore_id]/delete
