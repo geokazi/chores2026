@@ -168,6 +168,7 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
       const response = await fetch('/api/rotation/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ preset_key: selectedPreset, child_slots: mappings }),
       });
       if (response.ok) {
@@ -201,6 +202,7 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
       const response = await fetch('/api/family/custom-chores', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ custom_chores: customChores }),
       });
 
@@ -267,6 +269,7 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
       const customChoresResponse = await fetch('/api/family/custom-chores', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ custom_chores: customChores }),
       });
 
@@ -281,6 +284,7 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
       const response = await fetch('/api/rotation/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           preset_key: activeRotation.active_preset,
           child_slots: childSlotsToSave,
