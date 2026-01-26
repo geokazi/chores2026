@@ -4,6 +4,7 @@
  */
 
 import { useState } from "preact/hooks";
+import { triggerCelebration } from "./ConfettiTrigger.tsx";
 
 interface ChoreAssignment {
   id: string;
@@ -67,6 +68,9 @@ export default function ChoreList({ chores, onChoreComplete, kidId, showPoints =
       if (response.ok) {
         const result = await response.json();
         console.log('🎉 Chore completed:', result);
+
+        // Trigger confetti celebration
+        triggerCelebration('chore_complete');
 
         // Pass result data so parent can update points/leaderboard/activity
         const choreName = chore.chore_template?.name || "Chore";

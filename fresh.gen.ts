@@ -80,6 +80,7 @@ import * as $AppHeader from "./islands/AppHeader.tsx";
 import * as $BalanceCards from "./islands/BalanceCards.tsx";
 import * as $ChoreDetail from "./islands/ChoreDetail.tsx";
 import * as $ChoreList from "./islands/ChoreList.tsx";
+import * as $ConfettiTrigger from "./islands/ConfettiTrigger.tsx";
 import * as $EventMissionGroup from "./islands/EventMissionGroup.tsx";
 import * as $EventsList from "./islands/EventsList.tsx";
 import * as $FamilyReports from "./islands/FamilyReports.tsx";
@@ -203,6 +204,7 @@ const manifest = {
     "./islands/BalanceCards.tsx": $BalanceCards,
     "./islands/ChoreDetail.tsx": $ChoreDetail,
     "./islands/ChoreList.tsx": $ChoreList,
+    "./islands/ConfettiTrigger.tsx": $ConfettiTrigger,
     "./islands/EventMissionGroup.tsx": $EventMissionGroup,
     "./islands/EventsList.tsx": $EventsList,
     "./islands/FamilyReports.tsx": $FamilyReports,

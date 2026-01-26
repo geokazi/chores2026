@@ -96,6 +96,7 @@ graph TB
 │   ├── 📄 AddEventModal.tsx     # Event creation form
 │   ├── 📄 LiveLeaderboard.tsx   # Real-time family rankings
 │   ├── 📄 LiveActivityFeed.tsx  # Recent activity stream
+│   ├── 📄 ConfettiTrigger.tsx   # Global confetti animation system
 │   ├── 📄 ParentDashboard.tsx   # Parent management interface
 │   ├── 📄 AddChoreModal.tsx     # Chore creation with event linking
 │   └── 📁 auth/                 # Authentication components
@@ -110,6 +111,8 @@ graph TB
 │   └── 📁 user-state/           # Session management
 ├── 📁 static/                   # Static assets
 │   ├── 📄 styles.css            # Global styles and Fresh Meadow theme
+│   ├── 📁 scripts/              # Client-side scripts
+│   │   └── 📄 confetti.js       # Confetti animation configurations
 │   └── 📁 *.js                  # Client-side authentication helpers
 ├── 📁 utils/                    # Utility functions
 └── 📁 docs/                     # Comprehensive documentation

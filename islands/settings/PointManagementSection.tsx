@@ -4,6 +4,7 @@
 
 import { useState } from "preact/hooks";
 import ModalHeader from "../../components/ModalHeader.tsx";
+import { triggerCelebration } from "../ConfettiTrigger.tsx";
 
 interface PointManagementSectionProps {
   members: Array<{
@@ -54,6 +55,11 @@ export default function PointManagementSection({ members, familyId }: PointManag
       if (response.ok && result.success) {
         const afterPoints = result.new_balance;
         const sign = adjustAmount >= 0 ? "+" : "";
+
+        // Trigger confetti for positive adjustments (bonuses)
+        if (adjustAmount > 0) {
+          triggerCelebration('bonus_points');
+        }
 
         alert(`✅ Points adjusted for ${selectedMember.name}!\n\nBefore: ${beforePoints} pts\nAdjustment: ${sign}${adjustAmount} pts\nAfter: ${afterPoints} pts\n\nReason: ${adjustmentReason}`);
 

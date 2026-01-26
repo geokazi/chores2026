@@ -7,12 +7,14 @@
  * 3. Point Management - Regular adjustments
  * 4. Weekly Family Goal - Occasional updates
  * 5. App Theme - Personalization
- * 6. Kid Event Creation - Teen autonomy with oversight
- * 7. Kid PIN Security - One-time setup
- * 8. Parent PIN Security - One-time setup
+ * 6. Celebrations - Confetti animations toggle
+ * 7. Kid Event Creation - Teen autonomy with oversight
+ * 8. Email Digests - Notifications
+ * 9. Kid PIN Security - One-time setup
+ * 10. Parent PIN Security - One-time setup
  */
 
-import { useState } from "preact/hooks";
+import { useState, useEffect } from "preact/hooks";
 import TemplateSelector from "./TemplateSelector.tsx";
 import FamilyMembersSection from "./settings/FamilyMembersSection.tsx";
 import PointManagementSection from "./settings/PointManagementSection.tsx";
@@ -21,6 +23,7 @@ import ThemeSection from "./settings/ThemeSection.tsx";
 import KidPinSection from "./settings/KidPinSection.tsx";
 import ParentPinSection from "./settings/ParentPinSection.tsx";
 import PinSetupModal from "./settings/PinSetupModal.tsx";
+import { isConfettiEnabled, setConfettiEnabled, triggerCelebration } from "./ConfettiTrigger.tsx";
 
 interface FamilySettingsProps {
   family: {
@@ -67,6 +70,14 @@ export default function FamilySettings({ family, members, settings, digestChanne
   );
   const [savingEventSetting, setSavingEventSetting] = useState(false);
 
+  // Confetti celebration toggle state (localStorage-based)
+  const [confettiEnabled, setConfettiEnabledState] = useState(true);
+
+  // Load confetti preference on mount
+  useEffect(() => {
+    setConfettiEnabledState(isConfettiEnabled());
+  }, []);
+
   const childMembers = members.filter(m => m.role === "child");
   const parentMembers = members.filter(m => m.role === "parent");
 
@@ -99,6 +110,17 @@ export default function FamilySettings({ family, members, settings, digestChanne
       alert('Failed to save setting. Please try again.');
     } finally {
       setSavingEventSetting(false);
+    }
+  };
+
+  const handleConfettiToggle = () => {
+    const newValue = !confettiEnabled;
+    setConfettiEnabled(newValue);
+    setConfettiEnabledState(newValue);
+
+    // If enabling, show a demo confetti burst
+    if (newValue) {
+      setTimeout(() => triggerCelebration('chore_complete'), 100);
     }
   };
 
@@ -232,7 +254,80 @@ export default function FamilySettings({ family, members, settings, digestChanne
       {/* 5. Personalization - App Theme */}
       <ThemeSection />
 
-      {/* 6. Teen autonomy - Kid Event Creation */}
+      {/* 6. Celebrations - Confetti animations */}
+      <div class="card" style={{ marginBottom: "1.5rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
+          <span style={{ fontSize: "1.25rem" }}>🎉</span>
+          <h3 style={{ fontSize: "1.125rem", fontWeight: "600", margin: 0 }}>Celebrations</h3>
+        </div>
+
+        <div style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "0.75rem",
+          backgroundColor: "var(--color-bg)",
+          borderRadius: "0.5rem",
+        }}>
+          <div>
+            <div style={{ fontWeight: "500", marginBottom: "0.25rem" }}>
+              Confetti animations
+            </div>
+            <div style={{ fontSize: "0.75rem", color: "var(--color-text-light)" }}>
+              {confettiEnabled
+                ? "Show confetti when chores are completed"
+                : "Animations disabled"}
+            </div>
+          </div>
+          <button
+            onClick={handleConfettiToggle}
+            style={{
+              width: "50px",
+              height: "28px",
+              borderRadius: "14px",
+              border: "none",
+              backgroundColor: confettiEnabled ? "var(--color-primary)" : "#ccc",
+              cursor: "pointer",
+              position: "relative",
+              transition: "background-color 0.2s",
+            }}
+          >
+            <div
+              style={{
+                width: "24px",
+                height: "24px",
+                borderRadius: "50%",
+                backgroundColor: "white",
+                position: "absolute",
+                top: "2px",
+                left: confettiEnabled ? "24px" : "2px",
+                transition: "left 0.2s",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+              }}
+            />
+          </button>
+        </div>
+
+        {confettiEnabled && (
+          <div style={{
+            marginTop: "0.75rem",
+            padding: "0.75rem",
+            backgroundColor: "#f0f9ff",
+            borderRadius: "0.5rem",
+            fontSize: "0.875rem",
+            color: "var(--color-text)",
+          }}>
+            Confetti appears on:
+            <ul style={{ margin: "0.5rem 0 0 1rem", padding: 0 }}>
+              <li>Every chore completion</li>
+              <li>Bonus points awarded</li>
+              <li>Family milestone achievements</li>
+            </ul>
+          </div>
+        )}
+      </div>
+
+      {/* 7. Teen autonomy - Kid Event Creation */}
       <div class="card" style={{ marginBottom: "1.5rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
           <span style={{ fontSize: "1.25rem" }}>📅</span>
@@ -307,7 +402,7 @@ export default function FamilySettings({ family, members, settings, digestChanne
         )}
       </div>
 
-      {/* 7. Notifications - Email Digests */}
+      {/* 8. Notifications - Email Digests */}
       {digestChannel && (
         <div class="card" style={{ marginBottom: "1.5rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
@@ -508,14 +603,14 @@ export default function FamilySettings({ family, members, settings, digestChanne
         </div>
       )}
 
-      {/* 8. One-time setup - Kid PIN Security */}
+      {/* 9. One-time setup - Kid PIN Security */}
       <KidPinSection
         family={family}
         members={childMembers}
         onSetPin={(member) => setPinModalMember(member)}
       />
 
-      {/* 8. One-time setup - Parent PIN Security */}
+      {/* 10. One-time setup - Parent PIN Security */}
       <ParentPinSection
         members={parentMembers}
         onSetPin={(member) => setPinModalMember(member)}

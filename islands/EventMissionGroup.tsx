@@ -6,6 +6,7 @@
 
 import { useState } from "preact/hooks";
 import { FamilyEvent, ChoreAssignment, formatTime } from "../lib/utils/household.ts";
+import { triggerCelebration } from "./ConfettiTrigger.tsx";
 
 interface Props {
   event: FamilyEvent;
@@ -51,6 +52,10 @@ export default function EventMissionGroup({ event, chores, kidId, onChoreComplet
 
       if (response.ok) {
         const result = await response.json();
+
+        // Trigger confetti celebration
+        triggerCelebration('chore_complete');
+
         const choreName = chore.chore_template?.name || "Task";
         const pointsEarned = result.points_earned ?? result.chore?.points ?? chore.point_value;
         onChoreComplete(chore.id, { points_earned: pointsEarned, choreName });

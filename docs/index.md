@@ -1,8 +1,8 @@
 # ChoreGami 2026 Documentation
 
-**Version**: 1.25
+**Version**: 1.26
 **Status**: ✅ Production Ready
-**Last Updated**: January 25, 2026 (Manual mode inline chore management, recurring chores, delete functionality)
+**Last Updated**: January 25, 2026 (Confetti celebrations, settings toggle, multi-trigger support)
 
 **Project Overview**: A simplified, real-time chore completion system built with Deno Fresh, transforming routine family chores into an engaging, competitive experience with sub-second real-time updates across all family devices.
 
@@ -77,6 +77,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-24 | **Kid Goals Page Polish** | ✅ Complete | Fun empty state with bouncing icon, goal ideas with prices (🍦10/🎮50/🎧60/🎢80 pts), parent-assist CTA |
 | 2026-01-24 | **Reward Approval Flow** | ✅ Complete | Points deducted on parent fulfill (not kid claim), starter templates for empty catalog, kid UX with encouraging messages |
 | 2026-01-25 | [**Template Customization: Inline Chores**](./milestones/20260125_template_customization_inline_chores.md) | ✅ Complete | Add custom chores inline, assignment mode (rotation vs manual), hide/show chores, **Manual mode inline chore management** (recurring + one-time chores, edit/delete functionality, UTC timezone fixes) |
+| 2026-01-25 | [**Confetti Celebrations**](./milestones/20260125_confetti_celebrations.md) | ✅ Complete | Celebration animations on chore completion (green), bonus points (gold), milestones (multi-color); Settings toggle; canvas-confetti library |
 | 2026-01-24 | **Weekly Digest P1-P4** | ✅ Complete | Digest includes Behavioral Insights (trend, consistency), Balances, Rewards, Goals, Payouts |
 | TBD | [**SMS 10DLC Compliance**](./planned/20260123_sms_10dlc_compliance.md) | ⚠️ Blocked | Carrier blocks SMS; 10DLC brand+campaign registration required |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
@@ -264,6 +265,7 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 - ✅ **Balance & Pay Out (P2)**: Per-kid balance cards (points × exchange rate = dollars), weekly/chore earnings breakdown, Pay Out modal with parent PIN verification, transaction history; routes: `/parent/balances`, `/api/payout`
 - ✅ **Rewards Marketplace (P3)**: Parent-defined JSONB catalog, **parent-approval flow** (kid claims → pending request, parent "Mark Done" → points deducted + transaction created), positive framing ("Claim" not "Buy"), family-friendly language ("Rewards to Give"), starter templates for empty catalog, encouraging "Earn X more pts 💪" for unaffordable rewards, purchase history in `reward_purchases` table; routes: `/kid/rewards`, `/parent/rewards`, `/api/rewards/*`
 - ✅ **Savings Goals (P4)**: Kid-created goals in profile preferences JSONB, progress bars with auto-update, parent "boost" contributions (no balance deduction), celebration on achievement, custom delete confirmation modal, **fun empty state** with bouncing icon + goal ideas (🍦10/🎮50/🎧60/🎢80 pts) + parent-assist CTA; routes: `/kid/goals`, `/api/goals`
+- ✅ **Confetti Celebrations**: Animated confetti on chore completion (green), bonus points (gold), milestones (multi-color); user preference toggle in Settings > Celebrations; localStorage-based; canvas-confetti library via CDN
 
 ### Known Limitations
 - **Testing**: Comprehensive test suite not yet implemented
@@ -312,5 +314,5 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 
 ---
 
-*Last updated: January 25, 2026 (v1.25)*
+*Last updated: January 25, 2026 (v1.26)*
 *Maintained by: Claude Code AI Assistant*
