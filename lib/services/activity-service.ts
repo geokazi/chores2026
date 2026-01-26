@@ -10,6 +10,7 @@ import { getServiceSupabaseClient } from "../supabase.ts";
 export type ActivityType =
   | "chore_completed"
   | "chore_created"
+  | "recurring_chore_created"
   | "event_created"
   | "event_updated"
   | "event_deleted"
@@ -22,7 +23,7 @@ export type ActivityType =
   | "reward_fulfilled";
 
 // Target types for polymorphic references
-export type TargetType = "chore" | "event" | "prep_task" | "chore_assignment";
+export type TargetType = "chore" | "event" | "prep_task" | "chore_assignment" | "chore_template";
 
 export interface ActivityTarget {
   type: TargetType;
@@ -63,6 +64,7 @@ export interface Activity {
 const DEFAULT_ICONS: Record<ActivityType, string> = {
   chore_completed: "✅",
   chore_created: "📋",
+  recurring_chore_created: "🔁",
   event_created: "📅",
   event_updated: "✏️",
   event_deleted: "🗑️",

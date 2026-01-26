@@ -17,6 +17,8 @@ interface CreateChoreRequest {
   dueDate: string; // ISO date string
   category?: string;
   familyEventId?: string; // optional event link
+  isRecurring?: boolean; // if true, creates recurring template
+  recurringDays?: string[]; // e.g., ['mon', 'wed', 'fri']
 }
 
 export const handler: Handlers = {
@@ -44,9 +46,24 @@ export const handler: Handlers = {
         );
       }
 
-      if (!choreData.assignedTo || !choreData.dueDate) {
+      if (!choreData.assignedTo) {
         return new Response(
-          JSON.stringify({ success: false, error: "Assigned person and due date required" }),
+          JSON.stringify({ success: false, error: "Assigned person required" }),
+          { status: 400, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      // Recurring chores need days specified, one-time need due date
+      if (choreData.isRecurring) {
+        if (!choreData.recurringDays || choreData.recurringDays.length === 0) {
+          return new Response(
+            JSON.stringify({ success: false, error: "Recurring days required for recurring chores" }),
+            { status: 400, headers: { "Content-Type": "application/json" } }
+          );
+        }
+      } else if (!choreData.dueDate) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Due date required for one-time chores" }),
           { status: 400, headers: { "Content-Type": "application/json" } }
         );
       }
@@ -76,6 +93,7 @@ export const handler: Handlers = {
       }
 
       // Create chore template and assignment in one step
+      // For recurring chores, only template is created (cron generates daily assignments)
       const result = await choreService.createChoreWithTemplate(
         choreData.name,
         choreData.description || "",
@@ -85,27 +103,34 @@ export const handler: Handlers = {
         currentParent.id,
         choreData.dueDate,
         choreData.category || "household",
-        choreData.familyEventId || null
+        choreData.familyEventId || null,
+        choreData.isRecurring || false,
+        choreData.recurringDays
       );
 
       if (result.success) {
-        console.log(`✅ Chore created: ${choreData.name} assigned to ${assignedMember.name}`);
+        const isRecurring = choreData.isRecurring || false;
+        console.log(`✅ ${isRecurring ? 'Recurring chore' : 'Chore'} created: ${choreData.name} assigned to ${assignedMember.name}`);
 
         // Log activity (non-blocking)
         try {
           const activityService = getActivityService();
           const isLinkedChore = !!choreData.familyEventId;
+          const activityType = isRecurring ? "recurring_chore_created" :
+            isLinkedChore ? "linked_chore_created" : "chore_created";
           await activityService.logActivity({
             familyId: parentSession.family.id,
             actorId: currentParent.id,
             actorName: currentParent.name,
-            type: isLinkedChore ? "linked_chore_created" : "chore_created",
-            title: isLinkedChore
-              ? `${currentParent.name} linked chore "${choreData.name}" to event`
-              : `${currentParent.name} created chore "${choreData.name}"`,
+            type: activityType,
+            title: isRecurring
+              ? `${currentParent.name} created recurring chore "${choreData.name}"`
+              : isLinkedChore
+                ? `${currentParent.name} linked chore "${choreData.name}" to event`
+                : `${currentParent.name} created chore "${choreData.name}"`,
             target: {
-              type: "chore_assignment",
-              id: result.assignment?.id || "",
+              type: isRecurring ? "chore_template" : "chore_assignment",
+              id: result.assignment?.id || result.templateId || "",
               name: choreData.name,
             },
             meta: isLinkedChore ? { eventId: choreData.familyEventId } : undefined,
@@ -114,11 +139,17 @@ export const handler: Handlers = {
           console.warn("Failed to log activity:", error);
         }
 
+        const message = isRecurring
+          ? `Recurring chore "${choreData.name}" created for ${assignedMember.name} on ${choreData.recurringDays?.join(', ')}`
+          : `Chore "${choreData.name}" created for ${assignedMember.name}`;
+
         return new Response(
           JSON.stringify({
             success: true,
-            message: `Chore "${choreData.name}" created for ${assignedMember.name}`,
-            choreId: result.assignment?.id
+            message,
+            choreId: result.assignment?.id,
+            templateId: result.templateId,
+            isRecurring
           }),
           {
             status: 200,

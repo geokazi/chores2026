@@ -497,7 +497,195 @@ export const handler: Handlers = {
 
 ---
 
+## Manual Mode Inline Chore Management
+
+**Implemented**: January 25, 2026
+
+### Overview
+
+When parents select the "Manual" assignment mode (no rotation template), they can now create and manage chores directly inline within the Template Selector UI. This provides a streamlined workflow without navigating to separate screens.
+
+### Features
+
+1. **Inline Add Chore Form** - Create chores directly within the Manual card:
+   - One-time chores with due date
+   - Recurring chores with day-of-week selection (Mon-Sun)
+   - Kid assignment dropdown
+   - Points value selector
+
+2. **Existing Chores Display** - View all manually created chores:
+   - Recurring chores show schedule (e.g., "Mon, Wed, Fri")
+   - One-time chores show due date
+   - Both show assigned kid name and points
+
+3. **Delete Functionality** - Remove chores with confirmation dialog:
+   - Soft-delete pattern (sets `is_deleted: true`)
+   - Works for both recurring templates and one-time assignments
+
+### UI Mockup - Manual Mode with Inline Form
+
+```
++---------------------------------------------------------------------+
+| CHORE ASSIGNMENT MODE                                               |
++---------------------------------------------------------------------+
+|                                                                     |
+| ● 📝 Manual (Default)                                    ✓ ACTIVE   |
+|   You create and assign chores yourself                             |
+|                                                                     |
+|   +---------------------------------------------------------------+ |
+|   | YOUR CHORES                                                   | |
+|   |                                                               | |
+|   | RECURRING                                                     | |
+|   | ┌─────────────────────────────────────────────────────────┐   | |
+|   | │ 🔁 Feed the dog                    1 pt                 │   | |
+|   | │    Mon, Wed, Fri • Ciku                         [🗑️]    │   | |
+|   | └─────────────────────────────────────────────────────────┘   | |
+|   | ┌─────────────────────────────────────────────────────────┐   | |
+|   | │ 🔁 Take out trash                  2 pts                │   | |
+|   | │    Mon, Thu • Julia                             [🗑️]    │   | |
+|   | └─────────────────────────────────────────────────────────┘   | |
+|   |                                                               | |
+|   | ONE-TIME                                                      | |
+|   | ┌─────────────────────────────────────────────────────────┐   | |
+|   | │ 📋 Clean garage                    5 pts                │   | |
+|   | │    Due: Jan 26 • Ciku                           [🗑️]    │   | |
+|   | └─────────────────────────────────────────────────────────┘   | |
+|   |                                                               | |
+|   | [+ Add Chore]                                                 | |
+|   |                                                               | |
+|   +---------------------------------------------------------------+ |
+|                                                                     |
+| ○ 🎯 Smart Family Rotation                                          |
+| ○ ⚡ Weekend Warrior                                                 |
+| ○ 🌱 Daily Basics                                                   |
++---------------------------------------------------------------------+
+```
+
+### Add Chore Form (Expanded)
+
+```
++---------------------------------------------------------------+
+| NEW CHORE                                                     |
+|                                                               |
+| Chore Name: [________________________]                        |
+|                                                               |
+| Points: [1 ▼]                                                 |
+|                                                               |
+| Assigned To: [Ciku ▼]                                         |
+|                                                               |
+| ☐ Recurring                                                   |
+|                                                               |
+| (If recurring checked:)                                       |
+| Days: [Mon] [Tue] [Wed] [Thu] [Fri] [Sat] [Sun]               |
+|        ✓           ✓                                          |
+|                                                               |
+| (If not recurring:)                                           |
+| Due Date: [2026-01-26]                                        |
+|                                                               |
+|                              [Cancel]    [Add Chore]          |
++---------------------------------------------------------------+
+```
+
+### API Endpoints
+
+#### GET /api/chores/recurring
+
+Fetch existing manual chores (both recurring templates and one-time assignments).
+
+**Response:**
+```json
+{
+  "success": true,
+  "recurring": [
+    {
+      "id": "uuid-1",
+      "type": "recurring",
+      "name": "Feed the dog",
+      "points": 1,
+      "recurring_days": ["mon", "wed", "fri"],
+      "assigned_to_name": "Ciku"
+    }
+  ],
+  "oneTime": [
+    {
+      "id": "uuid-2",
+      "type": "one_time",
+      "name": "Clean garage",
+      "points": 5,
+      "due_date": "2026-01-26",
+      "assigned_to_name": "Ciku"
+    }
+  ],
+  "templates": []  // Deprecated, kept for backwards compat
+}
+```
+
+**Query Logic:**
+- Recurring: `chore_templates` where `is_recurring=true`, `is_active=true`, `is_deleted=false`
+- One-time: `chore_assignments` where `is_deleted=false`, status pending/assigned, due today or future, template `is_recurring=false`
+
+#### POST /api/chores/[chore_id]/delete
+
+Soft-delete a chore (recurring template or one-time assignment).
+
+**Request Body:**
+```json
+{
+  "type": "recurring" | "one_time"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Recurring chore deleted" | "Chore deleted"
+}
+```
+
+**Delete Logic:**
+- `type: "recurring"` → Updates `chore_templates` setting `is_deleted=true`, `is_active=false`
+- `type: "one_time"` → Updates `chore_assignments` setting `is_deleted=true`
+
+### Files Modified
+
+| File | Changes |
+|------|---------|
+| `lib/services/chore-service.ts` | Extended `createChoreWithTemplate()` to support recurring chores with `recurringDays[]` |
+| `routes/api/chores/create.ts` | Added `isRecurring` and `recurringDays` request parameters |
+| `routes/api/chores/recurring.ts` | **New** - Fetch existing recurring and one-time manual chores |
+| `routes/api/chores/[chore_id]/delete.ts` | **New** - Soft-delete endpoint for both chore types |
+| `islands/TemplateSelector.tsx` | Added inline form, chore list display, delete functionality |
+| `lib/services/activity-service.ts` | Added `recurring_chore_created` activity type and `chore_template` target type |
+| `islands/FamilySettings.tsx` | Added page reload after removing rotation to refresh Manual mode chores |
+
+### Key Implementation Details
+
+1. **Recurring Chore Creation Flow**:
+   - Parent fills inline form with name, points, assigned kid, recurring days
+   - `POST /api/chores/create` with `isRecurring: true`
+   - `ChoreService.createChoreWithTemplate()` creates template only (no assignment)
+   - Existing pg_cron job `generate_daily_recurring_assignments` creates daily assignments
+
+2. **One-Time Chore Creation Flow**:
+   - Parent fills inline form with name, points, assigned kid, due date
+   - `POST /api/chores/create` with `isRecurring: false`
+   - `ChoreService.createChoreWithTemplate()` creates template + assignment
+
+3. **Chore List Refresh**:
+   - `fetchManualChores()` called on mount and after add/delete
+   - Separate state for `recurringChores[]` and `oneTimeChores[]`
+   - Auto-refresh when switching from another template to Manual mode
+
+4. **Activity Logging**:
+   - New activity type: `recurring_chore_created` with icon 🔁
+   - New target type: `chore_template` for recurring chores
+   - Logged via `ActivityService.logActivity()` after successful creation
+
+---
+
 *Document Created*: January 25, 2026
 *Implemented*: January 25, 2026
+*Manual Mode Enhanced*: January 25, 2026
 *Source*: Beta User Feedback
 *Author*: Claude Code AI Assistant

@@ -812,6 +812,7 @@ export class ChoreService {
 
   /**
    * Create chore template AND assignment in one step (simplified)
+   * For recurring chores, only creates template (cron generates daily assignments)
    */
   async createChoreWithTemplate(
     name: string,
@@ -822,27 +823,38 @@ export class ChoreService {
     createdByProfileId: string,
     dueDate: string,
     category: string = "household",
-    familyEventId?: string | null
-  ): Promise<{ success: boolean; assignment?: ChoreAssignment; error?: string }> {
+    familyEventId?: string | null,
+    isRecurring: boolean = false,
+    recurringDays?: string[]
+  ): Promise<{ success: boolean; assignment?: ChoreAssignment; templateId?: string; error?: string }> {
     try {
       // First create the template
+      const templateData: any = {
+        family_id: familyId,
+        name,
+        description,
+        points,
+        category,
+        icon: "📋",
+        is_active: true,
+        is_deleted: false,
+        is_recurring: isRecurring,
+        created_by_profile_id: createdByProfileId,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      // Add recurring fields if applicable
+      if (isRecurring && recurringDays && recurringDays.length > 0) {
+        templateData.recurring_days = recurringDays;
+        templateData.assigned_to_profile_id = assignedToProfileId;
+        templateData.recurrence_start_date = new Date().toISOString().split("T")[0];
+      }
+
       const { data: template, error: templateError } = await this.client
         .schema("choretracker")
         .from("chore_templates")
-        .insert({
-          family_id: familyId,
-          name,
-          description,
-          points,
-          category,
-          icon: "📋",
-          is_active: true,
-          is_deleted: false,
-          is_recurring: false,
-          created_by_profile_id: createdByProfileId,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
+        .insert(templateData)
         .select()
         .single();
 
@@ -851,7 +863,13 @@ export class ChoreService {
         return { success: false, error: "Failed to create chore template" };
       }
 
-      // Then create the assignment
+      // For recurring chores, don't create immediate assignment (cron will handle it)
+      if (isRecurring) {
+        console.log(`✅ Recurring chore template created: ${name} on ${recurringDays?.join(', ')}`);
+        return { success: true, templateId: template.id };
+      }
+
+      // For one-time chores, create the assignment
       const { data: assignment, error: assignmentError } = await this.client
         .schema("choretracker")
         .from("chore_assignments")

@@ -1046,10 +1046,43 @@ Template auto-appears in selection modal.
 
 ---
 
+## Manual Mode Inline Chore Management
+
+**Status**: ✅ **COMPLETE** (January 25, 2026)
+
+When parents select Manual mode (no rotation template), they can create and manage chores directly inline within the Template Selector UI:
+
+### Features
+
+| Feature | Description |
+|---------|-------------|
+| **Inline Add Form** | Create one-time or recurring chores without navigating away |
+| **Recurring Chores** | Select days of week (Mon-Sun) for automatic daily assignment generation |
+| **Existing Chores List** | View all manual recurring and one-time chores with delete option |
+| **Soft Delete** | Remove chores with confirmation (sets `is_deleted: true`) |
+
+### API Endpoints
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/chores/recurring` | GET | Fetch existing recurring templates and one-time assignments |
+| `/api/chores/[chore_id]/delete` | POST | Soft-delete a chore (recurring or one-time) |
+| `/api/chores/create` | POST | Create chore with `isRecurring` and `recurringDays[]` params |
+
+### Implementation
+
+- **Recurring chores**: Creates template only; pg_cron generates daily assignments
+- **One-time chores**: Creates template + immediate assignment
+- **Activity logging**: New `recurring_chore_created` activity type with 🔁 icon
+
+See [Template Customization: Inline Chores & Assignment Mode](./milestones/20260125_template_customization_inline_chores.md) for complete implementation details.
+
+---
+
 ## Template Customization
 
 **Status**: ✅ **COMPLETE** (January 19, 2026)
-**Enhanced**: Planned (January 25, 2026) - See [Inline Chores & Assignment Mode](./milestones/20260125_template_customization_inline_chores.md)
+**Enhanced**: ✅ **COMPLETE** (January 25, 2026) - See [Inline Chores & Assignment Mode](./milestones/20260125_template_customization_inline_chores.md)
 
 Families may want to tweak templates (adjust points, disable chores, add custom chores). The **Override Layer Pattern** enables this with minimal complexity:
 
@@ -1124,7 +1157,17 @@ See [Implementation Gaps Document](./chore-templates-gaps.md) for detailed imple
 - [Seasonal Templates Implementation](./milestones/20260116_seasonal-templates-implementation.md) - Summer Break + School Year templates
 - [Implementation Gaps & Completion](./milestones/20260115_chore-templates-gaps.md) - Detailed implementation notes
 - [JSONB Schema Design](./milestones/20260115_chore-templates-jsonb-schema.md) - Database schema and customization design
-- [**Template Customization: Inline Chores & Assignment Mode**](./milestones/20260125_template_customization_inline_chores.md) - Beta user feedback: add custom chores inline, manual assignment mode, hide/show chores (Implemented)
+- [**Template Customization: Inline Chores & Assignment Mode**](./milestones/20260125_template_customization_inline_chores.md) - Beta user feedback: add custom chores inline, manual assignment mode, hide/show chores, **Manual mode inline chore management** (Implemented)
 - [**Large Family Smart Rotation**](./decisions/20260125_large_family_smart_rotation.md) - Proposed future paid template for 5-12 kids using dynamic distribution
 - [Existing JSONB Settings](./20260114_JSONB_settings_architecture.md)
 - [SQL Migration](../sql/20260114_jsonb_settings.sql)
+
+### Related API Endpoints
+
+| Endpoint | Purpose |
+|----------|---------|
+| `POST /api/rotation/apply` | Apply/remove rotation template |
+| `GET /api/rotation/status` | Get current rotation configuration |
+| `GET /api/chores/recurring` | Fetch manual recurring and one-time chores |
+| `POST /api/chores/[chore_id]/delete` | Soft-delete manual chores |
+| `POST /api/chores/create` | Create chores (one-time or recurring) |

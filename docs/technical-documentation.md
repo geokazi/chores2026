@@ -258,11 +258,28 @@ Response: { event: FamilyEvent }
 DELETE /api/events/[id]
 Response: { success: boolean }
 
-// Create chore with event link
+// Create chore with event link (supports one-time and recurring)
 POST /api/chores/create
 Body: { name: string, points: number, assignedTo: string, dueDate: string,
-        familyEventId?: string }  // Optional event link
-Response: { success: boolean, choreId: string }
+        familyEventId?: string, isRecurring?: boolean, recurringDays?: string[] }
+Response: { success: boolean, choreId?: string, templateId?: string, isRecurring: boolean }
+```
+
+#### Manual Mode Chore Management
+```typescript
+// Get existing manual chores (recurring templates + one-time assignments)
+GET /api/chores/recurring
+Response: {
+  success: boolean,
+  recurring: Array<{ id, type: 'recurring', name, points, recurring_days, assigned_to_name }>,
+  oneTime: Array<{ id, type: 'one_time', name, points, due_date, assigned_to_name }>,
+  templates: []  // Deprecated, kept for backwards compat
+}
+
+// Soft-delete a chore (recurring template or one-time assignment)
+POST /api/chores/[chore_id]/delete
+Body: { type: 'recurring' | 'one_time' }
+Response: { success: boolean, message: string }
 ```
 
 **Kid Event Creation** ✅ **Implemented Jan 20, 2026**
@@ -948,6 +965,6 @@ const loadTest = async () => {
 ---
 
 **Document Maintained By**: Engineering Team
-**Last Updated**: January 20, 2026
+**Last Updated**: January 25, 2026
 **Review Schedule**: Monthly technical review
 **Version Control**: Git-based documentation versioning

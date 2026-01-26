@@ -1,8 +1,8 @@
 # ChoreGami 2026 Documentation
 
-**Version**: 1.24
+**Version**: 1.25
 **Status**: ✅ Production Ready
-**Last Updated**: January 24, 2026 (Rewards catalog UX, inline point editing, kid goals polish)
+**Last Updated**: January 25, 2026 (Manual mode inline chore management, recurring chores, delete functionality)
 
 **Project Overview**: A simplified, real-time chore completion system built with Deno Fresh, transforming routine family chores into an engaging, competitive experience with sub-second real-time updates across all family devices.
 
@@ -76,7 +76,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-24 | **Rewards UX Polish** | ✅ Complete | Family-friendly language, realistic pricing, grouped catalog sections, inline point editing for defaults |
 | 2026-01-24 | **Kid Goals Page Polish** | ✅ Complete | Fun empty state with bouncing icon, goal ideas with prices (🍦10/🎮50/🎧60/🎢80 pts), parent-assist CTA |
 | 2026-01-24 | **Reward Approval Flow** | ✅ Complete | Points deducted on parent fulfill (not kid claim), starter templates for empty catalog, kid UX with encouraging messages |
-| 2026-01-25 | [**Template Customization: Inline Chores**](./milestones/20260125_template_customization_inline_chores.md) | ✅ Complete | Add custom chores inline, assignment mode (rotation vs manual), hide/show chores |
+| 2026-01-25 | [**Template Customization: Inline Chores**](./milestones/20260125_template_customization_inline_chores.md) | ✅ Complete | Add custom chores inline, assignment mode (rotation vs manual), hide/show chores, **Manual mode inline chore management** (recurring + one-time chores, delete functionality) |
 | 2026-01-24 | **Weekly Digest P1-P4** | ✅ Complete | Digest includes Behavioral Insights (trend, consistency), Balances, Rewards, Goals, Payouts |
 | TBD | [**SMS 10DLC Compliance**](./planned/20260123_sms_10dlc_compliance.md) | ⚠️ Blocked | Carrier blocks SMS; 10DLC brand+campaign registration required |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
@@ -240,6 +240,7 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 - ✅ **Collaborative Family Goals**: Weekly goal system with auto-bonus when reached - collaboration over competition
 - ✅ **Weekly Patterns Analysis**: Heatmap + text insights showing busiest/slowest days per kid (last 60 days)
 - ✅ **Chore Rotation Templates**: 7 pre-built schedules including **Dynamic Daily Routines** (scales to any family size 1-8 kids) + slot-based templates (Smart Rotation, Weekend Warrior, Daily Basics, Large Family, Summer Break, School Year) with Manual (Default) option + partial slot assignment
+- ✅ **Manual Mode Inline Chores**: Create one-time and recurring chores directly in Template Selector UI, view existing chores by type, soft-delete functionality; APIs: `/api/chores/recurring` (GET), `/api/chores/[chore_id]/delete` (POST)
 - ✅ **Template Gating & Gift Codes**: Prepaid plan tiers (Free vs Family Plan), gift code redemption (`/redeem`), JSONB-based plan storage, TemplateSelector component extraction, ACTIVE badge on templates, improved Free Plan UX
 - ✅ **Point Adjustment Security**: Parent PIN verification required before applying any point adjustments
 - ✅ **Events Calendar Integration**: Event-linked chores as "missions" on kid dashboard, parent events page (`/parent/events`), create/edit events, points hiding for event missions, preparation-focused UX
@@ -265,7 +266,7 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 
 ### Known Limitations
 - **Testing**: Comprehensive test suite not yet implemented
-- **Advanced Chore Management**: Recurring chores (separate from recurring events), bulk operations
+- **Advanced Chore Management**: Bulk operations, chore editing (currently delete-and-recreate)
 - **Offline Support**: PWA capabilities planned but not implemented
 - **Performance Monitoring**: Telemetry and error tracking to be added
 
@@ -310,5 +311,5 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 
 ---
 
-*Last updated: January 24, 2026 (v1.24)*
+*Last updated: January 25, 2026 (v1.25)*
 *Maintained by: Claude Code AI Assistant*

@@ -71,8 +71,10 @@ export default function FamilySettings({ family, members, settings, digestChanne
   const parentMembers = members.filter(m => m.role === "parent");
 
   const handleRemoveRotation = async () => {
-    const response = await fetch('/api/rotation/apply', { method: 'DELETE' });
+    const response = await fetch('/api/rotation/apply', { method: 'DELETE', credentials: 'include' });
     if (!response.ok) throw new Error('Failed to remove rotation');
+    // Reload to show updated settings and manual chores
+    globalThis.location.reload();
   };
 
   const handleKidsEventToggle = async () => {
