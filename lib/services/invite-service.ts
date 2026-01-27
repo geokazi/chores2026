@@ -144,25 +144,31 @@ export class InviteService {
     return null;
   }
 
-  /** Find invite by token */
+  /** Find invite by token - O(1) database operation via SQL function */
   async findByToken(token: string): Promise<{
     invite: PendingInvite;
     familyId: string;
     familyName: string;
   } | null> {
-    const { data: families } = await this.supabase
-      .from("families")
-      .select("id, name, settings")
-      .not("settings->apps->choregami->pending_invites", "is", null);
+    const { data, error } = await this.supabase.rpc("find_invite_by_token", {
+      p_token: token,
+    });
 
-    for (const family of families || []) {
-      const invites = family.settings?.apps?.choregami?.pending_invites || [];
-      const invite = invites.find((i: PendingInvite) => i.token === token);
-      if (invite && new Date(invite.expires_at) > new Date()) {
-        return { invite, familyId: family.id, familyName: family.name };
-      }
+    if (error) {
+      console.error("[invite] Token lookup error:", error);
+      return null;
     }
-    return null;
+
+    if (!data || data.length === 0) {
+      return null;
+    }
+
+    const row = data[0];
+    return {
+      invite: row.invite as PendingInvite,
+      familyId: row.family_id,
+      familyName: row.family_name,
+    };
   }
 
   /** Accept invite: create profile, remove from pending */

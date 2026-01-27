@@ -60,3 +60,20 @@ BEGIN
   RETURN COALESCE(invite_count, 0);
 END;
 $$ LANGUAGE plpgsql;
+
+-- Find invite by token - O(1) database operation
+-- Returns family_id, family_name, and invite data in single query
+CREATE OR REPLACE FUNCTION find_invite_by_token(p_token text)
+RETURNS TABLE(family_id uuid, family_name text, invite jsonb) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT f.id, f.name, inv
+  FROM families f,
+       jsonb_array_elements(
+         COALESCE(f.settings->'apps'->'choregami'->'pending_invites', '[]')
+       ) AS inv
+  WHERE inv->>'token' = p_token
+    AND (inv->>'expires_at')::timestamptz > NOW()
+  LIMIT 1;
+END;
+$$ LANGUAGE plpgsql;
