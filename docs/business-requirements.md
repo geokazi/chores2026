@@ -302,10 +302,43 @@ ChoreGami 2026 is a streamlined family chore management application designed to 
 - [Outreach Templates](./planned/20260126_testimonial_outreach_templates.md) - Email scripts
 - [Migration SQL](../sql/20260126_user_reviews.sql) (for future self-hosted Phase 4)
 
-### Epic 4: Real-Time Integration
+### Epic 6: Family Member Management (Planned)
 
-#### Story 3.1: Live Updates
-**As a family member**, I want to see real-time updates when others complete chores  
+#### Story 6.1: Co-Parent Invites
+**As a parent**, I want to invite my spouse/partner to join our family with their own login
+**So that** we can both manage chores without sharing passwords
+
+**Acceptance Criteria:**
+- [ ] "Invite Adult" button in Family Members section
+- [ ] Choice of email or phone invite channel
+- [ ] Magic link sent via Resend (email) or Twilio (SMS)
+- [ ] Recipient clicks link → login/signup → auto-joins family
+- [ ] New parent has full parent permissions
+- [ ] Max 5 pending invites per family
+
+**Business Value:** Enables multi-parent households without Cozi-style shared passwords
+
+#### Story 6.2: Invite Acceptance Flow
+**As an invited adult**, I want to click a link and join a family easily
+**So that** I don't need to coordinate passwords or manual setup
+
+**Acceptance Criteria:**
+- [ ] `/join?token=xxx` page shows family name and inviter
+- [ ] Option to login (existing account) or signup (new account)
+- [ ] After auth, automatically added to family as parent
+- [ ] Invite token expires after 7 days
+- [ ] Clear error messages for expired/invalid tokens
+
+**Business Value:** Zero-friction onboarding for invited family members
+
+**Related Documents:**
+- [Implementation Plan](./milestones/20260127_family_member_invites.md)
+- [JSONB Settings Architecture](./20260114_JSONB_settings_architecture.md)
+
+### Epic 7: Real-Time Integration
+
+#### Story 7.1: Live Updates
+**As a family member**, I want to see real-time updates when others complete chores
 **So that** I stay motivated and informed about family progress
 
 **Acceptance Criteria:**
@@ -317,7 +350,7 @@ ChoreGami 2026 is a streamlined family chore management application designed to 
 
 **Business Value:** Creates shared family experience and encourages participation
 
-#### Story 3.2: Cross-Device Sync
+#### Story 7.2: Cross-Device Sync
 **As a user**, I want my progress to sync across all family devices  
 **So that** I can access the system from any location
 
@@ -508,6 +541,6 @@ ChoreGami 2026 is a streamlined family chore management application designed to 
 
 **Document Owner**: Product Team
 **Review Cycle**: Monthly
-**Last Updated**: January 26, 2026
+**Last Updated**: January 27, 2026
 **Next Review**: February 26, 2026
 **Stakeholders**: Engineering, Design, Marketing, Customer Success

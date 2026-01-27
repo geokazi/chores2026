@@ -1,7 +1,7 @@
 # ChoreGami 2026 - Technical Architecture
 
-**Version**: 1.1
-**Last Updated**: January 19, 2026
+**Version**: 1.2
+**Last Updated**: January 27, 2026
 **Status**: Production Ready
 
 ## System Overview
@@ -266,6 +266,44 @@ export class ActiveKidSessionManager {
    ↓
 8. Role-Based Dashboard Access
 ```
+
+### Family Member Invite Flow (Planned)
+```
+1. Existing Parent Initiates Invite
+   ├─ Settings > Family Members > "Invite Adult"
+   ├─ Choose channel: Email or Phone
+   └─ Enter contact info + optional name
+   ↓
+2. Invite Created & Stored
+   ├─ 40-char secure token generated
+   ├─ Stored in families.settings JSONB (no new tables)
+   └─ 7-day expiry set
+   ↓
+3. Invite Sent
+   ├─ Email: Resend sends magic link
+   └─ Phone: Twilio sends SMS with link
+   ↓
+4. Recipient Clicks Link → /join?token=xxx
+   ├─ Token validated (not expired, not used)
+   ├─ Family name and inviter shown
+   └─ Login or Signup options presented
+   ↓
+5. After Auth → Auto-Join Family
+   ├─ New family_profiles record created (role=parent)
+   ├─ user_id linked to auth.users
+   └─ Invite removed from JSONB
+   ↓
+6. Full Parent Access
+   └─ Same permissions as account creator
+```
+
+**Key Design Decisions:**
+- **JSONB storage**: `families.settings.apps.choregami.pending_invites[]`
+- **Dual-channel**: Email (Resend) + Phone (Twilio) - both already configured
+- **Self-managed tokens**: Supabase built-in only supports email; we need phone too
+- **~200 lines**: Minimal code, follows 80/20 principle
+
+**See**: [Family Member Invites Implementation](./milestones/20260127_family_member_invites.md)
 
 ### Security Layers
 
