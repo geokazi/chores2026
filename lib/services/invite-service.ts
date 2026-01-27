@@ -3,8 +3,6 @@
  *
  * Handles dual-channel (email/phone) invites for co-parents.
  * Uses JSONB storage in families.settings - no new tables needed.
- *
- * ~100 lines following 80/20 principle.
  */
 
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
@@ -132,6 +130,7 @@ export class InviteService {
         .select("user_id")
         .eq("family_id", familyId)
         .eq("role", "parent")
+        .eq("is_deleted", false)
         .not("user_id", "is", null);
 
       for (const profile of profiles || []) {

@@ -79,11 +79,11 @@ export const handler: Handlers = {
 
     if (!sent) {
       // Invite created but send failed - still return success with warning
+      // Note: Don't expose token in response for security - it's only in email/SMS
       console.warn("[invite] Created but send failed for:", result.invite.contact);
       return Response.json({
         success: true,
-        warning: `Invite created but ${channel} delivery failed. They can still join with the link.`,
-        token: result.invite.token,
+        warning: `Invite created but ${channel} delivery failed. Please try again or use a different contact method.`,
       });
     }
 

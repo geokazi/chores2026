@@ -193,13 +193,13 @@ export default function JoinPage({ data }: PageProps<JoinPageData>) {
                 {isLoggedIn === false && (
                   <>
                     <a
-                      href={`/login?redirect=/join?token=${token}`}
+                      href={`/login?redirect=${encodeURIComponent(`/join?token=${token}`)}`}
                       class="join-btn join-btn-primary"
                     >
                       Sign In to Join
                     </a>
                     <a
-                      href={`/login?redirect=/join?token=${token}&signup=true`}
+                      href={`/login?redirect=${encodeURIComponent(`/join?token=${token}`)}&signup=true`}
                       class="join-btn join-btn-secondary"
                     >
                       Create Account

@@ -30,7 +30,6 @@ export default function FamilyMembersSection({ members }: FamilyMembersSectionPr
   const [inviteResult, setInviteResult] = useState<{ success?: boolean; message?: string } | null>(null);
 
   const childMembers = members.filter(member => member.role === "child");
-  const parentMembers = members.filter(member => member.role === "parent");
   const kidCount = childMembers.length;
 
   const openAddKidModal = () => {
