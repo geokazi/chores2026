@@ -220,50 +220,56 @@ chores2026/
 │   ├── index.tsx                    # Kid Selector (after login)
 │   ├── login.tsx                    # Copy from existing
 │   ├── kid/
-│   │   ├── [kid_id]/
-│   │   │   ├── dashboard.tsx        # Kid main screen
-│   │   │   └── chore/[chore_id].tsx # Chore detail
+│   │   ├── dashboard.tsx            # Kid main screen (session-based)
+│   │   └── chore/[chore_id].tsx     # Chore detail (NO user GUID in URL)
 │   ├── parent/
 │   │   ├── dashboard.tsx            # Parent main screen
 │   │   ├── activity.tsx             # Activity monitoring
+│   │   ├── my-chores.tsx            # Personal parent chores
 │   │   └── settings.tsx             # Family settings
 │   └── api/
 │       ├── chores/                  # CRUD operations
 │       ├── transactions/            # Point tracking
-│       ├── familyscore/            # WebSocket proxy
-│       └── families/               # Settings management
+│       ├── familyscore/             # WebSocket proxy
+│       ├── rotation/                # Smart rotation logic
+│       └── families/                # Settings management
 ├── islands/
-│   ├── auth/                       # Copy existing auth islands
-│   ├── KidSelector.tsx             # Family member selection
-│   ├── KidDashboard.tsx            # Main kid interface
-│   ├── ChoreList.tsx               # Assigned chores display
-│   ├── ChoreCard.tsx               # Individual chore items
-│   ├── CompletionButton.tsx        # "I Did This!" interaction
-│   ├── CelebrationModal.tsx        # Point celebration
-│   ├── LiveLeaderboard.tsx         # Real-time family rankings
-│   ├── LiveActivityFeed.tsx        # Real-time chore feed
-│   ├── ParentDashboard.tsx         # Parent overview
-│   ├── ParentActivityTab.tsx       # Adjustment interface
-│   ├── PointAdjustmentModal.tsx    # Point correction UI
-│   ├── BonusAwardModal.tsx         # Bonus point awards
-│   ├── FamilySettings.tsx          # Family configuration
-│   ├── ThemePicker.tsx             # Color theme selection
-│   ├── PinEntryModal.tsx           # 4-digit PIN input
-│   └── WebSocketManager.tsx        # FamilyScore connection
+│   ├── auth/                        # Copy existing auth islands
+│   ├── KidSelector.tsx              # Family member selection
+│   ├── KidDashboard.tsx             # Main kid interface
+│   ├── ChoreList.tsx                # Assigned chores display
+│   ├── ChoreCard.tsx                # Individual chore items
+│   ├── CompletionButton.tsx         # "I Did This!" interaction
+│   ├── CelebrationModal.tsx         # Point celebration
+│   ├── ConfettiTrigger.tsx          # Confetti animation system
+│   ├── LiveLeaderboard.tsx          # Real-time family rankings
+│   ├── LiveActivityFeed.tsx         # Real-time chore feed
+│   ├── ParentDashboard.tsx          # Parent overview
+│   ├── ParentActivityTab.tsx        # Adjustment interface
+│   ├── PointAdjustmentModal.tsx     # Point correction UI
+│   ├── BonusAwardModal.tsx          # Bonus point awards
+│   ├── TemplateSelector.tsx         # Chore template/rotation config
+│   ├── AddChoreModal.tsx            # Manual chore creation
+│   ├── FamilySettings.tsx           # Family configuration
+│   ├── ThemePicker.tsx              # Color theme selection
+│   ├── PinEntryModal.tsx            # 4-digit PIN input
+│   └── WebSocketManager.tsx         # FamilyScore connection
 ├── lib/
 │   ├── services/
 │   │   ├── transaction-service.ts   # Copy exactly from existing
-│   │   ├── chore-service.ts        # Basic CRUD operations
-│   │   ├── familyscore-client.ts   # WebSocket integration
-│   │   └── auth-service.ts         # Copy existing auth
-│   ├── components/                 # Shared UI components
-│   ├── types/                      # TypeScript definitions
-│   └── utils/                      # Helper functions
+│   │   ├── chore-service.ts         # Basic CRUD operations
+│   │   ├── rotation-service.ts      # Smart rotation logic
+│   │   ├── familyscore-client.ts    # WebSocket integration
+│   │   └── auth-service.ts          # Copy existing auth
+│   ├── components/                  # Shared UI components
+│   ├── types/                       # TypeScript definitions
+│   └── utils/                       # Helper functions
 ├── static/
-│   ├── themes.css                  # Color system
-│   ├── animations.css              # Celebrations/transitions
-│   └── oauth-fragment-handler.js   # Copy existing
-└── deno.json                       # Fresh configuration
+│   ├── themes.css                   # Color system
+│   ├── animations.css               # Celebrations/transitions
+│   ├── scripts/confetti.js          # Confetti animation configs
+│   └── oauth-fragment-handler.js    # Copy existing
+└── deno.json                        # Fresh configuration
 ```
 
 ## Critical Implementation Patterns
@@ -391,6 +397,56 @@ const kidPinValidation = async (profile, enteredPin) => {
 
   return false;
 };
+```
+
+### 🕐 UTC Timezone Pattern (CRITICAL)
+
+**Problem**: Server (Fly.io/Deno Deploy) runs in UTC. Using `toISOString()` causes date shifts when user's local time differs from UTC (e.g., 8 PM Sunday PST = Monday UTC).
+
+**Solution**: Always use local date components for date strings:
+
+```typescript
+// ✅ CORRECT - preserves user's local date
+const getLocalDateString = (date: Date = new Date()): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+// ❌ WRONG - causes date shift in different timezones
+const badDate = new Date().toISOString().split("T")[0];
+```
+
+**When to apply**:
+- Chore due dates and creation dates
+- Event repeat-until dates
+- "Today" filters in API endpoints
+- Any date comparison with user's local context
+
+**Client-to-server pattern**: Pass `localDate` as query parameter:
+```typescript
+// Client (island)
+const localDate = getLocalDateString();
+fetch(`/api/chores/recurring?localDate=${localDate}`);
+
+// Server (API route)
+const today = url.searchParams.get("localDate") || getLocalDateString();
+```
+
+### 🔒 Fetch Credentials Requirement
+
+**All client-side fetch calls MUST include credentials** to send auth cookies:
+
+```typescript
+// ✅ CORRECT - cookies sent with request
+const response = await fetch("/api/chores/recurring", {
+  method: "GET",
+  credentials: "include",
+});
+
+// ❌ WRONG - cookies not sent, results in 401 Unauthorized
+const response = await fetch("/api/chores/recurring");
 ```
 
 ## Design System - Fresh Meadow Theme
@@ -541,12 +597,43 @@ curl -H "x-api-key: your_familyscore_api_key" \
 - Security audit and testing
 - Deployment to Deno Deploy
 
+### Phase 5: Enhanced Features (Ongoing)
+
+✅ **Smart Rotation System**
+
+- Dynamic chore distribution when parents disable specific chores
+- Rotation frequency setting (weekly or biweekly swap)
+- Fair round-robin distribution across non-rest days
+- Week B offset for biweekly rotation fairness
+
+✅ **Manual Mode Chore Management**
+
+- Inline chore creation in Template Selector
+- One-time chores with due date assignment
+- Recurring chores with day-of-week selection (Mon-Sun)
+- Edit functionality for existing manual chores (name, points, assigned kid, due date)
+- Soft-delete for both recurring and one-time chores
+
+✅ **Confetti Celebrations**
+
+- Green confetti on chore completion
+- Gold confetti on bonus point adjustments
+- User preference toggle in Settings > Celebrations
+- localStorage-based preference (no API needed)
+- canvas-confetti v1.9.3 via CDN
+
+✅ **UTC Timezone Fixes**
+
+- Local date component pattern across all date handling
+- Client-to-server localDate parameter passing
+- Fixes for chore creation, events, rotation filters
+
 ## Database Schema Reference
 
 ### Existing Tables (DO NOT MODIFY)
 
 ```sql
--- Family organization
+-- Family organization (public schema)
 public.families (
   id uuid PRIMARY KEY,
   children_pins_enabled boolean DEFAULT false -- ✅ ADDED
@@ -562,14 +649,17 @@ public.family_profiles (
   user_id uuid -- Only parents have user_id, kids are null
 )
 
--- Chore management
+-- Chore management (choretracker schema - MUST use .schema("choretracker"))
 choretracker.chore_templates (
   id uuid PRIMARY KEY,
   family_id uuid REFERENCES families(id),
   name text,
   description text,
   points integer,
-  category text
+  category text,
+  is_deleted boolean DEFAULT false,  -- Soft delete for manual chores
+  recurring_days integer[],          -- [0-6] for Sun-Sat, null for one-time
+  source text                        -- 'rotation' | 'manual' | 'manual_recurring'
 )
 
 choretracker.chore_assignments (
@@ -593,6 +683,17 @@ choretracker.chore_transactions (
   balance_after_transaction integer,
   description text,
   metadata jsonb,
+  created_at timestamptz DEFAULT now()
+)
+
+choretracker.family_events (
+  id uuid PRIMARY KEY,
+  family_id uuid REFERENCES families(id),
+  profile_id uuid REFERENCES family_profiles(id),
+  activity_type text,    -- 'chore_completed' | 'bonus_awarded' | 'adjustment' | etc.
+  description text,
+  points_change integer,
+  metadata jsonb,        -- Flexible data (chore details, notes, etc.)
   created_at timestamptz DEFAULT now()
 )
 ```
