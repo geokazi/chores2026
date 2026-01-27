@@ -1,5 +1,5 @@
 /**
- * FamilyMembersSection - Manage family members (add/edit/remove kids)
+ * FamilyMembersSection - Manage family members (add/edit/remove kids, invite adults)
  */
 
 import { useState } from "preact/hooks";
@@ -21,7 +21,16 @@ export default function FamilyMembersSection({ members }: FamilyMembersSectionPr
   const [isManagingKid, setIsManagingKid] = useState(false);
   const [pendingRemoveKid, setPendingRemoveKid] = useState<any>(null);
 
+  // Invite adult state
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteChannel, setInviteChannel] = useState<"email" | "phone">("email");
+  const [inviteContact, setInviteContact] = useState("");
+  const [inviteName, setInviteName] = useState("");
+  const [isInviting, setIsInviting] = useState(false);
+  const [inviteResult, setInviteResult] = useState<{ success?: boolean; message?: string } | null>(null);
+
   const childMembers = members.filter(member => member.role === "child");
+  const parentMembers = members.filter(member => member.role === "parent");
   const kidCount = childMembers.length;
 
   const openAddKidModal = () => {
@@ -103,6 +112,46 @@ export default function FamilyMembersSection({ members }: FamilyMembersSectionPr
     setIsManagingKid(false);
   };
 
+  const openInviteModal = () => {
+    setInviteChannel("email");
+    setInviteContact("");
+    setInviteName("");
+    setInviteResult(null);
+    setShowInviteModal(true);
+  };
+
+  const handleSendInvite = async () => {
+    if (!inviteContact.trim()) return;
+    setIsInviting(true);
+    setInviteResult(null);
+
+    try {
+      const response = await fetch("/api/family/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          channel: inviteChannel,
+          contact: inviteContact.trim(),
+          name: inviteName.trim() || undefined,
+        }),
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        setInviteResult({ success: true, message: result.message || result.warning || "Invite sent!" });
+        // Clear form after success
+        setInviteContact("");
+        setInviteName("");
+      } else {
+        setInviteResult({ success: false, message: result.error || "Failed to send invite" });
+      }
+    } catch (err) {
+      setInviteResult({ success: false, message: "Network error. Please try again." });
+    }
+    setIsInviting(false);
+  };
+
   return (
     <div class="settings-section">
       <h2>👨‍👩‍👧‍👦 Family Members <span style={{ fontSize: "0.875rem", fontWeight: "normal", color: "var(--color-text-light)" }}>({kidCount}/8 kids)</span></h2>
@@ -139,15 +188,24 @@ export default function FamilyMembersSection({ members }: FamilyMembersSectionPr
           </div>
         ))}
       </div>
-      {kidCount < 8 && (
+      <div style={{ display: "flex", gap: "0.75rem", marginTop: "1rem" }}>
+        {kidCount < 8 && (
+          <button
+            class="btn btn-outline"
+            onClick={openAddKidModal}
+            style={{ flex: 1 }}
+          >
+            + Add Kid
+          </button>
+        )}
         <button
           class="btn btn-outline"
-          onClick={openAddKidModal}
-          style={{ marginTop: "1rem", width: "100%" }}
+          onClick={openInviteModal}
+          style={{ flex: 1 }}
         >
-          + Add Kid
+          + Invite Adult
         </button>
-      )}
+      </div>
 
       {/* Add/Edit Kid Modal */}
       {showKidModal && (
@@ -238,6 +296,116 @@ export default function FamilyMembersSection({ members }: FamilyMembersSectionPr
                 Cancel
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Invite Adult Modal */}
+      {showInviteModal && (
+        <div class="modal-overlay">
+          <div class="modal">
+            <ModalHeader
+              title="📧 Invite Adult"
+              onBack={() => setShowInviteModal(false)}
+              onSubmit={handleSendInvite}
+              submitLabel={isInviting ? "Sending..." : "Send Invite"}
+              backLabel="Cancel"
+              isSubmitting={isInviting}
+              submitDisabled={!inviteContact.trim()}
+            />
+
+            {inviteResult && (
+              <div style={{
+                padding: "0.75rem",
+                borderRadius: "6px",
+                marginBottom: "1rem",
+                background: inviteResult.success ? "#f0fdf4" : "#fef2f2",
+                color: inviteResult.success ? "#10b981" : "#dc2626",
+              }}>
+                {inviteResult.message}
+              </div>
+            )}
+
+            <div style={{ marginBottom: "1rem" }}>
+              <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
+                How should we reach them?
+              </label>
+              <div style={{ display: "flex", gap: "0.5rem" }}>
+                <button
+                  type="button"
+                  onClick={() => { setInviteChannel("email"); setInviteContact(""); }}
+                  style={{
+                    flex: 1,
+                    padding: "0.75rem",
+                    borderRadius: "6px",
+                    border: `2px solid ${inviteChannel === "email" ? "#10b981" : "#e5e7eb"}`,
+                    background: inviteChannel === "email" ? "#f0fdf4" : "white",
+                    cursor: "pointer",
+                    fontWeight: inviteChannel === "email" ? "600" : "400",
+                  }}
+                >
+                  📧 Email
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setInviteChannel("phone"); setInviteContact(""); }}
+                  style={{
+                    flex: 1,
+                    padding: "0.75rem",
+                    borderRadius: "6px",
+                    border: `2px solid ${inviteChannel === "phone" ? "#10b981" : "#e5e7eb"}`,
+                    background: inviteChannel === "phone" ? "#f0fdf4" : "white",
+                    cursor: "pointer",
+                    fontWeight: inviteChannel === "phone" ? "600" : "400",
+                  }}
+                >
+                  📱 Phone
+                </button>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: "1rem" }}>
+              <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
+                {inviteChannel === "email" ? "Email Address" : "Phone Number"}
+              </label>
+              <input
+                type={inviteChannel === "email" ? "email" : "tel"}
+                value={inviteContact}
+                onInput={(e) => setInviteContact((e.target as HTMLInputElement).value)}
+                placeholder={inviteChannel === "email" ? "spouse@example.com" : "(555) 123-4567"}
+                style={{
+                  width: "100%",
+                  padding: "0.75rem",
+                  borderRadius: "6px",
+                  border: "2px solid #e5e7eb",
+                  fontSize: "1rem",
+                }}
+                autoFocus
+              />
+            </div>
+
+            <div>
+              <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
+                Their Name <span style={{ color: "#888", fontWeight: "400" }}>(optional)</span>
+              </label>
+              <input
+                type="text"
+                value={inviteName}
+                onInput={(e) => setInviteName((e.target as HTMLInputElement).value)}
+                placeholder="Alex"
+                style={{
+                  width: "100%",
+                  padding: "0.75rem",
+                  borderRadius: "6px",
+                  border: "2px solid #e5e7eb",
+                  fontSize: "1rem",
+                }}
+              />
+            </div>
+
+            <p style={{ color: "#666", fontSize: "0.875rem", marginTop: "1rem" }}>
+              They'll receive a link to join your family. The invite expires in 7 days.
+            </p>
           </div>
         </div>
       )}
