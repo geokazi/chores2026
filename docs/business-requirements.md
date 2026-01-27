@@ -271,6 +271,37 @@ ChoreGami 2026 is a streamlined family chore management application designed to 
 - [Decision: Kid Event Creation](./decisions/20260120_kid_event_creation.md)
 - [Implementation Details](./milestones/20260120_kid_event_creation.md)
 
+### Epic 5: Testimonials & Social Proof (Planned)
+
+#### Story 5.1: Third-Party Review Collection
+**As a product team**, we want users to leave reviews on Trustpilot
+**So that** we build credible social proof on established platforms
+
+**Acceptance Criteria:**
+- [ ] Trustpilot and Google My Business accounts set up
+- [ ] Review prompt added to weekly digest email
+- [ ] Smart prompting (only happy, engaged users)
+- [ ] Charity incentive ($5 donation per review)
+
+**Business Value:** Credible third-party reviews build trust better than self-hosted
+
+#### Story 5.2: Testimonials Display
+**As a potential user**, I want to see reviews from real families
+**So that** I can trust the app before signing up
+
+**Acceptance Criteria:**
+- [ ] Landing page shows 3 curated testimonials (static JSON)
+- [ ] Link to Trustpilot for full reviews
+- [ ] Average rating and review count displayed
+- [ ] Updated manually when new reviews come in
+
+**Business Value:** Social proof increases signup conversion
+
+**Related Documents:**
+- [Testimonials Strategy](./planned/20260126_testimonials_strategy.md)
+- [Outreach Templates](./planned/20260126_testimonial_outreach_templates.md) - Email scripts
+- [Migration SQL](../sql/20260126_user_reviews.sql) (for future self-hosted Phase 4)
+
 ### Epic 4: Real-Time Integration
 
 #### Story 3.1: Live Updates
@@ -376,6 +407,8 @@ ChoreGami 2026 is a streamlined family chore management application designed to 
 - ✅ **Balance & Pay Out (P2)**: Per-kid balance cards, parent PIN-verified payouts
 - ✅ **Rewards Marketplace (P3)**: Parent-defined catalog, parent-approval claim flow, starter templates
 - ✅ **Savings Goals (P4)**: Kid-created goals, progress bars, parent boost
+- 📋 **Testimonials & Social Proof**: Third-party reviews (Trustpilot), static testimonials on landing page
+  - See: [Testimonials Strategy](./planned/20260126_testimonials_strategy.md)
 - Advanced chore management for parents
 - Photo verification for task completion
 - Achievement system and badges
@@ -475,6 +508,6 @@ ChoreGami 2026 is a streamlined family chore management application designed to 
 
 **Document Owner**: Product Team
 **Review Cycle**: Monthly
-**Last Updated**: January 25, 2026
-**Next Review**: February 25, 2026
+**Last Updated**: January 26, 2026
+**Next Review**: February 26, 2026
 **Stakeholders**: Engineering, Design, Marketing, Customer Success

@@ -1,8 +1,8 @@
 # ChoreGami 2026 Documentation
 
-**Version**: 1.26
+**Version**: 1.27
 **Status**: ✅ Production Ready
-**Last Updated**: January 25, 2026 (Confetti celebrations, settings toggle, multi-trigger support)
+**Last Updated**: January 26, 2026 (User Reviews & Social Proof planning)
 
 **Project Overview**: A simplified, real-time chore completion system built with Deno Fresh, transforming routine family chores into an engaging, competitive experience with sub-second real-time updates across all family devices.
 
@@ -80,6 +80,8 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-25 | [**Confetti Celebrations**](./milestones/20260125_confetti_celebrations.md) | ✅ Complete | Celebration animations on chore completion (green), bonus points (gold), milestones (multi-color); Settings toggle; canvas-confetti library |
 | 2026-01-24 | **Weekly Digest P1-P4** | ✅ Complete | Digest includes Behavioral Insights (trend, consistency), Balances, Rewards, Goals, Payouts |
 | TBD | [**SMS 10DLC Compliance**](./planned/20260123_sms_10dlc_compliance.md) | ⚠️ Blocked | Carrier blocks SMS; 10DLC brand+campaign registration required |
+| TBD | [**Testimonials & Social Proof**](./planned/20260126_testimonials_strategy.md) | 📋 Planned | Third-party reviews (Trustpilot first), static testimonials on landing page |
+| — | [↳ Outreach Templates](./planned/20260126_testimonial_outreach_templates.md) | 📖 Guide | Email scripts for collecting testimonials and reviews |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 
@@ -314,5 +316,5 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 
 ---
 
-*Last updated: January 25, 2026 (v1.26)*
+*Last updated: January 26, 2026 (v1.27)*
 *Maintained by: Claude Code AI Assistant*
