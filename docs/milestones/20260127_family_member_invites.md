@@ -354,6 +354,7 @@ This data helps prioritize A2P 10DLC registration effort.
 - [Testing Notifications](../testing-notifications.md) - Resend/Twilio setup
 - [Business Requirements](../business-requirements.md) - Epic 6: Family Management
 - [OAuth Token Preservation Decision](../decisions/20260128_oauth_invite_token_preservation.md) - localStorage bridge fix
+- [SMS Invite Demand Tracking Decision](../decisions/20260128_sms_invite_demand_tracking.md) - Why phone button stays with demand capture
 
 ---
 
