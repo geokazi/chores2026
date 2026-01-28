@@ -192,6 +192,10 @@ export default function JoinPage({ data }: PageProps<JoinPageData>) {
 
                 {isLoggedIn === false && (
                   <>
+                    {/* Store token in localStorage before OAuth redirect */}
+                    <script dangerouslySetInnerHTML={{
+                      __html: `localStorage.setItem('pendingInviteToken', '${token}');`
+                    }} />
                     <a
                       href={`/login?redirect=${encodeURIComponent(`/join?token=${token}`)}`}
                       class="join-btn join-btn-primary"

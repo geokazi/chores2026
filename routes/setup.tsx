@@ -207,6 +207,18 @@ export default function SetupPage({ data }: PageProps<SetupPageData>) {
 
   return (
     <div class="setup-container">
+      {/* Check for pending invite token from OAuth flow */}
+      <script dangerouslySetInnerHTML={{
+        __html: `
+          (function() {
+            var token = localStorage.getItem('pendingInviteToken');
+            if (token) {
+              localStorage.removeItem('pendingInviteToken');
+              window.location.href = '/join?token=' + token;
+            }
+          })();
+        `
+      }} />
       <div class="setup-card">
         <div class="setup-header">
           <h1>ChoreGami 2026</h1>
