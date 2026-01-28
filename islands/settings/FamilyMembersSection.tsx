@@ -310,7 +310,7 @@ export default function FamilyMembersSection({ members }: FamilyMembersSectionPr
               submitLabel={isInviting ? "Sending..." : "Send Invite"}
               backLabel="Cancel"
               isSubmitting={isInviting}
-              submitDisabled={!inviteContact.trim()}
+              submitDisabled={!inviteContact.trim() || inviteChannel === "phone"}
             />
 
             {inviteResult && (
@@ -347,13 +347,23 @@ export default function FamilyMembersSection({ members }: FamilyMembersSectionPr
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setInviteChannel("phone"); setInviteContact(""); }}
+                  onClick={() => {
+                    setInviteChannel("phone");
+                    setInviteContact("");
+                    // Track demand signal for SMS invites
+                    fetch("/api/analytics/feature-demand", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      credentials: "include",
+                      body: JSON.stringify({ feature: "sms_invite" }),
+                    }).catch(() => {}); // Fire and forget
+                  }}
                   style={{
                     flex: 1,
                     padding: "0.75rem",
                     borderRadius: "6px",
-                    border: `2px solid ${inviteChannel === "phone" ? "#10b981" : "#e5e7eb"}`,
-                    background: inviteChannel === "phone" ? "#f0fdf4" : "white",
+                    border: `2px solid ${inviteChannel === "phone" ? "#f59e0b" : "#e5e7eb"}`,
+                    background: inviteChannel === "phone" ? "#fffbeb" : "white",
                     cursor: "pointer",
                     fontWeight: inviteChannel === "phone" ? "600" : "400",
                   }}
@@ -363,25 +373,60 @@ export default function FamilyMembersSection({ members }: FamilyMembersSectionPr
               </div>
             </div>
 
-            <div style={{ marginBottom: "1rem" }}>
-              <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
-                {inviteChannel === "email" ? "Email Address" : "Phone Number"}
-              </label>
-              <input
-                type={inviteChannel === "email" ? "email" : "tel"}
-                value={inviteContact}
-                onInput={(e) => setInviteContact((e.target as HTMLInputElement).value)}
-                placeholder={inviteChannel === "email" ? "spouse@example.com" : "(555) 123-4567"}
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  borderRadius: "6px",
-                  border: "2px solid #e5e7eb",
-                  fontSize: "1rem",
-                }}
-                autoFocus
-              />
-            </div>
+            {/* Phone temporarily unavailable notice */}
+            {inviteChannel === "phone" && (
+              <div style={{
+                padding: "0.75rem",
+                borderRadius: "6px",
+                marginBottom: "1rem",
+                background: "#fffbeb",
+                border: "1px solid #f59e0b",
+                color: "#92400e",
+              }}>
+                <strong>📱 SMS invites temporarily unavailable</strong>
+                <p style={{ margin: "0.5rem 0 0", fontSize: "0.875rem" }}>
+                  We're upgrading our SMS system for better delivery. Please use email for now - it's more reliable anyway!
+                </p>
+                <button
+                  type="button"
+                  onClick={() => { setInviteChannel("email"); setInviteContact(""); }}
+                  style={{
+                    marginTop: "0.5rem",
+                    padding: "0.5rem 1rem",
+                    background: "#10b981",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "6px",
+                    cursor: "pointer",
+                    fontWeight: "500",
+                  }}
+                >
+                  Switch to Email
+                </button>
+              </div>
+            )}
+
+            {inviteChannel === "email" && (
+              <div style={{ marginBottom: "1rem" }}>
+                <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  value={inviteContact}
+                  onInput={(e) => setInviteContact((e.target as HTMLInputElement).value)}
+                  placeholder="spouse@example.com"
+                  style={{
+                    width: "100%",
+                    padding: "0.75rem",
+                    borderRadius: "6px",
+                    border: "2px solid #e5e7eb",
+                    fontSize: "1rem",
+                  }}
+                  autoFocus
+                />
+              </div>
+            )}
 
             <div>
               <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>

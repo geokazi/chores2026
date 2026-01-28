@@ -1,9 +1,13 @@
 # Family Member Invites (Co-Parent & Caregiver)
 
 **Date**: January 27, 2026
-**Status**: ✅ Complete
+**Status**: ✅ Complete (SMS temporarily disabled pending A2P 10DLC)
 **Effort**: ~850 lines total (all modules under 500-line limit)
 **Principle**: 80/20 Pareto - dual-channel invites with minimal complexity
+
+> **Note (Jan 27, 2026)**: SMS invites temporarily disabled due to US carrier A2P 10DLC requirements.
+> Email invites work fully. See [SMS 10DLC Compliance](../planned/20260123_sms_10dlc_compliance.md) for details.
+> Feature demand is being tracked via `family_activity` to prioritize A2P registration.
 
 ## Problem Statement
 
@@ -298,24 +302,45 @@ This link expires in 7 days.
 
 ## Testing Checklist
 
-- [ ] Email invite sends successfully via Resend
-- [ ] SMS invite sends successfully via Twilio
-- [ ] Token validates correctly
-- [ ] Expired tokens rejected
-- [ ] New user joins correct family
-- [ ] Existing user joins correct family
-- [ ] Parent profile created with correct role
-- [ ] Invite removed from JSONB after acceptance
-- [ ] Max 5 pending invites enforced
+- [x] Email invite sends successfully via Resend
+- [ ] SMS invite sends successfully via Twilio (blocked - pending A2P 10DLC)
+- [x] Token validates correctly
+- [x] Expired tokens rejected
+- [x] New user joins correct family
+- [x] Existing user joins correct family
+- [x] Parent profile created with correct role
+- [x] Invite removed from JSONB after acceptance
+- [x] Max 5 pending invites enforced
+- [x] SMS demand tracking via family_activity
 
 ## Success Criteria
 
 1. ✅ **Co-parent can join family** with their own independent login
 2. ✅ **Zero password sharing** required
-3. ✅ **Works for both email and phone** users
+3. ⚠️ **Email works, SMS pending** - A2P 10DLC registration required
 4. ✅ **All modules under 500 lines** (~850 total across 5 files)
 5. ✅ **No new database tables** (JSONB storage only)
 6. ✅ **O(1) token lookup** via SQL function
+7. ✅ **SMS demand tracking** - users clicking Phone logged to family_activity
+
+## SMS Demand Tracking
+
+When users click the Phone button (temporarily unavailable), we track this to measure demand:
+
+```sql
+-- Query SMS invite demand
+SELECT COUNT(*) as attempts
+FROM choretracker.family_activity
+WHERE data->'meta'->>'demand_feature' = 'sms_invite';
+
+-- Demand by day
+SELECT DATE(created_at) as date, COUNT(*) as attempts
+FROM choretracker.family_activity
+WHERE data->'meta'->>'demand_feature' = 'sms_invite'
+GROUP BY DATE(created_at) ORDER BY date DESC;
+```
+
+This data helps prioritize A2P 10DLC registration effort.
 
 ## Related Documents
 

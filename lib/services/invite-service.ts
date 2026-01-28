@@ -266,14 +266,20 @@ export class InviteService {
     }
   }
 
-  /** Send invite via SMS (Twilio) */
+  /** Send invite via SMS (Twilio Messaging Service) */
   async sendSmsInvite(invite: PendingInvite, familyName: string, baseUrl: string): Promise<boolean> {
+    // NOTE: SMS invites temporarily disabled - A2P 10DLC registration pending
+    // The UI should prevent this from being called, but return false as safety
+    console.warn("[invite] SMS invites temporarily disabled - A2P 10DLC pending");
+    return false;
+
+    /* Re-enable when A2P 10DLC campaign is approved:
     const accountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
     const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
-    const fromPhone = Deno.env.get("TWILIO_PHONE_NUMBER");
+    const messagingServiceSid = Deno.env.get("TWILIO_MESSAGING_SERVICE_SID");
 
-    if (!accountSid || !authToken || !fromPhone) {
-      console.error("[invite] Twilio credentials not set");
+    if (!accountSid || !authToken || !messagingServiceSid) {
+      console.error("[invite] Twilio credentials not set (need TWILIO_MESSAGING_SERVICE_SID)");
       return false;
     }
 
@@ -290,7 +296,7 @@ export class InviteService {
             "Authorization": "Basic " + btoa(`${accountSid}:${authToken}`),
           },
           body: new URLSearchParams({
-            From: fromPhone,
+            MessagingServiceSid: messagingServiceSid,
             To: invite.contact,
             Body: body,
           }),
@@ -307,5 +313,6 @@ export class InviteService {
       console.error("[invite] SMS send failed:", err);
       return false;
     }
+    */
   }
 }

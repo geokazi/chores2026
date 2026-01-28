@@ -1,9 +1,11 @@
 # SMS Delivery: 10DLC Compliance & Carrier Registration
 
-**Date**: January 23, 2026
+**Date**: January 23, 2026 (Updated: January 27, 2026)
 **Status**: Blocked — requires Twilio Console action
-**Priority**: High (SMS digest non-functional until resolved)
-**Related**: [Notifications: Calendar + Email + Badges](../milestones/20260122_notifications_calendar_email_badges.md)
+**Priority**: High (SMS digest + SMS invites non-functional until resolved)
+**Related**:
+- [Notifications: Calendar + Email + Badges](../milestones/20260122_notifications_calendar_email_badges.md)
+- [Family Member Invites](../milestones/20260127_family_member_invites.md) - SMS invites also blocked
 
 ---
 
@@ -264,11 +266,31 @@ These limits apply *after* carrier delivery succeeds. Currently, messages never 
 ## Action Items
 
 - [ ] Register Brand in Twilio Console (GKTech Solutions LLC)
-- [ ] Submit 10DLC Campaign (use case: account notifications / weekly digest)
+- [ ] Submit 10DLC Campaign (use case: account notifications / weekly digest / family invites)
 - [ ] Associate +12068884842 with approved campaign
 - [ ] Re-test SMS delivery after approval
 - [ ] Monitor first successful delivery via Twilio message logs
 - [ ] Consider toll-free as backup if 10DLC approval is slow
+- [ ] Re-enable SMS invites in `invite-service.ts` after approval
+- [ ] Remove "SMS unavailable" banner from `FamilyMembersSection.tsx`
+
+## Affected Features (Jan 27, 2026 Update)
+
+| Feature | Status | Workaround |
+|---------|--------|------------|
+| Weekly SMS Digest | ❌ Blocked | Email digest works |
+| SMS Family Invites | ❌ Blocked | Email invites work |
+
+### SMS Invite Demand Tracking
+
+User attempts to use SMS invites are tracked in `family_activity`:
+
+```sql
+SELECT COUNT(*) FROM choretracker.family_activity
+WHERE data->'meta'->>'demand_feature' = 'sms_invite';
+```
+
+Use this to gauge urgency of A2P registration.
 
 ---
 
