@@ -89,6 +89,18 @@ export default function IndexPage({ data }: PageProps<IndexPageData>) {
 
   return (
     <div class="container">
+      {/* Check for pending invite token from OAuth flow (fallback for existing users) */}
+      <script dangerouslySetInnerHTML={{
+        __html: `
+          (function() {
+            var token = localStorage.getItem('pendingInviteToken');
+            if (token) {
+              localStorage.removeItem('pendingInviteToken');
+              window.location.href = '/join?token=' + token;
+            }
+          })();
+        `
+      }} />
       <AppHeader
         currentPage="selector"
         pageTitle="ChoreGami 2026"

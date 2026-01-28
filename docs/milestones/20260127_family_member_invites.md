@@ -312,6 +312,7 @@ This link expires in 7 days.
 - [x] Invite removed from JSONB after acceptance
 - [x] Max 5 pending invites enforced
 - [x] SMS demand tracking via family_activity
+- [x] OAuth login preserves invite token (localStorage bridge)
 
 ## Success Criteria
 
@@ -352,6 +353,7 @@ This data helps prioritize A2P 10DLC registration effort.
 - [Architecture](../architecture.md) - Auth flow reference
 - [Testing Notifications](../testing-notifications.md) - Resend/Twilio setup
 - [Business Requirements](../business-requirements.md) - Epic 6: Family Management
+- [OAuth Token Preservation Decision](../decisions/20260128_oauth_invite_token_preservation.md) - localStorage bridge fix
 
 ---
 

@@ -1,8 +1,8 @@
 # ChoreGami 2026 Documentation
 
-**Version**: 1.28
+**Version**: 1.29
 **Status**: ✅ Production Ready
-**Last Updated**: January 27, 2026 (Family Member Invites planning)
+**Last Updated**: January 28, 2026 (OAuth invite token preservation)
 
 **Project Overview**: A simplified, real-time chore completion system built with Deno Fresh, transforming routine family chores into an engaging, competitive experience with sub-second real-time updates across all family devices.
 
@@ -90,6 +90,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 
 | Date | Decision | Status | Summary |
 |------|----------|--------|---------|
+| 2026-01-28 | [OAuth Invite Token Preservation](./decisions/20260128_oauth_invite_token_preservation.md) | ✅ Decided | localStorage bridge preserves invite tokens through OAuth flow |
 | 2026-01-25 | [Large Family Smart Rotation](./decisions/20260125_large_family_smart_rotation.md) | 📋 Proposed | Future paid template for 5-12 kids using dynamic distribution |
 | 2026-01-20 | [Feedback Strategy](./decisions/20260120_feedback_strategy.md) | ✅ Decided | Google Form now, in-app JSONB at 100+ users |
 | 2026-01-20 | [Analytics Strategy](./decisions/20260120_analytics_strategy.md) | ✅ Decided | External analytics (Plausible) + existing data; don't extend FamilyScore |
@@ -317,5 +318,5 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 
 ---
 
-*Last updated: January 27, 2026 (v1.28)*
+*Last updated: January 28, 2026 (v1.29)*
 *Maintained by: Claude Code AI Assistant*
