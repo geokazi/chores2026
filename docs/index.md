@@ -1,8 +1,8 @@
 # ChoreGami 2026 Documentation
 
-**Version**: 1.29
+**Version**: 1.30
 **Status**: ✅ Production Ready
-**Last Updated**: January 28, 2026 (OAuth invite token preservation)
+**Last Updated**: January 28, 2026 (Invite UX enhancements: redirect fix, token paste, context banner)
 
 **Project Overview**: A simplified, real-time chore completion system built with Deno Fresh, transforming routine family chores into an engaging, competitive experience with sub-second real-time updates across all family devices.
 
@@ -319,5 +319,5 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 
 ---
 
-*Last updated: January 28, 2026 (v1.29)*
+*Last updated: January 28, 2026 (v1.30)*
 *Maintained by: Claude Code AI Assistant*

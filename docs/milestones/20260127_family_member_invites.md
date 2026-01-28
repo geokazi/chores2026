@@ -313,6 +313,10 @@ This link expires in 7 days.
 - [x] Max 5 pending invites enforced
 - [x] SMS demand tracking via family_activity
 - [x] OAuth login preserves invite token (localStorage bridge)
+- [x] Phone login respects redirect parameter (P1)
+- [x] Token paste recovery on error page (P2)
+- [x] "Joining [Family]" context banner on login page (P3)
+- [x] Context banner persists across auth mode switches
 
 ## Success Criteria
 

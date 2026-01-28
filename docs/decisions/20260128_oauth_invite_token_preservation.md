@@ -131,6 +131,63 @@ Existing service for sensitive OAuth data. Over-engineering since invite tokens 
 
 ---
 
+## UX Enhancements (Jan 28, 2026)
+
+Additional improvements to make the invite flow more robust and user-friendly:
+
+### P1: Phone Login Redirect Fix (~3 lines)
+
+**Problem**: Phone OTP login hardcoded redirect to `/` instead of respecting `redirect` parameter.
+
+**Fix** (`routes/login.tsx`):
+```typescript
+// Before: return createSessionResponse(req, sessionData.session, "/", phone);
+const redirectTo = url.searchParams.get("redirect") || "/";
+return createSessionResponse(req, sessionData.session, redirectTo, phone);
+```
+
+**Benefit**: Direct redirect to `/join?token=xxx` without localStorage bridge hop.
+
+### P2: Token Paste Recovery (~65 lines)
+
+**Problem**: User with invalid/expired token has no recovery path.
+
+**Fix** (`routes/join.tsx`): Added collapsible "Have an invite code?" section on error page.
+
+```
+┌─────────────────────────────────────┐
+│  📋 Have an invite code?            │
+│  ┌─────────────────────────────┐   │
+│  │ Paste code from email...    │   │
+│  └─────────────────────────────┘   │
+│  [Apply Code]                       │
+└─────────────────────────────────────┘
+```
+
+**Benefit**: Recovery for users who lost original link or have expired tokens.
+
+### P3: Invite Context Banner (~50 lines)
+
+**Problem**: User doesn't know if invite context is preserved during login.
+
+**Fix** (`routes/login.tsx`): Show "Joining [Family Name]" banner when redirect contains invite token.
+
+```
+┌─────────────────────────────────────┐
+│ 🎉 Joining Smith Family             │
+│    Invited by Mom                   │
+└─────────────────────────────────────┘
+```
+
+**Features**:
+- Fetches family name server-side from invite token
+- Persists across auth mode switches (Email/Phone/Social)
+- Shows inviter name when available
+
+**Benefit**: User confidence that invite context is preserved.
+
+---
+
 ## Related Documents
 
 - [Family Member Invites Milestone](../milestones/20260127_family_member_invites.md)
@@ -141,3 +198,4 @@ Existing service for sensitive OAuth data. Over-engineering since invite tokens 
 
 **Decision Made By**: Development Team
 **Implementation**: January 28, 2026
+**UX Enhancements**: January 28, 2026
