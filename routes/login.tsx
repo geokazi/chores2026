@@ -18,6 +18,10 @@ interface LoginPageData {
   mode: AuthMode;
   error?: string;
   otpSent?: boolean;
+  inviteContext?: {
+    familyName: string;
+    inviterName?: string;
+  };
 }
 
 export const handler: Handlers<LoginPageData> = {
@@ -104,8 +108,9 @@ export const handler: Handlers<LoginPageData> = {
               });
 
               if (!verifyError && sessionData.session) {
-                console.log("✅ Session created, redirecting to home...");
-                return createSessionResponse(req, sessionData.session, "/", phone);
+                console.log("✅ Session created, redirecting...");
+                const redirectTo = url.searchParams.get("redirect") || "/";
+                return createSessionResponse(req, sessionData.session, redirectTo, phone);
               }
               console.error("❌ Token verify error:", verifyError);
             }
@@ -211,7 +216,29 @@ export const handler: Handlers<LoginPageData> = {
     const mode = (url.searchParams.get("mode") || "email") as AuthMode;
     const error = url.searchParams.get("error") || undefined;
 
-    return ctx.render({ mode, error });
+    // Check for invite context in redirect parameter
+    let inviteContext: LoginPageData["inviteContext"] = undefined;
+    const redirect = url.searchParams.get("redirect") || "";
+    if (redirect.includes("/join?token=")) {
+      try {
+        const tokenMatch = redirect.match(/token=([^&]+)/);
+        if (tokenMatch) {
+          const { InviteService } = await import("../lib/services/invite-service.ts");
+          const inviteService = new InviteService();
+          const found = await inviteService.findByToken(tokenMatch[1]);
+          if (found) {
+            inviteContext = {
+              familyName: found.familyName,
+              inviterName: found.invite.invited_by_name,
+            };
+          }
+        }
+      } catch (e) {
+        console.log("⚠️ Could not fetch invite context:", e);
+      }
+    }
+
+    return ctx.render({ mode, error, inviteContext });
   },
 };
 
@@ -256,7 +283,7 @@ function createSessionResponse(req: Request, session: any, redirectTo = "/", ver
 }
 
 export default function LoginPage({ data }: PageProps<LoginPageData>) {
-  const { mode, error, otpSent } = data;
+  const { mode, error, otpSent, inviteContext } = data;
   const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
   const supabaseKey = Deno.env.get("SUPABASE_KEY") || "";
 
@@ -271,6 +298,18 @@ export default function LoginPage({ data }: PageProps<LoginPageData>) {
           <h1>ChoreGami 2026</h1>
           <p>Sign in to manage your family's chores</p>
         </div>
+
+        {inviteContext && (
+          <div class="invite-banner">
+            <span class="invite-emoji">🎉</span>
+            <div class="invite-text">
+              <strong>Joining {inviteContext.familyName}</strong>
+              {inviteContext.inviterName && (
+                <span class="invite-from">Invited by {inviteContext.inviterName}</span>
+              )}
+            </div>
+          </div>
+        )}
 
         {error && <div class="error-message">{error}</div>}
 
@@ -348,6 +387,32 @@ export default function LoginPage({ data }: PageProps<LoginPageData>) {
           margin: 0;
           color: var(--color-text);
           opacity: 0.8;
+        }
+        .invite-banner {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+          border: 2px solid #10b981;
+          border-radius: 12px;
+          padding: 1rem;
+          margin-bottom: 1rem;
+        }
+        .invite-emoji {
+          font-size: 2rem;
+        }
+        .invite-text {
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+        }
+        .invite-text strong {
+          color: #064e3b;
+          font-size: 1rem;
+        }
+        .invite-from {
+          color: #059669;
+          font-size: 0.875rem;
         }
         .error-message {
           background: #fee;

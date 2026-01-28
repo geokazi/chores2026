@@ -172,7 +172,75 @@ export default function JoinPage({ data }: PageProps<JoinPageData>) {
                 <div class="join-emoji">😕</div>
                 <h1 class="join-title">Oops!</h1>
                 <div class="join-error">{error}</div>
-                <a href="/login" class="join-btn join-btn-primary">Go to Login</a>
+
+                {/* Token paste recovery option */}
+                <div style={{ marginTop: "1.5rem", borderTop: "1px solid #e5e7eb", paddingTop: "1.5rem" }}>
+                  <button
+                    type="button"
+                    id="token-toggle"
+                    onClick="toggleTokenInput()"
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: "#6b7280",
+                      fontSize: "0.875rem",
+                      cursor: "pointer",
+                      textDecoration: "underline",
+                    }}
+                  >
+                    📋 Have an invite code?
+                  </button>
+                  <div id="token-paste-section" style={{ display: "none", marginTop: "1rem" }}>
+                    <input
+                      type="text"
+                      id="token-input"
+                      placeholder="Paste invite code from email..."
+                      style={{
+                        width: "100%",
+                        padding: "0.75rem",
+                        border: "2px solid #d1d5db",
+                        borderRadius: "8px",
+                        fontSize: "0.875rem",
+                        fontFamily: "monospace",
+                        marginBottom: "0.5rem",
+                        boxSizing: "border-box",
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick="applyToken()"
+                      class="join-btn join-btn-primary"
+                      style={{ marginTop: "0.5rem" }}
+                    >
+                      Apply Code
+                    </button>
+                  </div>
+                </div>
+                <script dangerouslySetInnerHTML={{
+                  __html: `
+                    function toggleTokenInput() {
+                      var section = document.getElementById('token-paste-section');
+                      var toggle = document.getElementById('token-toggle');
+                      if (section.style.display === 'none') {
+                        section.style.display = 'block';
+                        toggle.textContent = '▼ Hide invite code input';
+                      } else {
+                        section.style.display = 'none';
+                        toggle.textContent = '📋 Have an invite code?';
+                      }
+                    }
+                    function applyToken() {
+                      var input = document.getElementById('token-input');
+                      var token = input.value.trim();
+                      if (token && token.length >= 20) {
+                        localStorage.setItem('pendingInviteToken', token);
+                        window.location.href = '/join?token=' + encodeURIComponent(token);
+                      } else {
+                        alert('Please enter a valid invite code (at least 20 characters)');
+                      }
+                    }
+                  `
+                }} />
               </>
             ) : alreadyMember ? (
               <>
