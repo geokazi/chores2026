@@ -283,14 +283,17 @@ These limits apply *after* carrier delivery succeeds. Currently, messages never 
 
 ### SMS Invite Demand Tracking
 
-User attempts to use SMS invites are tracked in `family_activity`:
+User attempts to use SMS invites are tracked in `family_activity`.
+
+**Full queries with follow-up contacts**: [`sql/queries/sms_invite_demand.sql`](../../sql/queries/sms_invite_demand.sql)
 
 ```sql
+-- Quick count
 SELECT COUNT(*) FROM choretracker.family_activity
 WHERE data->'meta'->>'demand_feature' = 'sms_invite';
 ```
 
-Use this to gauge urgency of A2P registration.
+Use this to gauge urgency of A2P registration and follow up with users when SMS is enabled.
 
 ---
 

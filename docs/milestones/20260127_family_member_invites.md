@@ -325,19 +325,23 @@ This link expires in 7 days.
 
 ## SMS Demand Tracking
 
-When users click the Phone button (temporarily unavailable), we track this to measure demand:
+When users click the Phone button (temporarily unavailable), we track this to measure demand.
+
+**Full queries**: [`sql/queries/sms_invite_demand.sql`](../../sql/queries/sms_invite_demand.sql)
 
 ```sql
--- Query SMS invite demand
+-- Quick count
 SELECT COUNT(*) as attempts
 FROM choretracker.family_activity
 WHERE data->'meta'->>'demand_feature' = 'sms_invite';
 
--- Demand by day
-SELECT DATE(created_at) as date, COUNT(*) as attempts
-FROM choretracker.family_activity
-WHERE data->'meta'->>'demand_feature' = 'sms_invite'
-GROUP BY DATE(created_at) ORDER BY date DESC;
+-- Users to follow up with (includes email/phone)
+SELECT fa.data->>'actor_name' as name, au.email, au.phone, fa.created_at
+FROM choretracker.family_activity fa
+JOIN public.family_profiles fp ON fp.id = (fa.data->>'actor_id')::uuid
+JOIN auth.users au ON au.id = fp.user_id
+WHERE fa.data->'meta'->>'demand_feature' = 'sms_invite'
+ORDER BY fa.created_at DESC;
 ```
 
 This data helps prioritize A2P 10DLC registration effort.
