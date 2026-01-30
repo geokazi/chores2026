@@ -77,3 +77,21 @@ BEGIN
   LIMIT 1;
 END;
 $$ LANGUAGE plpgsql;
+
+-- Find invite by email (for /setup page to show pending invite banner)
+-- Used when user is authenticated but has no family profile
+CREATE OR REPLACE FUNCTION find_invite_by_email(p_email text)
+RETURNS TABLE(family_id uuid, family_name text, invite jsonb) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT f.id, f.name, inv
+  FROM families f,
+       jsonb_array_elements(
+         COALESCE(f.settings->'apps'->'choregami'->'pending_invites', '[]')
+       ) AS inv
+  WHERE inv->>'channel' = 'email'
+    AND LOWER(inv->>'contact') = LOWER(p_email)
+    AND (inv->>'expires_at')::timestamptz > NOW()
+  LIMIT 1;
+END;
+$$ LANGUAGE plpgsql;

@@ -172,6 +172,33 @@ export class InviteService {
     };
   }
 
+  /** Find invite by email (for /setup page to show pending invite banner) */
+  async findByEmail(email: string): Promise<{
+    invite: PendingInvite;
+    familyId: string;
+    familyName: string;
+  } | null> {
+    const { data, error } = await this.supabase.rpc("find_invite_by_email", {
+      p_email: email,
+    });
+
+    if (error) {
+      console.error("[invite] Email lookup error:", error);
+      return null;
+    }
+
+    if (!data || data.length === 0) {
+      return null;
+    }
+
+    const row = data[0];
+    return {
+      invite: row.invite as PendingInvite,
+      familyId: row.family_id,
+      familyName: row.family_name,
+    };
+  }
+
   /** Accept invite: create or restore profile, remove from pending */
   async acceptInvite(token: string, userId: string): Promise<InviteResult> {
     const found = await this.findByToken(token);

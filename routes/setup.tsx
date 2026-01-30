@@ -12,6 +12,11 @@ import AppFooter from "../components/AppFooter.tsx";
 interface SetupPageData {
   error?: string;
   email?: string;
+  pendingInvite?: {
+    familyName: string;
+    inviterName: string;
+    token: string;
+  };
 }
 
 export const handler: Handlers<SetupPageData> = {
@@ -53,7 +58,27 @@ export const handler: Handlers<SetupPageData> = {
     const url = new URL(req.url);
     const error = url.searchParams.get("error") || undefined;
 
-    return ctx.render({ email: user?.email, error });
+    // Check if user has a pending invite by email
+    let pendingInvite: SetupPageData["pendingInvite"] = undefined;
+    if (user?.email) {
+      try {
+        const { InviteService } = await import("../lib/services/invite-service.ts");
+        const inviteService = new InviteService();
+        const found = await inviteService.findByEmail(user.email);
+        if (found) {
+          pendingInvite = {
+            familyName: found.familyName,
+            inviterName: found.invite.invited_by_name,
+            token: found.invite.token,
+          };
+          console.log("📬 Found pending invite for", user.email, "to join", found.familyName);
+        }
+      } catch (e) {
+        console.log("⚠️ Could not check pending invites:", e);
+      }
+    }
+
+    return ctx.render({ email: user?.email, error, pendingInvite });
   },
 
   async POST(req, ctx) {
@@ -212,7 +237,7 @@ export const handler: Handlers<SetupPageData> = {
 };
 
 export default function SetupPage({ data }: PageProps<SetupPageData>) {
-  const { error, email } = data;
+  const { error, email, pendingInvite } = data;
 
   return (
     <div class="setup-container">
@@ -235,8 +260,26 @@ export default function SetupPage({ data }: PageProps<SetupPageData>) {
           <p>Complete Your Profile</p>
         </div>
 
+        {/* Pending invite banner - shown when user has an invite waiting */}
+        {pendingInvite && (
+          <div class="pending-invite-banner">
+            <div class="invite-emoji">🎉</div>
+            <div class="invite-content">
+              <strong>You're invited to join {pendingInvite.familyName}!</strong>
+              <p>{pendingInvite.inviterName} sent you an invite.</p>
+              <a href={`/join?token=${pendingInvite.token}`} class="join-button">
+                Join Family
+              </a>
+            </div>
+          </div>
+        )}
+
         <div class="welcome-message">
-          Welcome! Let's set up your family.
+          {pendingInvite ? (
+            <>Or create your own family below</>
+          ) : (
+            <>Welcome! Let's set up your family.</>
+          )}
           {email && (
             <>
               <span class="email-hint">({email})</span>
@@ -399,6 +442,47 @@ export default function SetupPage({ data }: PageProps<SetupPageData>) {
         }
         .start-over-link:hover {
           color: #666;
+        }
+        .pending-invite-banner {
+          background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+          border: 2px solid #10b981;
+          border-radius: 12px;
+          padding: 1.25rem;
+          margin-bottom: 1rem;
+          display: flex;
+          gap: 1rem;
+          align-items: flex-start;
+        }
+        .invite-emoji {
+          font-size: 2rem;
+          line-height: 1;
+        }
+        .invite-content {
+          flex: 1;
+        }
+        .invite-content strong {
+          color: #064e3b;
+          display: block;
+          margin-bottom: 0.25rem;
+        }
+        .invite-content p {
+          color: #059669;
+          font-size: 0.875rem;
+          margin: 0 0 0.75rem 0;
+        }
+        .join-button {
+          display: inline-block;
+          background: #10b981;
+          color: white;
+          padding: 0.5rem 1.25rem;
+          border-radius: 6px;
+          text-decoration: none;
+          font-weight: 600;
+          font-size: 0.875rem;
+          transition: background 0.2s ease;
+        }
+        .join-button:hover {
+          background: #059669;
         }
         .error-message {
           background: #fee;
