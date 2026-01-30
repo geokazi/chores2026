@@ -63,12 +63,12 @@ export class InviteService {
       ? this.normalizePhone(contact)
       : contact.toLowerCase().trim();
 
-    // Check pending invite limit (max 5)
+    // Check pending invite limit (max 8)
     const { data: countData } = await this.supabase.rpc("count_pending_invites", {
       p_family_id: familyId
     });
-    if ((countData ?? 0) >= 5) {
-      return { success: false, error: "Maximum 5 pending invites allowed" };
+    if ((countData ?? 0) >= 8) {
+      return { success: false, error: "Maximum 8 pending invites allowed" };
     }
 
     // Check if contact already invited or in family

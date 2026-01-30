@@ -73,6 +73,13 @@ export const handler: Handlers = {
     const url = new URL(req.url);
     const baseUrl = `${url.protocol}//${url.host}`;
 
+    // DEBUG: Log join link for testing
+    console.log("\n" + "=".repeat(60));
+    console.log("🔗 DEBUG: Invite created - JOIN LINK:");
+    console.log(`   ${baseUrl}/join?token=${result.invite.token}`);
+    console.log(`   Role: ${inviteRole} | Contact: ${result.invite.contact}`);
+    console.log("=".repeat(60) + "\n");
+
     // Send invite
     let sent = false;
     if (channel === "email") {

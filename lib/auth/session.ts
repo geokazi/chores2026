@@ -12,6 +12,7 @@ export interface FamilyMember {
   role: "parent" | "child";
   current_points: number;
   has_pin: boolean;  // Whether member has a PIN set (don't expose actual hash)
+  user_id?: string;  // Only parents have user_id (links to auth.users)
 }
 
 export interface ChoreGamiSession {
@@ -91,7 +92,7 @@ export async function getAuthenticatedSession(
         .single(),
       supabase
         .from("family_profiles")
-        .select("id, name, role, current_points, pin_hash")
+        .select("id, name, role, current_points, pin_hash, user_id")
         .eq("family_id", profileData.family_id)
         .eq("is_deleted", false)
         .order("current_points", { ascending: false }),
@@ -112,6 +113,7 @@ export async function getAuthenticatedSession(
       role: m.role,
       current_points: m.current_points || 0,
       has_pin: !!m.pin_hash,  // Convert to boolean - don't expose actual hash
+      user_id: m.user_id,     // For owner identification (parents only)
     }));
 
     // Extract settings from JSONB with defaults

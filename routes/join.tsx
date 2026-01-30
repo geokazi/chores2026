@@ -9,7 +9,8 @@
  */
 
 import { Handlers, PageProps } from "$fresh/server.ts";
-import { getAuthenticatedSession } from "../lib/auth/session.ts";
+import { getCookies } from "@std/http/cookie";
+import { createClient } from "@supabase/supabase-js";
 import { InviteService } from "../lib/services/invite-service.ts";
 
 interface JoinPageData {
@@ -34,35 +35,70 @@ export const handler: Handlers<JoinPageData> = {
       return ctx.render({ error: "This invite link is invalid or has expired" });
     }
 
-    const session = await getAuthenticatedSession(req);
+    // Check if user is authenticated (even without a profile)
+    // This is critical for invite flow - new users have auth but no profile yet
+    const cookies = getCookies(req.headers);
+    const accessToken = cookies["sb-access-token"];
 
-    // If logged in, try to accept invite
-    if (session.isAuthenticated && session.user) {
-      // Check if already a member of this family
-      if (session.family?.id === found.familyId) {
-        return ctx.render({
-          alreadyMember: true,
-          familyName: found.familyName,
-        });
-      }
+    console.log("[join] Token check:", { hasToken: !!accessToken, tokenLen: accessToken?.length });
 
-      // Check if user already has a family (can't join another)
-      if (session.family) {
-        return ctx.render({
-          error: "You already belong to a family. You must leave your current family before joining another.",
-        });
-      }
+    let authUserId: string | null = null;
+    let existingFamilyId: string | null = null;
 
-      // Accept the invite
-      const result = await inviteService.acceptInvite(token, session.user.id);
-      if (result.success) {
-        // Redirect to home - they're now part of the family
-        return new Response(null, {
-          status: 303,
-          headers: { Location: "/?joined=true" },
-        });
-      } else {
-        return ctx.render({ error: result.error || "Failed to join family" });
+    if (accessToken) {
+      const supabase = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      );
+
+      const { data: { user }, error: authError } = await supabase.auth.getUser(accessToken);
+      console.log("[join] Auth result:", { userId: user?.id, email: user?.email, error: authError?.message });
+      if (user) {
+        authUserId = user.id;
+
+        // Check if user already has a profile
+        const { data: existingProfile } = await supabase
+          .from("family_profiles")
+          .select("id, family_id")
+          .eq("user_id", user.id)
+          .eq("is_deleted", false)
+          .single();
+
+        if (existingProfile) {
+          existingFamilyId = existingProfile.family_id;
+
+          // Already member of this family?
+          if (existingFamilyId === found.familyId) {
+            return ctx.render({
+              alreadyMember: true,
+              familyName: found.familyName,
+            });
+          }
+
+          // Already has a different family
+          return ctx.render({
+            error: "You already belong to a family. You must leave your current family before joining another.",
+          });
+        }
+
+        // User is authenticated but has NO profile - perfect for invite acceptance!
+        console.log("🎉 Accepting invite for authenticated user without profile:", user.id);
+        const result = await inviteService.acceptInvite(token, authUserId);
+        if (result.success) {
+          // Clear any pending invite token and redirect to home
+          return new Response(
+            `<!DOCTYPE html><html><head><title>Joined!</title></head>
+            <body>
+              <script>
+                localStorage.removeItem('pendingInviteToken');
+                window.location.href = '/?joined=true';
+              </script>
+            </body></html>`,
+            { status: 200, headers: { "Content-Type": "text/html" } }
+          );
+        } else {
+          return ctx.render({ error: result.error || "Failed to join family" });
+        }
       }
     }
 

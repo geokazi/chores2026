@@ -11,15 +11,18 @@ interface FamilyMembersSectionProps {
     name: string;
     role: string;
     current_points: number;
+    user_id?: string;  // Only parents have user_id
   }>;
+  ownerUserId?: string;  // Family owner (cannot be deleted)
 }
 
-export default function FamilyMembersSection({ members }: FamilyMembersSectionProps) {
+export default function FamilyMembersSection({ members, ownerUserId }: FamilyMembersSectionProps) {
   const [showKidModal, setShowKidModal] = useState(false);
   const [editingKid, setEditingKid] = useState<any>(null);
   const [kidNameInput, setKidNameInput] = useState("");
   const [isManagingKid, setIsManagingKid] = useState(false);
   const [pendingRemoveKid, setPendingRemoveKid] = useState<any>(null);
+  const [pendingRemoveParent, setPendingRemoveParent] = useState<any>(null);
 
   // Invite adult state
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -112,6 +115,44 @@ export default function FamilyMembersSection({ members }: FamilyMembersSectionPr
     setIsManagingKid(false);
   };
 
+  const handleRemoveParent = (parent: any) => {
+    if (parent.user_id === ownerUserId) {
+      alert("Cannot remove the family owner.");
+      return;
+    }
+    if (!confirm(`Remove ${parent.name} from this family? They will need a new invite to rejoin.`)) {
+      return;
+    }
+    setPendingRemoveParent(parent);
+  };
+
+  const confirmRemoveParent = async () => {
+    if (!pendingRemoveParent) return;
+    setIsManagingKid(true);
+
+    try {
+      const response = await fetch("/api/family/manage-parent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "remove",
+          profile_id: pendingRemoveParent.id,
+        }),
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        setPendingRemoveParent(null);
+        globalThis.location.reload();
+      } else {
+        alert(`❌ ${result.error}`);
+      }
+    } catch (err) {
+      alert(`❌ Error: ${err}`);
+    }
+    setIsManagingKid(false);
+  };
+
   const openInviteModal = () => {
     setInviteChannel("email");
     setInviteContact("");
@@ -185,6 +226,18 @@ export default function FamilyMembersSection({ members }: FamilyMembersSectionPr
                     🗑️
                   </button>
                 </>
+              )}
+              {member.role === 'parent' && member.user_id !== ownerUserId && (
+                <button
+                  class="btn-icon btn-icon-danger"
+                  onClick={() => handleRemoveParent(member)}
+                  title="Remove parent"
+                >
+                  🗑️
+                </button>
+              )}
+              {member.role === 'parent' && member.user_id === ownerUserId && (
+                <span style={{ fontSize: "0.75rem", color: "#888" }} title="Family owner">👑</span>
               )}
             </div>
           </div>
@@ -292,6 +345,62 @@ export default function FamilyMembersSection({ members }: FamilyMembersSectionPr
             <div class="modal-actions">
               <button
                 onClick={() => setPendingRemoveKid(null)}
+                class="btn btn-secondary"
+                disabled={isManagingKid}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Remove Parent PIN Verification Modal */}
+      {pendingRemoveParent && (
+        <div class="modal-overlay">
+          <div class="modal">
+            <h3>🔐 Verify Parent PIN</h3>
+            <p style={{ marginBottom: "1rem" }}>
+              Enter your PIN to remove <strong>{pendingRemoveParent.name}</strong>
+            </p>
+            <div style={{ marginBottom: "1rem" }}>
+              <input
+                type="password"
+                maxLength={4}
+                placeholder="Enter 4-digit PIN"
+                id="remove-parent-pin-input"
+                style={{
+                  width: "100%",
+                  padding: "0.75rem",
+                  borderRadius: "6px",
+                  border: "2px solid #e5e7eb",
+                  fontSize: "1.25rem",
+                  textAlign: "center",
+                  letterSpacing: "0.5rem",
+                }}
+                autoFocus
+                onInput={async (e) => {
+                  const pin = (e.target as HTMLInputElement).value;
+                  if (pin.length === 4) {
+                    const res = await fetch("/api/parent/verify-pin-simple", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ pin }),
+                    });
+                    const result = await res.json();
+                    if (result.success) {
+                      confirmRemoveParent();
+                    } else {
+                      alert("❌ Incorrect PIN");
+                      (e.target as HTMLInputElement).value = "";
+                    }
+                  }
+                }}
+              />
+            </div>
+            <div class="modal-actions">
+              <button
+                onClick={() => setPendingRemoveParent(null)}
                 class="btn btn-secondary"
                 disabled={isManagingKid}
               >

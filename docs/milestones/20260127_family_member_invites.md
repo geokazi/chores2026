@@ -431,6 +431,7 @@ This link expires in 7 days.
 
 - ❌ Invite management UI (view pending, resend, revoke) - Future
 - ✅ ~~Multiple invite roles (caregiver, teen)~~ - Done (Co-parent/Teen)
+- ✅ ~~Parent deletion~~ - Done (owner protected via JSONB)
 - ❌ Invite expiry notifications - Future
 - ❌ Bulk invites - Not needed
 - ❌ Caregiver role (view-only) - Future if needed
@@ -640,6 +641,42 @@ Role selector added to invite modal. Changes:
 | `islands/settings/FamilyMembersSection.tsx` | Role selector UI (Co-parent/Teen) | ~50 |
 
 **Total**: ~62 lines added
+
+## Parent Deletion with Owner Protection
+
+### Problem
+Co-parents can be invited but not removed. Need ability to remove parents who:
+- Divorced/separated from family
+- Were invited by mistake
+- Are no longer caregivers
+
+**Constraint**: Cannot delete the original family owner (the person who signed up).
+
+### Solution: Owner stored in JSONB
+
+```json
+// families.settings
+{
+  "owner_user_id": "auth-user-uuid-here",
+  "apps": { ... }
+}
+```
+
+### Implementation: ✅ Complete (Jan 29, 2026)
+
+| File | Change | Lines |
+|------|--------|-------|
+| `routes/api/family/manage-parent.ts` | New API for parent deletion | ~80 |
+| `islands/settings/FamilyMembersSection.tsx` | Delete button + PIN modal for parents | ~60 |
+| `lib/auth/session.ts` | Include `user_id` in session members | ~5 |
+| `routes/parent/settings.tsx` | Pass `owner_user_id` to settings | ~2 |
+| `sql/queries/family_owner.sql` | Backfill + query documentation | ~60 |
+
+**UI Behavior**:
+- Owner shows 👑 crown icon (no delete button)
+- Other parents show 🗑️ delete button
+- PIN verification required before deletion
+- Soft delete (is_deleted = true)
 
 ---
 

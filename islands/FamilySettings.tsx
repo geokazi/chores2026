@@ -38,6 +38,7 @@ interface FamilySettingsProps {
     role: string;
     current_points: number;
     has_pin?: boolean;
+    user_id?: string;  // Only parents have user_id
   }>;
   settings: {
     children_pins_enabled?: boolean;
@@ -236,7 +237,7 @@ export default function FamilySettings({ family, members, settings, digestChanne
   return (
     <div class="settings-container">
       {/* 1. First-time setup - Family Members (add kids first!) */}
-      <FamilyMembersSection members={members} />
+      <FamilyMembersSection members={members} ownerUserId={settings?.owner_user_id} />
 
       {/* 2. Core functionality - Chore Rotation Templates */}
       <TemplateSelector

@@ -27,6 +27,7 @@ import * as $api_family_custom_chores from "./routes/api/family/custom-chores.ts
 import * as $api_family_goal_settings from "./routes/api/family/goal-settings.ts";
 import * as $api_family_invite from "./routes/api/family/invite.ts";
 import * as $api_family_manage_kid from "./routes/api/family/manage-kid.ts";
+import * as $api_family_manage_parent from "./routes/api/family/manage-parent.ts";
 import * as $api_family_pin_setting from "./routes/api/family/pin-setting.ts";
 import * as $api_family_set_kid_pin from "./routes/api/family/set-kid-pin.ts";
 import * as $api_familyscore_live_family_id_ from "./routes/api/familyscore/live/[family_id].ts";
@@ -151,6 +152,7 @@ const manifest = {
     "./routes/api/family/goal-settings.ts": $api_family_goal_settings,
     "./routes/api/family/invite.ts": $api_family_invite,
     "./routes/api/family/manage-kid.ts": $api_family_manage_kid,
+    "./routes/api/family/manage-parent.ts": $api_family_manage_parent,
     "./routes/api/family/pin-setting.ts": $api_family_pin_setting,
     "./routes/api/family/set-kid-pin.ts": $api_family_set_kid_pin,
     "./routes/api/familyscore/live/[family_id].ts":

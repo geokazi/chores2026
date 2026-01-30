@@ -213,7 +213,8 @@ export default function SetupPage({ data }: PageProps<SetupPageData>) {
           (function() {
             var token = localStorage.getItem('pendingInviteToken');
             if (token) {
-              localStorage.removeItem('pendingInviteToken');
+              console.log('[setup] Found pending invite token, redirecting to /join');
+              // Don't remove token yet - /join will clear it after successful acceptance
               window.location.href = '/join?token=' + token;
             }
           })();

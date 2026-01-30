@@ -104,6 +104,8 @@ export const handler: Handlers<ParentSettingsData> = {
         theme: family.theme,
         // Include nested JSONB structure for rotation config
         apps: fullSettings.apps,
+        // Owner for parent deletion protection
+        owner_user_id: fullSettings.owner_user_id,
       },
       parentProfileId: session.user?.profileId,
       digestChannel,
