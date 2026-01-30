@@ -72,8 +72,11 @@ export const handler: Handlers = {
           return Response.json({ error: "Failed to remove parent" }, { status: 500 });
         }
 
-        console.log("✅ Parent removed (soft delete):", targetProfile.name);
-        return Response.json({ success: true });
+        // Check if user deleted themselves
+        const deletedSelf = profile_id === session.user.profileId;
+
+        console.log("✅ Parent removed (soft delete):", targetProfile.name, deletedSelf ? "(self)" : "");
+        return Response.json({ success: true, deletedSelf });
       }
 
       return Response.json({ error: "Invalid action" }, { status: 400 });

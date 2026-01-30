@@ -143,7 +143,13 @@ export default function FamilyMembersSection({ members, ownerUserId }: FamilyMem
       const result = await response.json();
       if (result.success) {
         setPendingRemoveParent(null);
-        globalThis.location.reload();
+        if (result.deletedSelf) {
+          // User removed themselves - log them out
+          localStorage.removeItem('pendingInviteToken');
+          globalThis.location.href = '/logout?reason=left_family';
+        } else {
+          globalThis.location.reload();
+        }
       } else {
         alert(`❌ ${result.error}`);
       }
