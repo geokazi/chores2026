@@ -193,8 +193,17 @@ export const handler: Handlers<SetupPageData> = {
         kids: kidProfileIds.length, template: template || "skip",
       });
 
-      // Success -> redirect to home
-      return new Response(null, { status: 303, headers: { Location: "/" } });
+      // Success -> clear any stale invite token and redirect to home
+      return new Response(
+        `<!DOCTYPE html><html><head><title>Setup Complete</title></head>
+        <body>
+          <script>
+            localStorage.removeItem('pendingInviteToken');
+            window.location.href = '/';
+          </script>
+        </body></html>`,
+        { status: 200, headers: { "Content-Type": "text/html" } }
+      );
     } catch (error) {
       console.error("Setup POST error:", error);
       return ctx.render({ error: "An unexpected error occurred. Please try again." });

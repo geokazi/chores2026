@@ -32,6 +32,21 @@ export const handler: Handlers<JoinPageData> = {
     const found = await inviteService.findByToken(token);
 
     if (!found) {
+      // Clear stale token from localStorage via client-side script
+      return new Response(
+        `<!DOCTYPE html><html><head><title>Invalid Invite</title></head>
+        <body>
+          <script>
+            localStorage.removeItem('pendingInviteToken');
+            window.location.href = '/join?token=${token}&cleared=1';
+          </script>
+        </body></html>`,
+        { status: 200, headers: { "Content-Type": "text/html" } }
+      );
+    }
+
+    // If already cleared, show the error page
+    if (url.searchParams.get("cleared")) {
       return ctx.render({ error: "This invite link is invalid or has expired" });
     }
 
