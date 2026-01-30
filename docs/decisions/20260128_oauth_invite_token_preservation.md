@@ -186,6 +186,45 @@ return createSessionResponse(req, sessionData.session, redirectTo, phone);
 
 **Benefit**: User confidence that invite context is preserved.
 
+### P4: Option A - Direct Login Flow (~40 lines)
+
+**Problem**: Intermediate /join page required extra click before user could see auth options.
+
+**Previous Flow**:
+```
+/join?token=xxx → "You're Invited!" page → click button → /login with small banner
+```
+
+**Fix** (`routes/join.tsx` + `routes/login.tsx`):
+- `/join` now redirects unauthenticated users directly to `/login?invite_token=xxx`
+- `/login` shows invite context as PRIMARY header (not secondary banner)
+
+**New Flow**:
+```
+/join?token=xxx → /login with prominent "Join [Family]" header → auth options immediately visible
+```
+
+**Visual**:
+```
+┌─────────────────────────────────────┐
+│           🎉                        │
+│   Join Smith Family                 │
+│   Invited by Mom                    │
+│   Sign in or create an account      │
+│                                     │
+│   [Email] [Phone] [Social]          │
+│   ┌─────────────────────────────┐   │
+│   │ Email/password form...      │   │
+│   └─────────────────────────────┘   │
+└─────────────────────────────────────┘
+```
+
+**Benefits**:
+- One less click for users
+- Auth options immediately visible
+- Invite context is the PRIMARY message, not secondary
+- Cleaner UX with consistent messaging
+
 ---
 
 ## Related Documents

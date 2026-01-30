@@ -317,6 +317,7 @@ This link expires in 7 days.
 - [x] Token paste recovery on error page (P2)
 - [x] "Joining [Family]" context banner on login page (P3)
 - [x] Context banner persists across auth mode switches
+- [x] Direct login flow - skip intermediate /join page (P4/Option A)
 
 ## Success Criteria
 

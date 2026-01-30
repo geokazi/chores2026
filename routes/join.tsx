@@ -69,13 +69,22 @@ export const handler: Handlers<JoinPageData> = {
       }
     }
 
-    // Not logged in - show invite info and login prompt
-    return ctx.render({
-      familyName: found.familyName,
-      inviterName: found.invite.invited_by_name,
-      token,
-      isLoggedIn: false,
-    });
+    // Not logged in - redirect to login with invite token (Option A: skip intermediate page)
+    // Store token in localStorage via redirect page for OAuth flow resilience
+    const loginUrl = `/login?invite_token=${encodeURIComponent(token)}`;
+    return new Response(
+      `<!DOCTYPE html><html><head><title>Joining family...</title></head>
+      <body>
+        <script>
+          localStorage.setItem('pendingInviteToken', '${token}');
+          window.location.href = '${loginUrl}';
+        </script>
+      </body></html>`,
+      {
+        status: 200,
+        headers: { "Content-Type": "text/html" },
+      },
+    );
   },
 };
 
