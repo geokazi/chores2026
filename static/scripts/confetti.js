@@ -135,21 +135,12 @@ function triggerCelebrationSound(type = 'chore_complete') {
 }
 
 /**
- * Check if celebration effects (confetti/sound/haptics) are enabled
- * @returns {boolean}
- */
-function isCelebrationEnabled() {
-  return localStorage.getItem('choregami_confetti_disabled') !== 'true';
-}
-
-/**
  * Trigger confetti animation
  * @param {string} type - Animation type: 'chore_complete' | 'bonus_points' | 'milestone'
- * @param {number} duration - Animation duration in milliseconds (default: 2500)
  */
-function triggerConfetti(type = 'chore_complete', duration = 2500) {
+function triggerConfetti(type = 'chore_complete') {
   // Check if celebrations are disabled (stored in localStorage)
-  if (!isCelebrationEnabled()) {
+  if (!isConfettiEnabled()) {
     console.log('Celebrations disabled by user preference');
     return;
   }
