@@ -446,7 +446,7 @@ This link expires in 7 days.
 - [x] Existing user joins correct family
 - [x] Parent profile created with correct role
 - [x] Invite removed from JSONB after acceptance
-- [x] Max 5 pending invites enforced
+- [x] Max 8 pending invites enforced (updated from 5)
 - [x] SMS demand tracking via family_activity
 - [x] OAuth login preserves invite token (localStorage bridge)
 - [x] Phone login respects redirect parameter (P1)
@@ -454,6 +454,14 @@ This link expires in 7 days.
 - [x] "Joining [Family]" context banner on login page (P3)
 - [x] Context banner persists across auth mode switches
 - [x] Direct login flow - skip intermediate /join page (P4/Option A)
+- [x] Role selector shows Co-parent/Teen options
+- [x] Teen invited with child role (limited permissions)
+- [x] Owner (👑) cannot be deleted
+- [x] Non-owner parents show delete button (🗑️)
+- [x] Parent deletion requires PIN verification
+- [x] Self-deletion triggers auto-logout
+- [x] Stale localStorage token auto-cleared on invalid invite
+- [x] "Start over" link on /setup page for stuck users
 
 ## Success Criteria
 
@@ -497,6 +505,8 @@ This data helps prioritize A2P 10DLC registration effort.
 - [Business Requirements](../business-requirements.md) - Epic 6: Family Management
 - [OAuth Token Preservation Decision](../decisions/20260128_oauth_invite_token_preservation.md) - localStorage bridge fix
 - [SMS Invite Demand Tracking Decision](../decisions/20260128_sms_invite_demand_tracking.md) - Why phone button stays with demand capture
+- [Family Owner SQL Queries](../../sql/queries/family_owner.sql) - Backfill and owner lookup queries
+- [SMS Invite Demand Queries](../../sql/queries/sms_invite_demand.sql) - Track users requesting SMS invites
 
 ---
 
@@ -678,10 +688,46 @@ Co-parents can be invited but not removed. Need ability to remove parents who:
 - PIN verification required before deletion
 - Soft delete (is_deleted = true)
 
+## UX Improvements (Jan 29, 2026)
+
+### Stale Token Cleanup
+
+**Problem**: localStorage `pendingInviteToken` could persist forever if invite flow failed, causing redirect loops.
+
+**Solution**: Auto-clear token in more scenarios:
+- On invalid/expired invite → clear before showing error
+- On manual `/setup` completion → clear after creating family
+- On successful invite acceptance → clear before redirect
+
+### "Start Over" Escape Link
+
+**Problem**: Users stuck on `/setup` with wrong account had no easy escape.
+
+**Solution**: Added "Not you? Start over" link in the welcome message box:
+```
+Welcome! Let's set up your family.
+(george.kariuki@gmail.com)
+Not you? Start over       ← NEW
+```
+
+Clicking clears localStorage and redirects to `/logout`.
+
+### Self-Deletion Auto-Logout
+
+**Problem**: User joins family → deletes themselves → cookie still valid → broken state.
+
+**Solution**: API returns `deletedSelf: true` flag, UI redirects to `/logout`:
+```typescript
+if (result.deletedSelf) {
+  localStorage.removeItem('pendingInviteToken');
+  globalThis.location.href = '/logout?reason=left_family';
+}
+```
+
 ---
 
 **Implementation Status**: ✅ Complete
-**Actual Effort**: ~850 lines new code (all modules under 500-line limit)
+**Actual Effort**: ~920 lines new code (all modules under 500-line limit)
 **Dependencies**: Resend (email), Twilio (SMS) - both already configured
 **Optimizations**: O(1) token lookup via SQL function (avoids O(n×m) JS iteration)
 
