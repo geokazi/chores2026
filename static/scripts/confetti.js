@@ -73,20 +73,94 @@ const confettiConfigs = {
 };
 
 /**
+ * Trigger haptic feedback (vibration) on supported devices
+ * @param {string} type - Celebration type for pattern variation
+ */
+function triggerHaptics(type = 'chore_complete') {
+  if (!navigator.vibrate) return;
+
+  const patterns = {
+    chore_complete: [100, 50, 100],      // Quick double buzz
+    bonus_points: [50, 30, 50, 30, 150], // Exciting triple buzz
+    milestone: [100, 50, 100, 50, 200],  // Celebratory pattern
+  };
+
+  navigator.vibrate(patterns[type] || patterns.chore_complete);
+}
+
+/**
+ * Play celebration sound using Web Audio API (no external files)
+ * @param {string} type - Celebration type for tone variation
+ */
+function triggerCelebrationSound(type = 'chore_complete') {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+
+    const ctx = new AudioContext();
+
+    // Different tones for different celebrations
+    const tones = {
+      chore_complete: [{ freq: 880, start: 0, dur: 0.15 }, { freq: 1108, start: 0.12, dur: 0.2 }], // A5 → C#6 (cheerful)
+      bonus_points: [{ freq: 659, start: 0, dur: 0.1 }, { freq: 880, start: 0.1, dur: 0.1 }, { freq: 1108, start: 0.2, dur: 0.25 }], // E5 → A5 → C#6 (cha-ching)
+      milestone: [{ freq: 523, start: 0, dur: 0.15 }, { freq: 659, start: 0.15, dur: 0.15 }, { freq: 784, start: 0.3, dur: 0.15 }, { freq: 1047, start: 0.45, dur: 0.3 }], // C5 → E5 → G5 → C6 (fanfare)
+    };
+
+    const sequence = tones[type] || tones.chore_complete;
+
+    sequence.forEach(({ freq, start, dur }) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+
+      // Gentle envelope
+      gain.gain.setValueAtTime(0, ctx.currentTime + start);
+      gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + start + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + start + dur);
+
+      osc.start(ctx.currentTime + start);
+      osc.stop(ctx.currentTime + start + dur);
+    });
+
+    // Clean up AudioContext after sounds complete
+    setTimeout(() => ctx.close(), 1000);
+  } catch (e) {
+    // Silently fail - sound is optional enhancement
+  }
+}
+
+/**
+ * Check if celebration effects (confetti/sound/haptics) are enabled
+ * @returns {boolean}
+ */
+function isCelebrationEnabled() {
+  return localStorage.getItem('choregami_confetti_disabled') !== 'true';
+}
+
+/**
  * Trigger confetti animation
  * @param {string} type - Animation type: 'chore_complete' | 'bonus_points' | 'milestone'
  * @param {number} duration - Animation duration in milliseconds (default: 2500)
  */
 function triggerConfetti(type = 'chore_complete', duration = 2500) {
-  // Check if confetti library is loaded
-  if (typeof confetti === 'undefined') {
-    console.warn('canvas-confetti library not loaded');
+  // Check if celebrations are disabled (stored in localStorage)
+  if (!isCelebrationEnabled()) {
+    console.log('Celebrations disabled by user preference');
     return;
   }
 
-  // Check if confetti is disabled (stored in localStorage)
-  if (localStorage.getItem('choregami_confetti_disabled') === 'true') {
-    console.log('Confetti disabled by user preference');
+  // Trigger haptics and sound immediately (even if confetti library not loaded)
+  triggerHaptics(type);
+  triggerCelebrationSound(type);
+
+  // Check if confetti library is loaded
+  if (typeof confetti === 'undefined') {
+    console.warn('canvas-confetti library not loaded (haptics/sound still triggered)');
     return;
   }
 
@@ -101,7 +175,7 @@ function triggerConfetti(type = 'chore_complete', duration = 2500) {
   // Finale burst (delayed)
   setTimeout(() => confetti(config.finale), 400);
 
-  console.log(`Confetti triggered: ${type}`);
+  console.log(`Celebration triggered: ${type}`);
 }
 
 /**
@@ -135,4 +209,6 @@ window.choreGamiConfetti = {
   trigger: triggerConfetti,
   setEnabled: setConfettiEnabled,
   isEnabled: isConfettiEnabled,
+  triggerHaptics: triggerHaptics,
+  triggerSound: triggerCelebrationSound,
 };
