@@ -463,6 +463,7 @@ This link expires in 7 days.
 - [x] Stale localStorage token auto-cleared on invalid invite
 - [x] "Start over" link on /setup page for stuck users
 - [x] Re-inviting soft-deleted user restores profile (not duplicate key error)
+- [x] Pending invite banner on /setup page (auto-detects invite by email)
 
 ## Success Criteria
 
@@ -508,6 +509,7 @@ This data helps prioritize A2P 10DLC registration effort.
 - [SMS Invite Demand Tracking Decision](../decisions/20260128_sms_invite_demand_tracking.md) - Why phone button stays with demand capture
 - [Family Owner SQL Queries](../../sql/queries/family_owner.sql) - Backfill and owner lookup queries
 - [SMS Invite Demand Queries](../../sql/queries/sms_invite_demand.sql) - Track users requesting SMS invites
+- [Pending Invite Lookup Queries](../../sql/queries/pending_invite_lookup.sql) - Find invites by token or email
 
 ---
 
@@ -757,6 +759,29 @@ if (existingProfile?.is_deleted) {
     .eq("id", existingProfile.id);
 }
 ```
+
+### Pending Invite Banner on /setup
+
+**Problem**: User is authenticated but has no family profile (was deleted or never joined). They land on `/setup` but might not realize they have a pending invite waiting.
+
+**Solution**: `/setup` now checks for pending invites by the user's email using `find_invite_by_email()` SQL function. If found, shows a prominent banner:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ 🎉  You're invited to join GK Family!                   │
+│     Dad sent you an invite.                             │
+│     [Join Family]                                       │
+└─────────────────────────────────────────────────────────┘
+│ Or create your own family below                         │
+```
+
+**Implementation**:
+- New SQL function: `find_invite_by_email(p_email text)`
+- New method: `InviteService.findByEmail(email)`
+- `/setup` GET handler checks for pending invite and passes to page
+- Banner links directly to `/join?token=xxx`
+
+**See**: [`sql/queries/pending_invite_lookup.sql`](../../sql/queries/pending_invite_lookup.sql)
 
 ---
 
