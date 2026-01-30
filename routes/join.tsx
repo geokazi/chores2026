@@ -15,9 +15,6 @@ import { InviteService } from "../lib/services/invite-service.ts";
 interface JoinPageData {
   error?: string;
   familyName?: string;
-  inviterName?: string;
-  token?: string;
-  isLoggedIn?: boolean;
   alreadyMember?: boolean;
 }
 
@@ -89,7 +86,7 @@ export const handler: Handlers<JoinPageData> = {
 };
 
 export default function JoinPage({ data }: PageProps<JoinPageData>) {
-  const { error, familyName, inviterName, token, isLoggedIn, alreadyMember } = data;
+  const { error, familyName, alreadyMember } = data;
 
   return (
     <html>
@@ -133,10 +130,6 @@ export default function JoinPage({ data }: PageProps<JoinPageData>) {
             font-weight: 600;
             color: #064e3b;
             margin: 1rem 0;
-          }
-          .join-inviter {
-            color: #666;
-            margin-bottom: 1.5rem;
           }
           .join-btn {
             display: block;
@@ -259,39 +252,7 @@ export default function JoinPage({ data }: PageProps<JoinPageData>) {
                 <div class="join-family-name">{familyName}</div>
                 <a href="/" class="join-btn join-btn-primary">Go to Dashboard</a>
               </>
-            ) : (
-              <>
-                <div class="join-emoji">🎉</div>
-                <h1 class="join-title">You're Invited!</h1>
-                <p class="join-subtitle">{inviterName} invited you to join</p>
-                <div class="join-family-name">{familyName}</div>
-                <p class="join-inviter">on ChoreGami</p>
-
-                {isLoggedIn === false && (
-                  <>
-                    {/* Store token in localStorage before OAuth redirect */}
-                    <script dangerouslySetInnerHTML={{
-                      __html: `localStorage.setItem('pendingInviteToken', '${token}');`
-                    }} />
-                    <a
-                      href={`/login?redirect=${encodeURIComponent(`/join?token=${token}`)}`}
-                      class="join-btn join-btn-primary"
-                    >
-                      Sign In to Join
-                    </a>
-                    <a
-                      href={`/login?redirect=${encodeURIComponent(`/join?token=${token}`)}&signup=true`}
-                      class="join-btn join-btn-secondary"
-                    >
-                      Create Account
-                    </a>
-                    <p style={{ color: "#888", fontSize: "0.875rem", marginTop: "1rem" }}>
-                      Sign in or create an account to join this family
-                    </p>
-                  </>
-                )}
-              </>
-            )}
+            ) : null}
           </div>
         </div>
       </body>

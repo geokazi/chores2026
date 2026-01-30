@@ -454,32 +454,6 @@ export default function LoginPage({ data }: PageProps<LoginPageData>) {
           margin: 0.75rem 0 0 0;
           opacity: 1;
         }
-        .invite-banner {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-          border: 2px solid #10b981;
-          border-radius: 12px;
-          padding: 1rem;
-          margin-bottom: 1rem;
-        }
-        .invite-emoji {
-          font-size: 2rem;
-        }
-        .invite-text {
-          display: flex;
-          flex-direction: column;
-          gap: 0.25rem;
-        }
-        .invite-text strong {
-          color: #064e3b;
-          font-size: 1rem;
-        }
-        .invite-from {
-          color: #059669;
-          font-size: 0.875rem;
-        }
         .error-message {
           background: #fee;
           color: var(--color-warning);
