@@ -462,6 +462,7 @@ This link expires in 7 days.
 - [x] Self-deletion triggers auto-logout
 - [x] Stale localStorage token auto-cleared on invalid invite
 - [x] "Start over" link on /setup page for stuck users
+- [x] Re-inviting soft-deleted user restores profile (not duplicate key error)
 
 ## Success Criteria
 
@@ -721,6 +722,39 @@ Clicking clears localStorage and redirects to `/logout`.
 if (result.deletedSelf) {
   localStorage.removeItem('pendingInviteToken');
   globalThis.location.href = '/logout?reason=left_family';
+}
+```
+
+### Re-inviting Soft-Deleted Users
+
+**Problem**: User was removed from family (soft-deleted), then re-invited. `acceptInvite()` tried to INSERT a new profile, but unique constraint on `(user_id, family_id)` failed because soft-deleted record still exists.
+
+**Error**:
+```
+duplicate key value violates unique constraint "family_profiles_user_id_family_id_key"
+Key (user_id, family_id)=(xxx, yyy) already exists.
+```
+
+**Solution**: `acceptInvite()` now checks for existing soft-deleted profiles before inserting:
+1. Query for profile with matching `user_id + family_id`
+2. If found and `is_deleted = true` → UPDATE to restore (set `is_deleted = false`, update name/role)
+3. If found and `is_deleted = false` → Return error "already a member"
+4. If not found → INSERT new profile
+
+```typescript
+// Check if soft-deleted profile exists
+const { data: existingProfile } = await this.supabase
+  .from("family_profiles")
+  .select("id, is_deleted")
+  .eq("family_id", familyId)
+  .eq("user_id", userId)
+  .single();
+
+if (existingProfile?.is_deleted) {
+  // Restore soft-deleted profile
+  await this.supabase.from("family_profiles")
+    .update({ is_deleted: false, name: profileName, role: invite.role })
+    .eq("id", existingProfile.id);
 }
 ```
 

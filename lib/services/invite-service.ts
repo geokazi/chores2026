@@ -172,7 +172,7 @@ export class InviteService {
     };
   }
 
-  /** Accept invite: create profile, remove from pending */
+  /** Accept invite: create or restore profile, remove from pending */
   async acceptInvite(token: string, userId: string): Promise<InviteResult> {
     const found = await this.findByToken(token);
     if (!found) {
@@ -180,22 +180,54 @@ export class InviteService {
     }
 
     const { invite, familyId } = found;
-
-    // Create profile with role from invite
     const defaultName = invite.role === "parent" ? "Parent" : "Teen";
-    const { error: profileError } = await this.supabase
-      .from("family_profiles")
-      .insert({
-        family_id: familyId,
-        user_id: userId,
-        name: invite.name || defaultName,
-        role: invite.role,  // Use role from invite (parent or child)
-        current_points: 0,
-      });
+    const profileName = invite.name || defaultName;
 
-    if (profileError) {
-      console.error("[invite] Profile creation error:", profileError);
-      return { success: false, error: "Failed to join family" };
+    // Check if soft-deleted profile exists (user was previously in this family)
+    const { data: existingProfile } = await this.supabase
+      .from("family_profiles")
+      .select("id, is_deleted")
+      .eq("family_id", familyId)
+      .eq("user_id", userId)
+      .single();
+
+    if (existingProfile) {
+      if (existingProfile.is_deleted) {
+        // Restore soft-deleted profile with updated info
+        const { error: restoreError } = await this.supabase
+          .from("family_profiles")
+          .update({
+            is_deleted: false,
+            name: profileName,
+            role: invite.role,
+          })
+          .eq("id", existingProfile.id);
+
+        if (restoreError) {
+          console.error("[invite] Profile restore error:", restoreError);
+          return { success: false, error: "Failed to rejoin family" };
+        }
+        console.log("[invite] Restored soft-deleted profile:", existingProfile.id);
+      } else {
+        // Profile already exists and is active
+        return { success: false, error: "You are already a member of this family" };
+      }
+    } else {
+      // Create new profile
+      const { error: profileError } = await this.supabase
+        .from("family_profiles")
+        .insert({
+          family_id: familyId,
+          user_id: userId,
+          name: profileName,
+          role: invite.role,
+          current_points: 0,
+        });
+
+      if (profileError) {
+        console.error("[invite] Profile creation error:", profileError);
+        return { success: false, error: "Failed to join family" };
+      }
     }
 
     // Remove from pending
