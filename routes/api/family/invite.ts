@@ -27,7 +27,10 @@ export const handler: Handlers = {
       return Response.json({ success: false, error: "Invalid request body" }, { status: 400 });
     }
 
-    const { channel, contact, name } = body;
+    const { channel, contact, name, role } = body;
+
+    // Validate role (default to parent)
+    const inviteRole = role === "child" ? "child" : "parent";
 
     // Validate channel
     if (!channel || !["email", "phone"].includes(channel)) {
@@ -58,7 +61,8 @@ export const handler: Handlers = {
       contact,
       session.user.profileId!,
       session.user.profileName || "A family member",
-      name
+      name,
+      inviteRole
     );
 
     if (!result.success || !result.invite) {

@@ -26,6 +26,7 @@ export default function FamilyMembersSection({ members }: FamilyMembersSectionPr
   const [inviteChannel, setInviteChannel] = useState<"email" | "phone">("email");
   const [inviteContact, setInviteContact] = useState("");
   const [inviteName, setInviteName] = useState("");
+  const [inviteRole, setInviteRole] = useState<"parent" | "child">("parent");
   const [isInviting, setIsInviting] = useState(false);
   const [inviteResult, setInviteResult] = useState<{ success?: boolean; message?: string } | null>(null);
 
@@ -115,6 +116,7 @@ export default function FamilyMembersSection({ members }: FamilyMembersSectionPr
     setInviteChannel("email");
     setInviteContact("");
     setInviteName("");
+    setInviteRole("parent");
     setInviteResult(null);
     setShowInviteModal(true);
   };
@@ -133,6 +135,7 @@ export default function FamilyMembersSection({ members }: FamilyMembersSectionPr
           channel: inviteChannel,
           contact: inviteContact.trim(),
           name: inviteName.trim() || undefined,
+          role: inviteRole,
         }),
       });
 
@@ -445,6 +448,65 @@ export default function FamilyMembersSection({ members }: FamilyMembersSectionPr
                   fontSize: "1rem",
                 }}
               />
+            </div>
+
+            {/* Role selector */}
+            <div style={{ marginTop: "1rem" }}>
+              <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "500" }}>
+                Role
+              </label>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                <label style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: "0.75rem",
+                  padding: "0.75rem",
+                  borderRadius: "6px",
+                  border: `2px solid ${inviteRole === "parent" ? "#10b981" : "#e5e7eb"}`,
+                  background: inviteRole === "parent" ? "#f0fdf4" : "white",
+                  cursor: "pointer",
+                }}>
+                  <input
+                    type="radio"
+                    name="inviteRole"
+                    value="parent"
+                    checked={inviteRole === "parent"}
+                    onChange={() => setInviteRole("parent")}
+                    style={{ marginTop: "0.125rem" }}
+                  />
+                  <div>
+                    <div style={{ fontWeight: "500" }}>👨‍👩‍👧‍👦 Co-parent</div>
+                    <div style={{ fontSize: "0.8rem", color: "#666" }}>
+                      Full access: manage family, adjust points, invite others
+                    </div>
+                  </div>
+                </label>
+                <label style={{
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: "0.75rem",
+                  padding: "0.75rem",
+                  borderRadius: "6px",
+                  border: `2px solid ${inviteRole === "child" ? "#10b981" : "#e5e7eb"}`,
+                  background: inviteRole === "child" ? "#f0fdf4" : "white",
+                  cursor: "pointer",
+                }}>
+                  <input
+                    type="radio"
+                    name="inviteRole"
+                    value="child"
+                    checked={inviteRole === "child"}
+                    onChange={() => setInviteRole("child")}
+                    style={{ marginTop: "0.125rem" }}
+                  />
+                  <div>
+                    <div style={{ fontWeight: "500" }}>🧑 Teen</div>
+                    <div style={{ fontSize: "0.8rem", color: "#666" }}>
+                      Own login, can complete chores only (no management access)
+                    </div>
+                  </div>
+                </label>
+              </div>
             </div>
 
             <p style={{ color: "#666", fontSize: "0.875rem", marginTop: "1rem" }}>

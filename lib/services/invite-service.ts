@@ -12,7 +12,7 @@ export interface PendingInvite {
   token: string;
   channel: "email" | "phone";
   contact: string;
-  role: "parent";
+  role: "parent" | "child";  // parent = co-parent, child = teen with own login
   name?: string;
   invited_by: string;
   invited_by_name: string;
@@ -55,7 +55,8 @@ export class InviteService {
     contact: string,
     invitedBy: string,
     invitedByName: string,
-    name?: string
+    name?: string,
+    role: "parent" | "child" = "parent"  // Default to parent for backwards compatibility
   ): Promise<InviteResult> {
     // Normalize contact
     const normalizedContact = channel === "phone"
@@ -80,7 +81,7 @@ export class InviteService {
       token: this.generateToken(),
       channel,
       contact: normalizedContact,
-      role: "parent",
+      role,  // Use passed role (parent or child)
       name,
       invited_by: invitedBy,
       invited_by_name: invitedByName,
@@ -180,14 +181,15 @@ export class InviteService {
 
     const { invite, familyId } = found;
 
-    // Create parent profile
+    // Create profile with role from invite
+    const defaultName = invite.role === "parent" ? "Parent" : "Teen";
     const { error: profileError } = await this.supabase
       .from("family_profiles")
       .insert({
         family_id: familyId,
         user_id: userId,
-        name: invite.name || "Parent",
-        role: "parent",
+        name: invite.name || defaultName,
+        role: invite.role,  // Use role from invite (parent or child)
         current_points: 0,
       });
 

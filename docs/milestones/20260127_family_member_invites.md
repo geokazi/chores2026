@@ -223,14 +223,14 @@
 
 ## Implementation
 
-### File Structure (~850 lines total)
+### File Structure (~920 lines total)
 
 | File | Purpose | Lines |
 |------|---------|-------|
-| `lib/services/invite-service.ts` | Token gen, validation, JSONB ops, email/SMS sending | ~306 |
-| `routes/api/family/invite.ts` | Create and send invite API | ~92 |
-| `routes/join.tsx` | Accept invite page with login flow | ~219 |
-| `islands/settings/FamilyMembersSection.tsx` | UI additions (button + modal) | ~150 added |
+| `lib/services/invite-service.ts` | Token gen, validation, JSONB ops, email/SMS sending | ~320 |
+| `routes/api/family/invite.ts` | Create and send invite API | ~96 |
+| `routes/join.tsx` | Accept invite page with login flow | ~262 |
+| `islands/settings/FamilyMembersSection.tsx` | UI (button, modal, role selector) | ~510 |
 | `sql/20260127_invite_functions.sql` | JSONB SQL functions | ~79 |
 
 ### SQL Functions (for JSONB array operations)
@@ -414,16 +414,26 @@ This link expires in 7 days.
 │  │ Alex                        │   │
 │  └─────────────────────────────┘   │
 │                                     │
+│  Role:                              │
+│  ┌─────────────────────────────┐   │
+│  │ (●) 👨‍👩‍👧‍👦 Co-parent              │   │
+│  │     Full access: manage...  │   │
+│  ├─────────────────────────────┤   │
+│  │ ( ) 🧑 Teen                  │   │
+│  │     Own login, chores only  │   │
+│  └─────────────────────────────┘   │
+│                                     │
 │        [Cancel]  [Send Invite]      │
 └─────────────────────────────────────┘
 ```
 
 ## What We're NOT Building (Simplicity)
 
-- ❌ Invite management UI (view pending, resend, revoke) - Phase 2
-- ❌ Multiple invite roles (caregiver, teen) - Phase 2
-- ❌ Invite expiry notifications - Phase 2
+- ❌ Invite management UI (view pending, resend, revoke) - Future
+- ✅ ~~Multiple invite roles (caregiver, teen)~~ - Done (Co-parent/Teen)
+- ❌ Invite expiry notifications - Future
 - ❌ Bulk invites - Not needed
+- ❌ Caregiver role (view-only) - Future if needed
 
 ## Testing Checklist
 
@@ -453,6 +463,7 @@ This link expires in 7 days.
 5. ✅ **No new database tables** (JSONB storage only)
 6. ✅ **O(1) token lookup** via SQL function
 7. ✅ **SMS demand tracking** - users clicking Phone logged to family_activity
+8. ✅ **Role selection** - invite as Co-parent OR Teen (own login, limited access)
 
 ## SMS Demand Tracking
 
@@ -488,11 +499,11 @@ This data helps prioritize A2P 10DLC registration effort.
 
 ---
 
-## Phase 2: Adult Child Invites (Assessment)
+## Role Selection for Invites
 
-### Problem Statement
+### Problem Statement (Solved)
 
-Current implementation hardcodes `role: "parent"` when accepting invites:
+Original implementation hardcoded `role: "parent"` when accepting invites:
 
 ```typescript
 // lib/services/invite-service.ts - acceptInvite()
@@ -618,20 +629,17 @@ family_profiles:
 3. **Explanation text**: Brief description of what each role can/can't do
 4. **Post-invite visibility**: Show invited role in pending invites list
 
-### Decision: Defer to Phase 2
+### Implementation: ✅ Complete (Jan 29, 2026)
 
-**Recommendation**: Implement when there's demand signal.
+Role selector added to invite modal. Changes:
 
-**Why defer**:
-- Current use case (invite spouse/co-parent) works today
-- Teen invite is a valid need but less common than co-parent
-- ~20 lines to implement when needed
-- Can track demand similar to SMS tracking
+| File | Change | Lines |
+|------|--------|-------|
+| `lib/services/invite-service.ts` | Accept `role` param, use in profile creation | ~8 |
+| `routes/api/family/invite.ts` | Pass `role` from request body | ~4 |
+| `islands/settings/FamilyMembersSection.tsx` | Role selector UI (Co-parent/Teen) | ~50 |
 
-**When to implement**:
-- User feedback requesting teen invites
-- Support tickets about "invite my teenager"
-- Feature request in family_activity demand tracking
+**Total**: ~62 lines added
 
 ---
 
