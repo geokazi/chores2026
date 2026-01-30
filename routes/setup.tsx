@@ -316,7 +316,34 @@ export default function SetupPage({ data }: PageProps<SetupPageData>) {
 
         <div class="setup-footer">
           <p class="help-note">You can add more kids, change templates, or set a parent PIN in Settings</p>
+          <div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid #e5e5e5" }}>
+            <button
+              type="button"
+              onClick="startOver()"
+              style={{
+                background: "none",
+                border: "none",
+                color: "#666",
+                fontSize: "0.875rem",
+                cursor: "pointer",
+                textDecoration: "underline",
+              }}
+            >
+              Wrong account? Start over
+            </button>
+          </div>
         </div>
+
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            function startOver() {
+              // Clear any stale invite tokens
+              localStorage.removeItem('pendingInviteToken');
+              // Redirect to logout which clears session and goes to login
+              window.location.href = '/logout?reason=restart';
+            }
+          `
+        }} />
 
         <AppFooter />
       </div>
