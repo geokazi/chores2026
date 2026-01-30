@@ -237,7 +237,18 @@ export default function SetupPage({ data }: PageProps<SetupPageData>) {
 
         <div class="welcome-message">
           Welcome! Let's set up your family.
-          {email && <span class="email-hint">({email})</span>}
+          {email && (
+            <>
+              <span class="email-hint">({email})</span>
+              <button
+                type="button"
+                onClick="startOver()"
+                class="start-over-link"
+              >
+                Not you? Start over
+              </button>
+            </>
+          )}
         </div>
 
         {error && <div class="error-message">{error}</div>}
@@ -316,30 +327,12 @@ export default function SetupPage({ data }: PageProps<SetupPageData>) {
 
         <div class="setup-footer">
           <p class="help-note">You can add more kids, change templates, or set a parent PIN in Settings</p>
-          <div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid #e5e5e5" }}>
-            <button
-              type="button"
-              onClick="startOver()"
-              style={{
-                background: "none",
-                border: "none",
-                color: "#666",
-                fontSize: "0.875rem",
-                cursor: "pointer",
-                textDecoration: "underline",
-              }}
-            >
-              Wrong account? Start over
-            </button>
-          </div>
         </div>
 
         <script dangerouslySetInnerHTML={{
           __html: `
             function startOver() {
-              // Clear any stale invite tokens
               localStorage.removeItem('pendingInviteToken');
-              // Redirect to logout which clears session and goes to login
               window.location.href = '/logout?reason=restart';
             }
           `
@@ -393,6 +386,19 @@ export default function SetupPage({ data }: PageProps<SetupPageData>) {
           font-size: 0.75rem;
           color: #666;
           margin-top: 0.25rem;
+        }
+        .start-over-link {
+          display: block;
+          background: none;
+          border: none;
+          color: #888;
+          font-size: 0.75rem;
+          cursor: pointer;
+          text-decoration: underline;
+          margin-top: 0.5rem;
+        }
+        .start-over-link:hover {
+          color: #666;
         }
         .error-message {
           background: #fee;
