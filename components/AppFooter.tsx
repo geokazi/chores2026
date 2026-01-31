@@ -53,17 +53,6 @@ export default function AppFooter({ style = "light" }: AppFooterProps) {
           {version}
         </span>
       </div>
-      <style>
-        {`
-          .version-footer .version-text {
-            opacity: 0;
-            transition: opacity 0.3s ease;
-          }
-          .version-footer:hover .version-text {
-            opacity: 1;
-          }
-        `}
-      </style>
     </footer>
   );
 }
