@@ -193,48 +193,16 @@ export default function AppHeader({
                 )}
               </div>
 
-              {/* Kid shortcuts */}
-              {kids.length > 0 && (
-                <div class="nav-section">
-                  <span class="nav-section-label">Quick View</span>
-                  {kids.map((kid) => (
-                    <button
-                      key={kid.id}
-                      class={`nav-item ${currentUser?.id === kid.id ? "active" : ""}`}
-                      onClick={async () => {
-                        const { ActiveKidSessionManager } = await import("../lib/active-kid-session.ts");
-                        ActiveKidSessionManager.setActiveKid(kid.id, kid.name);
-                        window.location.href = "/kid/dashboard";
-                      }}
-                    >
-                      <span class="nav-icon">{kid.avatar_emoji || "🧒"}</span>
-                      <span>{kid.name}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {/* Actions */}
+              {/* Settings */}
               <div class="nav-section">
-                <button class="nav-item" onClick={handleSwitchUser}>
-                  <span class="nav-icon">👥</span>
-                  <span>Switch User</span>
-                </button>
                 <a href="/parent/settings" class={`nav-item ${currentPage === "settings" ? "active" : ""}`}>
                   <span class="nav-icon">⚙️</span>
                   <span>Settings</span>
                 </a>
-                {currentUser?.user_id && (
-                  <a href="/share" class="nav-item">
-                    <span class="nav-icon">🎁</span>
-                    <span>Share ChoreGami</span>
-                  </a>
-                )}
               </div>
 
-              {/* Theme picker */}
-              <div class="nav-section">
-                <span class="nav-section-label">Theme</span>
+              {/* Theme picker (compact, no label) */}
+              <div class="nav-section nav-section-footer">
                 <div class="nav-theme-picker">
                   {THEMES.map((theme) => (
                     <button
@@ -247,14 +215,6 @@ export default function AppHeader({
                     </button>
                   ))}
                 </div>
-              </div>
-
-              {/* Logout */}
-              <div class="nav-section nav-section-bottom">
-                <button class="nav-item nav-logout" onClick={handleLogout}>
-                  <span class="nav-icon">🚪</span>
-                  <span>Logout</span>
-                </button>
               </div>
             </div>
           </nav>
@@ -443,6 +403,11 @@ export default function AppHeader({
         }
         .nav-section-bottom {
           margin-top: auto;
+        }
+        .nav-section-footer {
+          margin-top: auto;
+          padding-top: 0.75rem;
+          border-top: 1px solid var(--color-border, #e5e7eb);
         }
         .nav-item {
           display: flex;
