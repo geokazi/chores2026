@@ -194,7 +194,7 @@ $$ LANGUAGE plpgsql;
 │  🎁 Share ChoreGami                                 │
 │                                                     │
 │  Tell a friend. Get 1 free month when they join.   │
-│  Most families discover ChoreGami through friends. │
+│  Good things spread by word of mouth.              │
 │                                                     │
 │  Your referral link                                 │
 │  ┌───────────────────────────────────┬─────┬─────┐ │
@@ -229,7 +229,7 @@ $$ LANGUAGE plpgsql;
 | Element | Copy | Reasoning |
 |---------|------|-----------|
 | Label | "Your referral link" | Ownership language, removes hesitation |
-| Social proof | "Most families discover ChoreGami through friends" | Normalizes sharing, trust signal |
+| Social proof | "Good things spread by word of mouth" | Universal, teen-friendly |
 | Reward framing | "1 free month unlocked" | Achievement/gamification, not accounting |
 
 ---
@@ -370,7 +370,7 @@ const stats = await referralService.getStats(familyId);
 
 // Encouragement based on progress
 const encouragement = conversions === 0
-  ? "Be the first to spread the word!"
+  ? "Know someone who'd love this?"
   : conversions < 6
   ? `${6 - monthsEarned} more to max out your free months!`
   : "You're a ChoreGami champion! 🏆";

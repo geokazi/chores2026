@@ -109,7 +109,7 @@ export default function SharePage({ data }: PageProps<SharePageData>) {
 
   // Fun messages based on progress
   const encouragement = referral.conversions === 0
-    ? "Be the first to spread the word!"
+    ? "Know someone who'd love this?"
     : referral.conversions === 1
     ? "You're on a roll! Keep sharing!"
     : referral.conversions < 6

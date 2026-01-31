@@ -62,7 +62,7 @@ export default function ShareReferralCard({ code, conversions, monthsEarned, bas
       try {
         await navigator.share({
           title: "Join my family on ChoreGami!",
-          text: "ChoreGami makes family chores fun with points and rewards. Join us!",
+          text: "ChoreGami helps families stay organized with chores, events, and more. Check it out!",
           url: shareUrl,
         });
         console.log("[Referral] Share completed");
@@ -87,7 +87,7 @@ export default function ShareReferralCard({ code, conversions, monthsEarned, bas
         Tell a friend. Get 1 free month when they join.
       </p>
       <p class="referral-social-proof">
-        Most families discover ChoreGami through friends.
+        Good things spread by word of mouth.
       </p>
 
       <div class="referral-link-section">
