@@ -51,7 +51,7 @@ interface FamilySettingsProps {
   digestChannel?: "email" | "sms" | null;
   hasBothChannels?: boolean;
   notificationPrefs?: { weekly_summary?: boolean; daily_digest?: boolean; digest_channel?: string; sms_limit_hit?: boolean };
-  referral?: { code: string; conversions: number; monthsEarned: number };
+  referral?: { code: string; conversions: number; monthsEarned: number; baseUrl: string };
 }
 
 export default function FamilySettings({ family, members, settings, digestChannel, hasBothChannels, notificationPrefs, referral }: FamilySettingsProps) {
@@ -247,6 +247,7 @@ export default function FamilySettings({ family, members, settings, digestChanne
           code={referral.code}
           conversions={referral.conversions}
           monthsEarned={referral.monthsEarned}
+          baseUrl={referral.baseUrl}
         />
       )}
 

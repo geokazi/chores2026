@@ -25,7 +25,7 @@ interface ParentSettingsData {
   digestChannel?: "email" | "sms" | null;
   hasBothChannels?: boolean;
   notificationPrefs?: { weekly_summary?: boolean; daily_digest?: boolean; digest_channel?: string; sms_limit_hit?: boolean };
-  referral?: { code: string; conversions: number; monthsEarned: number };
+  referral?: { code: string; conversions: number; monthsEarned: number; baseUrl: string };
   error?: string;
 }
 
@@ -98,14 +98,15 @@ export const handler: Handlers<ParentSettingsData> = {
     }
 
     // Load or create referral code
-    let referral: { code: string; conversions: number; monthsEarned: number } | undefined;
+    const appBaseUrl = Deno.env.get("APP_BASE_URL") || "https://choregami.fly.dev";
+    let referral: { code: string; conversions: number; monthsEarned: number; baseUrl: string } | undefined;
     try {
       console.log("[Referral] Loading referral for family:", family.id);
       const referralService = new ReferralService();
       const stats = await referralService.getStats(family.id);
       console.log("[Referral] Stats loaded:", stats);
       if (stats) {
-        referral = stats;
+        referral = { ...stats, baseUrl: appBaseUrl };
       }
     } catch (e) {
       console.error("[Referral] Failed to load referral:", e);

@@ -5,6 +5,7 @@ interface ShareReferralCardProps {
   code: string;
   conversions: number;
   monthsEarned: number;
+  baseUrl: string;
 }
 
 /** Track feature interaction for analytics */
@@ -16,9 +17,9 @@ const trackFeature = (feature: string) => {
   }).catch(() => {}); // Non-blocking
 };
 
-export default function ShareReferralCard({ code, conversions, monthsEarned }: ShareReferralCardProps) {
+export default function ShareReferralCard({ code, conversions, monthsEarned, baseUrl }: ShareReferralCardProps) {
   const copied = useSignal(false);
-  const shareUrl = `https://choregami.app/r/${code}`;
+  const shareUrl = `${baseUrl}/r/${code}`;
 
   // Debug logging
   console.log("[Referral] ShareReferralCard mounted", { code, conversions, monthsEarned, shareUrl });
