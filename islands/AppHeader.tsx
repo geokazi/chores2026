@@ -280,10 +280,7 @@ export default function AppHeader({
             <hr />
             {/* Share ChoreGami - only for users with their own account (parents, teens) */}
             {currentUser?.user_id && (
-              <a
-                href="/share"
-                style={{ display: "block", padding: "0.75rem 1rem", color: "var(--color-text)", textDecoration: "none", borderRadius: "8px", fontSize: "1rem" }}
-              >
+              <a href="/share">
                 🎁 Share ChoreGami
               </a>
             )}
@@ -314,9 +311,10 @@ export default function AppHeader({
           cursor: pointer;
           padding: 0.5rem;
           border-radius: 8px;
-          transition: background 0.2s;
+          transition: background 0.2s, transform 0.1s;
         }
         .header-btn:hover { background: rgba(255,255,255,0.2); }
+        .header-btn:active { transform: scale(0.95); }
         .header-title {
           margin: 0;
           font-size: 1.25rem;
@@ -328,79 +326,149 @@ export default function AppHeader({
           left: 0;
           right: 0;
           bottom: 0;
-          background: rgba(0,0,0,0.5);
+          background: rgba(0,0,0,0.4);
           z-index: 200;
-          animation: fadeIn 0.2s ease;
+          animation: fadeIn 0.15s ease;
+          backdrop-filter: blur(2px);
         }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .nav-menu, .user-menu {
+
+        /* Left nav menu */
+        .nav-menu {
           position: absolute;
           top: 0;
+          left: 0;
           background: var(--color-card);
-          min-width: 240px;
+          width: 260px;
+          max-width: 85vw;
           height: 100vh;
-          padding: 1rem;
+          padding: 0.75rem;
           display: flex;
           flex-direction: column;
-          gap: 0.5rem;
+          gap: 2px;
           animation: slideIn 0.2s ease;
-          box-shadow: 4px 0 20px rgba(0,0,0,0.2);
+          box-shadow: 4px 0 24px rgba(0,0,0,0.15);
+          overflow-y: auto;
+          overscroll-behavior: contain;
         }
-        .nav-menu { left: 0; }
-        .user-menu { right: 0; height: auto; border-radius: 0 0 0 12px; }
         @keyframes slideIn { from { transform: translateX(-100%); } to { transform: translateX(0); } }
-        .user-menu { animation-name: slideInRight; }
+
+        /* Right user menu */
+        .user-menu {
+          position: absolute;
+          top: 0;
+          right: 0;
+          background: var(--color-card);
+          width: 240px;
+          max-width: 80vw;
+          max-height: 85vh;
+          padding: 0.75rem;
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+          animation: slideInRight 0.2s ease;
+          box-shadow: -4px 4px 24px rgba(0,0,0,0.15);
+          border-radius: 0 0 0 16px;
+          overflow-y: auto;
+        }
         @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
-        .nav-menu a, .nav-menu button, .user-menu button {
-          display: block;
-          padding: 0.75rem 1rem;
+
+        /* Menu items - compact & playful */
+        .nav-menu a, .nav-menu button, .user-menu a, .user-menu button {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.6rem 0.75rem;
           color: var(--color-text);
           text-decoration: none;
-          border-radius: 8px;
-          font-size: 1rem;
+          border-radius: 10px;
+          font-size: 0.95rem;
+          font-weight: 500;
           background: none;
           border: none;
           text-align: left;
           cursor: pointer;
           width: 100%;
+          transition: background 0.15s, transform 0.1s;
         }
-        .nav-menu a:hover, .nav-menu button:hover, .user-menu button:hover { background: var(--color-bg); }
+        .nav-menu a:hover, .nav-menu button:hover,
+        .user-menu a:hover, .user-menu button:hover {
+          background: var(--color-bg);
+          transform: translateX(2px);
+        }
+        .nav-menu a:active, .nav-menu button:active,
+        .user-menu a:active, .user-menu button:active {
+          transform: scale(0.98);
+        }
         .nav-menu a.active, .nav-menu button.active {
           background: var(--color-primary);
           color: white;
-          position: relative;
+          font-weight: 600;
         }
-        .nav-menu a.active::before, .nav-menu button.active::before {
-          content: "";
-          position: absolute;
-          left: 0;
-          top: 50%;
-          transform: translateY(-50%);
-          width: 4px;
-          height: 60%;
-          background: white;
-          border-radius: 0 2px 2px 0;
+
+        /* Section dividers */
+        .menu-section {
+          margin-top: 0.5rem;
+          padding-top: 0.5rem;
+          border-top: 1px solid var(--color-bg);
         }
-        .menu-section { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--color-bg); }
-        .menu-label { font-size: 0.75rem; color: var(--color-text-light); text-transform: uppercase; padding: 0 1rem; }
+        .menu-label {
+          display: block;
+          font-size: 0.65rem;
+          font-weight: 600;
+          color: var(--text-secondary, #888);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          padding: 0.25rem 0.75rem 0.4rem;
+        }
         .kid-link { font-size: 0.9rem; }
-        .theme-picker { display: flex; gap: 0.5rem; padding: 0.5rem 1rem; }
-        .theme-btn {
-          width: 40px;
-          height: 40px;
-          border: 2px solid var(--color-bg);
-          border-radius: 8px;
-          font-size: 1.25rem;
-          cursor: pointer;
-          background: var(--color-card);
-          transition: transform 0.2s;
+
+        /* Theme picker - inline & compact */
+        .theme-picker {
+          display: flex;
+          gap: 0.4rem;
+          padding: 0.25rem 0.5rem 0.5rem;
         }
-        .theme-btn:hover { transform: scale(1.1); }
-        .theme-btn.active { border-color: var(--color-primary); background: var(--color-bg); }
-        .user-info { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem; }
-        .user-avatar { font-size: 2rem; }
-        .user-name { font-weight: 600; color: var(--color-text); }
-        .user-menu hr { border: none; border-top: 1px solid var(--color-bg); margin: 0.5rem 0; }
+        .theme-btn {
+          width: 36px;
+          height: 36px;
+          border: 2px solid transparent;
+          border-radius: 10px;
+          font-size: 1.1rem;
+          cursor: pointer;
+          background: var(--color-bg);
+          transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+        }
+        .theme-btn:hover {
+          transform: scale(1.1);
+          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .theme-btn:active { transform: scale(0.95); }
+        .theme-btn.active {
+          border-color: var(--color-primary);
+          box-shadow: 0 0 0 2px var(--color-bg), 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        /* User info header */
+        .user-info {
+          display: flex;
+          align-items: center;
+          gap: 0.6rem;
+          padding: 0.5rem 0.5rem 0.75rem;
+        }
+        .user-avatar { font-size: 1.75rem; }
+        .user-name {
+          font-weight: 600;
+          font-size: 1rem;
+          color: var(--color-text);
+        }
+        .user-menu hr {
+          border: none;
+          border-top: 1px solid var(--color-bg);
+          margin: 0.4rem 0;
+        }
+
+        /* Badge dots */
         .header-badge-dot {
           position: absolute;
           top: 6px;
