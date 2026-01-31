@@ -644,3 +644,88 @@ button:disabled,
     margin: 1rem;
   }
 }
+
+/* =============================================================================
+   CELEBRATION ANIMATIONS
+   Used by confetti.js for chore completion feedback
+   ============================================================================= */
+
+/* Standard chore completion - Green pulse effect */
+.chore-card-success {
+  animation: success-pulse 0.6s ease-out forwards;
+  position: relative;
+  z-index: 10;
+}
+
+@keyframes success-pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  30% {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px 10px rgba(16, 185, 129, 0.4);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 40px 20px rgba(16, 185, 129, 0);
+  }
+}
+
+/* Milestone achievement - Golden shimmer effect */
+.milestone-glow {
+  animation: milestone-shimmer 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  z-index: 20;
+}
+
+@keyframes milestone-shimmer {
+  0% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  20% {
+    transform: scale(1.08);
+    box-shadow:
+      0 0 15px #f59e0b,
+      0 0 30px #fbbf24,
+      0 0 45px #fcd34d;
+    filter: brightness(1.2);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 60px 30px rgba(245, 158, 11, 0);
+    filter: brightness(1);
+  }
+}
+
+/* Weekly finale - Screen shake effect */
+.weekly-finale-shake {
+  animation: screen-shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes screen-shake {
+  10%, 90% { transform: translate3d(-1px, 0, 0); }
+  20%, 80% { transform: translate3d(2px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+  40%, 60% { transform: translate3d(4px, 0, 0); }
+}
+
+/* Bonus points - Amber glow (for bonus_points type) */
+.bonus-glow {
+  animation: bonus-pulse 0.7s ease-out forwards;
+}
+
+@keyframes bonus-pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7);
+  }
+  30% {
+    transform: scale(1.06);
+    box-shadow: 0 0 25px 12px rgba(245, 158, 11, 0.5);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 50px 25px rgba(245, 158, 11, 0);
+  }
+}

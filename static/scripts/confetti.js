@@ -141,6 +141,7 @@ function triggerHaptics(type = 'chore_complete') {
     chore_complete: [100, 50, 100],      // Quick double buzz
     bonus_points: [50, 30, 50, 30, 150], // Exciting triple buzz
     milestone: [100, 50, 100, 50, 200],  // Celebratory pattern
+    weekly_finale: [100, 50, 100, 50, 100, 50, 300], // Epic long pattern
   };
 
   // Android / Standard Web Vibration API
@@ -277,6 +278,87 @@ function isConfettiEnabled() {
   return localStorage.getItem('choregami_confetti_disabled') !== 'true';
 }
 
+/**
+ * Trigger 5-second sustained confetti rain for weekly completion
+ * The "Boss Level" celebration - ticker-tape parade effect
+ */
+function triggerWeeklyFinale() {
+  if (!isConfettiEnabled()) return;
+  if (typeof confetti === 'undefined') return;
+
+  const duration = 5000; // 5 seconds
+  const end = Date.now() + duration;
+  const colors = ['#3b82f6', '#fbbf24', '#10b981', '#ec4899', '#8b5cf6'];
+
+  // Initial milestone sound and haptic
+  triggerHaptics('weekly_finale');
+  triggerCelebrationSound('milestone');
+
+  // Continuous confetti rain using requestAnimationFrame (battery-friendly)
+  const frame = () => {
+    // Rain from top-left
+    confetti({
+      particleCount: 3,
+      angle: 60,
+      spread: 55,
+      origin: { x: 0, y: 0 },
+      colors: colors,
+    });
+    // Rain from top-right
+    confetti({
+      particleCount: 3,
+      angle: 120,
+      spread: 55,
+      origin: { x: 1, y: 0 },
+      colors: colors,
+    });
+
+    // Keep going until time is up
+    if (Date.now() < end) {
+      requestAnimationFrame(frame);
+    }
+  };
+
+  frame();
+  console.log('Weekly Finale triggered: 5-second confetti rain');
+}
+
+/**
+ * Animate an element with success pulse or milestone glow
+ * Requires CSS classes: .chore-card-success, .milestone-glow
+ * @param {string} elementId - ID of element to animate
+ * @param {string} theme - 'chore_complete' | 'milestone'
+ */
+function animateElement(elementId, theme = 'chore_complete') {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+
+  const animationClass = theme === 'milestone' ? 'milestone-glow' : 'chore-card-success';
+
+  el.classList.add(animationClass);
+
+  // Remove class after animation ends so it can be triggered again
+  el.addEventListener('animationend', () => {
+    el.classList.remove(animationClass);
+  }, { once: true });
+}
+
+/**
+ * Apply screen shake effect to a container element
+ * Requires CSS class: .weekly-finale-shake
+ * @param {string} containerId - ID of container to shake
+ */
+function shakeContainer(containerId) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+
+  el.classList.add('weekly-finale-shake');
+
+  el.addEventListener('animationend', () => {
+    el.classList.remove('weekly-finale-shake');
+  }, { once: true });
+}
+
 // Listen for custom celebrate events
 window.addEventListener('choregami:celebrate', (event) => {
   const { type } = event.detail || {};
@@ -285,11 +367,18 @@ window.addEventListener('choregami:celebrate', (event) => {
 
 // Expose functions globally for easy access
 window.choreGamiConfetti = {
+  // Core celebrations
   trigger: triggerConfetti,
-  setEnabled: setConfettiEnabled,
-  isEnabled: isConfettiEnabled,
+  triggerWeeklyFinale: triggerWeeklyFinale,
+  // Element animations (require CSS classes)
+  animateElement: animateElement,
+  shakeContainer: shakeContainer,
+  // Sound & haptics
   triggerHaptics: triggerHaptics,
   triggerSound: triggerCelebrationSound,
+  // Settings
+  setEnabled: setConfettiEnabled,
+  isEnabled: isConfettiEnabled,
   // iOS debugging
   isIOS: isIOS,
   unlockAudio: unlockAudioContext,
