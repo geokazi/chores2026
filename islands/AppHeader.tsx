@@ -209,6 +209,14 @@ export default function AppHeader({
               ⚙️ Settings
             </a>
 
+            {/* Share ChoreGami - scrolls to referral card in settings */}
+            <a
+              href="/parent/settings#share-referral-section"
+              title="Get 1 free month when friends join"
+            >
+              🎁 Share ChoreGami
+            </a>
+
             {/* Inline Theme Picker */}
             <div class="menu-section">
               <span class="menu-label">Theme</span>

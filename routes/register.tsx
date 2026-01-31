@@ -19,6 +19,7 @@ interface RegisterPageData {
   mode: AuthMode;
   error?: string;
   otpSent?: boolean;
+  refCode?: string;  // Referral code from /r/[code] redirect
 }
 
 export const handler: Handlers<RegisterPageData> = {
@@ -26,6 +27,10 @@ export const handler: Handlers<RegisterPageData> = {
     const formData = await req.formData();
     const url = new URL(req.url);
     const mode = (url.searchParams.get("mode") || "email") as AuthMode;
+    const refCode = url.searchParams.get("ref") || formData.get("ref") as string || undefined;
+
+    // Build setup URL with ref param if present
+    const setupUrl = refCode ? `/setup?ref=${encodeURIComponent(refCode)}` : "/setup";
 
     // Honeypot check - bots fill hidden fields, humans don't
     const honeypot = formData.get("website");
@@ -107,7 +112,7 @@ export const handler: Handlers<RegisterPageData> = {
             });
 
             if (!verifyError && sessionData.session) {
-              return createSessionResponse(req, sessionData.session, "/setup", phone);
+              return createSessionResponse(req, sessionData.session, setupUrl, phone);
             }
           }
         }
@@ -206,7 +211,7 @@ export const handler: Handlers<RegisterPageData> = {
       const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
         type: "magiclink",
         email: email,
-        options: { redirectTo: new URL("/setup", req.url).toString() },
+        options: { redirectTo: new URL(setupUrl, req.url).toString() },
       });
 
       if (linkError || !linkData?.properties?.action_link) {
@@ -229,8 +234,9 @@ export const handler: Handlers<RegisterPageData> = {
     const url = new URL(req.url);
     const mode = (url.searchParams.get("mode") || "email") as AuthMode;
     const error = url.searchParams.get("error") || undefined;
+    const refCode = url.searchParams.get("ref") || undefined;
 
-    return ctx.render({ mode, error });
+    return ctx.render({ mode, error, refCode });
   },
 };
 
@@ -275,7 +281,7 @@ function createSessionResponse(req: Request, session: any, redirectTo: string, v
 }
 
 export default function RegisterPage({ data }: PageProps<RegisterPageData>) {
-  const { mode, error, otpSent } = data;
+  const { mode, error, otpSent, refCode } = data;
   const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
   const supabaseKey = Deno.env.get("SUPABASE_KEY") || "";
 
@@ -296,6 +302,8 @@ export default function RegisterPage({ data }: PageProps<RegisterPageData>) {
 
           {mode === "email" && (
             <form method="POST" class="register-form">
+              {/* Preserve referral code through form submission */}
+              {refCode && <input type="hidden" name="ref" value={refCode} />}
               {/* Honeypot field - invisible to humans, bots fill it */}
               <div style={{ position: "absolute", left: "-9999px", opacity: 0 }} aria-hidden="true">
                 <input type="text" name="website" tabIndex={-1} autoComplete="off" />

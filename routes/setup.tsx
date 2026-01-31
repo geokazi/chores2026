@@ -17,6 +17,7 @@ interface SetupPageData {
     inviterName: string;
     token: string;
   };
+  refCode?: string;  // Referral code from /r/[code] redirect
 }
 
 export const handler: Handlers<SetupPageData> = {
@@ -57,6 +58,7 @@ export const handler: Handlers<SetupPageData> = {
     // getUser hasn't propagated yet.
     const url = new URL(req.url);
     const error = url.searchParams.get("error") || undefined;
+    const refCode = url.searchParams.get("ref") || undefined;
 
     // Check if user has a pending invite by email
     let pendingInvite: SetupPageData["pendingInvite"] = undefined;
@@ -78,7 +80,7 @@ export const handler: Handlers<SetupPageData> = {
       }
     }
 
-    return ctx.render({ email: user?.email, error, pendingInvite });
+    return ctx.render({ email: user?.email, error, pendingInvite, refCode });
   },
 
   async POST(req, ctx) {
@@ -218,6 +220,30 @@ export const handler: Handlers<SetupPageData> = {
         kids: kidProfileIds.length, template: template || "skip",
       });
 
+      // Track referral conversion if ref code provided
+      const refCode = formData.get("ref") as string;
+      if (refCode) {
+        try {
+          const { ReferralService } = await import("../lib/services/referral-service.ts");
+          const referralService = new ReferralService();
+          const referrer = await referralService.findByCode(refCode);
+
+          if (referrer && referrer.familyId !== family.id) {
+            const result = await referralService.recordConversion(
+              referrer.familyId,
+              family.id,
+              familyName.trim(),
+              user.id
+            );
+            if (result.success) {
+              console.log("🎉 Referral conversion recorded:", { referrer: referrer.familyName, newFamily: familyName });
+            }
+          }
+        } catch (e) {
+          console.warn("⚠️ Referral conversion failed (non-blocking):", e);
+        }
+      }
+
       // Success -> clear any stale invite token and redirect to home
       return new Response(
         `<!DOCTYPE html><html><head><title>Setup Complete</title></head>
@@ -237,7 +263,7 @@ export const handler: Handlers<SetupPageData> = {
 };
 
 export default function SetupPage({ data }: PageProps<SetupPageData>) {
-  const { error, email, pendingInvite } = data;
+  const { error, email, pendingInvite, refCode } = data;
 
   return (
     <div class="setup-container">
@@ -297,6 +323,9 @@ export default function SetupPage({ data }: PageProps<SetupPageData>) {
         {error && <div class="error-message">{error}</div>}
 
         <form method="POST" class="setup-form">
+          {/* Preserve referral code through form submission */}
+          {refCode && <input type="hidden" name="ref" value={refCode} />}
+
           <div class="form-group">
             <label for="parentName">Your Name</label>
             <input
