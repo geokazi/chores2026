@@ -127,20 +127,49 @@ const confettiConfigs = {
   },
 };
 
+// Detect iOS (including iPads that report as MacIntel)
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
 /**
  * Trigger haptic feedback (vibration) on supported devices
+ * Uses Vibration API on Android, switch hack on iOS 18+
  * @param {string} type - Celebration type for pattern variation
  */
 function triggerHaptics(type = 'chore_complete') {
-  if (!navigator.vibrate) return;
-
   const patterns = {
     chore_complete: [100, 50, 100],      // Quick double buzz
     bonus_points: [50, 30, 50, 30, 150], // Exciting triple buzz
     milestone: [100, 50, 100, 50, 200],  // Celebratory pattern
   };
 
-  navigator.vibrate(patterns[type] || patterns.chore_complete);
+  // Android / Standard Web Vibration API
+  if (navigator.vibrate) {
+    navigator.vibrate(patterns[type] || patterns.chore_complete);
+    return;
+  }
+
+  // iOS 18+ Switch Hack: toggling a switch input triggers light haptic
+  if (isIOS) {
+    try {
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.setAttribute('switch', '');
+      input.style.cssText = 'position:fixed;top:-100px;left:-100px;opacity:0;pointer-events:none;';
+      document.body.appendChild(input);
+
+      // Toggle the switch to trigger haptic
+      input.checked = true;
+
+      // Clean up after haptic fires
+      setTimeout(() => {
+        input.checked = false;
+        input.remove();
+      }, 50);
+    } catch (e) {
+      // Silently fail - haptics are optional
+    }
+  }
 }
 
 /**
@@ -261,7 +290,8 @@ window.choreGamiConfetti = {
   isEnabled: isConfettiEnabled,
   triggerHaptics: triggerHaptics,
   triggerSound: triggerCelebrationSound,
-  // iOS audio debugging
+  // iOS debugging
+  isIOS: isIOS,
   unlockAudio: unlockAudioContext,
   isAudioUnlocked: () => audioUnlocked,
   getAudioState: () => sharedAudioContext?.state || 'no context',
