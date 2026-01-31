@@ -1,0 +1,449 @@
+# Planned: Referral "Share ChoreGami" Feature
+
+**Date**: January 30, 2026
+**Status**: 📋 Planned
+**Priority**: Growth / Marketing
+**Estimated Effort**: ~225 lines across 6 files
+
+---
+
+## Overview
+
+Enable users to share ChoreGami with friends and earn free months when referrals sign up. Targets two audiences:
+- **Parents**: Share with other parents
+- **High schoolers (teens with accounts)**: Share with friends
+
+### Business Goal
+
+Track referrer → referred relationship for future reward credit (e.g., 1 free month per signup).
+
+---
+
+## Principles Applied
+
+| Principle | How Applied |
+|-----------|-------------|
+| **Pareto 80/20** | Settings card + profile menu link covers both audiences (~60 lines UI) |
+| **Reuse existing** | Copy `InviteService` pattern, reuse SQL function patterns from `20260127_invite_functions.sql` |
+| **O(1) database** | GIN index + JSONB containment query for code lookup |
+| **No code bloat** | No separate page initially - inline share in settings |
+| **JSONB flexibility** | Add fields without migration, matches `pending_invites` pattern |
+| **Complete schema** | All reward tracking fields included upfront (no technical debt) |
+
+---
+
+## Data Structure
+
+### Storage Location
+
+```
+families.settings.apps.choregami.referral
+```
+
+### Schema
+
+```jsonc
+{
+  "code": "ABC123",                    // 6-char alphanumeric, unique
+  "created_at": "2026-01-30T12:00:00Z",
+  "conversions": [
+    {
+      "family_id": "uuid",
+      "family_name": "Smith Family",
+      "user_id": "uuid",
+      "converted_at": "2026-02-01T..."
+    }
+  ],
+  "reward_months_earned": 1,           // Increment on each conversion
+  "reward_months_redeemed": 0,         // Track what's been applied to billing
+  "last_conversion_at": "2026-02-01T..." // For activity queries
+}
+```
+
+### Why JSONB (Not Separate Table)
+
+| Factor | JSONB | Separate Table |
+|--------|-------|----------------|
+| Consistency | ✅ Matches `pending_invites` pattern | ❌ New pattern |
+| Schema flexibility | ✅ Add fields without migration | ❌ Requires ALTER |
+| O(1) lookup | ✅ GIN index + containment | ✅ Primary key |
+| Referential integrity | ❌ No FK constraints | ✅ FK to auth.users |
+| Query complexity | Medium (containment syntax) | Simple (WHERE =) |
+
+**Decision**: JSONB wins on consistency and flexibility. O(1) achieved via GIN index.
+
+---
+
+## SQL Functions
+
+**File**: `sql/20260131_referral_functions.sql`
+
+### 1. Initialize Referral (with COALESCE pattern from invite functions)
+
+```sql
+CREATE OR REPLACE FUNCTION init_family_referral(p_family_id uuid, p_code text)
+RETURNS void AS $$
+BEGIN
+  UPDATE families
+  SET settings = jsonb_set(
+    jsonb_set(
+      jsonb_set(
+        COALESCE(settings, '{}'),
+        '{apps}',
+        COALESCE(settings->'apps', '{}')
+      ),
+      '{apps,choregami}',
+      COALESCE(settings->'apps'->'choregami', '{}')
+    ),
+    '{apps,choregami,referral}',
+    jsonb_build_object(
+      'code', p_code,
+      'created_at', NOW(),
+      'conversions', '[]'::jsonb,
+      'reward_months_earned', 0,
+      'reward_months_redeemed', 0,
+      'last_conversion_at', NULL
+    )
+  )
+  WHERE id = p_family_id;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+### 2. Find Family by Referral Code (O(1) with GIN)
+
+```sql
+-- Requires GIN index on families.settings
+CREATE INDEX IF NOT EXISTS idx_families_settings_gin
+ON families USING GIN (settings);
+
+CREATE OR REPLACE FUNCTION find_family_by_referral_code(p_code text)
+RETURNS TABLE(family_id uuid, family_name text, referral jsonb) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT f.id, f.name, f.settings->'apps'->'choregami'->'referral'
+  FROM families f
+  WHERE f.settings @> jsonb_build_object(
+    'apps', jsonb_build_object(
+      'choregami', jsonb_build_object(
+        'referral', jsonb_build_object('code', p_code)
+      )
+    )
+  )
+  LIMIT 1;
+END;
+$$ LANGUAGE plpgsql STABLE;
+```
+
+### 3. Record Conversion
+
+```sql
+CREATE OR REPLACE FUNCTION record_referral_conversion(
+  p_referrer_family_id uuid,
+  p_new_family_id uuid,
+  p_new_family_name text,
+  p_new_user_id uuid
+)
+RETURNS void AS $$
+DECLARE
+  current_referral jsonb;
+  new_conversion jsonb;
+BEGIN
+  -- Get current referral data
+  SELECT settings->'apps'->'choregami'->'referral'
+  INTO current_referral
+  FROM families
+  WHERE id = p_referrer_family_id;
+
+  -- Build new conversion entry
+  new_conversion := jsonb_build_object(
+    'family_id', p_new_family_id,
+    'family_name', p_new_family_name,
+    'user_id', p_new_user_id,
+    'converted_at', NOW()
+  );
+
+  -- Update referral with new conversion
+  UPDATE families
+  SET settings = jsonb_set(
+    jsonb_set(
+      jsonb_set(
+        settings,
+        '{apps,choregami,referral,conversions}',
+        COALESCE(current_referral->'conversions', '[]'::jsonb) || new_conversion
+      ),
+      '{apps,choregami,referral,reward_months_earned}',
+      to_jsonb(COALESCE((current_referral->>'reward_months_earned')::int, 0) + 1)
+    ),
+    '{apps,choregami,referral,last_conversion_at}',
+    to_jsonb(NOW())
+  )
+  WHERE id = p_referrer_family_id;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+---
+
+## UI Design
+
+### Settings Page Card (Primary)
+
+```
+├─────────────────────────────────────────────────────┤
+│  🎁 Share ChoreGami                                 │
+│                                                     │
+│  Tell a friend. Get 1 free month when they join.   │
+│  Most families discover ChoreGami through friends. │
+│                                                     │
+│  Your referral link                                 │
+│  ┌───────────────────────────────────┬─────┬─────┐ │
+│  │ choregami.app/r/ABC123            │ 📋  │ 📤  │ │
+│  └───────────────────────────────────┴─────┴─────┘ │
+│                                                     │
+│  🎉 1 friend joined — 1 free month unlocked         │
+└─────────────────────────────────────────────────────┘
+```
+
+### Zero-State (No Conversions)
+
+```
+│  🎉 Share to unlock free months                     │
+```
+
+### Profile Menu Link (Secondary)
+
+```
+┌──────────────────────┐
+│  👤 Mom              │
+├──────────────────────┤
+│  ⚙️  Settings        │
+│  🎁 Share ChoreGami  │  ← scrolls to card in settings
+│  ─────────────────── │
+│  🚪 Log Out          │
+└──────────────────────┘
+```
+
+### UX Copy Decisions
+
+| Element | Copy | Reasoning |
+|---------|------|-----------|
+| Label | "Your referral link" | Ownership language, removes hesitation |
+| Social proof | "Most families discover ChoreGami through friends" | Normalizes sharing, trust signal |
+| Reward framing | "1 free month unlocked" | Achievement/gamification, not accounting |
+
+---
+
+## Module Structure
+
+```
+lib/services/
+  referral-service.ts      # ~80 lines - code gen, lookup, conversion
+
+islands/
+  ShareReferralCard.tsx    # ~60 lines - reusable share component
+
+routes/
+  r/[code].tsx             # ~25 lines - short URL redirect
+
+sql/
+  20260131_referral_functions.sql  # ~60 lines - 3 functions + index
+```
+
+---
+
+## Service Layer
+
+**File**: `lib/services/referral-service.ts`
+
+```typescript
+export interface Referral {
+  code: string;
+  created_at: string;
+  conversions: ReferralConversion[];
+  reward_months_earned: number;
+  reward_months_redeemed: number;
+  last_conversion_at: string | null;
+}
+
+export interface ReferralConversion {
+  family_id: string;
+  family_name: string;
+  user_id: string;
+  converted_at: string;
+}
+
+export class ReferralService {
+  private supabase: SupabaseClient;
+
+  constructor() { /* same pattern as InviteService */ }
+
+  /** Generate 6-char alphanumeric code */
+  generateCode(): string {
+    return crypto.randomUUID().replace(/-/g, "").slice(0, 6).toUpperCase();
+  }
+
+  /** Get or create referral for family (idempotent) */
+  async getOrCreateReferral(familyId: string): Promise<Referral>
+
+  /** O(1) lookup by code via GIN index */
+  async findByCode(code: string): Promise<{
+    familyId: string;
+    familyName: string;
+    referral: Referral;
+  } | null>
+
+  /** Record conversion (called during signup) */
+  async recordConversion(
+    referrerFamilyId: string,
+    newFamilyId: string,
+    newFamilyName: string,
+    newUserId: string
+  ): Promise<void>
+
+  /** Get stats for display */
+  async getStats(familyId: string): Promise<{
+    code: string;
+    conversions: number;
+    monthsEarned: number;
+    monthsRedeemed: number;
+  }>
+}
+```
+
+---
+
+## Integration Points
+
+### 1. Short URL Route (`/r/[code]`)
+
+```typescript
+// routes/r/[code].tsx
+export const handler: Handlers = {
+  async GET(req, ctx) {
+    const code = ctx.params.code;
+    return new Response(null, {
+      status: 302,
+      headers: { Location: `/register?ref=${code}` }
+    });
+  }
+};
+```
+
+### 2. Registration Integration
+
+In `/register` POST handler after successful family creation:
+
+```typescript
+const ref = url.searchParams.get("ref");
+if (ref) {
+  const referralService = new ReferralService();
+  const referrer = await referralService.findByCode(ref);
+  if (referrer && referrer.familyId !== newFamilyId) {  // Prevent self-referral
+    await referralService.recordConversion(
+      referrer.familyId,
+      newFamilyId,
+      familyName,
+      userId
+    );
+  }
+}
+```
+
+### 3. Settings Page Integration
+
+Add `ShareReferralCard` to `routes/parent/settings.tsx`:
+
+```typescript
+// In handler: get or create referral
+const referralService = new ReferralService();
+const referral = await referralService.getOrCreateReferral(familyId);
+
+// In render: add card
+<ShareReferralCard
+  code={referral.code}
+  conversions={referral.conversions.length}
+  monthsEarned={referral.reward_months_earned}
+/>
+```
+
+---
+
+## Line Count Summary
+
+| File | Lines | Notes |
+|------|-------|-------|
+| `referral-service.ts` | ~80 | Service layer |
+| `ShareReferralCard.tsx` | ~60 | Island component |
+| `r/[code].tsx` | ~25 | Redirect route |
+| `20260131_referral_functions.sql` | ~60 | SQL functions |
+| Settings integration | ~20 | Add card to existing page |
+| Profile menu link | ~5 | One link |
+| Register integration | ~15 | Conversion tracking |
+| **Total** | **~265** | Under 500 limit ✅ |
+
+---
+
+## Security Considerations
+
+| Risk | Mitigation |
+|------|------------|
+| Code enumeration | 6-char alphanumeric = 2.1B combinations, rate limit `/r/[code]` |
+| Self-referral | Check `referrer.familyId !== newFamilyId` before crediting |
+| Duplicate conversion | Check if `newFamilyId` already in conversions array |
+| Code guessing for rewards | Conversion only credited after verified signup + family creation |
+| Referral spam | One code per family (idempotent creation) |
+
+---
+
+## Future Extensibility
+
+| Future Need | Current Design Support |
+|-------------|------------------------|
+| Reward redemption | `reward_months_redeemed` field ready |
+| Referral dashboard page | `ShareReferralCard` is reusable, add route |
+| Post-celebration prompt | Import same component, show conditionally |
+| Referral tiers (5 = bonus) | Query `conversions.length` from JSONB |
+| Analytics | `last_conversion_at` enables time-based queries |
+| Expire old codes | Add `expires_at` field to JSONB (no migration) |
+| Email on conversion | Add to `recordConversion` method |
+
+---
+
+## What This Plan Does NOT Include
+
+| Excluded | Why |
+|----------|-----|
+| Separate referral page | 80/20 - card is sufficient initially |
+| Post-celebration prompt | Complexity (show logic, dismissal state) - Phase 2 |
+| Email notification on conversion | Not MVP, add later |
+| Automatic reward application | Billing integration TBD, just track for now |
+| Admin dashboard | Query JSONB directly if needed |
+
+---
+
+## Testing Checklist
+
+- [ ] Code generation produces unique 6-char codes
+- [ ] GIN index lookup returns correct family
+- [ ] Invalid code returns null (not error)
+- [ ] Conversion increments `reward_months_earned`
+- [ ] Self-referral blocked
+- [ ] Duplicate conversion blocked
+- [ ] Native share works on mobile
+- [ ] Clipboard copy works on desktop
+- [ ] Card displays correct stats
+
+---
+
+## Related Documents
+
+- [Invite Functions SQL](../../sql/20260127_invite_functions.sql) - Pattern reference
+- [InviteService](../../lib/services/invite-service.ts) - Service pattern reference
+- [Family Member Invites Milestone](../milestones/20260127_family_member_invites.md) - Similar feature
+
+---
+
+**Author**: Development Team
+**Created**: January 30, 2026
+**Status**: Ready for Implementation
