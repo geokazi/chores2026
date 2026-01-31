@@ -107,14 +107,14 @@ export default function SharePage({ data }: PageProps<SharePageData>) {
     );
   }
 
-  // Fun messages based on progress
-  const encouragement = referral.conversions === 0
-    ? "Know someone who'd love this?"
-    : referral.conversions === 1
+  // Progress message (only show when they've made progress)
+  const progressMessage = referral.conversions === 1
     ? "You're on a roll! Keep sharing!"
-    : referral.conversions < 6
-    ? `${6 - referral.monthsEarned} more to max out your free months!`
-    : "You're a ChoreGami champion! 🏆";
+    : referral.conversions > 1 && referral.conversions < 6
+    ? `${6 - referral.monthsEarned} more to max out!`
+    : referral.conversions >= 6
+    ? "You're a ChoreGami champion! 🏆"
+    : null;
 
   return (
     <>
@@ -136,9 +136,11 @@ export default function SharePage({ data }: PageProps<SharePageData>) {
           <p class="share-subtitle">Help other families discover ChoreGami</p>
         </div>
 
-        <div class="share-encouragement">
-          {encouragement}
-        </div>
+        {progressMessage && (
+          <div class="share-encouragement">
+            {progressMessage}
+          </div>
+        )}
 
         <ShareReferralCard
           code={referral.code}
@@ -148,8 +150,7 @@ export default function SharePage({ data }: PageProps<SharePageData>) {
         />
 
         <div class="share-tip">
-          <div class="share-tip-title">💡 Sharing tip</div>
-          Text a friend, post on social, or just tell someone in person!
+          💡 Text, post, or just tell someone!
         </div>
       </main>
 
@@ -200,14 +201,9 @@ const pageStyles = `
     font-size: 0.85rem;
     color: var(--text-secondary, #666);
     margin-top: 24px;
-    padding: 16px;
+    padding: 12px 16px;
     background: var(--bg-secondary, #f9fafb);
     border-radius: 12px;
-  }
-  .share-tip-title {
-    font-weight: 600;
-    margin-bottom: 8px;
-    color: var(--color-text, #064e3b);
   }
   .share-error {
     text-align: center;
