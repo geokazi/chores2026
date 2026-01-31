@@ -1,8 +1,8 @@
 # ChoreGami 2026 Documentation
 
-**Version**: 1.33
+**Version**: 1.34
 **Status**: ✅ Production Ready
-**Last Updated**: January 31, 2026 (Referral "Share ChoreGami" feature with 6-month cap + terms)
+**Last Updated**: January 31, 2026 (Account Types & Personal Hubs architecture brainstorm)
 
 **Project Overview**: A simplified, real-time chore completion system built with Deno Fresh, transforming routine family chores into an engaging, competitive experience with sub-second real-time updates across all family devices.
 
@@ -84,6 +84,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-27 | [**Family Member Invites**](./milestones/20260127_family_member_invites.md) | ✅ Complete | Dual-channel invites (email working, SMS pending A2P); role selector (Co-parent/Teen); parent deletion with owner protection |
 | — | [↳ Outreach Templates](./planned/20260126_testimonial_outreach_templates.md) | 📖 Guide | Email scripts for collecting testimonials and reviews |
 | 2026-01-31 | [**Referral "Share ChoreGami"**](./planned/20260130_referral_share_feature.md) | ✅ Complete | Dedicated `/share` route (no PIN); profile menu link; JSONB+GIN O(1) lookup; 6-month cap |
+| TBD | [**Account Types & Personal Hubs**](./planned/20260131_account_types_personal_hubs.md) | 📋 Planned | Support families, roommates, couples, solo users; age-based gamification; fairness tracking |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 

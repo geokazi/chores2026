@@ -36,6 +36,14 @@ ChoreGami 2026 is a streamlined family chore management application designed to 
 - **Needs**: Simple interface to view and assign basic tasks
 - **Permissions**: Limited access to specific family functions
 
+### Planned User Expansion
+
+See [Account Types & Personal Hubs](./planned/20260131_account_types_personal_hubs.md) for detailed architecture supporting:
+
+- **Roommates/Couples**: Peer accountability without gamification, fairness tracking
+- **Solo Users (Teens/Students)**: Personal task management, homework tracking
+- **Adults**: Simplified chore lists without "kid" UX elements
+
 ## 💼 Business Value Proposition
 
 ### For Families

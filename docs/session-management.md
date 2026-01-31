@@ -506,6 +506,7 @@ The session returned by `getAuthenticatedSession()` intentionally limits the dat
 - [Signup & PIN Detection Fixes](./milestones/20260119_signup_and_pin_fixes.md) - Fixed `has_pin` vs `pin_hash` session property usage
 - [Parent PIN Security Implementation](./20260111_parent_pin_security_implementation.md) - PIN protection architecture
 - [Notifications: Digest Settings Fix](./milestones/20260122_notifications_calendar_email_badges.md#settings-ui-server-side-pass-through-option-3) - Uses `session.user.id` for channel detection
+- [Account Types & Personal Hubs](./planned/20260131_account_types_personal_hubs.md) - How user switching enables multi-account-type architecture
 
 ---
 

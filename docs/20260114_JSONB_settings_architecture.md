@@ -699,3 +699,4 @@ theme: "fresh_meadow",  // Hardcoded until JSONB migration
 - [Gift Codes Table](../sql/20260118_gift_codes.sql) - Companion table for gift code redemption tracking
 - [Notifications: Calendar/Email/Badges](./milestones/20260122_notifications_calendar_email_badges.md) - Uses `preferences.notifications.weekly_summary` + `digest_channel` for weekly digest opt-in
 - [Notifications Usage Queries](../sql/20260122_notifications_usage_queries.sql) - Runtime queries for usage counters, global budget cap, upgrade candidates
+- [Account Types & Personal Hubs](./planned/20260131_account_types_personal_hubs.md) - Uses `settings.account_type` and `preferences.gamification` for multi-mode support

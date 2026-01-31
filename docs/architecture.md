@@ -105,8 +105,8 @@ Cross-Device Sync       // Changes appear on all family devices
 ```
 1. Parent Login (Multi-OAuth)
    ↓
-2. Family Member Selection 
-   ↓  
+2. Family Member Selection
+   ↓
 3. Session Storage (Browser Tab Specific)
    ↓
 4. Role-Based Dashboard Routing
@@ -117,6 +117,15 @@ Cross-Device Sync       // Changes appear on all family devices
    ↓
 6. FamilyScore Point Sync (Transaction Service)
 ```
+
+### Future: Account Type Architecture
+
+The existing user switching mechanism (right nav "Switch To") serves as personal views, while the home/index page serves as the shared hub. This enables future expansion to support multiple account types without new UI patterns.
+
+**See**: [Account Types & Personal Hubs](./planned/20260131_account_types_personal_hubs.md) for planned support of:
+- **Family with Kids**: Current model with full gamification
+- **Roommates/Couples**: Fairness tracking instead of points
+- **Solo Users**: Personal task management without hub
 
 ## Data Architecture
 
