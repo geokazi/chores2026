@@ -1,11 +1,17 @@
 import { useSignal } from "@preact/signals";
 import { useEffect } from "preact/hooks";
 
+interface WeeklyStats {
+  choresCompleted: number;
+  streakDays: number;
+}
+
 interface ShareReferralCardProps {
   code: string;
   conversions: number;
   monthsEarned: number;
   baseUrl: string;
+  weeklyStats?: WeeklyStats | null;
 }
 
 /** Track feature interaction for analytics */
@@ -17,25 +23,34 @@ const trackFeature = (feature: string) => {
   }).catch(() => {}); // Non-blocking
 };
 
-export default function ShareReferralCard({ code, conversions, monthsEarned, baseUrl }: ShareReferralCardProps) {
+// Threshold for showing personalized stats
+const PERSONALIZED_THRESHOLD = 5;
+
+export default function ShareReferralCard({ code, conversions, monthsEarned, baseUrl, weeklyStats }: ShareReferralCardProps) {
   const copied = useSignal(false);
   const shareUrl = `${baseUrl}/r/${code}`;
 
+  // Show personalized version if >= 5 chores completed this week
+  const isPersonalized = weeklyStats && weeklyStats.choresCompleted >= PERSONALIZED_THRESHOLD;
+
   // Debug logging
-  console.log("[Referral] ShareReferralCard mounted", { code, conversions, monthsEarned, shareUrl });
+  console.log("[Referral] ShareReferralCard mounted", {
+    code, conversions, monthsEarned, shareUrl,
+    weeklyStats, isPersonalized
+  });
 
   // Track card view on mount (once per session)
   useEffect(() => {
     const viewedKey = "referral_card_viewed";
     if (!sessionStorage.getItem(viewedKey)) {
-      trackFeature("referral_card_view");
+      trackFeature(isPersonalized ? "referral_card_view_personalized" : "referral_card_view_simple");
       sessionStorage.setItem(viewedKey, "1");
     }
-  }, []);
+  }, [isPersonalized]);
 
   const handleCopy = async () => {
-    console.log("[Referral] Copy clicked", { shareUrl });
-    trackFeature("referral_copy");
+    console.log("[Referral] Copy clicked", { shareUrl, isPersonalized });
+    trackFeature(isPersonalized ? "referral_copy_personalized" : "referral_copy_simple");
     try {
       await navigator.clipboard.writeText(shareUrl);
       copied.value = true;
@@ -55,18 +70,30 @@ export default function ShareReferralCard({ code, conversions, monthsEarned, bas
     }
   };
 
+  // Generate share message based on stats
+  const getShareMessage = () => {
+    if (isPersonalized && weeklyStats) {
+      const { choresCompleted, streakDays } = weeklyStats;
+      if (streakDays >= 3) {
+        return `My family completed ${choresCompleted} chores this week with a ${streakDays}-day streak! ChoreGami actually works.`;
+      }
+      return `My family completed ${choresCompleted} chores this week! ChoreGami actually works.`;
+    }
+    return "ChoreGami helps families stay organized with chores, events, and more. Check it out!";
+  };
+
   const handleShare = async () => {
-    console.log("[Referral] Share clicked", { hasShareAPI: !!navigator.share });
-    trackFeature("referral_share");
+    console.log("[Referral] Share clicked", { hasShareAPI: !!navigator.share, isPersonalized });
+    trackFeature(isPersonalized ? "referral_share_personalized" : "referral_share_simple");
     if (navigator.share) {
       try {
         await navigator.share({
           title: "Join my family on ChoreGami!",
-          text: "ChoreGami helps families stay organized with chores, events, and more. Check it out!",
+          text: getShareMessage(),
           url: shareUrl,
         });
         console.log("[Referral] Share completed");
-        trackFeature("referral_share_complete");
+        trackFeature(isPersonalized ? "referral_share_complete_personalized" : "referral_share_complete_simple");
       } catch (err) {
         console.log("[Referral] Share cancelled or failed", err);
       }
@@ -82,6 +109,16 @@ export default function ShareReferralCard({ code, conversions, monthsEarned, bas
       <p class="referral-tagline">
         Tell a friend. Get 1 free month when they join.
       </p>
+
+      {/* Stats badge - only shown when personalized (>= 5 chores this week) */}
+      {isPersonalized && weeklyStats && (
+        <div class="referral-stats-badge">
+          <span>🎉 {weeklyStats.choresCompleted} chores this week</span>
+          {weeklyStats.streakDays >= 3 && (
+            <span> • 🔥 {weeklyStats.streakDays}-day streak</span>
+          )}
+        </div>
+      )}
 
       <div class="referral-link-section">
         <label class="referral-label">Your referral link</label>
@@ -124,6 +161,17 @@ export default function ShareReferralCard({ code, conversions, monthsEarned, bas
           margin: 0 0 16px 0;
           font-size: 0.9rem;
           color: var(--text-secondary);
+        }
+        .referral-stats-badge {
+          background: linear-gradient(135deg, var(--color-bg) 0%, #ecfdf5 100%);
+          border: 1px solid var(--color-primary);
+          border-radius: 10px;
+          padding: 10px 14px;
+          margin-bottom: 16px;
+          font-size: 0.9rem;
+          font-weight: 500;
+          color: var(--color-primary);
+          text-align: center;
         }
         .referral-link-section {
           margin-bottom: 16px;

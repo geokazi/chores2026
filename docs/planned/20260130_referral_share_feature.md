@@ -187,28 +187,76 @@ $$ LANGUAGE plpgsql;
 
 ## UI Design
 
-### Settings Page Card (Primary)
+### Adaptive Personalization (Jan 31, 2026)
+
+The share card automatically adapts based on family activity:
+
+| Condition | Version | Share Message |
+|-----------|---------|---------------|
+| < 5 chores this week | **Simple** | Generic message about ChoreGami |
+| ≥ 5 chores this week | **Personalized** | Stats-based social proof message |
+
+**Why auto-detect:**
+- Active families have social proof to share → use it
+- New/inactive families see low numbers → hide them (embarrassing)
+- Zero extra clicks for user
+- Enables A/B comparison via analytics tracking
+
+### Simple Version (< 5 chores/week)
 
 ```
 ├─────────────────────────────────────────────────────┤
-│  🎁 Share ChoreGami                                 │
+│  Share ChoreGami                                    │
 │                                                     │
 │  Tell a friend. Get 1 free month when they join.   │
-│  Good things spread by word of mouth.              │
 │                                                     │
-│  Your referral link                                 │
-│  ┌───────────────────────────────────┬─────┬─────┐ │
-│  │ choregami.app/r/ABC123            │ 📋  │ 📤  │ │
-│  └───────────────────────────────────┴─────┴─────┘ │
+│  YOUR REFERRAL LINK                                 │
+│  choregami.fly.dev/r/ABC123                         │
 │                                                     │
-│  🎉 1 friend joined — 1 free month unlocked         │
+│  [📋 Copy]              [📤 Share]                  │
+│                                                     │
+│  Earn up to 6 free months                           │
 └─────────────────────────────────────────────────────┘
 ```
+
+### Personalized Version (≥ 5 chores/week)
+
+```
+├─────────────────────────────────────────────────────┤
+│  Share ChoreGami                                    │
+│                                                     │
+│  Tell a friend. Get 1 free month when they join.   │
+│                                                     │
+│  ┌───────────────────────────────────────────────┐  │
+│  │ 🎉 23 chores this week • 🔥 5-day streak     │  │
+│  └───────────────────────────────────────────────┘  │
+│                                                     │
+│  YOUR REFERRAL LINK                                 │
+│  choregami.fly.dev/r/ABC123                         │
+│                                                     │
+│  [📋 Copy]              [📤 Share]                  │
+│                                                     │
+│  Earn up to 6 free months                           │
+└─────────────────────────────────────────────────────┘
+```
+
+**Personalized share message:**
+```
+My family completed 23 chores this week with a 5-day streak! ChoreGami actually works.
+```
+
+### Analytics Tracking
+
+Tracks which version leads to more shares:
+- `referral_card_view_simple` / `referral_card_view_personalized`
+- `referral_copy_simple` / `referral_copy_personalized`
+- `referral_share_simple` / `referral_share_personalized`
+- `referral_share_complete_simple` / `referral_share_complete_personalized`
 
 ### Zero-State (No Conversions)
 
 ```
-│  🎉 Share to unlock free months                     │
+│  Earn up to 6 free months                           │
 ```
 
 ### Profile Menu Link (Secondary)
@@ -229,8 +277,30 @@ $$ LANGUAGE plpgsql;
 | Element | Copy | Reasoning |
 |---------|------|-----------|
 | Label | "Your referral link" | Ownership language, removes hesitation |
-| Social proof | "Good things spread by word of mouth" | Universal, teen-friendly |
-| Reward framing | "1 free month unlocked" | Achievement/gamification, not accounting |
+| Tagline | "Tell a friend. Get 1 free month when they join." | Clear value prop |
+| Personalized share | "My family completed X chores this week!" | Social proof with real stats |
+| Generic share | "ChoreGami helps families stay organized..." | Safe default for new users |
+
+### Weekly Stats Data Flow
+
+```typescript
+// routes/share.tsx handler
+const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+const { data: transactions } = await supabase
+  .schema("choretracker")
+  .from("chore_transactions")
+  .select("created_at")
+  .eq("family_id", family.id)
+  .eq("transaction_type", "chore_completed")
+  .gte("created_at", oneWeekAgo);
+
+// Reuse calculateStreak from insights-service.ts
+const streakDays = calculateStreak(transactions.map(t => t.created_at));
+
+// Pass to component
+weeklyStats: { choresCompleted: transactions.length, streakDays }
+```
 
 ---
 
@@ -239,12 +309,13 @@ $$ LANGUAGE plpgsql;
 ```
 lib/services/
   referral-service.ts      # ~80 lines - code gen, lookup, conversion
+  insights-service.ts      # calculateStreak() reused for share stats
 
 islands/
-  ShareReferralCard.tsx    # ~60 lines - reusable share component
+  ShareReferralCard.tsx    # ~210 lines - adaptive share component with stats
 
 routes/
-  share.tsx                # ~230 lines - dedicated share page (no PIN required)
+  share.tsx                # ~240 lines - dedicated share page with weekly stats query
   r/[code].tsx             # ~25 lines - short URL redirect
 
 sql/

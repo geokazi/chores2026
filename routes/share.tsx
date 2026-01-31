@@ -8,6 +8,8 @@ import { Handlers, PageProps } from "$fresh/server.ts";
 import { Head } from "$fresh/runtime.ts";
 import { getAuthenticatedSession } from "../lib/auth/session.ts";
 import { ReferralService } from "../lib/services/referral-service.ts";
+import { calculateStreak } from "../lib/services/insights-service.ts";
+import { createClient } from "../lib/supabase.ts";
 import ShareReferralCard from "../islands/ShareReferralCard.tsx";
 import AppHeader from "../islands/AppHeader.tsx";
 import AppFooter from "../components/AppFooter.tsx";
@@ -20,11 +22,17 @@ interface FamilyMember {
   user_id?: string;
 }
 
+interface WeeklyStats {
+  choresCompleted: number;
+  streakDays: number;
+}
+
 interface SharePageData {
   familyMembers: FamilyMember[];
   currentUser: FamilyMember | null;
   userRole: "parent" | "child";
   referral: { code: string; conversions: number; monthsEarned: number; baseUrl: string };
+  weeklyStats: WeeklyStats | null;
   error?: string;
 }
 
@@ -57,6 +65,7 @@ export const handler: Handlers<SharePageData> = {
           familyMembers: family.members,
           currentUser,
           userRole,
+          weeklyStats: null,
           error: "Could not load referral code",
         } as any);
       }
@@ -66,8 +75,35 @@ export const handler: Handlers<SharePageData> = {
         familyMembers: family.members,
         currentUser,
         userRole,
+        weeklyStats: null,
         error: "Could not load referral code",
       } as any);
+    }
+
+    // Fetch weekly stats for personalized sharing (non-blocking)
+    let weeklyStats: WeeklyStats | null = null;
+    try {
+      const supabase = createClient();
+      const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+      // Get chore completions from last 7 days
+      const { data: transactions } = await supabase
+        .schema("choretracker")
+        .from("chore_transactions")
+        .select("created_at")
+        .eq("family_id", family.id)
+        .eq("transaction_type", "chore_completed")
+        .gte("created_at", oneWeekAgo)
+        .order("created_at", { ascending: false });
+
+      if (transactions && transactions.length > 0) {
+        const choresCompleted = transactions.length;
+        const streakDays = calculateStreak(transactions.map(t => t.created_at));
+        weeklyStats = { choresCompleted, streakDays };
+      }
+    } catch (e) {
+      console.warn("[Share] Could not load weekly stats:", e);
+      // Non-blocking - continue with simple version
     }
 
     return ctx.render({
@@ -75,12 +111,13 @@ export const handler: Handlers<SharePageData> = {
       currentUser,
       userRole,
       referral,
+      weeklyStats,
     });
   },
 };
 
 export default function SharePage({ data }: PageProps<SharePageData>) {
-  const { familyMembers, currentUser, userRole, referral, error } = data;
+  const { familyMembers, currentUser, userRole, referral, weeklyStats, error } = data;
 
   if (error) {
     return (
@@ -147,6 +184,7 @@ export default function SharePage({ data }: PageProps<SharePageData>) {
           conversions={referral.conversions}
           monthsEarned={referral.monthsEarned}
           baseUrl={referral.baseUrl}
+          weeklyStats={weeklyStats}
         />
 
         <div class="share-tip">
