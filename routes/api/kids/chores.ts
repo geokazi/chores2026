@@ -151,7 +151,6 @@ export const handler: Handlers = {
 
         if (todayTemplates.length > 0) {
           // Get completion status for these recurring chores today
-          const templateIds = todayTemplates.map((t: any) => t.id);
           const { data: completedTx } = await supabase
             .schema("choretracker")
             .from("chore_transactions")
