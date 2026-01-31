@@ -10,7 +10,20 @@ import { Handlers } from "$fresh/server.ts";
 import { getAuthenticatedSession } from "../../../lib/auth/session.ts";
 import { getActivityService } from "../../../lib/services/activity-service.ts";
 
-const ALLOWED_FEATURES = ["sms_invite"];
+const ALLOWED_FEATURES = [
+  // SMS invites (pending A2P 10DLC)
+  "sms_invite",
+  // Referral tracking
+  "referral_card_view",
+  "referral_copy",
+  "referral_share",
+  "referral_share_complete",
+  // Redeem/upgrade tracking
+  "redeem_click",
+  "redeem_attempt",
+  "redeem_success",
+  "redeem_failure",
+];
 
 export const handler: Handlers = {
   async POST(req) {

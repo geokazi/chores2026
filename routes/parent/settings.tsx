@@ -100,13 +100,15 @@ export const handler: Handlers<ParentSettingsData> = {
     // Load or create referral code
     let referral: { code: string; conversions: number; monthsEarned: number } | undefined;
     try {
+      console.log("[Referral] Loading referral for family:", family.id);
       const referralService = new ReferralService();
       const stats = await referralService.getStats(family.id);
+      console.log("[Referral] Stats loaded:", stats);
       if (stats) {
         referral = stats;
       }
     } catch (e) {
-      console.warn("Failed to load referral:", e);
+      console.error("[Referral] Failed to load referral:", e);
     }
 
     return ctx.render({

@@ -529,7 +529,17 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
                 <span class="free-plan-desc">3 templates included · Unlock 5 more with Family Plan</span>
               </div>
             </div>
-            <a href="/redeem" class="redeem-link">Redeem gift code →</a>
+            <a
+              href="/redeem"
+              class="redeem-link"
+              onClick={() => {
+                fetch("/api/analytics/feature-demand", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ feature: "redeem_click" }),
+                }).catch(() => {});
+              }}
+            >Redeem gift code →</a>
           </div>
         )}
       </div>

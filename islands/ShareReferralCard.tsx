@@ -1,10 +1,20 @@
 import { useSignal } from "@preact/signals";
+import { useEffect } from "preact/hooks";
 
 interface ShareReferralCardProps {
   code: string;
   conversions: number;
   monthsEarned: number;
 }
+
+/** Track feature interaction for analytics */
+const trackFeature = (feature: string) => {
+  fetch("/api/analytics/feature-demand", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ feature }),
+  }).catch(() => {}); // Non-blocking
+};
 
 export default function ShareReferralCard({ code, conversions, monthsEarned }: ShareReferralCardProps) {
   const copied = useSignal(false);
@@ -13,8 +23,18 @@ export default function ShareReferralCard({ code, conversions, monthsEarned }: S
   // Debug logging
   console.log("[Referral] ShareReferralCard mounted", { code, conversions, monthsEarned, shareUrl });
 
+  // Track card view on mount (once per session)
+  useEffect(() => {
+    const viewedKey = "referral_card_viewed";
+    if (!sessionStorage.getItem(viewedKey)) {
+      trackFeature("referral_card_view");
+      sessionStorage.setItem(viewedKey, "1");
+    }
+  }, []);
+
   const handleCopy = async () => {
     console.log("[Referral] Copy clicked", { shareUrl });
+    trackFeature("referral_copy");
     try {
       await navigator.clipboard.writeText(shareUrl);
       copied.value = true;
@@ -36,6 +56,7 @@ export default function ShareReferralCard({ code, conversions, monthsEarned }: S
 
   const handleShare = async () => {
     console.log("[Referral] Share clicked", { hasShareAPI: !!navigator.share });
+    trackFeature("referral_share");
     if (navigator.share) {
       try {
         await navigator.share({
@@ -44,6 +65,7 @@ export default function ShareReferralCard({ code, conversions, monthsEarned }: S
           url: shareUrl,
         });
         console.log("[Referral] Share completed");
+        trackFeature("referral_share_complete");
       } catch (err) {
         console.log("[Referral] Share cancelled or failed", err);
       }

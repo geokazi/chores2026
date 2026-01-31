@@ -96,6 +96,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-25 | [Large Family Smart Rotation](./decisions/20260125_large_family_smart_rotation.md) | 📋 Proposed | Future paid template for 5-12 kids using dynamic distribution |
 | 2026-01-20 | [Feedback Strategy](./decisions/20260120_feedback_strategy.md) | ✅ Decided | Google Form now, in-app JSONB at 100+ users |
 | 2026-01-20 | [Analytics Strategy](./decisions/20260120_analytics_strategy.md) | ✅ Decided | External analytics (Plausible) + existing data; don't extend FamilyScore |
+| 2026-01-30 | [Analytics & Demand Tracking](./analytics/20260130_analytics_tracking.md) | ✅ Active | Comprehensive guide to all analytics: feature demand, referral funnel, redeem tracking |
 | 2026-01-20 | [Kid Event Creation](./decisions/20260120_kid_event_creation.md) | ✅ Decided | Allow kids to create events with parent visibility, gated by existing PIN |
 | 2026-01-20 | [Community Messaging Board](./decisions/20260120_community_messaging_board_analysis.md) | ✅ Deferred | Test with Facebook Group first; in-app at 2000+ users |
 | 2026-01-20 | [Prep Tasks Visibility](./decisions/20260120_prep_tasks_visibility_analysis.md) | ✅ Decided | Smart auto-expand ≤3 tasks + inline checkboxes |
@@ -320,5 +321,5 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 
 ---
 
-*Last updated: January 30, 2026 (v1.32)*
+*Last updated: January 30, 2026 (v1.33)*
 *Maintained by: Claude Code AI Assistant*

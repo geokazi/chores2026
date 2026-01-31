@@ -24,6 +24,15 @@ const PLAN_NAMES: Record<string, string> = {
   full_year: "Full Year Plan",
 };
 
+/** Track feature interaction for analytics */
+const trackFeature = (feature: string) => {
+  fetch("/api/analytics/feature-demand", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ feature }),
+  }).catch(() => {}); // Non-blocking
+};
+
 export default function RedeemForm({ prefillCode }: Props) {
   const [code, setCode] = useState(prefillCode || "");
   const [loading, setLoading] = useState(false);
@@ -35,6 +44,7 @@ export default function RedeemForm({ prefillCode }: Props) {
 
     setLoading(true);
     setResult(null);
+    trackFeature("redeem_attempt");
 
     try {
       const response = await fetch("/api/gift/redeem", {
@@ -45,8 +55,16 @@ export default function RedeemForm({ prefillCode }: Props) {
 
       const data = await response.json();
       setResult(data);
+
+      // Track success or failure
+      if (data.success) {
+        trackFeature("redeem_success");
+      } else {
+        trackFeature("redeem_failure");
+      }
     } catch (err) {
       setResult({ success: false, error: "Network error. Please try again." });
+      trackFeature("redeem_failure");
     } finally {
       setLoading(false);
     }

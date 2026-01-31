@@ -404,6 +404,15 @@ ChoreGami 2026 is a streamlined family chore management application designed to 
 - **Responsibility Development**: Measurable improvement in child independence
 - **Time Savings**: 60% reduction in chore management time for parents
 
+### Analytics & Demand Tracking
+Privacy-respecting analytics to measure feature adoption and prioritize development:
+- **Feature Demand Signals**: Track user attempts for unavailable features (e.g., SMS invites pending A2P 10DLC)
+- **Referral Funnel**: View → Copy → Share → Share Complete conversion tracking
+- **Redeem Flow**: Click → Attempt → Success/Failure for gift code redemption
+- **Usage Events**: Badge taps, ICS downloads, digest interactions
+
+See: [Analytics & Demand Tracking](./analytics/20260130_analytics_tracking.md) for implementation details and SQL queries.
+
 ## 🛠 Technical Requirements
 
 ### Performance Standards
@@ -541,6 +550,6 @@ ChoreGami 2026 is a streamlined family chore management application designed to 
 
 **Document Owner**: Product Team
 **Review Cycle**: Monthly
-**Last Updated**: January 27, 2026
+**Last Updated**: January 30, 2026
 **Next Review**: February 26, 2026
 **Stakeholders**: Engineering, Design, Marketing, Customer Success
