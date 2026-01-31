@@ -72,6 +72,7 @@ import * as $parent_my_chores from "./routes/parent/my-chores.tsx";
 import * as $parent_rewards from "./routes/parent/rewards.tsx";
 import * as $parent_settings from "./routes/parent/settings.tsx";
 import * as $privacy from "./routes/privacy.tsx";
+import * as $r_code_ from "./routes/r/[code].tsx";
 import * as $redeem from "./routes/redeem.tsx";
 import * as $register from "./routes/register.tsx";
 import * as $reports from "./routes/reports.tsx";
@@ -106,6 +107,7 @@ import * as $RewardsCatalog from "./islands/RewardsCatalog.tsx";
 import * as $SavingsGoals from "./islands/SavingsGoals.tsx";
 import * as $SecureKidDashboard from "./islands/SecureKidDashboard.tsx";
 import * as $SecureParentDashboard from "./islands/SecureParentDashboard.tsx";
+import * as $ShareReferralCard from "./islands/ShareReferralCard.tsx";
 import * as $SocialAuthButtons from "./islands/SocialAuthButtons.tsx";
 import * as $TemplateSelector from "./islands/TemplateSelector.tsx";
 import * as $ThemeInitializer from "./islands/ThemeInitializer.tsx";
@@ -198,6 +200,7 @@ const manifest = {
     "./routes/parent/rewards.tsx": $parent_rewards,
     "./routes/parent/settings.tsx": $parent_settings,
     "./routes/privacy.tsx": $privacy,
+    "./routes/r/[code].tsx": $r_code_,
     "./routes/redeem.tsx": $redeem,
     "./routes/register.tsx": $register,
     "./routes/reports.tsx": $reports,
@@ -234,6 +237,7 @@ const manifest = {
     "./islands/SavingsGoals.tsx": $SavingsGoals,
     "./islands/SecureKidDashboard.tsx": $SecureKidDashboard,
     "./islands/SecureParentDashboard.tsx": $SecureParentDashboard,
+    "./islands/ShareReferralCard.tsx": $ShareReferralCard,
     "./islands/SocialAuthButtons.tsx": $SocialAuthButtons,
     "./islands/TemplateSelector.tsx": $TemplateSelector,
     "./islands/ThemeInitializer.tsx": $ThemeInitializer,
