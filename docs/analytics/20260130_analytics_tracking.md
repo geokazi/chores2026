@@ -111,6 +111,8 @@ fetch("/api/analytics/feature-demand", {
 
 **Context**: "Share ChoreGami" referral feature
 
+**Route**: `/share` (accessible to all logged-in family members - no PIN required)
+
 **Events**:
 
 | Event | Trigger | Purpose |
@@ -120,7 +122,7 @@ fetch("/api/analytics/feature-demand", {
 | `referral_share` | User clicks share button | Strong intent |
 | `referral_share_complete` | Web Share API completes successfully | Actual share |
 
-**Implementation**: `islands/ShareReferralCard.tsx`
+**Implementation**: `islands/ShareReferralCard.tsx` (rendered in `routes/share.tsx`)
 
 **Funnel Analysis**:
 ```

@@ -83,7 +83,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | TBD | [**Testimonials & Social Proof**](./planned/20260126_testimonials_strategy.md) | 📋 Planned | Third-party reviews (Trustpilot first), static testimonials on landing page |
 | 2026-01-27 | [**Family Member Invites**](./milestones/20260127_family_member_invites.md) | ✅ Complete | Dual-channel invites (email working, SMS pending A2P); role selector (Co-parent/Teen); parent deletion with owner protection |
 | — | [↳ Outreach Templates](./planned/20260126_testimonial_outreach_templates.md) | 📖 Guide | Email scripts for collecting testimonials and reviews |
-| 2026-01-31 | [**Referral "Share ChoreGami"**](./planned/20260130_referral_share_feature.md) | ✅ Complete | Settings card + profile menu; JSONB+GIN O(1) lookup; 6-month cap; reward tracking |
+| 2026-01-31 | [**Referral "Share ChoreGami"**](./planned/20260130_referral_share_feature.md) | ✅ Complete | Dedicated `/share` route (no PIN); profile menu link; JSONB+GIN O(1) lookup; 6-month cap |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 

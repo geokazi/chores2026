@@ -23,7 +23,6 @@ import ThemeSection from "./settings/ThemeSection.tsx";
 import KidPinSection from "./settings/KidPinSection.tsx";
 import ParentPinSection from "./settings/ParentPinSection.tsx";
 import PinSetupModal from "./settings/PinSetupModal.tsx";
-import ShareReferralCard from "./ShareReferralCard.tsx";
 import { isConfettiEnabled, setConfettiEnabled, triggerCelebration } from "./ConfettiTrigger.tsx";
 
 interface FamilySettingsProps {
@@ -51,10 +50,9 @@ interface FamilySettingsProps {
   digestChannel?: "email" | "sms" | null;
   hasBothChannels?: boolean;
   notificationPrefs?: { weekly_summary?: boolean; daily_digest?: boolean; digest_channel?: string; sms_limit_hit?: boolean };
-  referral?: { code: string; conversions: number; monthsEarned: number; baseUrl: string };
 }
 
-export default function FamilySettings({ family, members, settings, digestChannel, hasBothChannels, notificationPrefs, referral }: FamilySettingsProps) {
+export default function FamilySettings({ family, members, settings, digestChannel, hasBothChannels, notificationPrefs }: FamilySettingsProps) {
   // Shared PIN modal state - lifted to orchestrator level
   const [pinModalMember, setPinModalMember] = useState<{ id: string; name: string; role: string } | null>(null);
 
@@ -241,15 +239,6 @@ export default function FamilySettings({ family, members, settings, digestChanne
       {/* 1. First-time setup - Family Members (add kids first!) */}
       <FamilyMembersSection members={members} ownerUserId={settings?.owner_user_id} />
 
-      {/* 1b. Share ChoreGami - Referral link */}
-      {referral && (
-        <ShareReferralCard
-          code={referral.code}
-          conversions={referral.conversions}
-          monthsEarned={referral.monthsEarned}
-          baseUrl={referral.baseUrl}
-        />
-      )}
 
       {/* 2. Core functionality - Chore Rotation Templates */}
       <TemplateSelector

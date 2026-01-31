@@ -213,7 +213,7 @@ export default function AppHeader({
             {/* Share ChoreGami - only for users with their own account (parents, teens) */}
             {currentUser?.user_id && (
               <a
-                href="/parent/settings#share-referral-section"
+                href="/share"
                 title="Get 1 free month when friends join"
               >
                 🎁 Share ChoreGami
@@ -281,7 +281,7 @@ export default function AppHeader({
             {/* Share ChoreGami - only for users with their own account (parents, teens) */}
             {currentUser?.user_id && (
               <a
-                href="/parent/settings#share-referral-section"
+                href="/share"
                 style={{ display: "block", padding: "0.75rem 1rem", color: "var(--color-text)", textDecoration: "none", borderRadius: "8px", fontSize: "1rem" }}
               >
                 🎁 Share ChoreGami

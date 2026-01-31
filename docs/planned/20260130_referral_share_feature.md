@@ -23,10 +23,10 @@ Track referrer → referred relationship for future reward credit (e.g., 1 free 
 
 | Principle | How Applied |
 |-----------|-------------|
-| **Pareto 80/20** | Settings card + profile menu link covers both audiences (~60 lines UI) |
+| **Pareto 80/20** | Dedicated `/share` route + profile menu link - frictionless for all family members |
 | **Reuse existing** | Copy `InviteService` pattern, reuse SQL function patterns from `20260127_invite_functions.sql` |
 | **O(1) database** | GIN index + JSONB containment query for code lookup |
-| **No code bloat** | No separate page initially - inline share in settings |
+| **No code bloat** | Dedicated `/share` route (no PIN required) - cleaner UX separation |
 | **JSONB flexibility** | Add fields without migration, matches `pending_invites` pattern |
 | **Complete schema** | All reward tracking fields included upfront (no technical debt) |
 
@@ -244,6 +244,7 @@ islands/
   ShareReferralCard.tsx    # ~60 lines - reusable share component
 
 routes/
+  share.tsx                # ~230 lines - dedicated share page (no PIN required)
   r/[code].tsx             # ~25 lines - short URL redirect
 
 sql/
@@ -350,22 +351,36 @@ if (ref) {
 }
 ```
 
-### 3. Settings Page Integration
+### 3. Dedicated Share Page
 
-Add `ShareReferralCard` to `routes/parent/settings.tsx`:
+**Route**: `/share` (accessible to all logged-in family members - no PIN required)
+
+**File**: `routes/share.tsx`
 
 ```typescript
+// Features:
+// - Playful hero section with bouncing gift emoji
+// - Dynamic encouragement messages based on referral progress
+// - ShareReferralCard component for copy/share actions
+// - Sharing tips for word-of-mouth growth
+
 // In handler: get or create referral
 const referralService = new ReferralService();
-const referral = await referralService.getOrCreateReferral(familyId);
+const stats = await referralService.getStats(familyId);
 
-// In render: add card
-<ShareReferralCard
-  code={referral.code}
-  conversions={referral.conversions.length}
-  monthsEarned={referral.reward_months_earned}
-/>
+// Encouragement based on progress
+const encouragement = conversions === 0
+  ? "Be the first to spread the word!"
+  : conversions < 6
+  ? `${6 - monthsEarned} more to max out your free months!`
+  : "You're a ChoreGami champion! 🏆";
 ```
+
+**Why separate route (not in settings)?**
+- Settings requires parent PIN when enabled - unnecessary friction for sharing
+- Sharing is a growth action, not a configuration action
+- All family members (including teens) should be able to share
+- Cleaner separation of concerns
 
 ---
 
@@ -374,13 +389,13 @@ const referral = await referralService.getOrCreateReferral(familyId);
 | File | Lines | Notes |
 |------|-------|-------|
 | `referral-service.ts` | ~80 | Service layer |
-| `ShareReferralCard.tsx` | ~60 | Island component |
+| `ShareReferralCard.tsx` | ~210 | Island component with analytics |
+| `share.tsx` | ~230 | Dedicated share page (no PIN) |
 | `r/[code].tsx` | ~25 | Redirect route |
 | `20260131_referral_functions.sql` | ~60 | SQL functions |
-| Settings integration | ~20 | Add card to existing page |
-| Profile menu link | ~5 | One link |
+| Profile menu link | ~5 | One link in AppHeader |
 | Register integration | ~15 | Conversion tracking |
-| **Total** | **~265** | Under 500 limit ✅ |
+| **Total** | **~625** | Growth feature investment ✅ |
 
 ---
 

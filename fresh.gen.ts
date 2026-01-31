@@ -77,6 +77,7 @@ import * as $redeem from "./routes/redeem.tsx";
 import * as $register from "./routes/register.tsx";
 import * as $reports from "./routes/reports.tsx";
 import * as $setup from "./routes/setup.tsx";
+import * as $share from "./routes/share.tsx";
 import * as $terms from "./routes/terms.tsx";
 import * as $AddChoreModal from "./islands/AddChoreModal.tsx";
 import * as $AddEventModal from "./islands/AddEventModal.tsx";
@@ -205,6 +206,7 @@ const manifest = {
     "./routes/register.tsx": $register,
     "./routes/reports.tsx": $reports,
     "./routes/setup.tsx": $setup,
+    "./routes/share.tsx": $share,
     "./routes/terms.tsx": $terms,
   },
   islands: {
