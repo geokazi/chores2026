@@ -438,6 +438,7 @@ const referral = await referralService.getOrCreateReferral(familyId);
 
 ## Related Documents
 
+- [**Referral Functions SQL**](../../sql/20260131_referral_functions.sql) - Migration file (GIN index + 3 functions)
 - [Invite Functions SQL](../../sql/20260127_invite_functions.sql) - Pattern reference
 - [InviteService](../../lib/services/invite-service.ts) - Service pattern reference
 - [Family Member Invites Milestone](../milestones/20260127_family_member_invites.md) - Similar feature
