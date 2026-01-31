@@ -10,7 +10,12 @@ import { ReferralService } from "../../lib/services/referral-service.ts";
 Deno.env.set("SUPABASE_URL", "https://test.supabase.co");
 Deno.env.set("SUPABASE_SERVICE_ROLE_KEY", "test-key");
 
-Deno.test("ReferralService - Code Generation", async (t) => {
+Deno.test({
+  name: "ReferralService - Code Generation",
+  // Supabase client creates internal intervals for connection management
+  sanitizeOps: false,
+  sanitizeResources: false,
+  fn: async (t) => {
   const service = new ReferralService();
 
   await t.step("generateCode() returns 6-character string", () => {
@@ -31,9 +36,15 @@ Deno.test("ReferralService - Code Generation", async (t) => {
     // Allow for some collisions but expect at least 990 unique (99%)
     assertEquals(codes.size >= 990, true, `Expected at least 990 unique codes, got ${codes.size}`);
   });
+  },
 });
 
-Deno.test("ReferralService - Lookup Validation", async (t) => {
+Deno.test({
+  name: "ReferralService - Lookup Validation",
+  // Supabase client creates internal intervals for connection management
+  sanitizeOps: false,
+  sanitizeResources: false,
+  fn: async (t) => {
   const service = new ReferralService();
 
   await t.step("findByCode() returns null for empty string", async () => {
@@ -50,9 +61,15 @@ Deno.test("ReferralService - Lookup Validation", async (t) => {
     const result = await service.findByCode("ABCDEFGH");
     assertEquals(result, null);
   });
+  },
 });
 
-Deno.test("ReferralService - Self-Referral Prevention", async (t) => {
+Deno.test({
+  name: "ReferralService - Self-Referral Prevention",
+  // Supabase client creates internal intervals for connection management
+  sanitizeOps: false,
+  sanitizeResources: false,
+  fn: async (t) => {
   const service = new ReferralService();
 
   await t.step("recordConversion() blocks self-referral", async () => {
@@ -66,4 +83,5 @@ Deno.test("ReferralService - Self-Referral Prevention", async (t) => {
     assertEquals(result.success, false);
     assertEquals(result.error, "Cannot refer yourself");
   });
+  },
 });

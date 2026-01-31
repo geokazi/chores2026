@@ -26,16 +26,16 @@ Deno.test("Referral Registration - Param Handling", async (t) => {
 
   await t.step("Self-referral is blocked at conversion time", () => {
     // This validates the logic that self-referral check happens
-    const referrerFamilyId = "family-123";
-    const newFamilyId = "family-123";  // Same family
+    const referrerFamilyId: string = "family-123";
+    const newFamilyId: string = "family-123";  // Same family
 
     const isSelfReferral = referrerFamilyId === newFamilyId;
     assertEquals(isSelfReferral, true);
   });
 
   await t.step("Different family passes self-referral check", () => {
-    const referrerFamilyId = "family-123";
-    const newFamilyId = "family-456";  // Different family
+    const referrerFamilyId: string = "family-123";
+    const newFamilyId: string = "family-456";  // Different family
 
     const isSelfReferral = referrerFamilyId === newFamilyId;
     assertEquals(isSelfReferral, false);
