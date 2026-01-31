@@ -133,7 +133,6 @@ export default function SharePage({ data }: PageProps<SharePageData>) {
       <main class="share-page">
         <div class="share-hero">
           <div class="share-emoji">🎁</div>
-          <h1 class="share-title">Share the Fun!</h1>
           <p class="share-subtitle">Help other families discover ChoreGami</p>
         </div>
 
@@ -180,12 +179,6 @@ const pageStyles = `
   @keyframes gentle-bounce {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-8px); }
-  }
-  .share-title {
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: var(--color-text, #064e3b);
-    margin: 0 0 4px 0;
   }
   .share-subtitle {
     font-size: 1rem;
