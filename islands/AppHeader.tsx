@@ -251,42 +251,52 @@ export default function AppHeader({
       {userMenuOpen && (
         <div class="menu-overlay" onClick={() => setUserMenuOpen(false)}>
           <nav class="user-menu" onClick={(e) => e.stopPropagation()}>
-            <div class="user-info">
-              <span class="user-avatar">{currentUser?.avatar_emoji || "👤"}</span>
-              <span class="user-name">{currentUser?.name || "User"}</span>
-            </div>
-            <hr />
-
-            {/* Inline User Switcher - All family members */}
-            <div class="menu-section" style={{ marginTop: 0, paddingTop: "0.5rem", borderTop: "none" }}>
-              <span class="menu-label">Switch to</span>
-              {familyMembers
-                .filter((m) => m.id !== currentUser?.id)
-                .map((member) => (
-                  <button
-                    key={member.id}
-                    onClick={() => {
-                      ActiveKidSessionManager.setActiveKid(member.id, member.name);
-                      window.location.href = member.role === "parent"
-                        ? "/parent/my-chores"
-                        : "/kid/dashboard";
-                    }}
-                  >
-                    {member.avatar_emoji || (member.role === "parent" ? "👤" : "🧒")} {member.name}
-                  </button>
-                ))}
+            {/* Header with theme color */}
+            <div class="user-menu-header">
+              <span class="user-avatar-large">{currentUser?.avatar_emoji || "👤"}</span>
+              <span class="user-name-large">{currentUser?.name || "User"}</span>
             </div>
 
-            <hr />
-            {/* Share ChoreGami - only for users with their own account (parents, teens) */}
-            {currentUser?.user_id && (
-              <a href="/share">
-                🎁 Share ChoreGami
-              </a>
-            )}
-            <button onClick={handleLogout}>
-              🚪 Logout
-            </button>
+            {/* Menu body */}
+            <div class="user-menu-body">
+              {/* User Switcher */}
+              {familyMembers.filter((m) => m.id !== currentUser?.id).length > 0 && (
+                <div class="user-menu-section">
+                  <span class="user-menu-label">Switch to</span>
+                  {familyMembers
+                    .filter((m) => m.id !== currentUser?.id)
+                    .map((member) => (
+                      <button
+                        key={member.id}
+                        class="user-menu-item"
+                        onClick={() => {
+                          ActiveKidSessionManager.setActiveKid(member.id, member.name);
+                          window.location.href = member.role === "parent"
+                            ? "/parent/my-chores"
+                            : "/kid/dashboard";
+                        }}
+                      >
+                        <span class="item-emoji">{member.avatar_emoji || (member.role === "parent" ? "👤" : "🧒")}</span>
+                        <span>{member.name}</span>
+                      </button>
+                    ))}
+                </div>
+              )}
+
+              {/* Actions */}
+              <div class="user-menu-section">
+                {currentUser?.user_id && (
+                  <a href="/share" class="user-menu-item">
+                    <span class="item-emoji">🎁</span>
+                    <span>Share ChoreGami</span>
+                  </a>
+                )}
+                <button class="user-menu-item logout-item" onClick={handleLogout}>
+                  <span class="item-emoji">🚪</span>
+                  <span>Logout</span>
+                </button>
+              </div>
+            </div>
           </nav>
         </div>
       )}
@@ -353,25 +363,104 @@ export default function AppHeader({
         }
         @keyframes slideIn { from { transform: translateX(-100%); } to { transform: translateX(0); } }
 
-        /* Right user menu */
+        /* Right user menu - modern card design */
         .user-menu {
           position: absolute;
-          top: 0;
-          right: 0;
+          top: 8px;
+          right: 8px;
           background: var(--color-card);
-          width: 240px;
+          width: 220px;
           max-width: 80vw;
           max-height: 85vh;
-          padding: 0.75rem;
+          padding: 0;
+          display: flex;
+          flex-direction: column;
+          animation: slideInRight 0.2s ease;
+          box-shadow: 0 8px 32px rgba(0,0,0,0.2), 0 2px 8px rgba(0,0,0,0.1);
+          border-radius: 16px;
+          overflow: hidden;
+        }
+        @keyframes slideInRight { from { opacity: 0; transform: translateY(-10px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+        .user-menu-header {
+          background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark, var(--color-primary)) 100%);
+          padding: 1.25rem 1rem;
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+        }
+        .user-avatar-large {
+          font-size: 2.25rem;
+          background: rgba(255,255,255,0.2);
+          border-radius: 50%;
+          width: 48px;
+          height: 48px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .user-name-large {
+          font-size: 1.1rem;
+          font-weight: 600;
+          color: white;
+        }
+
+        .user-menu-body {
+          padding: 0.5rem;
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+          overflow-y: auto;
+        }
+        .user-menu-section {
           display: flex;
           flex-direction: column;
           gap: 2px;
-          animation: slideInRight 0.2s ease;
-          box-shadow: -4px 4px 24px rgba(0,0,0,0.15);
-          border-radius: 0 0 0 16px;
-          overflow-y: auto;
         }
-        @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
+        .user-menu-section + .user-menu-section {
+          margin-top: 0.5rem;
+          padding-top: 0.5rem;
+          border-top: 1px solid var(--color-bg);
+        }
+        .user-menu-label {
+          font-size: 0.65rem;
+          font-weight: 600;
+          color: var(--text-secondary, #888);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          padding: 0.25rem 0.75rem 0.4rem;
+        }
+        .user-menu-item {
+          display: flex;
+          align-items: center;
+          gap: 0.6rem;
+          padding: 0.65rem 0.75rem;
+          color: var(--color-text);
+          text-decoration: none;
+          border-radius: 10px;
+          font-size: 0.9rem;
+          font-weight: 500;
+          background: transparent;
+          border: none;
+          text-align: left;
+          cursor: pointer;
+          width: 100%;
+          transition: background 0.15s, transform 0.1s;
+        }
+        .user-menu-item:hover {
+          background: var(--color-bg);
+        }
+        .user-menu-item:active {
+          transform: scale(0.98);
+        }
+        .item-emoji {
+          font-size: 1.1rem;
+          width: 24px;
+          text-align: center;
+        }
+        .logout-item {
+          color: var(--color-warning, #dc2626);
+        }
 
         /* Menu items - compact & playful */
         .nav-menu a, .nav-menu button, .user-menu a, .user-menu button {
@@ -447,25 +536,6 @@ export default function AppHeader({
         .theme-btn.active {
           border-color: var(--color-primary);
           box-shadow: 0 0 0 2px var(--color-bg), 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        /* User info header */
-        .user-info {
-          display: flex;
-          align-items: center;
-          gap: 0.6rem;
-          padding: 0.5rem 0.5rem 0.75rem;
-        }
-        .user-avatar { font-size: 1.75rem; }
-        .user-name {
-          font-weight: 600;
-          font-size: 1rem;
-          color: var(--color-text);
-        }
-        .user-menu hr {
-          border: none;
-          border-top: 1px solid var(--color-bg);
-          margin: 0.4rem 0;
         }
 
         /* Badge dots */
