@@ -150,7 +150,7 @@ export default function SharePage({ data }: PageProps<SharePageData>) {
 
         <div class="share-tip">
           <div class="share-tip-title">💡 Sharing tip</div>
-          Text a friend, post in your neighborhood group, or tell another parent at school pickup!
+          Text a friend, post on social, or just tell someone in person!
         </div>
       </main>
 
