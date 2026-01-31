@@ -118,10 +118,80 @@ export const handler: Handlers = {
         }
       }
 
-      // Merge: manual chores first, then rotation chores
+      // Get recurring chores (manual recurring templates assigned to this kid)
+      // These are generated on-the-fly similar to rotation chores
+      let recurringChores: any[] = [];
+
+      // Map day names to JS day numbers (0=Sun, 1=Mon, etc.)
+      const dayNameToNum: Record<string, number> = {
+        sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6
+      };
+
+      // Get today's day of week from localDate
+      const requestDate = new Date(localDate + "T12:00:00");
+      const todayDayNum = requestDate.getDay(); // 0-6
+
+      // Query recurring templates assigned to this kid
+      const { data: recurringTemplates } = await supabase
+        .schema("choretracker")
+        .from("chore_templates")
+        .select("id, name, points, recurring_days, icon")
+        .eq("family_id", familyId)
+        .eq("assigned_to_profile_id", kidId)
+        .eq("is_recurring", true)
+        .eq("is_active", true)
+        .eq("is_deleted", false);
+
+      if (recurringTemplates && recurringTemplates.length > 0) {
+        // Filter to templates due today
+        const todayTemplates = recurringTemplates.filter((t: any) => {
+          if (!t.recurring_days || !Array.isArray(t.recurring_days)) return false;
+          return t.recurring_days.some((dayName: string) => dayNameToNum[dayName] === todayDayNum);
+        });
+
+        if (todayTemplates.length > 0) {
+          // Get completion status for these recurring chores today
+          const templateIds = todayTemplates.map((t: any) => t.id);
+          const { data: completedTx } = await supabase
+            .schema("choretracker")
+            .from("chore_transactions")
+            .select("metadata")
+            .eq("family_id", familyId)
+            .eq("profile_id", kidId)
+            .eq("transaction_type", "chore_completed")
+            .contains("metadata", { recurring_date: localDate });
+
+          const completedTemplateIds = new Set<string>();
+          for (const tx of completedTx || []) {
+            const metadata = tx.metadata as Record<string, unknown> | null;
+            if (metadata?.recurring_template_id) {
+              completedTemplateIds.add(metadata.recurring_template_id as string);
+            }
+          }
+
+          // Convert to chore format
+          recurringChores = todayTemplates.map((template: any) => ({
+            id: `recurring_${template.id}_${localDate}`,
+            status: completedTemplateIds.has(template.id) ? "completed" : "pending",
+            point_value: template.points,
+            source: "recurring",
+            recurring_template_id: template.id,
+            recurring_date: localDate,
+            chore_template: {
+              id: template.id,
+              name: template.name,
+              icon: template.icon || "🔁",
+              description: "Recurring chore",
+            },
+          }));
+        }
+      }
+
+      // Merge: manual chores first, then recurring chores, then rotation chores
       // Mark manual chores with source
       const allChores = [
         ...manualChores.map((c: any) => ({ ...c, source: "manual" })),
+        ...recurringChores,
         ...rotationChores,
       ];
 

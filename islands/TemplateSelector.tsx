@@ -730,6 +730,21 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
                   {addChoreIsRecurring && (
                     <div class="form-row">
                       <label>Repeat on</label>
+                      <div class="recurring-days-controls">
+                        <button
+                          type="button"
+                          class={`daily-shortcut-btn ${addChoreRecurringDays.length === 7 ? 'active' : ''}`}
+                          onClick={() => {
+                            if (addChoreRecurringDays.length === 7) {
+                              setAddChoreRecurringDays([]);
+                            } else {
+                              setAddChoreRecurringDays(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']);
+                            }
+                          }}
+                        >
+                          {addChoreRecurringDays.length === 7 ? '✓ Daily' : '📅 Daily'}
+                        </button>
+                      </div>
                       <div class="recurring-days-grid">
                         {(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const).map(day => {
                           const dayLabels: Record<string, string> = {
@@ -1702,6 +1717,10 @@ const styles = `
   .checkbox-label.disabled { opacity: 0.6; cursor: not-allowed; }
   .checkbox-label .edit-hint { font-size: 0.75rem; color: #9ca3af; margin-left: 0.25rem; }
   .recurring-toggle { padding-top: 0.5rem; border-top: 1px solid #e5e7eb; }
+  .recurring-days-controls { margin-bottom: 0.5rem; }
+  .daily-shortcut-btn { padding: 0.4rem 0.75rem; background: #f0fdf4; border: 2px solid var(--color-primary); border-radius: 6px; color: var(--color-primary); font-weight: 500; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; }
+  .daily-shortcut-btn:hover { background: #dcfce7; }
+  .daily-shortcut-btn.active { background: var(--color-primary); color: white; }
   .recurring-days-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; }
   .day-checkbox { display: flex; align-items: center; gap: 0.25rem; padding: 0.4rem 0.6rem; background: white; border: 2px solid #e5e7eb; border-radius: 6px; cursor: pointer; transition: all 0.2s; font-size: 0.85rem; }
   .day-checkbox:hover { border-color: var(--color-primary); }

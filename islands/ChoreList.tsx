@@ -10,11 +10,14 @@ interface ChoreAssignment {
   id: string;
   status: "pending" | "completed" | "verified" | "rejected";
   point_value: number;
-  source?: "manual" | "rotation";
+  source?: "manual" | "rotation" | "recurring";
   rotation_key?: string;
   rotation_preset?: string;
   rotation_date?: string;
+  recurring_template_id?: string;
+  recurring_date?: string;
   chore_template?: {
+    id?: string;
     name: string;
     description?: string;
     icon?: string;
@@ -51,6 +54,19 @@ export default function ChoreList({ chores, onChoreComplete, kidId, showPoints =
           body: JSON.stringify({
             chore_key: chore.rotation_key,
             date: chore.rotation_date,
+            kid_id: kidId,
+          }),
+        });
+      } else if (chore.source === "recurring" && chore.recurring_template_id && chore.recurring_date) {
+        // Recurring chore - use recurring complete endpoint
+        response = await fetch('/api/recurring/complete', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            template_id: chore.recurring_template_id,
+            date: chore.recurring_date,
             kid_id: kidId,
           }),
         });
