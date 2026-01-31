@@ -13,6 +13,7 @@ interface FamilyMember {
   name: string;
   role: "parent" | "child";
   avatar_emoji?: string;
+  user_id?: string;  // Only set if member has their own login (parents, teens)
 }
 
 interface Props {
@@ -209,13 +210,15 @@ export default function AppHeader({
               ⚙️ Settings
             </a>
 
-            {/* Share ChoreGami - scrolls to referral card in settings */}
-            <a
-              href="/parent/settings#share-referral-section"
-              title="Get 1 free month when friends join"
-            >
-              🎁 Share ChoreGami
-            </a>
+            {/* Share ChoreGami - only for users with their own account (parents, teens) */}
+            {currentUser?.user_id && (
+              <a
+                href="/parent/settings#share-referral-section"
+                title="Get 1 free month when friends join"
+              >
+                🎁 Share ChoreGami
+              </a>
+            )}
 
             {/* Inline Theme Picker */}
             <div class="menu-section">
@@ -275,12 +278,15 @@ export default function AppHeader({
             </div>
 
             <hr />
-            <a
-              href="/parent/settings#share-referral-section"
-              style={{ display: "block", padding: "0.75rem 1rem", color: "var(--color-text)", textDecoration: "none", borderRadius: "8px", fontSize: "1rem" }}
-            >
-              🎁 Share ChoreGami
-            </a>
+            {/* Share ChoreGami - only for users with their own account (parents, teens) */}
+            {currentUser?.user_id && (
+              <a
+                href="/parent/settings#share-referral-section"
+                style={{ display: "block", padding: "0.75rem 1rem", color: "var(--color-text)", textDecoration: "none", borderRadius: "8px", fontSize: "1rem" }}
+              >
+                🎁 Share ChoreGami
+              </a>
+            )}
             <button onClick={handleLogout}>
               🚪 Logout
             </button>
