@@ -109,7 +109,7 @@ schedule_data: {
 }
 ```
 
-**Display Logic**: Show on each day in "Coming Up" with "(Day 1 of 3)" suffix calculated at render time.
+**Display Logic**: Show on each day in "What's Next" with "(Day 1 of 3)" suffix calculated at render time.
 
 ---
 

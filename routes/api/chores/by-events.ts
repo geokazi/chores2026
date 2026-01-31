@@ -1,6 +1,6 @@
 /**
  * Get chores linked to specific events
- * Used by dashboards to show event-linked chores in "Coming Up" section
+ * Used by dashboards to show event-linked chores in "What's Next" section
  */
 
 import { Handlers } from "$fresh/server.ts";

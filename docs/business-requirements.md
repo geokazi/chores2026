@@ -259,7 +259,7 @@ ChoreGami 2026 is a streamlined family chore management application designed to 
 
 **Acceptance Criteria:**
 - [ ] Family setting toggle: "Kids can create events" (OFF by default)
-- [ ] When enabled, kids see "+ Add" button in Coming Up section
+- [ ] When enabled, kids see "+ Add Event" button in What's Next section
 - [ ] If Kid PIN enabled, PIN required before creating event
 - [ ] Events show "Added by [name]" attribution
 - [ ] Parents have full visibility and edit access to all events

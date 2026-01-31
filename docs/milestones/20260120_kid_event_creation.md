@@ -35,11 +35,11 @@ Add a new setting in `/parent/settings`:
 
 ### Kid Dashboard UI
 
-When enabled, show "+ Add Event" in the "Coming Up" section:
+When enabled, show "+ Add Event" in the "What's Next" section:
 
 ```
 +----------------------------------------+
-| Coming Up                    [+ Add]  |
+| What's Next                    [+ Add]  |
 |----------------------------------------|
 | Basketball practice                    |
 | Tomorrow at 4:00 PM                    |
@@ -134,7 +134,7 @@ Add toggle in settings card:
 
 **File**: `islands/KidDashboard.tsx`
 
-Add conditional button to "Coming Up" section:
+Add conditional button to "What's Next" section:
 
 ```tsx
 {kidsCanCreateEvents && (

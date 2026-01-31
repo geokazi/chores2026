@@ -37,7 +37,7 @@ Implemented comprehensive events calendar integration with two types of event-li
 ### Kid Experience
 
 #### Dashboard Integration
-- **"Coming Up" Section**: Shows upcoming events kid is participating in
+- **"What's Next" Section**: Shows upcoming events kid is participating in
 - **Prep Tasks Display**: Tasks shown as "Your missions" under events
 - **Task Toggle**: Tap to mark prep tasks done (optimistic UI)
 - **Event Missions**: Linked chores grouped by event with hidden points
@@ -121,7 +121,7 @@ ADD COLUMN family_event_id UUID REFERENCES choretracker.family_events(id);
 - `lib/utils/household.ts` - Event grouping utilities
 
 ### Modified Files
-- `islands/KidDashboard.tsx` - Added Coming Up section, prep task display
+- `islands/KidDashboard.tsx` - Added What's Next section, prep task display
 - `islands/SecureKidDashboard.tsx` - Added event/prep task fetching
 - `islands/AddChoreModal.tsx` - Added preSelectedEventId/Assignee props
 - `islands/AppHeader.tsx` - Added Events nav link

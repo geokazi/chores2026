@@ -12,7 +12,7 @@ ChoreGami currently restricts event creation to parents only (`/parent/events`).
 
 ### Current State
 - Parents create events at `/parent/events`
-- Kids see events they're participating in via "Coming Up" section
+- Kids see events they're participating in via "What's Next" section
 - Kids can mark prep tasks done and **add prep tasks** to events
 - Kids **cannot** create chores (only parents can create chores)
 - Existing PIN system gates dashboard access (optional family setting)
@@ -79,7 +79,7 @@ ChoreGami currently restricts event creation to parents only (`/parent/events`).
    ```
 
 2. **When setting is ON:**
-   - Kids see "+ Add Event" button in "Coming Up" section
+   - Kids see "+ Add Event" button in "What's Next" section
    - Uses existing `AddEventModal` component (reuse)
    - If Kid PIN is enabled for family, PIN required before creating
    - Events tagged with `created_by_profile_id`
@@ -123,7 +123,7 @@ This positions ChoreGami for the "responsible teen" market segment that's curren
 
 - [x] Implement family setting: `kids_can_create_events`
 - [x] Add toggle to `/parent/settings`
-- [x] Add "+ Add Event" to kid "Coming Up" section (conditional)
+- [x] Add "+ Add Event" to kid "What's Next" section (conditional)
 - [x] Update API to accept kid sessions (when enabled)
 - [x] Add "Added by [name]" badge to events
 - [x] Update documentation

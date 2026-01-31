@@ -10,7 +10,7 @@
 
 | Item Type | Storage Location | Display Location |
 |-----------|------------------|------------------|
-| **Events** | `choretracker.family_events` | "Coming Up" section on dashboards |
+| **Events** | `choretracker.family_events` | "What's Next" section on dashboards |
 | **Prep Tasks** | `family_events.metadata.prep_tasks` (JSONB) | Within event cards, as checkboxes |
 | **Event-Linked Chores** | `choretracker.chore_assignments` with `family_event_id` FK | "Event Missions" grouped section |
 
@@ -18,7 +18,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│ Events ("Coming Up" Section)                                         │
+│ Events ("What's Next" Section)                                         │
 ├─────────────────────────────────────────────────────────────────────┤
 │ 1. SecureKidDashboard calls /api/events                              │
 │ 2. API fetches from family_events WHERE is_deleted=false             │
@@ -177,16 +177,16 @@ useEffect(() => {
 - OR: Fetch event date via API when modal opens with preSelectedEventId
 - This fixes the root cause - chores will be due on the event day
 
-### Fix 0b: Show Event-Linked Chores in "Coming Up" Section (P1, 1-2 hr)
+### Fix 0b: Show Event-Linked Chores in "What's Next" Section (P1, 1-2 hr)
 
 **Files**: `islands/SecureKidDashboard.tsx`, `islands/KidDashboard.tsx`
 
 **Problem**: Event-linked chores with future due dates don't appear until that day.
 
-**Solution**: Load event-linked chores alongside events and display them in the "Coming Up" section:
+**Solution**: Load event-linked chores alongside events and display them in the "What's Next" section:
 
 ```
-📅 Coming Up
+📅 What's Next
 ┌─────────────────────────────┐
 │ 🏀 Basketball practice      │
 │ Tomorrow at 4:00 PM         │
@@ -298,7 +298,7 @@ WHERE conname LIKE '%family_event%';
 |----------|-----|--------|--------|
 | **P0** | **Fix 0: Default due_date to event date** | **HIGH - Fixes primary root cause** | 15 min |
 | P0 | Fix 3: Add logging | Enables diagnosis of remaining issues | 5 min |
-| P1 | Fix 0b: Show event chores in Coming Up | Better UX - see prep tasks before event day | 1-2 hr |
+| P1 | Fix 0b: Show event chores in What's Next | Better UX - see prep tasks before event day | 1-2 hr |
 | P1 | Fix 1: Timezone | Events not showing for users in different TZ | 5 min |
 | P1 | Fix 2: Soft-delete filter | Prevents stale data from deleted events | 10 min |
 | P2 | Fix 4: Explicit FK | Ensures reliable join behavior | 5 min |
@@ -312,9 +312,9 @@ After fixes:
 - [ ] Verify due date field defaults to event date (Jan 25), not today
 - [ ] Save chore, verify it appears on the event's date dashboard
 
-**Fix 0b - Coming Up Display**:
+**Fix 0b - What's Next Display**:
 - [ ] Create event for tomorrow with prep task and linked chore
-- [ ] On today's dashboard, verify both appear in "Coming Up" section
+- [ ] On today's dashboard, verify both appear in "What's Next" section
 - [ ] Verify prep tasks show as checkboxes
 - [ ] Verify linked chores show as mission items
 
@@ -341,7 +341,7 @@ After fixes:
 
 ### Fix 5: Smart Event Grouping (Removes 7-Day Limit)
 
-**Problem**: Events more than 7 days in the future weren't appearing in the "Coming Up" section. This was discovered when a kid-created event 11 days out didn't show on the dashboard.
+**Problem**: Events more than 7 days in the future weren't appearing in the "What's Next" section. This was discovered when a kid-created event 11 days out didn't show on the dashboard.
 
 **Root Cause**: Hard-coded 7-day filter in multiple locations:
 - `SecureKidDashboard.tsx`: `eventDate <= weekFromNow`
@@ -377,7 +377,7 @@ export function groupEventsByTimePeriod<T extends { event_date: string }>(events
 
 1. **AddChoreModal.tsx** (Fix 0): When opened from event card or when event selected from dropdown, `dueDate` now defaults to event's date instead of today. Also sets points to 0 for event-linked chores.
 
-2. **routes/api/chores/by-events.ts** (Fix 0b - NEW): New API endpoint to fetch chores linked to specific events by their IDs. Returns chores with template data for display in "Coming Up" section.
+2. **routes/api/chores/by-events.ts** (Fix 0b - NEW): New API endpoint to fetch chores linked to specific events by their IDs. Returns chores with template data for display in "What's Next" section.
 
 3. **SecureKidDashboard.tsx & SecureParentDashboard.tsx** (Fix 0b, Fix 1, Fix 3):
    - Pass `localDate` to `/api/events` (Fix 1)
@@ -385,9 +385,9 @@ export function groupEventsByTimePeriod<T extends { event_date: string }>(events
    - Fetch event-linked chores via new `/api/chores/by-events` endpoint (Fix 0b)
    - Merge linked chores into event objects as `linked_chores` array (Fix 0b)
 
-4. **KidDashboard.tsx** (Fix 0b): Updated "Coming Up" section to display linked chores alongside prep tasks. Added `LinkedChore` interface and render logic to show chores with completion status.
+4. **KidDashboard.tsx** (Fix 0b): Updated "What's Next" section to display linked chores alongside prep tasks. Added `LinkedChore` interface and render logic to show chores with completion status.
 
-5. **SecureParentDashboard.tsx** (Fix 0b): Updated "Coming Up" section display to show linked chores count alongside prep tasks count.
+5. **SecureParentDashboard.tsx** (Fix 0b): Updated "What's Next" section display to show linked chores count alongside prep tasks count.
 
 6. **routes/api/events.ts** (Fix 1): Now accepts `?localDate=YYYY-MM-DD` query param to avoid timezone issues.
 
