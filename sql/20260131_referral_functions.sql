@@ -7,7 +7,7 @@
 -- ============================================================================
 
 CREATE INDEX IF NOT EXISTS idx_families_settings_gin
-ON families USING GIN (settings);
+ON public.families USING GIN (settings);
 
 -- ============================================================================
 -- 1. Initialize Referral for Family (idempotent)
@@ -17,7 +17,7 @@ ON families USING GIN (settings);
 CREATE OR REPLACE FUNCTION init_family_referral(p_family_id uuid, p_code text)
 RETURNS void AS $$
 BEGIN
-  UPDATE families
+  UPDATE public.families
   SET settings = jsonb_set(
     jsonb_set(
       jsonb_set(
@@ -51,7 +51,7 @@ RETURNS TABLE(family_id uuid, family_name text, referral jsonb) AS $$
 BEGIN
   RETURN QUERY
   SELECT f.id, f.name, f.settings->'apps'->'choregami'->'referral'
-  FROM families f
+  FROM public.families f
   WHERE f.settings @> jsonb_build_object(
     'apps', jsonb_build_object(
       'choregami', jsonb_build_object(
@@ -88,7 +88,7 @@ BEGIN
   -- Lock the row to prevent race conditions (FOR UPDATE)
   SELECT settings->'apps'->'choregami'->'referral'
   INTO current_referral
-  FROM families
+  FROM public.families
   WHERE id = p_referrer_family_id
   FOR UPDATE;
 
@@ -121,7 +121,7 @@ BEGIN
   );
 
   -- Atomic update with cap check in WHERE clause (double protection)
-  UPDATE families
+  UPDATE public.families
   SET settings = jsonb_set(
     jsonb_set(
       jsonb_set(
@@ -155,7 +155,7 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION refresh_referral_code(p_family_id uuid, p_new_code text)
 RETURNS void AS $$
 BEGIN
-  UPDATE families
+  UPDATE public.families
   SET settings = jsonb_set(
     jsonb_set(
       settings,
