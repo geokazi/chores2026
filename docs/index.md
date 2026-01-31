@@ -1,8 +1,8 @@
 # ChoreGami 2026 Documentation
 
-**Version**: 1.32
+**Version**: 1.33
 **Status**: ✅ Production Ready
-**Last Updated**: January 30, 2026 (Option A invite flow, haptic/sound celebrations, referral plan)
+**Last Updated**: January 31, 2026 (Referral "Share ChoreGami" feature with 6-month cap + terms)
 
 **Project Overview**: A simplified, real-time chore completion system built with Deno Fresh, transforming routine family chores into an engaging, competitive experience with sub-second real-time updates across all family devices.
 
@@ -83,7 +83,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | TBD | [**Testimonials & Social Proof**](./planned/20260126_testimonials_strategy.md) | 📋 Planned | Third-party reviews (Trustpilot first), static testimonials on landing page |
 | 2026-01-27 | [**Family Member Invites**](./milestones/20260127_family_member_invites.md) | ✅ Complete | Dual-channel invites (email working, SMS pending A2P); role selector (Co-parent/Teen); parent deletion with owner protection |
 | — | [↳ Outreach Templates](./planned/20260126_testimonial_outreach_templates.md) | 📖 Guide | Email scripts for collecting testimonials and reviews |
-| TBD | [**Referral "Share ChoreGami"**](./planned/20260130_referral_share_feature.md) | 📋 Planned | Settings card + profile menu; JSONB+GIN O(1) lookup; reward tracking |
+| 2026-01-31 | [**Referral "Share ChoreGami"**](./planned/20260130_referral_share_feature.md) | ✅ Complete | Settings card + profile menu; JSONB+GIN O(1) lookup; 6-month cap; reward tracking |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 
