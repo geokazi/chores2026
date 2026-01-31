@@ -422,14 +422,83 @@ const referral = await referralService.getOrCreateReferral(familyId);
 
 ---
 
-## Testing Checklist
+## Unit Tests
 
-- [ ] Code generation produces unique 6-char codes
-- [ ] GIN index lookup returns correct family
-- [ ] Invalid code returns null (not error)
-- [ ] Conversion increments `reward_months_earned`
-- [ ] Self-referral blocked
-- [ ] Duplicate conversion blocked
+### Test File Structure
+
+```
+tests/
+├── services/
+│   └── referral-service.test.ts    # ~80 lines, 12 tests
+├── routes/
+│   └── r-code.test.ts              # ~25 lines, 3 tests
+└── integration/
+    └── referral-registration.test.ts  # ~40 lines, 4 tests
+```
+
+### 1. ReferralService (`tests/services/referral-service.test.ts`)
+
+```typescript
+// Code Generation
+- [ ] generateCode() returns 6-character string
+- [ ] generateCode() returns uppercase alphanumeric only
+- [ ] generateCode() returns unique codes (no collisions in 1000 iterations)
+
+// Get or Create (idempotent)
+- [ ] getOrCreateReferral() creates new referral for family without one
+- [ ] getOrCreateReferral() returns existing referral for family with one
+- [ ] getOrCreateReferral() initializes all required fields (code, created_at, conversions[], reward_months_earned, reward_months_redeemed)
+
+// Lookup
+- [ ] findByCode() returns family data for valid code
+- [ ] findByCode() returns null for invalid code
+- [ ] findByCode() returns null for empty string
+
+// Conversion Recording
+- [ ] recordConversion() increments reward_months_earned
+- [ ] recordConversion() appends to conversions array
+- [ ] recordConversion() updates last_conversion_at
+- [ ] recordConversion() blocks self-referral (referrer === new family)
+- [ ] recordConversion() blocks duplicate conversion (family already in conversions)
+```
+
+### 2. Short URL Route (`tests/routes/r-code.test.ts`)
+
+```typescript
+- [ ] GET /r/ABC123 redirects to /register?ref=ABC123
+- [ ] GET /r/ABC123 returns 302 status
+- [ ] GET /r/invalid still redirects (validation happens at registration)
+```
+
+### 3. Registration Integration (`tests/integration/referral-registration.test.ts`)
+
+```typescript
+- [ ] Registration with valid ref param calls recordConversion()
+- [ ] Registration with invalid ref param silently ignores (no error)
+- [ ] Registration without ref param skips referral logic
+- [ ] Self-referral attempt is blocked
+```
+
+### Line Count Summary
+
+| File | Tests | Lines |
+|------|-------|-------|
+| `referral-service.test.ts` | 12 | ~80 |
+| `r-code.test.ts` | 3 | ~25 |
+| `referral-registration.test.ts` | 4 | ~40 |
+| **Total** | **19** | **~145** |
+
+### What NOT to Unit Test
+
+| Skip | Why |
+|------|-----|
+| SQL functions directly | Tested via service layer integration |
+| GIN index performance | DB responsibility, not app logic |
+| UI copy/share buttons | Browser APIs, manual QA sufficient |
+| Canvas confetti | Visual, manual verification |
+
+### Manual QA Checklist
+
 - [ ] Native share works on mobile
 - [ ] Clipboard copy works on desktop
 - [ ] Card displays correct stats
