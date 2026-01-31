@@ -7,16 +7,23 @@
 
 import { createClient, SupabaseClient } from "jsr:@supabase/supabase-js@2";
 
+export interface ReferralAttribution {
+  source: string;  // 'direct', 'web', 'app', 'email', 'social'
+  campaign?: string;  // Optional campaign identifier
+}
+
 export interface ReferralConversion {
   family_id: string;
   family_name: string;
   user_id: string;
   converted_at: string;
+  attribution?: ReferralAttribution;
 }
 
 export interface Referral {
   code: string;
   created_at: string;
+  code_refreshed_at?: string;  // Set when code is regenerated
   conversions: ReferralConversion[];
   reward_months_earned: number;
   reward_months_redeemed: number;
@@ -110,48 +117,30 @@ export class ReferralService {
     };
   }
 
-  /** Record conversion when referred user signs up */
+  /**
+   * Record conversion when referred user signs up
+   * Uses atomic SQL function with FOR UPDATE lock to prevent race conditions
+   */
   async recordConversion(
     referrerFamilyId: string,
     newFamilyId: string,
     newFamilyName: string,
-    newUserId: string
+    newUserId: string,
+    attribution?: { source?: string; campaign?: string }
   ): Promise<{ success: boolean; error?: string }> {
-    // Block self-referral
+    // Block self-referral (early exit before DB call)
     if (referrerFamilyId === newFamilyId) {
       return { success: false, error: "Cannot refer yourself" };
     }
 
-    // Check for duplicate conversion
-    const { data: family } = await this.supabase
-      .from("families")
-      .select("settings")
-      .eq("id", referrerFamilyId)
-      .single();
-
-    const referral = family?.settings?.apps?.choregami?.referral;
-
-    // Check 6-month cap
-    if ((referral?.reward_months_earned ?? 0) >= MAX_REWARD_MONTHS) {
-      return { success: false, error: "Maximum referral rewards reached (6 months)" };
-    }
-
-    // Check for duplicate conversion
-    if (referral?.conversions) {
-      const alreadyConverted = referral.conversions.some(
-        (c: ReferralConversion) => c.family_id === newFamilyId
-      );
-      if (alreadyConverted) {
-        return { success: false, error: "Already credited for this signup" };
-      }
-    }
-
-    // Record the conversion
-    const { error } = await this.supabase.rpc("record_referral_conversion", {
+    // Record the conversion atomically (SQL handles cap + duplicate checks)
+    const { data, error } = await this.supabase.rpc("record_referral_conversion", {
       p_referrer_family_id: referrerFamilyId,
       p_new_family_id: newFamilyId,
       p_new_family_name: newFamilyName,
       p_new_user_id: newUserId,
+      p_source: attribution?.source ?? null,
+      p_campaign: attribution?.campaign ?? null,
     });
 
     if (error) {
@@ -159,7 +148,37 @@ export class ReferralService {
       return { success: false, error: "Failed to record conversion" };
     }
 
-    return { success: true };
+    // Handle result codes from atomic SQL function
+    const result = data as string;
+    switch (result) {
+      case "success":
+        return { success: true };
+      case "cap_reached":
+        return { success: false, error: "Maximum referral rewards reached (6 months)" };
+      case "duplicate":
+        return { success: false, error: "Already credited for this signup" };
+      case "not_found":
+        return { success: false, error: "Referrer family not found" };
+      default:
+        return { success: false, error: "Unknown error" };
+    }
+  }
+
+  /** Refresh referral code (generates new code, preserves history) */
+  async refreshCode(familyId: string): Promise<string> {
+    const newCode = this.generateCode();
+
+    const { error } = await this.supabase.rpc("refresh_referral_code", {
+      p_family_id: familyId,
+      p_new_code: newCode,
+    });
+
+    if (error) {
+      console.error("[referral] Refresh code error:", error);
+      throw new Error("Failed to refresh referral code");
+    }
+
+    return newCode;
   }
 
   /** Get stats for display */

@@ -64,44 +64,63 @@ END;
 $$ LANGUAGE plpgsql STABLE;
 
 -- ============================================================================
--- 3. Record Referral Conversion
+-- 3. Record Referral Conversion (Atomic with FOR UPDATE lock)
 -- Called when a referred user signs up and creates their family
--- Enforces 6-month cap on referral rewards
+-- Enforces 6-month cap on referral rewards atomically
+-- Returns: 'success', 'cap_reached', 'duplicate', or 'not_found'
 -- ============================================================================
 
 CREATE OR REPLACE FUNCTION record_referral_conversion(
   p_referrer_family_id uuid,
   p_new_family_id uuid,
   p_new_family_name text,
-  p_new_user_id uuid
+  p_new_user_id uuid,
+  p_source text DEFAULT NULL,
+  p_campaign text DEFAULT NULL
 )
-RETURNS void AS $$
+RETURNS text AS $$
 DECLARE
   current_referral jsonb;
   current_months int;
   new_conversion jsonb;
+  row_updated boolean;
 BEGIN
-  -- Get current referral data
+  -- Lock the row to prevent race conditions (FOR UPDATE)
   SELECT settings->'apps'->'choregami'->'referral'
   INTO current_referral
   FROM families
-  WHERE id = p_referrer_family_id;
+  WHERE id = p_referrer_family_id
+  FOR UPDATE;
 
-  -- Check 6-month cap (enforcement at DB level)
-  current_months := COALESCE((current_referral->>'reward_months_earned')::int, 0);
-  IF current_months >= 6 THEN
-    RETURN;  -- Cap reached, silently ignore
+  -- Family not found
+  IF current_referral IS NULL THEN
+    RETURN 'not_found';
   END IF;
 
-  -- Build new conversion entry
+  -- Check 6-month cap atomically (under lock)
+  current_months := COALESCE((current_referral->>'reward_months_earned')::int, 0);
+  IF current_months >= 6 THEN
+    RETURN 'cap_reached';
+  END IF;
+
+  -- Check for duplicate conversion (same family already referred)
+  IF current_referral->'conversions' @> jsonb_build_object('family_id', p_new_family_id) THEN
+    RETURN 'duplicate';
+  END IF;
+
+  -- Build new conversion entry with optional attribution
   new_conversion := jsonb_build_object(
     'family_id', p_new_family_id,
     'family_name', p_new_family_name,
     'user_id', p_new_user_id,
-    'converted_at', NOW()
+    'converted_at', NOW(),
+    'attribution', jsonb_build_object(
+      'source', COALESCE(p_source, 'direct'),
+      'campaign', p_campaign
+    )
   );
 
-  -- Update referral with new conversion
+  -- Atomic update with cap check in WHERE clause (double protection)
   UPDATE families
   SET settings = jsonb_set(
     jsonb_set(
@@ -116,6 +135,37 @@ BEGIN
     '{apps,choregami,referral,last_conversion_at}',
     to_jsonb(NOW())
   )
-  WHERE id = p_referrer_family_id;
+  WHERE id = p_referrer_family_id
+    AND COALESCE((settings->'apps'->'choregami'->'referral'->>'reward_months_earned')::int, 0) < 6;
+
+  -- Check if update succeeded (FOUND is set by UPDATE)
+  IF NOT FOUND THEN
+    RETURN 'cap_reached';  -- Race condition caught by WHERE clause
+  END IF;
+
+  RETURN 'success';
+END;
+$$ LANGUAGE plpgsql;
+
+-- ============================================================================
+-- 4. Refresh Referral Code
+-- Generates a new code while preserving conversion history
+-- ============================================================================
+
+CREATE OR REPLACE FUNCTION refresh_referral_code(p_family_id uuid, p_new_code text)
+RETURNS void AS $$
+BEGIN
+  UPDATE families
+  SET settings = jsonb_set(
+    jsonb_set(
+      settings,
+      '{apps,choregami,referral,code}',
+      to_jsonb(p_new_code)
+    ),
+    '{apps,choregami,referral,code_refreshed_at}',
+    to_jsonb(NOW())
+  )
+  WHERE id = p_family_id
+    AND settings->'apps'->'choregami'->'referral' IS NOT NULL;
 END;
 $$ LANGUAGE plpgsql;
