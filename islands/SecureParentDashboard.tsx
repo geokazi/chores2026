@@ -419,7 +419,7 @@ export default function SecureParentDashboard({ family, familyMembers, recentAct
         </div>
       )}
 
-      {/* Coming Up - Events with Smart Grouping */}
+      {/* What's Next - Events with Smart Grouping */}
       {upcomingEvents.length > 0 && (
         <div class="card" style={{ marginBottom: "1.5rem" }}>
           <h2 style={{
@@ -430,7 +430,7 @@ export default function SecureParentDashboard({ family, familyMembers, recentAct
             alignItems: "center",
             gap: "0.5rem",
           }}>
-            📅 Coming Up
+            📅 What's Next
           </h2>
 
           {/* Helper to render event card */}

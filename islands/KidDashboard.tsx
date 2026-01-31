@@ -286,7 +286,7 @@ export default function KidDashboard({
                 color: "var(--color-text)",
               }}
             >
-              📅 Coming Up
+              📅 What's Next
             </h2>
             {kidsCanCreateEvents && (
               <button
