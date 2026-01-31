@@ -10,12 +10,18 @@ export default function ShareReferralCard({ code, conversions, monthsEarned }: S
   const copied = useSignal(false);
   const shareUrl = `https://choregami.app/r/${code}`;
 
+  // Debug logging
+  console.log("[Referral] ShareReferralCard mounted", { code, conversions, monthsEarned, shareUrl });
+
   const handleCopy = async () => {
+    console.log("[Referral] Copy clicked", { shareUrl });
     try {
       await navigator.clipboard.writeText(shareUrl);
       copied.value = true;
+      console.log("[Referral] Copied to clipboard successfully");
       setTimeout(() => { copied.value = false; }, 2000);
-    } catch {
+    } catch (err) {
+      console.log("[Referral] Clipboard API failed, using fallback", err);
       // Fallback for older browsers
       const textArea = document.createElement("textarea");
       textArea.value = shareUrl;
@@ -29,6 +35,7 @@ export default function ShareReferralCard({ code, conversions, monthsEarned }: S
   };
 
   const handleShare = async () => {
+    console.log("[Referral] Share clicked", { hasShareAPI: !!navigator.share });
     if (navigator.share) {
       try {
         await navigator.share({
@@ -36,11 +43,12 @@ export default function ShareReferralCard({ code, conversions, monthsEarned }: S
           text: "ChoreGami makes family chores fun with points and rewards. Join us!",
           url: shareUrl,
         });
-      } catch {
-        // User cancelled or share failed - silent
+        console.log("[Referral] Share completed");
+      } catch (err) {
+        console.log("[Referral] Share cancelled or failed", err);
       }
     } else {
-      // Fallback to copy
+      console.log("[Referral] No Web Share API, falling back to copy");
       handleCopy();
     }
   };

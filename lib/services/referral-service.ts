@@ -56,6 +56,8 @@ export class ReferralService {
 
   /** Get existing referral for family or create new one (idempotent) */
   async getOrCreateReferral(familyId: string): Promise<Referral> {
+    console.log("[Referral] getOrCreateReferral called", { familyId });
+
     // Check if referral already exists
     const { data: family } = await this.supabase
       .from("families")
@@ -65,11 +67,13 @@ export class ReferralService {
 
     const existing = family?.settings?.apps?.choregami?.referral;
     if (existing?.code) {
+      console.log("[Referral] Found existing referral", { code: existing.code, conversions: existing.conversions?.length || 0 });
       return existing as Referral;
     }
 
     // Generate new code and initialize
     const code = this.generateCode();
+    console.log("[Referral] Creating new referral", { familyId, code });
     const { error } = await this.supabase.rpc("init_family_referral", {
       p_family_id: familyId,
       p_code: code,
@@ -92,7 +96,10 @@ export class ReferralService {
 
   /** O(1) lookup by code via GIN index */
   async findByCode(code: string): Promise<ReferralLookup | null> {
+    console.log("[Referral] findByCode called", { code });
+
     if (!code || code.length !== 6) {
+      console.log("[Referral] Invalid code length", { code, length: code?.length });
       return null;
     }
 
@@ -101,15 +108,17 @@ export class ReferralService {
     });
 
     if (error) {
-      console.error("[referral] Code lookup error:", error);
+      console.error("[Referral] Code lookup error:", error);
       return null;
     }
 
     if (!data || data.length === 0) {
+      console.log("[Referral] Code not found", { code });
       return null;
     }
 
     const row = data[0];
+    console.log("[Referral] Code found", { code, familyId: row.family_id, familyName: row.family_name });
     return {
       familyId: row.family_id,
       familyName: row.family_name,
