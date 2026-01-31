@@ -56,7 +56,7 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
   const [showAddChoreForm, setShowAddChoreForm] = useState(false);
   const [addChoreName, setAddChoreName] = useState("");
   const [addChorePoints, setAddChorePoints] = useState("1");
-  const [addChoreIsRecurring, setAddChoreIsRecurring] = useState(false);
+  const [addChoreFrequency, setAddChoreFrequency] = useState<'once' | 'daily' | 'custom'>('once');
   const [addChoreRecurringDays, setAddChoreRecurringDays] = useState<string[]>([]);
   const [addChoreAssignedTo, setAddChoreAssignedTo] = useState("");
   const [isAddingChore, setIsAddingChore] = useState(false);
@@ -393,7 +393,7 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
   const resetChoreForm = () => {
     setAddChoreName("");
     setAddChorePoints("1");
-    setAddChoreIsRecurring(false);
+    setAddChoreFrequency('once');
     setAddChoreRecurringDays([]);
     setAddChoreAssignedTo("");
     setAddChoreDueDate("");
@@ -408,12 +408,15 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
     setEditingChoreType(type);
     setAddChoreName(chore.name);
     setAddChorePoints(String(chore.points));
-    setAddChoreIsRecurring(type === 'recurring');
 
     if (type === 'recurring') {
-      setAddChoreRecurringDays(chore.recurring_days || []);
+      const days = chore.recurring_days || [];
+      setAddChoreRecurringDays(days);
+      // Detect if it's daily (all 7 days) or custom
+      setAddChoreFrequency(days.length === 7 ? 'daily' : 'custom');
       setAddChoreDueDate("");
     } else {
+      setAddChoreFrequency('once');
       setAddChoreRecurringDays([]);
       // Convert due_date to YYYY-MM-DD format for date input
       if (chore.due_date) {
@@ -435,8 +438,8 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
       return;
     }
 
-    if (addChoreIsRecurring && addChoreRecurringDays.length === 0) {
-      alert("Please select at least one day for recurring chores");
+    if (addChoreFrequency === 'custom' && addChoreRecurringDays.length === 0) {
+      alert("Please select at least one day for custom recurring chores");
       return;
     }
 
@@ -483,8 +486,12 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
             points: parseInt(addChorePoints) || 1,
             assignedTo: addChoreAssignedTo,
             dueDate: localDate + "T12:00:00",  // Noon local, no Z suffix = treated as local time
-            isRecurring: addChoreIsRecurring,
-            recurringDays: addChoreIsRecurring ? addChoreRecurringDays : undefined,
+            isRecurring: addChoreFrequency !== 'once',
+            recurringDays: addChoreFrequency === 'daily'
+              ? ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
+              : addChoreFrequency === 'custom'
+                ? addChoreRecurringDays
+                : undefined,
           }),
         });
 
@@ -712,60 +719,64 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
                     </select>
                   </div>
 
-                  {/* Recurring Toggle (disabled when editing - can't change type) */}
-                  <div class="form-row recurring-toggle">
-                    <label class={`checkbox-label ${editingChoreId ? 'disabled' : ''}`}>
-                      <input
-                        type="checkbox"
-                        checked={addChoreIsRecurring}
-                        onChange={(e) => setAddChoreIsRecurring(e.currentTarget.checked)}
+                  {/* Frequency Selector (segmented control) */}
+                  <div class="form-row">
+                    <label>Repeats</label>
+                    <div class={`frequency-segmented ${editingChoreId ? 'disabled' : ''}`}>
+                      <button
+                        type="button"
+                        class={`frequency-btn ${addChoreFrequency === 'once' ? 'active' : ''}`}
+                        onClick={() => !editingChoreId && setAddChoreFrequency('once')}
                         disabled={!!editingChoreId}
-                      />
-                      <span>Recurring chore</span>
-                      {editingChoreId && <span class="edit-hint">(type cannot be changed)</span>}
-                    </label>
+                      >
+                        Once
+                      </button>
+                      <button
+                        type="button"
+                        class={`frequency-btn ${addChoreFrequency === 'daily' ? 'active' : ''}`}
+                        onClick={() => !editingChoreId && setAddChoreFrequency('daily')}
+                        disabled={!!editingChoreId}
+                      >
+                        Daily
+                      </button>
+                      <button
+                        type="button"
+                        class={`frequency-btn ${addChoreFrequency === 'custom' ? 'active' : ''}`}
+                        onClick={() => !editingChoreId && setAddChoreFrequency('custom')}
+                        disabled={!!editingChoreId}
+                      >
+                        Custom
+                      </button>
+                    </div>
+                    {editingChoreId && <span class="edit-hint">Frequency cannot be changed</span>}
                   </div>
 
-                  {/* Recurring Days (show only if recurring) */}
-                  {addChoreIsRecurring && (
+                  {/* Day Selector (only for Custom frequency) */}
+                  {addChoreFrequency === 'custom' && (
                     <div class="form-row">
-                      <label>Repeat on</label>
-                      <div class="recurring-days-controls">
-                        <button
-                          type="button"
-                          class={`daily-shortcut-btn ${addChoreRecurringDays.length === 7 ? 'active' : ''}`}
-                          onClick={() => {
-                            if (addChoreRecurringDays.length === 7) {
-                              setAddChoreRecurringDays([]);
-                            } else {
-                              setAddChoreRecurringDays(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']);
-                            }
-                          }}
-                        >
-                          {addChoreRecurringDays.length === 7 ? '✓ Daily' : '📅 Daily'}
-                        </button>
-                      </div>
-                      <div class="recurring-days-grid">
+                      <label>Select days</label>
+                      <div class="day-pills">
                         {(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const).map(day => {
                           const dayLabels: Record<string, string> = {
-                            mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun'
+                            mon: 'M', tue: 'T', wed: 'W', thu: 'T', fri: 'F', sat: 'S', sun: 'S'
                           };
                           const isSelected = addChoreRecurringDays.includes(day);
                           return (
-                            <label key={day} class={`day-checkbox ${isSelected ? 'selected' : ''}`}>
-                              <input
-                                type="checkbox"
-                                checked={isSelected}
-                                onChange={(e) => {
-                                  if (e.currentTarget.checked) {
-                                    setAddChoreRecurringDays([...addChoreRecurringDays, day]);
-                                  } else {
-                                    setAddChoreRecurringDays(addChoreRecurringDays.filter(d => d !== day));
-                                  }
-                                }}
-                              />
-                              <span>{dayLabels[day]}</span>
-                            </label>
+                            <button
+                              key={day}
+                              type="button"
+                              class={`day-pill ${isSelected ? 'active' : ''}`}
+                              onClick={() => {
+                                if (isSelected) {
+                                  setAddChoreRecurringDays(addChoreRecurringDays.filter(d => d !== day));
+                                } else {
+                                  setAddChoreRecurringDays([...addChoreRecurringDays, day]);
+                                }
+                              }}
+                              title={day.charAt(0).toUpperCase() + day.slice(1)}
+                            >
+                              {dayLabels[day]}
+                            </button>
                           );
                         })}
                       </div>
@@ -773,7 +784,7 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
                   )}
 
                   {/* Due Date (show only for one-time chores when editing) */}
-                  {!addChoreIsRecurring && editingChoreType === 'one_time' && (
+                  {addChoreFrequency === 'once' && editingChoreType === 'one_time' && (
                     <div class="form-row">
                       <label>Due Date</label>
                       <input
@@ -792,23 +803,29 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
                     disabled={isAddingChore || !addChoreName.trim() || !addChoreAssignedTo}
                   >
                     {isAddingChore
-                      ? (editingChoreId ? 'Saving...' : 'Adding...')
+                      ? (editingChoreId ? 'Saving...' : 'Creating...')
                       : editingChoreId
                         ? 'Save Changes'
-                        : addChoreIsRecurring
-                          ? 'Create Recurring Chore'
-                          : 'Add Chore for Today'}
+                        : addChoreFrequency === 'once'
+                          ? 'Create Chore'
+                          : addChoreFrequency === 'daily'
+                            ? 'Create Daily Chore'
+                            : 'Create Custom Chore'}
                   </button>
 
-                  {addChoreIsRecurring && addChoreRecurringDays.length > 0 && (
+                  {addChoreFrequency !== 'once' && (
                     <p class="recurring-hint">
-                      📅 This chore will appear every {addChoreRecurringDays.map(d => {
-                        const labels: Record<string, string> = {
-                          mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday',
-                          fri: 'Friday', sat: 'Saturday', sun: 'Sunday'
-                        };
-                        return labels[d];
-                      }).join(', ')}
+                      {addChoreFrequency === 'daily'
+                        ? '✓ Appears every day'
+                        : addChoreRecurringDays.length > 0
+                          ? `✓ ${addChoreRecurringDays.map(d => {
+                              const labels: Record<string, string> = {
+                                mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu',
+                                fri: 'Fri', sat: 'Sat', sun: 'Sun'
+                              };
+                              return labels[d];
+                            }).join(', ')}`
+                          : '← Select days'}
                     </p>
                   )}
                 </div>
@@ -1716,16 +1733,21 @@ const styles = `
   .checkbox-label input { width: 18px; height: 18px; accent-color: var(--color-primary); }
   .checkbox-label.disabled { opacity: 0.6; cursor: not-allowed; }
   .checkbox-label .edit-hint { font-size: 0.75rem; color: #9ca3af; margin-left: 0.25rem; }
-  .recurring-toggle { padding-top: 0.5rem; border-top: 1px solid #e5e7eb; }
-  .recurring-days-controls { margin-bottom: 0.5rem; }
-  .daily-shortcut-btn { padding: 0.4rem 0.75rem; background: #f0fdf4; border: 2px solid var(--color-primary); border-radius: 6px; color: var(--color-primary); font-weight: 500; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; }
-  .daily-shortcut-btn:hover { background: #dcfce7; }
-  .daily-shortcut-btn.active { background: var(--color-primary); color: white; }
-  .recurring-days-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-  .day-checkbox { display: flex; align-items: center; gap: 0.25rem; padding: 0.4rem 0.6rem; background: white; border: 2px solid #e5e7eb; border-radius: 6px; cursor: pointer; transition: all 0.2s; font-size: 0.85rem; }
-  .day-checkbox:hover { border-color: var(--color-primary); }
-  .day-checkbox.selected { border-color: var(--color-primary); background: #f0fdf4; }
-  .day-checkbox input { width: 14px; height: 14px; accent-color: var(--color-primary); }
+  /* Frequency segmented control */
+  .frequency-segmented { display: flex; border: 2px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
+  .frequency-segmented.disabled { opacity: 0.6; }
+  .frequency-btn { flex: 1; padding: 0.5rem 0.75rem; border: none; background: white; font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all 0.2s; color: #6b7280; }
+  .frequency-btn:not(:last-child) { border-right: 1px solid #e5e7eb; }
+  .frequency-btn:hover:not(:disabled) { background: #f9fafb; }
+  .frequency-btn.active { background: var(--color-primary); color: white; }
+  .frequency-btn:disabled { cursor: not-allowed; }
+  .edit-hint { display: block; font-size: 0.75rem; color: #9ca3af; margin-top: 0.25rem; }
+
+  /* Day pills for custom frequency */
+  .day-pills { display: flex; gap: 0.375rem; }
+  .day-pill { width: 36px; height: 36px; border: 2px solid #e5e7eb; border-radius: 50%; background: white; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s; color: #6b7280; display: flex; align-items: center; justify-content: center; }
+  .day-pill:hover { border-color: var(--color-primary); color: var(--color-primary); }
+  .day-pill.active { background: var(--color-primary); border-color: var(--color-primary); color: white; }
   .add-chore-submit { margin-top: 0.5rem; }
   .recurring-hint { margin-top: 0.5rem; padding: 0.5rem 0.75rem; background: #f0fdf4; border-radius: 6px; font-size: 0.8rem; color: #166534; }
 `;
