@@ -124,124 +124,138 @@ export default function AppHeader({
       {menuOpen && (
         <div class="menu-overlay" onClick={() => setMenuOpen(false)}>
           <nav class="nav-menu" onClick={(e) => e.stopPropagation()}>
-            <a href={isParent ? "/parent/dashboard" : "/kid/dashboard"} class={currentPage === "dashboard" ? "active" : ""}>
-              🏠 Dashboard
-            </a>
-            <a href="/reports" class={currentPage === "reports" ? "active" : ""}>
-              📊 Reports
-            </a>
-
-            {/* Kid-only financial features */}
-            {!isParent && (
-              <>
-                <a href="/kid/rewards" class={currentPage === "rewards" ? "active" : ""}>
-                  🎁 Rewards
-                </a>
-                <a href="/kid/goals" class={currentPage === "goals" ? "active" : ""}>
-                  🎯 My Goals
-                </a>
-              </>
-            )}
-
-            {isParent && (
-              <>
-                <a
-                  href="/parent/events"
-                  class={currentPage === "events" ? "active" : ""}
-                  style={{ position: "relative" }}
-                  onClick={() => {
-                    if (hasUpcomingEvents) {
-                      fetch("/api/analytics/event", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ metric: "badges" }),
-                      }).catch(() => {}); // Non-blocking
-                    }
-                  }}
-                >
-                  📅 Events
-                  {hasUpcomingEvents && (
-                    <span class="event-badge-dot" />
-                  )}
-                </a>
-                <a href="/parent/balances" class={currentPage === "balances" ? "active" : ""}>
-                  💰 Balances
-                </a>
-                <a href="/parent/rewards" class={currentPage === "rewards" ? "active" : ""}>
-                  🎁 Rewards
-                </a>
-                <a href="/parent/insights" class={currentPage === "insights" ? "active" : ""}>
-                  🧠 Habit Insights
-                </a>
-              </>
-            )}
-
-            {/* Kid shortcuts - SECURITY: session-based, no GUIDs in URLs */}
-            {kids.length > 0 && (
-              <div class="menu-section">
-                <span class="menu-label">Quick View</span>
-                {kids.map((kid) => (
-                  <button
-                    key={kid.id}
-                    class={`kid-link ${currentUser?.id === kid.id ? "active" : ""}`}
-                    onClick={async () => {
-                      const { ActiveKidSessionManager } = await import("../lib/active-kid-session.ts");
-                      ActiveKidSessionManager.setActiveKid(kid.id, kid.name);
-                      window.location.href = "/kid/dashboard";
-                    }}
-                  >
-                    {kid.avatar_emoji || "🧒"} {kid.name}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* Switch User - go back to family selector */}
-            <button onClick={handleSwitchUser}>
-              👥 Switch User
-            </button>
-
-            {/* Settings - Parent-only, PIN-protected */}
-            <a
-              href="/parent/settings"
-              class={currentPage === "settings" ? "active" : ""}
-              title="Adjust Points, Chore Templates, Weekly Goal, PIN & Security"
-            >
-              ⚙️ Settings
-            </a>
-
-            {/* Share ChoreGami - only for users with their own account (parents, teens) */}
-            {currentUser?.user_id && (
-              <a
-                href="/share"
-                title="Get 1 free month when friends join"
-              >
-                🎁 Share ChoreGami
-              </a>
-            )}
-
-            {/* Inline Theme Picker */}
-            <div class="menu-section">
-              <span class="menu-label">Theme</span>
-              <div class="theme-picker">
-                {THEMES.map((theme) => (
-                  <button
-                    key={theme.key}
-                    class={`theme-btn ${currentTheme === theme.key ? "active" : ""}`}
-                    onClick={() => handleThemeChange(theme.key)}
-                    title={theme.name}
-                  >
-                    {theme.emoji}
-                  </button>
-                ))}
-              </div>
+            {/* Header */}
+            <div class="nav-menu-header">
+              <span class="nav-logo">🏠</span>
+              <span class="nav-brand">ChoreGami</span>
+              <button class="nav-close" onClick={() => setMenuOpen(false)}>✕</button>
             </div>
 
-            {/* Logout at bottom */}
-            <div class="menu-section">
-              <button onClick={handleLogout}>
-                🚪 Logout
-              </button>
+            {/* Menu body */}
+            <div class="nav-menu-body">
+              {/* Main navigation */}
+              <div class="nav-section">
+                <a href={isParent ? "/parent/dashboard" : "/kid/dashboard"} class={`nav-item ${currentPage === "dashboard" ? "active" : ""}`}>
+                  <span class="nav-icon">🏠</span>
+                  <span>Dashboard</span>
+                </a>
+                <a href="/reports" class={`nav-item ${currentPage === "reports" ? "active" : ""}`}>
+                  <span class="nav-icon">📊</span>
+                  <span>Reports</span>
+                </a>
+
+                {/* Kid-only financial features */}
+                {!isParent && (
+                  <>
+                    <a href="/kid/rewards" class={`nav-item ${currentPage === "rewards" ? "active" : ""}`}>
+                      <span class="nav-icon">🎁</span>
+                      <span>Rewards</span>
+                    </a>
+                    <a href="/kid/goals" class={`nav-item ${currentPage === "goals" ? "active" : ""}`}>
+                      <span class="nav-icon">🎯</span>
+                      <span>My Goals</span>
+                    </a>
+                  </>
+                )}
+
+                {isParent && (
+                  <>
+                    <a
+                      href="/parent/events"
+                      class={`nav-item ${currentPage === "events" ? "active" : ""}`}
+                      onClick={() => {
+                        if (hasUpcomingEvents) {
+                          fetch("/api/analytics/event", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ metric: "badges" }),
+                          }).catch(() => {});
+                        }
+                      }}
+                    >
+                      <span class="nav-icon">📅</span>
+                      <span>Events</span>
+                      {hasUpcomingEvents && <span class="nav-badge" />}
+                    </a>
+                    <a href="/parent/balances" class={`nav-item ${currentPage === "balances" ? "active" : ""}`}>
+                      <span class="nav-icon">💰</span>
+                      <span>Balances</span>
+                    </a>
+                    <a href="/parent/rewards" class={`nav-item ${currentPage === "rewards" ? "active" : ""}`}>
+                      <span class="nav-icon">🎁</span>
+                      <span>Rewards</span>
+                    </a>
+                    <a href="/parent/insights" class={`nav-item ${currentPage === "insights" ? "active" : ""}`}>
+                      <span class="nav-icon">🧠</span>
+                      <span>Habit Insights</span>
+                    </a>
+                  </>
+                )}
+              </div>
+
+              {/* Kid shortcuts */}
+              {kids.length > 0 && (
+                <div class="nav-section">
+                  <span class="nav-section-label">Quick View</span>
+                  {kids.map((kid) => (
+                    <button
+                      key={kid.id}
+                      class={`nav-item ${currentUser?.id === kid.id ? "active" : ""}`}
+                      onClick={async () => {
+                        const { ActiveKidSessionManager } = await import("../lib/active-kid-session.ts");
+                        ActiveKidSessionManager.setActiveKid(kid.id, kid.name);
+                        window.location.href = "/kid/dashboard";
+                      }}
+                    >
+                      <span class="nav-icon">{kid.avatar_emoji || "🧒"}</span>
+                      <span>{kid.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Actions */}
+              <div class="nav-section">
+                <button class="nav-item" onClick={handleSwitchUser}>
+                  <span class="nav-icon">👥</span>
+                  <span>Switch User</span>
+                </button>
+                <a href="/parent/settings" class={`nav-item ${currentPage === "settings" ? "active" : ""}`}>
+                  <span class="nav-icon">⚙️</span>
+                  <span>Settings</span>
+                </a>
+                {currentUser?.user_id && (
+                  <a href="/share" class="nav-item">
+                    <span class="nav-icon">🎁</span>
+                    <span>Share ChoreGami</span>
+                  </a>
+                )}
+              </div>
+
+              {/* Theme picker */}
+              <div class="nav-section">
+                <span class="nav-section-label">Theme</span>
+                <div class="nav-theme-picker">
+                  {THEMES.map((theme) => (
+                    <button
+                      key={theme.key}
+                      class={`nav-theme-btn ${currentTheme === theme.key ? "active" : ""}`}
+                      onClick={() => handleThemeChange(theme.key)}
+                      title={theme.name}
+                    >
+                      {theme.emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Logout */}
+              <div class="nav-section nav-section-bottom">
+                <button class="nav-item nav-logout" onClick={handleLogout}>
+                  <span class="nav-icon">🚪</span>
+                  <span>Logout</span>
+                </button>
+              </div>
             </div>
           </nav>
         </div>
@@ -343,25 +357,165 @@ export default function AppHeader({
         }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        /* Left nav menu */
+        /* Left nav menu - modern card design */
         .nav-menu {
           position: absolute;
-          top: 0;
-          left: 0;
+          top: 8px;
+          left: 8px;
           background: var(--color-card);
           width: 260px;
           max-width: 85vw;
-          height: 100vh;
-          padding: 0.75rem;
+          max-height: calc(100vh - 16px);
+          padding: 0;
+          display: flex;
+          flex-direction: column;
+          animation: slideIn 0.2s ease;
+          box-shadow: 0 8px 32px rgba(0,0,0,0.2), 0 2px 8px rgba(0,0,0,0.1);
+          border-radius: 16px;
+          overflow: hidden;
+        }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-10px) scale(0.95); } to { opacity: 1; transform: translateX(0) scale(1); } }
+
+        .nav-menu-header {
+          background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark, var(--color-primary)) 100%);
+          padding: 1rem;
+          display: flex;
+          align-items: center;
+          gap: 0.6rem;
+        }
+        .nav-logo {
+          font-size: 1.5rem;
+          background: rgba(255,255,255,0.2);
+          border-radius: 10px;
+          width: 40px;
+          height: 40px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .nav-brand {
+          font-size: 1.1rem;
+          font-weight: 700;
+          color: white;
+          flex: 1;
+        }
+        .nav-close {
+          background: rgba(255,255,255,0.2);
+          border: none;
+          color: white;
+          width: 32px;
+          height: 32px;
+          border-radius: 8px;
+          font-size: 1rem;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: background 0.15s;
+        }
+        .nav-close:hover { background: rgba(255,255,255,0.3); }
+
+        .nav-menu-body {
+          padding: 0.5rem;
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+          overflow-y: auto;
+          flex: 1;
+        }
+        .nav-section {
           display: flex;
           flex-direction: column;
           gap: 2px;
-          animation: slideIn 0.2s ease;
-          box-shadow: 4px 0 24px rgba(0,0,0,0.15);
-          overflow-y: auto;
-          overscroll-behavior: contain;
         }
-        @keyframes slideIn { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+        .nav-section + .nav-section {
+          margin-top: 0.5rem;
+          padding-top: 0.5rem;
+          border-top: 1px solid var(--color-bg);
+        }
+        .nav-section-label {
+          font-size: 0.65rem;
+          font-weight: 600;
+          color: var(--text-secondary, #888);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          padding: 0.25rem 0.75rem 0.4rem;
+        }
+        .nav-section-bottom {
+          margin-top: auto;
+        }
+        .nav-item {
+          display: flex;
+          align-items: center;
+          gap: 0.6rem;
+          padding: 0.65rem 0.75rem;
+          color: var(--color-text);
+          text-decoration: none;
+          border-radius: 10px;
+          font-size: 0.9rem;
+          font-weight: 500;
+          background: transparent;
+          border: none;
+          text-align: left;
+          cursor: pointer;
+          width: 100%;
+          transition: background 0.15s, transform 0.1s;
+          position: relative;
+        }
+        .nav-item:hover {
+          background: var(--color-bg);
+        }
+        .nav-item:active {
+          transform: scale(0.98);
+        }
+        .nav-item.active {
+          background: var(--color-primary);
+          color: white;
+        }
+        .nav-icon {
+          font-size: 1.1rem;
+          width: 24px;
+          text-align: center;
+        }
+        .nav-badge {
+          position: absolute;
+          right: 12px;
+          width: 8px;
+          height: 8px;
+          background: #ef4444;
+          border-radius: 50%;
+          animation: badgePulse 2s infinite;
+        }
+        .nav-logout {
+          color: var(--color-warning, #dc2626);
+        }
+
+        /* Theme picker in nav */
+        .nav-theme-picker {
+          display: flex;
+          gap: 0.5rem;
+          padding: 0.25rem 0.5rem 0.5rem;
+        }
+        .nav-theme-btn {
+          width: 44px;
+          height: 44px;
+          border: 2px solid transparent;
+          border-radius: 12px;
+          font-size: 1.25rem;
+          cursor: pointer;
+          background: var(--color-bg);
+          transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+        }
+        .nav-theme-btn:hover {
+          transform: scale(1.08);
+          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .nav-theme-btn:active { transform: scale(0.95); }
+        .nav-theme-btn.active {
+          border-color: var(--color-primary);
+          box-shadow: 0 0 0 2px var(--color-bg), 0 2px 8px rgba(0,0,0,0.15);
+          background: var(--color-card);
+        }
 
         /* Right user menu - modern card design */
         .user-menu {
