@@ -6,7 +6,62 @@
  * - chore_complete: Green confetti for completing chores
  * - bonus_points: Gold confetti for bonus points awarded
  * - milestone: Special multi-color confetti for family milestones
+ *
+ * iOS Audio Fix:
+ * iOS Safari/Chrome require user gesture to unlock AudioContext.
+ * We create a shared context and unlock it on first touch/click.
  */
+
+// Shared AudioContext for iOS compatibility (unlocked on first interaction)
+let sharedAudioContext = null;
+let audioUnlocked = false;
+
+/**
+ * Get or create the shared AudioContext
+ * @returns {AudioContext|null}
+ */
+function getAudioContext() {
+  if (sharedAudioContext) return sharedAudioContext;
+
+  const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextClass) return null;
+
+  sharedAudioContext = new AudioContextClass();
+  return sharedAudioContext;
+}
+
+/**
+ * Unlock AudioContext on iOS (must be called from user gesture)
+ * Creates a silent buffer and plays it to unlock audio playback
+ */
+function unlockAudioContext() {
+  if (audioUnlocked) return;
+
+  const ctx = getAudioContext();
+  if (!ctx) return;
+
+  // Resume if suspended (iOS requirement)
+  if (ctx.state === 'suspended') {
+    ctx.resume().then(() => {
+      audioUnlocked = true;
+      console.log('AudioContext unlocked for iOS');
+    }).catch(() => {});
+  } else {
+    audioUnlocked = true;
+  }
+
+  // Play silent buffer to fully unlock (some iOS versions need this)
+  const buffer = ctx.createBuffer(1, 1, 22050);
+  const source = ctx.createBufferSource();
+  source.buffer = buffer;
+  source.connect(ctx.destination);
+  source.start(0);
+}
+
+// Unlock audio on first user interaction (iOS requirement)
+['touchstart', 'touchend', 'click', 'keydown'].forEach(event => {
+  document.addEventListener(event, unlockAudioContext, { once: true, passive: true });
+});
 
 // Confetti configurations per celebration type
 const confettiConfigs = {
@@ -90,14 +145,18 @@ function triggerHaptics(type = 'chore_complete') {
 
 /**
  * Play celebration sound using Web Audio API (no external files)
+ * Uses shared AudioContext for iOS compatibility
  * @param {string} type - Celebration type for tone variation
  */
 function triggerCelebrationSound(type = 'chore_complete') {
   try {
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContext) return;
+    const ctx = getAudioContext();
+    if (!ctx) return;
 
-    const ctx = new AudioContext();
+    // Ensure context is running (may be suspended on iOS)
+    if (ctx.state === 'suspended') {
+      ctx.resume();
+    }
 
     // Different tones for different celebrations
     const tones = {
@@ -127,10 +186,10 @@ function triggerCelebrationSound(type = 'chore_complete') {
       osc.stop(ctx.currentTime + start + dur);
     });
 
-    // Clean up AudioContext after sounds complete
-    setTimeout(() => ctx.close(), 1000);
+    // Note: Don't close shared context - it's reused for all sounds
   } catch (e) {
     // Silently fail - sound is optional enhancement
+    console.debug('Sound playback failed:', e.message);
   }
 }
 
@@ -202,4 +261,8 @@ window.choreGamiConfetti = {
   isEnabled: isConfettiEnabled,
   triggerHaptics: triggerHaptics,
   triggerSound: triggerCelebrationSound,
+  // iOS audio debugging
+  unlockAudio: unlockAudioContext,
+  isAudioUnlocked: () => audioUnlocked,
+  getAudioState: () => sharedAudioContext?.state || 'no context',
 };
