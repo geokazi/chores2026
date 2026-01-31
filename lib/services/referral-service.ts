@@ -29,6 +29,9 @@ export interface ReferralLookup {
   referral: Referral;
 }
 
+// Maximum free months a user can earn through referrals
+const MAX_REWARD_MONTHS = 6;
+
 export class ReferralService {
   private supabase: SupabaseClient;
 
@@ -127,6 +130,13 @@ export class ReferralService {
       .single();
 
     const referral = family?.settings?.apps?.choregami?.referral;
+
+    // Check 6-month cap
+    if ((referral?.reward_months_earned ?? 0) >= MAX_REWARD_MONTHS) {
+      return { success: false, error: "Maximum referral rewards reached (6 months)" };
+    }
+
+    // Check for duplicate conversion
     if (referral?.conversions) {
       const alreadyConverted = referral.conversions.some(
         (c: ReferralConversion) => c.family_id === newFamilyId

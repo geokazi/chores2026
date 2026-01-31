@@ -66,6 +66,7 @@ $$ LANGUAGE plpgsql STABLE;
 -- ============================================================================
 -- 3. Record Referral Conversion
 -- Called when a referred user signs up and creates their family
+-- Enforces 6-month cap on referral rewards
 -- ============================================================================
 
 CREATE OR REPLACE FUNCTION record_referral_conversion(
@@ -77,6 +78,7 @@ CREATE OR REPLACE FUNCTION record_referral_conversion(
 RETURNS void AS $$
 DECLARE
   current_referral jsonb;
+  current_months int;
   new_conversion jsonb;
 BEGIN
   -- Get current referral data
@@ -84,6 +86,12 @@ BEGIN
   INTO current_referral
   FROM families
   WHERE id = p_referrer_family_id;
+
+  -- Check 6-month cap (enforcement at DB level)
+  current_months := COALESCE((current_referral->>'reward_months_earned')::int, 0);
+  IF current_months >= 6 THEN
+    RETURN;  -- Cap reached, silently ignore
+  END IF;
 
   -- Build new conversion entry
   new_conversion := jsonb_build_object(
@@ -103,7 +111,7 @@ BEGIN
         COALESCE(current_referral->'conversions', '[]'::jsonb) || new_conversion
       ),
       '{apps,choregami,referral,reward_months_earned}',
-      to_jsonb(COALESCE((current_referral->>'reward_months_earned')::int, 0) + 1)
+      to_jsonb(current_months + 1)
     ),
     '{apps,choregami,referral,last_conversion_at}',
     to_jsonb(NOW())

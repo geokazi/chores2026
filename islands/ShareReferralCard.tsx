@@ -88,13 +88,17 @@ export default function ShareReferralCard({ code, conversions, monthsEarned }: S
       <div class="referral-stats">
         {conversions > 0 ? (
           <span class="referral-stat-earned">
-            🎉 {conversions} friend{conversions > 1 ? "s" : ""} joined — {monthsEarned} free month{monthsEarned > 1 ? "s" : ""} unlocked
+            🎉 {conversions} friend{conversions > 1 ? "s" : ""} joined — {monthsEarned} of 6 free months unlocked
           </span>
         ) : (
           <span class="referral-stat-zero">
-            🎉 Share to unlock free months
+            🎉 Share to unlock up to 6 free months
           </span>
         )}
+      </div>
+
+      <div class="referral-terms">
+        ⓘ Free months apply to future billing (up to 6).
       </div>
 
       <style>{`
@@ -160,6 +164,12 @@ export default function ShareReferralCard({ code, conversions, monthsEarned }: S
         }
         .referral-stat-zero {
           color: var(--text-secondary);
+        }
+        .referral-terms {
+          margin-top: 12px;
+          font-size: 0.75rem;
+          color: var(--text-secondary);
+          text-align: center;
         }
       `}</style>
     </div>

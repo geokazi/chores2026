@@ -384,6 +384,35 @@ const referral = await referralService.getOrCreateReferral(familyId);
 
 ---
 
+## Referral Terms
+
+### User-Facing Copy
+
+```
+ⓘ Free months apply to future billing (up to 6).
+```
+
+### Full Terms (for /terms or Help section)
+
+```
+Referral Program Terms:
+• Earn 1 free month for each friend who joins using your link and completes account setup.
+• You may earn up to 6 free months through referrals.
+• Free months apply to future billing; no cash value.
+• Self-referrals or abuse may revoke credits.
+```
+
+### Enforcement Rules
+
+| Rule | Implementation |
+|------|----------------|
+| **6-month cap** | Service layer + SQL function both enforce `reward_months_earned < 6` |
+| **Activation requirement** | Credit on family creation (not just signup) |
+| **No self-referral** | Check `referrer.familyId !== newFamilyId` |
+| **No duplicates** | Check conversions array for existing `family_id` |
+
+---
+
 ## Security Considerations
 
 | Risk | Mitigation |
@@ -393,6 +422,7 @@ const referral = await referralService.getOrCreateReferral(familyId);
 | Duplicate conversion | Check if `newFamilyId` already in conversions array |
 | Code guessing for rewards | Conversion only credited after verified signup + family creation |
 | Referral spam | One code per family (idempotent creation) |
+| Reward abuse | 6-month cap enforced at service + DB level |
 
 ---
 
