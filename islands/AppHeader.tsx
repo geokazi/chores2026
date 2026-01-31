@@ -275,6 +275,12 @@ export default function AppHeader({
             </div>
 
             <hr />
+            <a
+              href="/parent/settings#share-referral-section"
+              style={{ display: "block", padding: "0.75rem 1rem", color: "var(--color-text)", textDecoration: "none", borderRadius: "8px", fontSize: "1rem" }}
+            >
+              🎁 Share ChoreGami
+            </a>
             <button onClick={handleLogout}>
               🚪 Logout
             </button>
