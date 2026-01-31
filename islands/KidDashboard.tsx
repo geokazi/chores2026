@@ -309,7 +309,7 @@ export default function KidDashboard({
                   cursor: "pointer",
                 }}
               >
-                + Add
+                + Add Event
               </button>
             )}
           </div>

@@ -406,7 +406,7 @@ export default function FamilySettings({ family, members, settings, digestChanne
           }}>
             <strong>How it works:</strong>
             <ul style={{ margin: "0.5rem 0 0 1rem", padding: 0 }}>
-              <li>Kids see "+ Add" button in Coming Up section</li>
+              <li>Kids see "+ Add Event" button in Coming Up section</li>
               <li>If Kid PIN is enabled, PIN required before creating</li>
               <li>Parents see all events with "Added by" attribution</li>
             </ul>
