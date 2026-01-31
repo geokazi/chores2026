@@ -1,6 +1,8 @@
 /* Fresh Meadow Theme */
 [data-theme="meadow"] {
   --color-primary: #10b981;
+  --color-primary-rgb: 16, 185, 129;
+  --color-primary-dark: #059669;
   --color-secondary: #3b82f6;
   --color-accent: #f59e0b;
   --color-bg: #f0fdf4;
@@ -20,6 +22,8 @@
 /* Sunset Citrus Theme */
 [data-theme="citrus"] {
   --color-primary: #f97316;
+  --color-primary-rgb: 249, 115, 22;
+  --color-primary-dark: #ea580c;
   --color-secondary: #14b8a6;
   --color-accent: #fbbf24;
   --color-bg: #fffbeb;
@@ -39,6 +43,8 @@
 /* Ocean Depth Theme */
 [data-theme="ocean"] {
   --color-primary: #1e40af;
+  --color-primary-rgb: 30, 64, 175;
+  --color-primary-dark: #1e3a8a;
   --color-secondary: #e0e7ff; /* Light indigo - matches stat card borders */
   --color-accent: #34d399;
   --color-bg: #f8fafc;

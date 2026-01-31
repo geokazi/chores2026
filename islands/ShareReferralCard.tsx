@@ -103,8 +103,11 @@ export default function ShareReferralCard({ code, conversions, monthsEarned, bas
     }
   };
 
+  // Progress percentage for the bar
+  const progressPercent = Math.min((monthsEarned / 6) * 100, 100);
+
   return (
-    <div class="settings-card" id="share-referral-section">
+    <div class="share-card" id="share-referral-section">
       <h3 class="referral-title">Share ChoreGami</h3>
       <p class="referral-tagline">
         Tell a friend. Get 1 free month when they join.
@@ -127,9 +130,10 @@ export default function ShareReferralCard({ code, conversions, monthsEarned, bas
           value={shareUrl}
           readOnly
           class="referral-link-input"
+          onClick={(e) => (e.target as HTMLInputElement).select()}
         />
         <div class="referral-actions">
-          <button onClick={handleCopy} class="referral-btn referral-btn-copy">
+          <button onClick={handleCopy} class={`referral-btn referral-btn-copy ${copied.value ? 'copied' : ''}`}>
             {copied.value ? "✓ Copied!" : "📋 Copy"}
           </button>
           <button onClick={handleShare} class="referral-btn referral-btn-share">
@@ -138,100 +142,239 @@ export default function ShareReferralCard({ code, conversions, monthsEarned, bas
         </div>
       </div>
 
-      <div class="referral-footer">
-        {conversions > 0 ? (
-          <span class="referral-progress">
-            🎉 {monthsEarned}/6 free months earned
+      {/* Progress section with bar */}
+      <div class="referral-progress-section">
+        <div class="referral-progress-header">
+          <span class="referral-progress-label">
+            {conversions > 0 ? `🎉 ${monthsEarned}/6 free months` : "Earn up to 6 free months"}
           </span>
-        ) : (
-          <span class="referral-progress">
-            Earn up to 6 free months
-          </span>
+        </div>
+        <div class="referral-progress-bar">
+          <div
+            class="referral-progress-fill"
+            style={`width: ${progressPercent}%`}
+          />
+        </div>
+        {conversions > 0 && monthsEarned < 6 && (
+          <p class="referral-progress-hint">
+            {6 - monthsEarned} more to unlock all rewards!
+          </p>
         )}
       </div>
 
       <style>{`
+        /* Modern glass card */
+        .share-card {
+          background: rgba(255, 255, 255, 0.85);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border-radius: 20px;
+          border: 1px solid rgba(255, 255, 255, 0.6);
+          box-shadow:
+            0 4px 24px rgba(0, 0, 0, 0.06),
+            0 1px 2px rgba(0, 0, 0, 0.04),
+            inset 0 1px 0 rgba(255, 255, 255, 0.8);
+          padding: 24px;
+          transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .share-card:hover {
+          transform: translateY(-2px);
+          box-shadow:
+            0 8px 32px rgba(0, 0, 0, 0.08),
+            0 2px 4px rgba(0, 0, 0, 0.04),
+            inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        }
+
+        /* Typography */
         .referral-title {
-          margin: 0 0 4px 0;
-          font-size: 1.1rem;
-          font-weight: 600;
+          margin: 0 0 6px 0;
+          font-size: 1.25rem;
+          font-weight: 700;
           color: var(--color-text);
+          letter-spacing: -0.02em;
         }
         .referral-tagline {
-          margin: 0 0 16px 0;
-          font-size: 0.9rem;
+          margin: 0 0 20px 0;
+          font-size: 0.95rem;
           color: var(--text-secondary);
+          line-height: 1.4;
         }
+
+        /* Stats badge */
         .referral-stats-badge {
-          background: linear-gradient(135deg, var(--color-bg) 0%, #ecfdf5 100%);
-          border: 1px solid var(--color-primary);
-          border-radius: 10px;
-          padding: 10px 14px;
-          margin-bottom: 16px;
+          background: linear-gradient(
+            135deg,
+            rgba(var(--color-primary-rgb, 16, 185, 129), 0.12) 0%,
+            rgba(var(--color-primary-rgb, 16, 185, 129), 0.06) 100%
+          );
+          border: 1px solid rgba(var(--color-primary-rgb, 16, 185, 129), 0.3);
+          border-radius: 12px;
+          padding: 12px 16px;
+          margin-bottom: 20px;
           font-size: 0.9rem;
-          font-weight: 500;
+          font-weight: 600;
           color: var(--color-primary);
           text-align: center;
         }
+
+        /* Link section */
         .referral-link-section {
-          margin-bottom: 16px;
+          margin-bottom: 20px;
         }
         .referral-label {
           display: block;
-          font-size: 0.75rem;
+          font-size: 0.7rem;
+          font-weight: 600;
           color: var(--text-secondary);
-          margin-bottom: 6px;
+          margin-bottom: 8px;
           text-transform: uppercase;
-          letter-spacing: 0.5px;
+          letter-spacing: 0.08em;
         }
         .referral-link-input {
           width: 100%;
-          padding: 12px;
-          border: 1px solid var(--border-color);
-          border-radius: 8px;
-          font-size: 0.85rem;
-          background: var(--bg-secondary);
-          color: var(--text-primary);
-          margin-bottom: 10px;
+          padding: 14px 16px;
+          border: 1px solid rgba(var(--color-primary-rgb, 16, 185, 129), 0.2);
+          border-radius: 12px;
+          font-size: 0.875rem;
+          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+          background: rgba(var(--color-primary-rgb, 16, 185, 129), 0.04);
+          color: var(--color-text);
+          margin-bottom: 12px;
+          transition: border-color 0.2s, box-shadow 0.2s;
         }
+        .referral-link-input:focus {
+          outline: none;
+          border-color: var(--color-primary);
+          box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb, 16, 185, 129), 0.15);
+        }
+
+        /* Action buttons */
         .referral-actions {
           display: flex;
-          gap: 10px;
+          gap: 12px;
         }
         .referral-btn {
           flex: 1;
-          padding: 12px 16px;
+          padding: 14px 20px;
           border: none;
-          border-radius: 10px;
+          border-radius: 12px;
           cursor: pointer;
           font-size: 0.95rem;
-          font-weight: 500;
-          transition: transform 0.15s, opacity 0.15s;
-        }
-        .referral-btn:hover {
-          opacity: 0.9;
+          font-weight: 600;
+          transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
         }
         .referral-btn:active {
           transform: scale(0.97);
         }
+
+        /* Copy button */
         .referral-btn-copy {
-          background: var(--bg-secondary);
-          color: var(--color-text);
-          border: 1px solid var(--border-color);
+          background: rgba(var(--color-primary-rgb, 16, 185, 129), 0.1);
+          color: var(--color-primary);
+          border: 1px solid rgba(var(--color-primary-rgb, 16, 185, 129), 0.3);
         }
-        .referral-btn-share {
+        .referral-btn-copy:hover {
+          background: rgba(var(--color-primary-rgb, 16, 185, 129), 0.15);
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(var(--color-primary-rgb, 16, 185, 129), 0.15);
+        }
+        .referral-btn-copy.copied {
           background: var(--color-primary);
           color: white;
+          border-color: transparent;
         }
-        .referral-footer {
-          text-align: center;
-          font-size: 0.85rem;
+
+        /* Share button - gradient */
+        .referral-btn-share {
+          background: linear-gradient(
+            135deg,
+            var(--color-primary) 0%,
+            var(--color-primary-dark, var(--color-primary)) 100%
+          );
+          color: white;
+          box-shadow: 0 2px 8px rgba(var(--color-primary-rgb, 16, 185, 129), 0.3);
+        }
+        .referral-btn-share:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 16px rgba(var(--color-primary-rgb, 16, 185, 129), 0.4);
+        }
+
+        /* Progress section */
+        .referral-progress-section {
+          padding-top: 20px;
+          border-top: 1px solid rgba(var(--color-primary-rgb, 16, 185, 129), 0.1);
+        }
+        .referral-progress-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 10px;
+        }
+        .referral-progress-label {
+          font-size: 0.9rem;
+          font-weight: 600;
+          color: var(--color-text);
+        }
+
+        /* Progress bar */
+        .referral-progress-bar {
+          height: 10px;
+          background: rgba(var(--color-primary-rgb, 16, 185, 129), 0.1);
+          border-radius: 5px;
+          overflow: hidden;
+          position: relative;
+        }
+        .referral-progress-fill {
+          height: 100%;
+          background: linear-gradient(
+            90deg,
+            var(--color-primary) 0%,
+            var(--color-primary-dark, var(--color-primary)) 100%
+          );
+          border-radius: 5px;
+          transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+          position: relative;
+          min-width: ${conversions > 0 ? '8%' : '0'};
+        }
+        /* Shimmer effect */
+        .referral-progress-fill::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(
+            90deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.4) 50%,
+            transparent 100%
+          );
+          animation: shimmer 2s infinite;
+        }
+        @keyframes shimmer {
+          0% { left: -100%; }
+          100% { left: 100%; }
+        }
+
+        .referral-progress-hint {
+          margin: 10px 0 0 0;
+          font-size: 0.8rem;
           color: var(--text-secondary);
-          padding-top: 12px;
-          border-top: 1px solid var(--color-bg);
+          text-align: center;
         }
-        .referral-progress {
-          font-weight: 500;
+
+        /* Reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+          .share-card,
+          .referral-btn,
+          .referral-link-input,
+          .referral-progress-fill {
+            transition: none;
+          }
+          .referral-progress-fill::after {
+            animation: none;
+          }
         }
       `}</style>
     </div>

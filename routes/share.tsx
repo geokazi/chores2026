@@ -199,56 +199,110 @@ export default function SharePage({ data }: PageProps<SharePageData>) {
 }
 
 const pageStyles = `
+  /* Modern gradient background */
   .share-page {
     min-height: calc(100vh - 120px);
-    padding: 20px;
-    max-width: 500px;
+    padding: 24px 20px 40px;
+    max-width: 480px;
     margin: 0 auto;
+    position: relative;
   }
+
+  /* Gradient overlay behind content */
+  .share-page::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+      145deg,
+      var(--color-bg, #f0fdf4) 0%,
+      rgba(255, 255, 255, 0.9) 50%,
+      var(--color-bg, #ecfdf5) 100%
+    );
+    z-index: -1;
+  }
+
+  /* Hero section */
   .share-hero {
     text-align: center;
-    margin-bottom: 24px;
+    margin-bottom: 28px;
+    padding-top: 8px;
   }
   .share-emoji {
-    font-size: 4rem;
+    font-size: 4.5rem;
     line-height: 1;
-    margin-bottom: 8px;
-    animation: gentle-bounce 2s ease-in-out infinite;
+    margin-bottom: 12px;
+    animation: gentle-bounce 2.5s ease-in-out infinite;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
   }
   @keyframes gentle-bounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-8px); }
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-10px) scale(1.02); }
   }
   .share-subtitle {
-    font-size: 1rem;
-    color: var(--text-secondary, #666);
+    font-size: 1.1rem;
+    color: var(--color-text, #064e3b);
     margin: 0;
+    font-weight: 500;
+    letter-spacing: -0.01em;
   }
+
+  /* Progress encouragement */
   .share-encouragement {
     text-align: center;
-    padding: 12px 16px;
-    background: linear-gradient(135deg, var(--color-bg, #f0fdf4) 0%, #ecfdf5 100%);
-    border-radius: 12px;
-    margin-bottom: 20px;
+    padding: 14px 20px;
+    background: linear-gradient(
+      135deg,
+      rgba(var(--color-primary-rgb, 16, 185, 129), 0.1) 0%,
+      rgba(var(--color-primary-rgb, 16, 185, 129), 0.05) 100%
+    );
+    border: 1px solid rgba(var(--color-primary-rgb, 16, 185, 129), 0.2);
+    border-radius: 14px;
+    margin-bottom: 24px;
     font-size: 0.95rem;
     color: var(--color-primary, #10b981);
-    font-weight: 500;
+    font-weight: 600;
   }
+
+  /* Tip section */
   .share-tip {
     text-align: center;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     color: var(--text-secondary, #666);
-    margin-top: 24px;
-    padding: 12px 16px;
-    background: var(--bg-secondary, #f9fafb);
-    border-radius: 12px;
+    margin-top: 28px;
+    padding: 16px 20px;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-radius: 14px;
+    border: 1px solid rgba(var(--color-primary-rgb, 16, 185, 129), 0.1);
   }
+
+  /* Error state */
   .share-error {
     text-align: center;
-    padding: 40px 20px;
+    padding: 48px 24px;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 20px;
+    margin-top: 20px;
   }
   .back-link {
     color: var(--color-primary, #10b981);
     text-decoration: none;
+    font-weight: 500;
+    transition: opacity 0.2s;
+  }
+  .back-link:hover {
+    opacity: 0.8;
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    .share-emoji {
+      animation: none;
+    }
   }
 `;
