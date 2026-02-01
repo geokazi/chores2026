@@ -259,6 +259,10 @@ export default function AppHeader({
 
               {/* Actions */}
               <div class="user-menu-section">
+                <a href="/parent/dashboard" class="user-menu-item">
+                  <span class="item-emoji">👨‍👩‍👧‍👦</span>
+                  <span>Family Dashboard</span>
+                </a>
                 {currentUser?.user_id && (
                   <a href="/share" class="user-menu-item">
                     <span class="item-emoji">🎁</span>
