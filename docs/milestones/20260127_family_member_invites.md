@@ -510,6 +510,34 @@ This data helps prioritize A2P 10DLC registration effort.
 - [Family Owner SQL Queries](../../sql/queries/family_owner.sql) - Backfill and owner lookup queries
 - [SMS Invite Demand Queries](../../sql/queries/sms_invite_demand.sql) - Track users requesting SMS invites
 - [Pending Invite Lookup Queries](../../sql/queries/pending_invite_lookup.sql) - Find invites by token or email
+- [**Account Types & Personal Hubs**](../planned/20260131_account_types_personal_hubs.md) - Planned persona-typed invites with `account_type` field
+
+## Future: Persona-Typed Invites
+
+When account types are implemented, the `PendingInvite` interface will be extended:
+
+```typescript
+// Current
+interface PendingInvite {
+  role: "parent" | "child";
+  // ...
+}
+
+// Future (see Account Types doc)
+interface PendingInvite {
+  role: "parent" | "child" | "member";  // "member" = equal peer (roommates)
+  account_type: "family" | "roommates";  // Inherited from family.settings
+  // ...
+}
+```
+
+This enables:
+- **Zero-decision joins**: Invited users inherit context, skip persona selection
+- **Roommate support**: `role: "member"` for peer accountability
+- **Dynamic email templates**: "Join [Family]" vs "Join [Apartment]"
+- **Streamlined `/setup/join` route**: Name-only form for invitees
+
+See [Context-Aware Setup Routes](../planned/20260131_account_types_personal_hubs.md#context-aware-setup-routes-preferred-approach) for full design.
 
 ---
 

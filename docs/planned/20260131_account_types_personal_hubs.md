@@ -629,6 +629,225 @@ AI should reduce friction, not be a selling point.
 
 ---
 
+## Context-Aware Setup Routes (Preferred Approach)
+
+### Core Principle: Inherit Context, Don't Ask
+
+Rather than asking all users to choose their persona in `/setup`, we can **infer context** from invite tokens and referral codes:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    DECISION TREE                                │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  User arrives at signup...                                      │
+│                                                                 │
+│  HAS INVITE TOKEN?                                              │
+│  ├─ YES → Inherit account_type from inviter's family           │
+│  │        → Skip persona selection                             │
+│  │        → /setup/join (streamlined join flow)                │
+│  │                                                             │
+│  HAS REFERRAL CODE?                                             │
+│  ├─ YES → Suggest referrer's account_type (can change)         │
+│  │        → /setup/referred (pre-selected but editable)        │
+│  │                                                             │
+│  NEITHER?                                                       │
+│  └─ NO  → Must choose persona                                  │
+│          → /setup/new (full persona selection)                 │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Three Distinct Setup Routes
+
+| Route | Trigger | Creates | Decisions | account_type |
+|-------|---------|---------|-----------|--------------|
+| `/setup/join` | Invite token | Profile in EXISTING family | 0 (name only) | Inherited from family |
+| `/setup/referred` | Referral code | NEW family | 0-1 (can change pre-selected) | Pre-selected from referrer |
+| `/setup/new` | No token/code | NEW family | 1 (required) | User must select |
+
+### Persona-Typed Invites
+
+**Add `account_type` to invite metadata:**
+
+```typescript
+// Current PendingInvite
+interface PendingInvite {
+  token: string;
+  role: "parent" | "child";
+  // ...
+}
+
+// Proposed PendingInvite
+interface PendingInvite {
+  token: string;
+  role: "parent" | "child" | "member";
+  account_type: "family" | "roommates";  // Inherited from family.settings
+  // ...
+}
+```
+
+**Auto-populate on invite creation:**
+```typescript
+// In invite-service.ts createInvite()
+const familySettings = family.settings;
+const accountType = familySettings?.account_type || "family";
+
+const invite: PendingInvite = {
+  // ...existing fields
+  account_type: accountType,  // Auto-inherited
+  role: accountType === "roommates" ? "member" : role,
+};
+```
+
+### Persona-Typed Referrals
+
+**Add `account_type` to referral code metadata:**
+
+```typescript
+// Current referral structure
+{
+  referral: {
+    code: "ABC123",
+    conversions: [...],
+  }
+}
+
+// Proposed: Include referrer's account type
+{
+  referral: {
+    code: "ABC123",
+    account_type: "family",  // Captured at code creation time
+    conversions: [...],
+  }
+}
+```
+
+### Route UX Mockups
+
+#### `/setup/join` - Zero Decisions (Invite Flow)
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    JOIN APT 4B                                  │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  🎉 Marcus invited you!                                        │
+│                                                                 │
+│  You're joining Apt 4B as a roommate.                          │
+│                                                                 │
+│  ┌─────────────────────────────────────────────────────────────┐
+│  │  Your Name: [Alex________________]                          │
+│  └─────────────────────────────────────────────────────────────┘
+│                                                                 │
+│  [Join Apt 4B]                                                  │
+│                                                                 │
+│  ─────────────────────────────────────────────────────────────  │
+│  • You'll share tasks with Marcus                              │
+│  • No points or competition (fairness tracking)                │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### `/setup/referred` - Pre-Selected (Referral Flow)
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    GET STARTED                                  │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  🎁 Referred by The Smiths                                     │
+│                                                                 │
+│  ┌─────────────────────────────────────────────────────────────┐
+│  │  [👨‍👩‍👧‍👦 Family ✓]  [🏠 Roommates]  [👤 Just Me]              │
+│  └─────────────────────────────────────────────────────────────┘
+│                                                                 │
+│  ┌─────────────────────────────────────────────────────────────┐
+│  │  Your Name:   [_________________]                           │
+│  │  Family Name: [_________________]                           │
+│  │  Kids:        [________] [________] [+ Add]                │
+│  └─────────────────────────────────────────────────────────────┘
+│                                                                 │
+│  [Get Started]                                                  │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### `/setup/new` - Full Selection (Organic Signup)
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    WELCOME TO CHOREGAMI                         │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  Who's using this?                                              │
+│                                                                 │
+│  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐       │
+│  │               │  │               │  │               │       │
+│  │ 👨‍👩‍👧‍👦 Family    │  │ 🏠 Roommates  │  │ 👤 Just Me   │       │
+│  │  with Kids   │  │   /Couple    │  │              │       │
+│  │               │  │               │  │               │       │
+│  │  Points &    │  │  Fairness    │  │  Personal    │       │
+│  │  rewards     │  │  tracking    │  │  tasks       │       │
+│  │               │  │               │  │               │       │
+│  └───────────────┘  └───────────────┘  └───────────────┘       │
+│                                                                 │
+│  ─────────────────────────────────────────────────────────────  │
+│  This affects your setup. You can change it later.             │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Router Logic
+
+```typescript
+// In /login.tsx or /register.tsx POST handler
+
+// Check for invite token first (highest priority)
+const inviteToken = formData.get("invite_token") ||
+                    localStorage.get("pendingInviteToken");
+if (inviteToken) {
+  const invite = await InviteService.findByToken(inviteToken);
+  if (invite) {
+    return redirect(`/setup/join?token=${inviteToken}`);
+  }
+}
+
+// Check for referral code (pre-select but editable)
+const refCode = url.searchParams.get("ref");
+if (refCode) {
+  const referrer = await ReferralService.findByCode(refCode);
+  if (referrer) {
+    return redirect(`/setup/referred?ref=${refCode}`);
+  }
+}
+
+// No context - full persona selection
+return redirect("/setup/new");
+```
+
+### Edge Cases
+
+| Scenario | Handling |
+|----------|----------|
+| Referral + Invite both present | Invite wins (joining > creating) |
+| Expired invite token | Treat as organic → `/setup/new` |
+| Invalid referral code | Silent fallback → `/setup/new` |
+| Referrer changed account type | Use type at code creation (immutable) |
+| "Personal" referral | Pre-select "Just Me", allow change |
+
+### Benefits
+
+| User Type | Benefit |
+|-----------|---------|
+| **Invited users** | Zero friction - just enter name and join |
+| **Referred users** | Smart default, still flexible |
+| **Organic users** | Clear choice upfront |
+
+**Principle**: Decisions only when necessary. Most users come via invite or referral (social spread), so optimize for those paths.
+
+---
+
 ## Implementation: Auth Flow Changes Required
 
 ### Current State Assessment
@@ -791,29 +1010,35 @@ const fairnessTracking = accountType === "roommates";
 
 ## Implementation Phases
 
-### Phase 1: Account Type Infrastructure (Low Effort)
-1. Add account_type selection to `/setup.tsx` Step 1
-2. Store in `families.settings.account_type`
-3. Add "member" to role enum in invite-service.ts
-4. Update role-based queries to handle "member"
+### Phase 1: Persona-Typed Metadata (Low Effort)
+1. Add `account_type` field to `PendingInvite` interface
+2. Add `account_type` field to referral code metadata
+3. Auto-populate from `family.settings.account_type` on creation
+4. Add "member" to role enum in invite-service.ts
 
-### Phase 2: Dynamic Setup Form (Medium Effort)
-1. Conditional form fields based on account_type
-2. Different default names: "Family Name" vs "Place Name"
-3. Hide kids section for roommates/personal
-4. Hide templates for non-family types
+### Phase 2: Route Splitting (Medium Effort)
+1. Create `/setup/join` - minimal form, inherited context
+2. Create `/setup/referred` - pre-selected, editable
+3. Create `/setup/new` - full persona selection (current `/setup` becomes this)
+4. Add router logic in login/register POST handlers
 
-### Phase 3: UI Adaptations (Medium Effort)
+### Phase 3: Route-Specific UX (Medium Effort)
+1. `/setup/join`: Name-only form, contextual messaging
+2. `/setup/referred`: Pre-selected toggle, dynamic form fields
+3. `/setup/new`: Full persona cards with descriptions
+4. Dynamic email templates based on account_type
+
+### Phase 4: Dashboard Adaptations (Medium Effort)
 1. Fairness tracking for roommates (replace leaderboard)
 2. Simplified nav for solo users (no hub toggle)
 3. Age-based gamification toggles
-4. Dynamic email templates in invite-service.ts
+4. Empty state variations per account type
 
-### Phase 4: Polish (Low Effort)
-1. Welcome messaging per account type
+### Phase 5: Polish (Low Effort)
+1. Welcome messaging per route
 2. Onboarding hints ("Add roommates" vs "Add kids")
-3. Empty state variations
-4. Settings page adaptations
+3. Settings page "Convert account type" option
+4. Help documentation per persona
 
 ---
 

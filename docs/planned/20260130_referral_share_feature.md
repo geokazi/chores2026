@@ -523,6 +523,28 @@ Referral Program Terms:
 | Analytics | `last_conversion_at` enables time-based queries |
 | Expire old codes | Add `expires_at` field to JSONB (no migration) |
 | Email on conversion | Add to `recordConversion` method |
+| **Persona-typed referrals** | Add `account_type` to JSONB, pre-select referred user's setup |
+
+### Persona-Typed Referrals (Planned)
+
+**See**: [Account Types & Personal Hubs](./20260131_account_types_personal_hubs.md#persona-typed-referrals)
+
+When account types are implemented, referral codes will capture the referrer's `account_type`:
+
+```jsonc
+{
+  "code": "ABC123",
+  "account_type": "family",  // NEW: Captured at code creation
+  "created_at": "2026-01-30T...",
+  "conversions": [...]
+}
+```
+
+This enables:
+- Pre-selecting account type in `/setup/referred` route
+- Smart defaults: "My friend uses it for family, I probably do too"
+- Reduced decisions for referred users
+- Analytics on which account types drive referrals
 
 ---
 
