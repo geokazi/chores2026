@@ -114,6 +114,7 @@ import * as $SocialAuthButtons from "./islands/SocialAuthButtons.tsx";
 import * as $TemplateSelector from "./islands/TemplateSelector.tsx";
 import * as $ThemeInitializer from "./islands/ThemeInitializer.tsx";
 import * as $WebSocketManager from "./islands/WebSocketManager.tsx";
+import * as $WeeklyProgress from "./islands/WeeklyProgress.tsx";
 import * as $auth_AuthModeSelector from "./islands/auth/AuthModeSelector.tsx";
 import * as $auth_AuthPageLayout from "./islands/auth/AuthPageLayout.tsx";
 import * as $auth_EmailAuthForm from "./islands/auth/EmailAuthForm.tsx";
@@ -246,6 +247,7 @@ const manifest = {
     "./islands/TemplateSelector.tsx": $TemplateSelector,
     "./islands/ThemeInitializer.tsx": $ThemeInitializer,
     "./islands/WebSocketManager.tsx": $WebSocketManager,
+    "./islands/WeeklyProgress.tsx": $WeeklyProgress,
     "./islands/auth/AuthModeSelector.tsx": $auth_AuthModeSelector,
     "./islands/auth/AuthPageLayout.tsx": $auth_AuthPageLayout,
     "./islands/auth/EmailAuthForm.tsx": $auth_EmailAuthForm,

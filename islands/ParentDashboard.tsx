@@ -8,6 +8,7 @@ import LiveLeaderboard from "./LiveLeaderboard.tsx";
 import LiveActivityFeed from "./LiveActivityFeed.tsx";
 import AddChoreModal from "./AddChoreModal.tsx";
 import WebSocketManager from "./WebSocketManager.tsx";
+import WeeklyProgress from "./WeeklyProgress.tsx";
 import { getCurrentTheme, changeTheme, themes, type ThemeId } from "../lib/theme-manager.ts";
 
 interface Family {
@@ -36,6 +37,25 @@ interface ChoreAssignment {
   completed_at?: string;
 }
 
+interface ThisWeekDay {
+  date: string;
+  dayName: string;
+  done: boolean;
+}
+
+interface ThisWeekActivity {
+  profileId: string;
+  name: string;
+  days: ThisWeekDay[];
+  totalDone: number;
+}
+
+interface StreakData {
+  profileId: string;
+  name: string;
+  currentStreak: number;
+}
+
 interface Props {
   family: Family;
   members: FamilyMember[];
@@ -43,10 +63,12 @@ interface Props {
   parentChores?: any[];
   parentProfileId?: string;
   recentActivity: any[];
+  thisWeekActivity: ThisWeekActivity[];
+  streaks: StreakData[];
 }
 
 export default function ParentDashboard(
-  { family, members, chores, parentChores: _parentChores, parentProfileId: _parentProfileId, recentActivity }: Props,
+  { family, members, chores, parentChores: _parentChores, parentProfileId: _parentProfileId, recentActivity, thisWeekActivity, streaks }: Props,
 ) {
   const [showPointAdjustment, setShowPointAdjustment] = useState(false);
   const [selectedMember, setSelectedMember] = useState<FamilyMember | null>(
@@ -95,8 +117,6 @@ export default function ParentDashboard(
   };
 
   const kids = liveMembers.filter((m) => m.role === "child");
-  const pendingChores = chores.filter((c) => c.status === "pending");
-  const completedChores = chores.filter((c) => c.status === "completed");
 
 
   const handlePointAdjustment = async () => {
@@ -252,39 +272,11 @@ export default function ParentDashboard(
       onMessage={handleWebSocketMessage}
     >
       <div>
-      {/* Family Overview */}
-      <div class="card" style={{ marginBottom: "1.5rem" }}>
-        <h2
-          style={{
-            fontSize: "1.25rem",
-            fontWeight: "600",
-            marginBottom: "1rem",
-          }}
-        >
-          {family.name} Overview
-        </h2>
-
-        <div class="stats-grid">
-          <div class="stat-item">
-            <span class="stat-number">{kids.length}</span>
-            <span class="stat-label">Kids</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-number">{pendingChores.length}</span>
-            <span class="stat-label">Pending</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-number">{completedChores.length}</span>
-            <span class="stat-label">Completed</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-number">
-              {kids.reduce((sum, kid) => sum + kid.current_points, 0)}
-            </span>
-            <span class="stat-label">Total Points</span>
-          </div>
-        </div>
-      </div>
+      {/* This Week - Day-by-day progress */}
+      <WeeklyProgress
+        thisWeekActivity={thisWeekActivity}
+        streaks={streaks}
+      />
 
 
 

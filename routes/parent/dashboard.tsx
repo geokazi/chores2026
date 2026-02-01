@@ -10,6 +10,7 @@ import { Handlers, PageProps } from "$fresh/server.ts";
 import { getAuthenticatedSession } from "../../lib/auth/session.ts";
 import { ChoreService } from "../../lib/services/chore-service.ts";
 import { getActivityService } from "../../lib/services/activity-service.ts";
+import { InsightsService, ThisWeekActivity, StreakData } from "../../lib/services/insights-service.ts";
 import ParentDashboard from "../../islands/ParentDashboard.tsx";
 import AppHeader from "../../islands/AppHeader.tsx";
 import AppFooter from "../../components/AppFooter.tsx";
@@ -21,6 +22,8 @@ interface ParentDashboardData {
   parentChores: any[];
   parentProfileId?: string;
   recentActivity: any[];
+  thisWeekActivity: ThisWeekActivity[];
+  streaks: StreakData[];
   error?: string;
 }
 
@@ -39,10 +42,12 @@ export const handler: Handlers<ParentDashboardData> = {
 
     try {
       const choreService = new ChoreService();
+      const insightsService = new InsightsService();
 
       // OPTIMIZATION: Use cached family + members from session
       const family = session.family;
       const members = family.members;
+      const familySettings = family.settings as Record<string, unknown> | null;
 
       // Parent profile ID is now cached in session
       const parentProfileId = session.user?.profileId;
@@ -63,6 +68,28 @@ export const handler: Handlers<ParentDashboardData> = {
       const activityService = getActivityService();
       const recentActivity = await activityService.getRecentActivity(familyId, 10);
 
+      // Get weekly progress data for This Week view
+      const childProfiles = members
+        .filter((m: any) => m.role === "child")
+        .map((m: any) => ({ id: m.id, name: m.name }));
+
+      // Get timezone from parent's preferences
+      const timezone = parentProfileId
+        ? await insightsService.getTimezone(parentProfileId)
+        : "UTC";
+
+      // Fetch insights data (thisWeekActivity + streaks)
+      let thisWeekActivity: ThisWeekActivity[] = [];
+      let streaks: StreakData[] = [];
+
+      if (childProfiles.length > 0) {
+        const insights = await insightsService.getInsights(
+          familyId, familySettings, childProfiles, timezone
+        );
+        thisWeekActivity = insights.thisWeekActivity;
+        streaks = insights.streaks;
+      }
+
       console.log("✅ Parent dashboard loaded for family:", family.name);
 
       return ctx.render({
@@ -72,6 +99,8 @@ export const handler: Handlers<ParentDashboardData> = {
         parentChores,
         parentProfileId,
         recentActivity,
+        thisWeekActivity,
+        streaks,
       });
     } catch (error) {
       console.error("❌ Error loading parent dashboard:", error);
@@ -82,6 +111,8 @@ export const handler: Handlers<ParentDashboardData> = {
         parentChores: [],
         parentProfileId: undefined,
         recentActivity: [],
+        thisWeekActivity: [],
+        streaks: [],
         error: "Failed to load dashboard",
       });
     }
@@ -91,7 +122,7 @@ export const handler: Handlers<ParentDashboardData> = {
 export default function ParentDashboardPage(
   { data }: PageProps<ParentDashboardData>,
 ) {
-  const { family, members, chores, parentChores, parentProfileId, recentActivity, error } = data;
+  const { family, members, chores, parentChores, parentProfileId, recentActivity, thisWeekActivity, streaks, error } = data;
 
   if (error) {
     return (
@@ -137,6 +168,8 @@ export default function ParentDashboardPage(
         parentChores={parentChores}
         parentProfileId={parentProfileId}
         recentActivity={recentActivity}
+        thisWeekActivity={thisWeekActivity}
+        streaks={streaks}
       />
       <AppFooter />
     </div>

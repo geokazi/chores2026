@@ -1,0 +1,212 @@
+/**
+ * WeeklyProgress Component
+ * Shows day-by-day chore completion for the current week
+ * Replaces static overview stats with actionable progress view
+ */
+
+interface ThisWeekDay {
+  date: string;
+  dayName: string;
+  done: boolean;
+}
+
+interface ThisWeekActivity {
+  profileId: string;
+  name: string;
+  days: ThisWeekDay[];
+  totalDone: number;
+}
+
+interface StreakData {
+  profileId: string;
+  name: string;
+  currentStreak: number;
+}
+
+interface Props {
+  thisWeekActivity: ThisWeekActivity[];
+  streaks: StreakData[];
+}
+
+/** Encouraging message based on streak/activity */
+function getEncouragement(streak: number, totalDone: number): string {
+  if (streak >= 3) return `🔥 ${streak}-day streak — great momentum!`;
+  if (streak === 2) return `🔥 ${streak}-day streak — keep it up!`;
+  if (streak === 1) return "🌟 Nice start! One more day for a streak.";
+  if (totalDone > 0) return "🌟 Off to a good start!";
+  return "✨ Ready when you are!";
+}
+
+export default function WeeklyProgress({ thisWeekActivity, streaks }: Props) {
+  if (thisWeekActivity.length === 0) {
+    return (
+      <div class="weekly-progress-empty">
+        <p>No kids in family yet. Add kids to see weekly progress.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div class="weekly-progress">
+      <div class="weekly-progress-header">
+        <h2>This Week</h2>
+        <span class="weekly-progress-subtitle">Day-by-day progress</span>
+      </div>
+
+      <div class="weekly-progress-cards">
+        {thisWeekActivity.map(kid => {
+          const kidStreak = streaks.find(s => s.profileId === kid.profileId);
+          const encouragement = getEncouragement(kidStreak?.currentStreak || 0, kid.totalDone);
+
+          return (
+            <div class="weekly-progress-card" key={kid.profileId}>
+              <div class="wpc-header">
+                <span class="wpc-name">{kid.name}</span>
+                <span class="wpc-count">{kid.totalDone}/7</span>
+              </div>
+              <div class="wpc-days">
+                {kid.days.map(day => (
+                  <div class={`wpc-day ${day.done ? "done" : ""}`} key={day.date}>
+                    <span class="wpc-day-icon">{day.done ? "✓" : "○"}</span>
+                    <span class="wpc-day-name">{day.dayName}</span>
+                  </div>
+                ))}
+              </div>
+              <div class="wpc-encouragement">{encouragement}</div>
+            </div>
+          );
+        })}
+      </div>
+
+      <style>{`
+        .weekly-progress {
+          margin-bottom: 1.5rem;
+        }
+
+        .weekly-progress-header {
+          margin-bottom: 0.75rem;
+        }
+
+        .weekly-progress-header h2 {
+          font-size: 1.1rem;
+          font-weight: 700;
+          margin: 0 0 0.125rem;
+          color: var(--color-text);
+        }
+
+        .weekly-progress-subtitle {
+          font-size: 0.75rem;
+          color: var(--color-text-light);
+        }
+
+        .weekly-progress-cards {
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+        }
+
+        .weekly-progress-card {
+          background: rgba(255, 255, 255, 0.85);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border: 1px solid rgba(var(--color-primary-rgb), 0.12);
+          border-radius: 14px;
+          padding: 1rem 1.125rem;
+          transition: all 0.2s ease;
+        }
+
+        .weekly-progress-card:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 16px rgba(var(--color-primary-rgb), 0.1);
+        }
+
+        .wpc-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 0.625rem;
+        }
+
+        .wpc-name {
+          font-weight: 600;
+          font-size: 0.95rem;
+          color: var(--color-text);
+        }
+
+        .wpc-count {
+          font-size: 0.8rem;
+          font-weight: 600;
+          color: var(--color-primary);
+          background: rgba(var(--color-primary-rgb), 0.1);
+          padding: 0.2rem 0.5rem;
+          border-radius: 6px;
+        }
+
+        .wpc-days {
+          display: flex;
+          gap: 0.375rem;
+          margin-bottom: 0.625rem;
+        }
+
+        .wpc-day {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          flex: 1;
+          padding: 0.5rem 0.25rem;
+          border-radius: 8px;
+          background: rgba(var(--color-primary-rgb), 0.04);
+          transition: all 0.15s ease;
+        }
+
+        .wpc-day.done {
+          background: rgba(var(--color-primary-rgb), 0.12);
+        }
+
+        .wpc-day-icon {
+          font-size: 1.1rem;
+          color: rgba(var(--color-primary-rgb), 0.25);
+          line-height: 1;
+          margin-bottom: 0.25rem;
+        }
+
+        .wpc-day.done .wpc-day-icon {
+          color: var(--color-primary);
+        }
+
+        .wpc-day-name {
+          font-size: 0.6rem;
+          font-weight: 600;
+          color: var(--color-text-light);
+          text-transform: uppercase;
+          letter-spacing: 0.02em;
+        }
+
+        .wpc-encouragement {
+          font-size: 0.8rem;
+          color: var(--color-text-light);
+          font-weight: 500;
+        }
+
+        .weekly-progress-empty {
+          background: rgba(255, 255, 255, 0.7);
+          border-radius: 12px;
+          padding: 1.5rem;
+          text-align: center;
+          color: var(--color-text-light);
+          font-size: 0.875rem;
+        }
+
+        /* Reduced motion */
+        @media (prefers-reduced-motion: reduce) {
+          .weekly-progress-card {
+            transition: none;
+          }
+          .weekly-progress-card:hover {
+            transform: none;
+          }
+        }
+      `}</style>
+    </div>
+  );
+}
