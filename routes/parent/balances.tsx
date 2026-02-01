@@ -53,11 +53,14 @@ export const handler: Handlers<BalancesData> = {
       const url = new URL(req.url);
       const timezone = url.searchParams.get("tz") || "America/Los_Angeles";
 
-      const [balances, financeSettings, recentPurchases] = await Promise.all([
+      const [rawBalances, financeSettings, recentPurchases] = await Promise.all([
         balanceService.getFamilyBalances(session.family.id, timezone),
         balanceService.getFinanceSettings(session.family.id),
         rewardsService.getRecentPurchases(session.family.id, undefined, 10),
       ]);
+
+      // Sort by current points (highest first)
+      const balances = rawBalances.sort((a, b) => b.currentPoints - a.currentPoints);
 
       const members: FamilyMember[] = session.family.members.map((m: any) => ({
         id: m.id,
