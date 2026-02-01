@@ -115,7 +115,7 @@ export default function HabitInsights({ trends, streaks, routines, totalActiveDa
         </section>
 
         <section class="insights-section">
-          <h2>This Week</h2>
+          <h2>Last 7 Days</h2>
           <p class="section-desc">Day-by-day progress</p>
           <div class="this-week-cards">
             {thisWeekActivity.map(kid => {

@@ -47,7 +47,7 @@ export default function WeeklyProgress({ thisWeekActivity, streaks, singleKid = 
   if (thisWeekActivity.length === 0) {
     return (
       <div class="weekly-progress-empty">
-        <p>{singleKid ? "No activity yet this week." : "No kids in family yet. Add kids to see weekly progress."}</p>
+        <p>{singleKid ? "No activity in the last 7 days." : "No kids in family yet. Add kids to see weekly progress."}</p>
       </div>
     );
   }
@@ -56,7 +56,7 @@ export default function WeeklyProgress({ thisWeekActivity, streaks, singleKid = 
     <div class={`weekly-progress ${singleKid ? "single-kid" : ""}`}>
       {!singleKid && (
         <div class="weekly-progress-header">
-          <h2>This Week</h2>
+          <h2>Last 7 Days</h2>
           <span class="weekly-progress-subtitle">Day-by-day progress</span>
         </div>
       )}

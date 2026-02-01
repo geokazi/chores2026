@@ -21,8 +21,8 @@ import type {
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-/** Get current week's dates (Sun-Sat) with day names - timezone aware */
-function getCurrentWeekDates(timezone: string = "America/Los_Angeles"): Array<{ date: string; dayName: string }> {
+/** Get rolling 7-day window (today + 6 previous days) with day names - timezone aware */
+function getRolling7DayDates(timezone: string = "America/Los_Angeles"): Array<{ date: string; dayName: string }> {
   // Get today's date in user's timezone
   const now = new Date();
   const todayLocal = getLocalDate(now.toISOString(), timezone); // YYYY-MM-DD
@@ -31,20 +31,17 @@ function getCurrentWeekDates(timezone: string = "America/Los_Angeles"): Array<{ 
   const month = parseInt(monthStr, 10);
   const day = parseInt(dayStr, 10);
 
-  // Week start: Sunday (to match reports page)
   const todayDate = new Date(year, month - 1, day);
-  const dayOfWeek = todayDate.getDay(); // 0=Sun, 6=Sat
-  const sundayDate = new Date(year, month - 1, day - dayOfWeek);
-
   const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const weekDates: Array<{ date: string; dayName: string }> = [];
 
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(sundayDate);
-    d.setDate(sundayDate.getDate() + i);
+  // Rolling window: start 6 days ago, end today (always shows 7 days of activity)
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(todayDate);
+    d.setDate(todayDate.getDate() - i);
     weekDates.push({
       date: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`,
-      dayName: dayNames[i],
+      dayName: dayNames[d.getDay()],
     });
   }
 
@@ -103,7 +100,7 @@ export class BalanceService {
    */
   async getFamilyBalances(familyId: string, timezone: string = "America/Los_Angeles"): Promise<BalanceInfo[]> {
     const financeSettings = await this.getFinanceSettings(familyId);
-    const weekDates = getCurrentWeekDates(timezone);
+    const weekDates = getRolling7DayDates(timezone);
     const weekStart = weekDates[0].date;
 
     // Get all child profiles with their current points
@@ -181,7 +178,7 @@ export class BalanceService {
     timezone: string = "America/Los_Angeles",
   ): Promise<BalanceInfo | null> {
     const financeSettings = await this.getFinanceSettings(familyId);
-    const weekDates = getCurrentWeekDates(timezone);
+    const weekDates = getRolling7DayDates(timezone);
     const weekStart = weekDates[0].date;
 
     const { data: profile, error } = await this.client

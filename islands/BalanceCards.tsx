@@ -135,7 +135,7 @@ export default function BalanceCards({ balances, recentPurchases, dollarValuePer
                 })}
               </div>
               <div class="weekly-total">
-                <span>This Week</span>
+                <span>Last 7 Days</span>
                 <span class="weekly-value">+{balance.weeklyEarnings} pts</span>
               </div>
             </div>

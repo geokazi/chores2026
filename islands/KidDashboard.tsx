@@ -316,7 +316,7 @@ export default function KidDashboard({
               color: "var(--color-text)",
             }}
           >
-            This Week
+            Last 7 Days
           </h2>
           <WeeklyProgress
             thisWeekActivity={kidWeeklyActivity}

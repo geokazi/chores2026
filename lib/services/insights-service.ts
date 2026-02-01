@@ -180,8 +180,8 @@ export class InsightsService {
   }
 
   /**
-   * Compute day-by-day activity for the current week (Sun-Sat).
-   * Uses timezone-aware dates to match Reports page.
+   * Compute day-by-day activity for rolling 7-day window (today + 6 previous days).
+   * Uses timezone-aware dates. Rolling window ensures no "empty Sunday" problem.
    */
   private computeThisWeekActivity(
     txData: TransactionRow[],
@@ -196,20 +196,17 @@ export class InsightsService {
     const month = parseInt(monthStr, 10);
     const day = parseInt(dayStr, 10);
 
-    // Week start: Sunday (to match Reports page)
     const todayDate = new Date(year, month - 1, day);
-    const dayOfWeek = todayDate.getDay(); // 0=Sun, 6=Sat
-    const sundayDate = new Date(year, month - 1, day - dayOfWeek);
-
     const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     const weekDates: Array<{ date: string; dayName: string }> = [];
 
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(sundayDate);
-      d.setDate(sundayDate.getDate() + i);
+    // Rolling window: start 6 days ago, end today (always shows 7 days of activity)
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(todayDate);
+      d.setDate(todayDate.getDate() - i);
       weekDates.push({
         date: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`,
-        dayName: dayNames[i],
+        dayName: dayNames[d.getDay()],
       });
     }
 
