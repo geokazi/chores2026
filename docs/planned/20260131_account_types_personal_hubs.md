@@ -629,15 +629,225 @@ AI should reduce friction, not be a selling point.
 
 ---
 
-## Open Questions
+## Implementation: Auth Flow Changes Required
 
-1. **Conversion path**: Can a "Just Me" account later add roommates?
-2. **Family transitions**: What happens when last kid turns 18?
-3. **Billing**: Should roommates/solo have different pricing?
-4. **Lists feature**: Expand beyond chores to shopping, homework, bills?
+### Current State Assessment
+
+The current auth/signup flows are optimized for "Family with Kids":
+
+| Component | Current Behavior | Gap |
+|-----------|------------------|-----|
+| `/setup.tsx` | Creates `role: "parent"`, asks for "Kids" | No roommate/solo paths |
+| `invite-service.ts` | Only `role: "parent" \| "child"` | No `"member"` role for peers |
+| Email templates | "Join the [Family] family" | Wrong terminology for roommates |
+| Referral service | Tracks by `family_id` | Works for all types (no change) |
+
+### Required Changes: `/setup.tsx`
+
+**Current Form Structure**:
+```
+Your Name → creates role: "parent"
+Family Name → creates families.name
+Kids (optional) → creates role: "child" profiles
+Template Selection → chore rotation templates
+```
+
+**Proposed: Dynamic Form Based on Account Type**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    SETUP FLOW (REVISED)                         │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  STEP 1: Account Type Selection (new)                          │
+│  ─────────────────────────────────────────────────────────────  │
+│  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐       │
+│  │ 👨‍👩‍👧‍👦 Family    │  │ 🏠 Roommates  │  │ 👤 Just Me   │       │
+│  │  with Kids   │  │   /Couple    │  │              │       │
+│  └───────────────┘  └───────────────┘  └───────────────┘       │
+│                                                                 │
+│  STEP 2: Dynamic Form Fields                                   │
+│  ─────────────────────────────────────────────────────────────  │
+│                                                                 │
+│  IF account_type = "family":                                   │
+│  ┌─────────────────────────────────────────────────────────────┐
+│  │  Your Name:     [Mom____________] → role: "parent"         │
+│  │  Family Name:   [The Smiths_____] → families.name          │
+│  │  Kids:          [Emma___] [Jake__] → role: "child"         │
+│  │  Template:      (•) Daily Routines  ( ) Skip               │
+│  └─────────────────────────────────────────────────────────────┘
+│                                                                 │
+│  IF account_type = "roommates":                                │
+│  ┌─────────────────────────────────────────────────────────────┐
+│  │  Your Name:     [Marcus__________] → role: "member"        │
+│  │  Place Name:    [Apt 4B__________] → families.name         │
+│  │  (No kids section)                                         │
+│  │  (No template section)                                     │
+│  └─────────────────────────────────────────────────────────────┘
+│                                                                 │
+│  IF account_type = "personal":                                 │
+│  ┌─────────────────────────────────────────────────────────────┐
+│  │  Your Name:     [Alex____________] → role: "member"        │
+│  │  (No family/place name - auto: "[Name]'s Tasks")           │
+│  │  (No kids section)                                         │
+│  │  (No template section)                                     │
+│  │  Track:         ☑ Tasks  ☑ Shopping  ☐ Homework            │
+│  └─────────────────────────────────────────────────────────────┘
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Database Changes (families.settings)**:
+```typescript
+// POST handler writes account_type to settings
+{
+  _version: 1,
+  account_type: "family" | "roommates" | "personal",
+  apps: {
+    choregami: {
+      gamification_enabled: true,  // false for roommates/personal
+      fairness_tracking: false,    // true for roommates
+      hub_name: "Family Hub",      // "Apartment" for roommates, null for personal
+    }
+  }
+}
+```
+
+### Required Changes: `invite-service.ts`
+
+**Current Role Type**:
+```typescript
+role: "parent" | "child"  // parent = co-parent, child = teen
+```
+
+**Proposed Role Type**:
+```typescript
+role: "parent" | "child" | "member"  // member = equal peer (roommates)
+```
+
+**Email Template Changes**:
+```html
+<!-- Current -->
+Subject: "Join [FamilyName] on ChoreGami"
+Body: "...join the [FamilyName] family..."
+
+<!-- Proposed: Dynamic based on account_type -->
+IF account_type = "family":
+  Subject: "Join [FamilyName] on ChoreGami"
+  Body: "...join the [FamilyName] family..."
+
+IF account_type = "roommates":
+  Subject: "Join [PlaceName] on ChoreGami"
+  Body: "...join [PlaceName] for shared tasks..."
+
+IF account_type = "personal":
+  (Invites disabled - no hub to invite to)
+```
+
+### Required Changes: `/join.tsx`
+
+**Current Behavior**:
+- Creates profile with `role` from invite
+- Only supports "parent" or "child"
+
+**Proposed Changes**:
+- Support "member" role for roommate invites
+- For roommates: all invitees get `role: "member"`
+- Show different welcome messaging based on account_type
+
+### Referral Service: No Changes Needed
+
+The referral system works at the `family_id` level. All account types create a family record (even solo users), so:
+- `/r/[code]` → `/register?ref=CODE` works unchanged
+- `ReferralService.recordConversion()` tracks by family_id
+- Attribution works identically for all account types
+
+### OAuth Flow: No Changes Needed
+
+OAuth flow is account-type agnostic:
+1. User clicks OAuth provider
+2. Supabase creates auth user
+3. Redirect to `/setup`
+4. `/setup` shows account type selector (NEW)
+5. User completes form based on type
+
+The only change is in `/setup.tsx` - OAuth callbacks remain unchanged.
+
+### Backward Compatibility
+
+**Existing families**:
+- No `account_type` in settings → default to "family"
+- Gamification remains enabled
+- No migration needed
+
+**Query Pattern**:
+```typescript
+const accountType = family.settings?.account_type || "family";
+const gamificationEnabled = accountType === "family";
+const fairnessTracking = accountType === "roommates";
+```
 
 ---
 
-**Status**: 📋 Brainstorm Complete
+## Implementation Phases
+
+### Phase 1: Account Type Infrastructure (Low Effort)
+1. Add account_type selection to `/setup.tsx` Step 1
+2. Store in `families.settings.account_type`
+3. Add "member" to role enum in invite-service.ts
+4. Update role-based queries to handle "member"
+
+### Phase 2: Dynamic Setup Form (Medium Effort)
+1. Conditional form fields based on account_type
+2. Different default names: "Family Name" vs "Place Name"
+3. Hide kids section for roommates/personal
+4. Hide templates for non-family types
+
+### Phase 3: UI Adaptations (Medium Effort)
+1. Fairness tracking for roommates (replace leaderboard)
+2. Simplified nav for solo users (no hub toggle)
+3. Age-based gamification toggles
+4. Dynamic email templates in invite-service.ts
+
+### Phase 4: Polish (Low Effort)
+1. Welcome messaging per account type
+2. Onboarding hints ("Add roommates" vs "Add kids")
+3. Empty state variations
+4. Settings page adaptations
+
+---
+
+## Open Questions
+
+1. **Conversion path**: Can a "Just Me" account later add roommates?
+   - *Proposed*: Yes, via Settings → "Convert to shared account"
+   - Creates hub, enables invites
+
+2. **Family transitions**: What happens when last kid turns 18?
+   - *Proposed*: No automatic change - parents can adjust gamification in Settings
+
+3. **Billing**: Should roommates/solo have different pricing?
+   - *Proposed*: Same pricing, different feature focus in marketing
+
+4. **Lists feature**: Expand beyond chores to shopping, homework, bills?
+   - *Proposed*: Phase 2 - start with chores/tasks only
+
+5. **Role migration**: Can a "child" become a "member" (teen leaves home)?
+   - *Proposed*: Yes, via Settings → "Leave family" → new account
+
+---
+
+## Cross-References: Auth Flow Documentation
+
+For implementation, also review:
+- **Current auth flow**: Explore agent research (comprehensive flow diagrams)
+- **OAuth handling**: `routes/login.tsx`, `islands/auth/SocialAuthButtons.tsx`
+- **Session management**: `lib/auth/session.ts`, [Session Management](../session-management.md)
+- **Invite system**: `lib/services/invite-service.ts`, [Family Member Invites](../milestones/20260127_family_member_invites.md)
+- **Referral system**: `lib/services/referral-service.ts`, [Referral Share Feature](./20260130_referral_share_feature.md)
+
+---
+
+**Status**: 📋 Brainstorm Complete + Implementation Gaps Documented
 **Next Step**: Validate with beta users, prioritize for Q2 roadmap
 **Effort Estimate**: ~20% more code for 3x addressable market
