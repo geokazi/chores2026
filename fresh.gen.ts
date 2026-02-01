@@ -45,6 +45,7 @@ import * as $api_parent_verify_pin from "./routes/api/parent/verify-pin.ts";
 import * as $api_payout from "./routes/api/payout.ts";
 import * as $api_pin_verify from "./routes/api/pin/verify.ts";
 import * as $api_points_adjust from "./routes/api/points/adjust.ts";
+import * as $api_recurring_complete from "./routes/api/recurring/complete.ts";
 import * as $api_rewards_catalog from "./routes/api/rewards/catalog.ts";
 import * as $api_rewards_claim from "./routes/api/rewards/claim.ts";
 import * as $api_rewards_fulfill from "./routes/api/rewards/fulfill.ts";
@@ -174,6 +175,7 @@ const manifest = {
     "./routes/api/payout.ts": $api_payout,
     "./routes/api/pin/verify.ts": $api_pin_verify,
     "./routes/api/points/adjust.ts": $api_points_adjust,
+    "./routes/api/recurring/complete.ts": $api_recurring_complete,
     "./routes/api/rewards/catalog.ts": $api_rewards_catalog,
     "./routes/api/rewards/claim.ts": $api_rewards_claim,
     "./routes/api/rewards/fulfill.ts": $api_rewards_fulfill,
