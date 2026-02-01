@@ -33,11 +33,6 @@ export default function ShareReferralCard({ code, conversions, monthsEarned, bas
   // Show personalized version if >= 5 chores completed this week
   const isPersonalized = weeklyStats && weeklyStats.choresCompleted >= PERSONALIZED_THRESHOLD;
 
-  // Debug logging
-  console.log("[Referral] ShareReferralCard mounted", {
-    code, conversions, monthsEarned, shareUrl,
-    weeklyStats, isPersonalized
-  });
 
   // Track card view on mount (once per session)
   useEffect(() => {
@@ -49,15 +44,12 @@ export default function ShareReferralCard({ code, conversions, monthsEarned, bas
   }, [isPersonalized]);
 
   const handleCopy = async () => {
-    console.log("[Referral] Copy clicked", { shareUrl, isPersonalized });
     trackFeature(isPersonalized ? "referral_copy_personalized" : "referral_copy_simple");
     try {
       await navigator.clipboard.writeText(shareUrl);
       copied.value = true;
-      console.log("[Referral] Copied to clipboard successfully");
       setTimeout(() => { copied.value = false; }, 2000);
-    } catch (err) {
-      console.log("[Referral] Clipboard API failed, using fallback", err);
+    } catch {
       // Fallback for older browsers
       const textArea = document.createElement("textarea");
       textArea.value = shareUrl;
@@ -83,7 +75,6 @@ export default function ShareReferralCard({ code, conversions, monthsEarned, bas
   };
 
   const handleShare = async () => {
-    console.log("[Referral] Share clicked", { hasShareAPI: !!navigator.share, isPersonalized });
     trackFeature(isPersonalized ? "referral_share_personalized" : "referral_share_simple");
     if (navigator.share) {
       try {
@@ -92,13 +83,11 @@ export default function ShareReferralCard({ code, conversions, monthsEarned, bas
           text: getShareMessage(),
           url: shareUrl,
         });
-        console.log("[Referral] Share completed");
         trackFeature(isPersonalized ? "referral_share_complete_personalized" : "referral_share_complete_simple");
-      } catch (err) {
-        console.log("[Referral] Share cancelled or failed", err);
+      } catch {
+        // User cancelled or share failed - no action needed
       }
     } else {
-      console.log("[Referral] No Web Share API, falling back to copy");
       handleCopy();
     }
   };
@@ -130,13 +119,14 @@ export default function ShareReferralCard({ code, conversions, monthsEarned, bas
           value={shareUrl}
           readOnly
           class="referral-link-input"
+          aria-label="Your referral link"
           onClick={(e) => (e.target as HTMLInputElement).select()}
         />
         <div class="referral-actions">
-          <button onClick={handleCopy} class={`referral-btn referral-btn-copy ${copied.value ? 'copied' : ''}`}>
+          <button type="button" onClick={handleCopy} class={`referral-btn referral-btn-copy ${copied.value ? 'copied' : ''}`}>
             {copied.value ? "✓ Copied!" : "📋 Copy"}
           </button>
-          <button onClick={handleShare} class="referral-btn referral-btn-share">
+          <button type="button" onClick={handleShare} class="referral-btn referral-btn-share">
             📤 Share
           </button>
         </div>
@@ -152,7 +142,7 @@ export default function ShareReferralCard({ code, conversions, monthsEarned, bas
         <div class="referral-progress-bar">
           <div
             class="referral-progress-fill"
-            style={`width: ${progressPercent}%`}
+            style={`width: ${progressPercent}%; min-width: ${conversions > 0 ? '8%' : '0'}`}
           />
         </div>
         {conversions > 0 && monthsEarned < 6 && (
@@ -334,7 +324,6 @@ export default function ShareReferralCard({ code, conversions, monthsEarned, bas
           border-radius: 5px;
           transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
           position: relative;
-          min-width: ${conversions > 0 ? '8%' : '0'};
         }
         /* Shimmer effect */
         .referral-progress-fill::after {
