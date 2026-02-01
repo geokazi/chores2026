@@ -65,6 +65,29 @@ interface FamilyReportsProps {
 export default function FamilyReports({ analytics, goalsAchieved, pointsPerDollar, goalStatus, weeklyPatterns }: FamilyReportsProps) {
   const { members, totals } = analytics;
 
+  // Detect "new period" situations for helpful context
+  const today = new Date();
+  const isSunday = today.getDay() === 0;
+  const isFirstOfMonth = today.getDate() === 1;
+  const isJan1 = today.getMonth() === 0 && today.getDate() === 1;
+
+  // Only show note when it's day 1 AND totals are actually zero
+  const showWeekNote = isSunday && totals.earned_week === 0;
+  const showMonthNote = isFirstOfMonth && totals.earned_month === 0;
+  const showYearNote = isJan1 && totals.earned_ytd === 0;
+
+  // Build contextual note
+  let periodNote = "";
+  if (showYearNote) {
+    periodNote = "Happy New Year! Fresh start for everyone.";
+  } else if (showWeekNote && showMonthNote) {
+    periodNote = "New week and month just started.";
+  } else if (showMonthNote) {
+    periodNote = "New month just started.";
+  } else if (showWeekNote) {
+    periodNote = "New week just started.";
+  }
+
   // Find top saver (highest savings)
   const topSaver = members.length > 0
     ? members.reduce((top, m) => m.savings > top.savings ? m : top, members[0])
@@ -229,6 +252,21 @@ export default function FamilyReports({ analytics, goalsAchieved, pointsPerDolla
           <span style={{ textAlign: "right", fontFamily: "monospace" }}>{totals.earned_ytd}</span>
           <span style={{ textAlign: "right", fontFamily: "monospace" }}>{totals.earned_all_time}</span>
         </div>
+
+        {/* Contextual note for new periods */}
+        {periodNote && (
+          <p style={{
+            margin: "0.5rem 0 0 0",
+            padding: "0.5rem",
+            fontSize: "0.85rem",
+            color: "var(--color-text-light)",
+            background: "var(--color-bg, #f8f9fa)",
+            borderRadius: "6px",
+            textAlign: "center",
+          }}>
+            {periodNote}
+          </p>
+        )}
       </div>
 
       {/* Goals Achieved Section - Card Layout by Person */}
