@@ -618,6 +618,115 @@ AI should reduce friction, not be a selling point.
 
 ---
 
+## 2026 UX Trends Assessment
+
+Based on [web research](#sources), our context-aware setup routes design aligns strongly with modern UX trends.
+
+### ✅ Aligned with 2026 Trends
+
+| Trend | ChoreGami Design | Assessment |
+|-------|------------------|------------|
+| **Context-Aware Onboarding** | Invite/referral tokens pre-select account type | ✅ Strong |
+| **Progressive Disclosure** | 3 setup routes with escalating decisions (0→1→required) | ✅ Strong |
+| **Reduce Cognitive Load** | `/setup/join` = name only | ✅ Strong |
+| **Delayed Decisions** | Only organic signups choose persona | ✅ Strong |
+| **Personalization via Context** | Referrer's account_type suggests your type | ✅ Strong |
+| **Zero-Friction for Social Spread** | Invited users skip persona selection | ✅ Strong |
+
+### ⚠️ Gaps & Recommended Improvements
+
+| Gap | Effort | Impact | Priority |
+|-----|--------|--------|----------|
+| Progress indicators ("Step 1 of 2") | **2-4 hrs** | Medium | P1 |
+| Gamification transparency banner | **2-4 hrs** | Medium | P1 |
+| Static demo mode (value before signup) | **1-2 days** | High | P2 |
+| Biometric/passkey auth | **1-2 days** | Low-Medium | P3 |
+
+### P1: Progress Indicators (2-4 hours)
+
+Add "Step 1 of 2" to `/setup/new` and `/setup/referred`:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Step 1 of 2                                    ●───────○       │
+├─────────────────────────────────────────────────────────────────┤
+│  Who's using this?                                              │
+│  [Family] [Roommates] [Just Me]                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Files**: `routes/setup/new.tsx`, `routes/setup/referred.tsx`, `static/styles.css`
+
+### P1: Gamification Transparency Banner (2-4 hours)
+
+Add info banner during family setup:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  ℹ️ Family mode uses points & rewards to motivate kids.        │
+│     You can adjust this anytime in Settings.     [Learn more]  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Files**: `routes/setup/new.tsx`, `routes/setup/referred.tsx`
+
+### P2: Static Demo Mode (1-2 days)
+
+Let users explore before creating account:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  ChoreGami                                                      │
+├─────────────────────────────────────────────────────────────────┤
+│  [Get Started]        [👀 Try Demo First]                      │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│  🎮 DEMO MODE                              [Exit Demo] [Sign Up]│
+├─────────────────────────────────────────────────────────────────┤
+│  Sample Family Dashboard                                        │
+│  👧 Emma: 3 chores today    [✓] [✓] [○]                       │
+│  👦 Jake: 2 chores today    [✓] [○]                           │
+│                                                                 │
+│  Try completing a chore! Tap the checkbox.                     │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Files**: `routes/demo.tsx`, `islands/DemoKidDashboard.tsx`, `islands/DemoChoreCard.tsx`
+
+**Why**: 64% of users drop off during signup flows. Demo mode shows value first.
+
+### P3: Passkey Auth (1-2 days)
+
+Add WebAuthn passkey support:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  [🔑 Sign in with Passkey]          ← NEW                      │
+│  ─────────────────────────────────────────────────────────────  │
+│  [📧 Continue with Email]                                       │
+│  [📱 Continue with Phone]                                       │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Dependencies**: Supabase WebAuthn API (still evolving in 2026)
+
+### Key Statistics
+
+- **64% of users** drop off during typical SaaS signup flows
+- **27% abandon forms** that feel too long
+- **42% of sites** still interrupt users with account creation too early
+- Apps with great onboarding see **5X better engagement**
+
+### Sources
+
+- [Best Mobile App UI/UX Design Trends for 2026](https://natively.dev/blog/best-mobile-app-design-trends-2026)
+- [Best Mobile App Onboarding Examples in 2026](https://www.plotline.so/blog/mobile-app-onboarding-examples)
+- [Save Account Creation for Confirmation Step - Baymard](https://baymard.com/blog/delayed-account-creation)
+- [The Ultimate Mobile App Onboarding Guide 2026 - VWO](https://vwo.com/blog/mobile-app-onboarding-guide/)
+
+---
+
 ## Related Documentation
 
 - [Architecture](../architecture.md) - Overall system design
