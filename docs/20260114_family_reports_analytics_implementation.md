@@ -13,7 +13,7 @@
 
 A `/reports` page showing:
 1. **Savings** by person with dollar values
-2. **Points Earned** by person (Week/Month/YTD/All Time)
+2. **Points Earned** by person (Week/Month/Year/All Time)
 3. **Goals Achieved** (positive framing for redemptions)
 4. **Weekly Champion** badge
 
@@ -167,7 +167,7 @@ const { data: transactions } = await this.client
 │    Dad          12 pts   ($12.00)                     │
 │    Mom           5 pts    ($5.00)                     │
 │                                                       │
-│ 📈 EARNED THIS   Week  Month   YTD   All              │
+│ 📈 EARNED THIS   Week  Month  Year   All              │
 │ ───────────────────────────────────────────────────── │
 │ Cikū              47    120    450   890              │
 │ Tonie!            32     98    380   720              │
@@ -199,8 +199,15 @@ const { data: transactions } = await this.client
 **Period Definitions**:
 - **Week**: Current calendar week (Sun-Sat)
 - **Month**: Current calendar month
-- **YTD**: Year to Date (Jan 1 to now)
+- **Year**: Year to Date (Jan 1 to now)
 - **All**: All time (lifetime total)
+
+**Contextual Notes**:
+When it's the start of a new period AND totals are zero, a helpful note appears below the Family Totals row:
+- Sunday with 0 weekly: "New week just started."
+- 1st of month with 0 monthly: "New month just started."
+- Both: "New week and month just started."
+- Jan 1 with 0 yearly: "Happy New Year! Fresh start for everyone."
 
 **Goals Achieved (Card Layout)**:
 - **Aggregated by person**: Shows total per family member, not individual transactions
