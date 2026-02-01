@@ -135,20 +135,32 @@ interface DemandSignal {
 
 ### Database Table
 
+**Decision**: Reuse `family_activity` pattern (minimal schema + JSONB payload) in public schema.
+
 ```sql
--- choretracker.demand_signals
-CREATE TABLE choretracker.demand_signals (
+-- public.demand_signals (reuses family_activity pattern)
+-- No family_id FK - anonymous demand tracking
+CREATE TABLE public.demand_signals (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  feature text NOT NULL,           -- 'roommates' | 'just_me'
-  email text,                      -- Optional early access signup
-  session_id text,                 -- Anonymous session tracking
-  user_agent text,                 -- Browser context
-  created_at timestamptz DEFAULT now()
+  created_at timestamptz DEFAULT now() NOT NULL,
+  data jsonb NOT NULL
 );
 
--- Index for analytics queries
-CREATE INDEX idx_demand_signals_feature ON choretracker.demand_signals(feature);
-CREATE INDEX idx_demand_signals_created ON choretracker.demand_signals(created_at);
+-- Index for time-based queries
+CREATE INDEX idx_demand_signals_created ON public.demand_signals(created_at DESC);
+
+-- JSONB data contains: { v, feature, email?, session_id?, user_agent? }
+```
+
+**JSONB Payload** (same pattern as `family_activity.data`):
+```typescript
+{
+  v: 1,                    // Schema version
+  feature: "roommates",    // 'roommates' | 'just_me'
+  email?: "user@...",      // Optional early access signup
+  session_id?: "uuid",     // Anonymous session tracking
+  user_agent?: "Mozilla/..." // Browser context
+}
 ```
 
 ### API Endpoint
@@ -164,15 +176,17 @@ export const handler: Handlers = {
       return new Response("Invalid feature", { status: 400 });
     }
 
-    // Insert signal
+    // Insert signal with JSONB payload (family_activity pattern)
     await supabase
-      .schema("choretracker")
-      .from("demand_signals")
+      .from("demand_signals")  // public schema, no .schema() needed
       .insert({
-        feature,
-        email: email || null,
-        session_id: session_id || null,
-        user_agent: req.headers.get("user-agent"),
+        data: {
+          v: 1,  // Schema version
+          feature,
+          email: email || undefined,
+          session_id: session_id || undefined,
+          user_agent: req.headers.get("user-agent") || undefined,
+        },
       });
 
     return new Response(JSON.stringify({ success: true }), {
@@ -319,15 +333,15 @@ islands/
 ### Simple Query for Product Decisions
 
 ```sql
--- Daily demand signals by feature
+-- Daily demand signals by feature (JSONB query)
 SELECT
-  feature,
+  data->>'feature' as feature,
   DATE(created_at) as date,
   COUNT(*) as clicks,
-  COUNT(DISTINCT email) as email_signups
-FROM choretracker.demand_signals
+  COUNT(DISTINCT data->>'email') as email_signups
+FROM public.demand_signals
 WHERE created_at > NOW() - INTERVAL '30 days'
-GROUP BY feature, DATE(created_at)
+GROUP BY data->>'feature', DATE(created_at)
 ORDER BY date DESC, clicks DESC;
 ```
 
@@ -367,11 +381,12 @@ ORDER BY date DESC, clicks DESC;
 
 | Decision | Rationale |
 |----------|-----------|
+| **Reuse family_activity pattern** | Same JSONB-based minimal schema, proven pattern, no new abstractions |
+| Public schema (no family_id FK) | Anonymous demand tracking, no auth required |
 | Client-side deduplication first | Pareto: 99% coverage with zero server complexity |
 | localStorage over cookies | Simpler, no GDPR cookie concerns |
 | Optional email capture | Lower friction than required fields |
 | Server rate limiting optional | Add only if abuse observed |
-| Single DB table | Simple schema, easy queries |
 
 ---
 
