@@ -39,6 +39,11 @@ export const handler: Handlers<InsightsData> = {
 
     const familyId = session.family.id;
     const familySettings = session.family.settings as Record<string, unknown> | null;
+
+    // Get timezone from URL query param (sent by browser) or default
+    const url = new URL(req.url);
+    const timezone = url.searchParams.get("tz") || "America/Los_Angeles";
+
     const childProfiles = session.family.members
       .filter((m: any) => m.role === "child")
       .map((m: any) => ({ id: m.id, name: m.name }));
@@ -64,12 +69,6 @@ export const handler: Handlers<InsightsData> = {
 
     try {
       const insightsService = new InsightsService();
-
-      // Reuse the service's Supabase client for timezone lookup
-      const profileId = session.user?.profileId;
-      const timezone = profileId
-        ? await insightsService.getTimezone(profileId)
-        : "UTC";
 
       // Single call fetches transactions once, computes all insights
       const { trends, streaks, routines, totalActiveDays, thisWeekActivity } = await insightsService.getInsights(
@@ -104,8 +103,22 @@ export default function InsightsPage({ data }: PageProps<InsightsData>) {
 
   const currentUser = data.members.find(m => m.id === data.currentProfileId) || null;
 
+  // Script to detect browser timezone and reload with it if needed
+  const timezoneScript = `
+    (function() {
+      const url = new URL(window.location.href);
+      if (!url.searchParams.has('tz')) {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        url.searchParams.set('tz', tz);
+        window.location.replace(url.toString());
+      }
+    })();
+  `;
+
   return (
     <div class="container">
+      {/* Auto-detect and pass browser timezone */}
+      <script dangerouslySetInnerHTML={{ __html: timezoneScript }} />
       <AppHeader
         currentPage="insights"
         pageTitle="Habit Insights"

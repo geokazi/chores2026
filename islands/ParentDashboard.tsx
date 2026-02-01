@@ -41,6 +41,7 @@ interface ThisWeekDay {
   date: string;
   dayName: string;
   done: boolean;
+  points: number;
 }
 
 interface ThisWeekActivity {
@@ -48,6 +49,7 @@ interface ThisWeekActivity {
   name: string;
   days: ThisWeekDay[];
   totalDone: number;
+  totalPoints: number;
 }
 
 interface StreakData {

@@ -46,6 +46,10 @@ export const handler: Handlers<SecureKidDashboardData> = {
       const choreService = new ChoreService();
       const insightsService = new InsightsService();
 
+      // Get timezone from URL query param (sent by browser) or default
+      const url = new URL(req.url);
+      const timezone = url.searchParams.get("tz") || "America/Los_Angeles";
+
       // OPTIMIZATION: Use cached family + members from session
       const { family } = session;
       const familySettings = family.settings as Record<string, unknown> | null;
@@ -54,7 +58,7 @@ export const handler: Handlers<SecureKidDashboardData> = {
       const activityService = getActivityService();
       const [recentActivity, goalStatus] = await Promise.all([
         activityService.getRecentActivity(family.id, 10),
-        choreService.getFamilyGoalStatus(family.id),
+        choreService.getFamilyGoalStatus(family.id, timezone),
       ]);
 
       // Get weekly progress data for This Week view
@@ -67,7 +71,7 @@ export const handler: Handlers<SecureKidDashboardData> = {
 
       if (childProfiles.length > 0) {
         const insights = await insightsService.getInsights(
-          family.id, familySettings, childProfiles, "UTC"
+          family.id, familySettings, childProfiles, timezone
         );
         thisWeekActivity = insights.thisWeekActivity;
         streaks = insights.streaks;
@@ -107,9 +111,22 @@ export default function SecureKidDashboardPage(
 ) {
   const { family, familyMembers, recentActivity, goalStatus, thisWeekActivity, streaks, error } = data;
 
+  // Script to detect browser timezone and reload with it if needed
+  const timezoneScript = `
+    (function() {
+      const url = new URL(window.location.href);
+      if (!url.searchParams.has('tz')) {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        url.searchParams.set('tz', tz);
+        window.location.replace(url.toString());
+      }
+    })();
+  `;
+
   if (error) {
     return (
       <div class="container">
+        <script dangerouslySetInnerHTML={{ __html: timezoneScript }} />
         <div class="header">
           <h1>ChoreGami 2026</h1>
         </div>
@@ -127,6 +144,8 @@ export default function SecureKidDashboardPage(
 
   return (
     <div class="container">
+      {/* Auto-detect and pass browser timezone */}
+      <script dangerouslySetInnerHTML={{ __html: timezoneScript }} />
       <SecureKidDashboard
         family={family}
         familyMembers={familyMembers}

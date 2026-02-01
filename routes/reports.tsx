@@ -87,7 +87,7 @@ export const handler: Handlers<ReportsData> = {
       const [analytics, goalsAchieved, goalStatus, weeklyPatterns] = await Promise.all([
         choreService.getFamilyAnalytics(familyId, pointsPerDollar, timezone),
         choreService.getGoalsAchieved(familyId),
-        choreService.getFamilyGoalStatus(familyId),
+        choreService.getFamilyGoalStatus(familyId, timezone),
         choreService.getWeeklyPatterns(familyId, timezone),
       ]);
 

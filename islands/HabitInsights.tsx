@@ -41,6 +41,7 @@ interface ThisWeekDay {
   date: string;
   dayName: string;
   done: boolean;
+  points: number;
 }
 
 interface ThisWeekActivity {
@@ -48,6 +49,7 @@ interface ThisWeekActivity {
   name: string;
   days: ThisWeekDay[];
   totalDone: number;
+  totalPoints: number;
 }
 
 interface Props {
@@ -123,11 +125,15 @@ export default function HabitInsights({ trends, streaks, routines, totalActiveDa
                 <div class="this-week-card" key={kid.profileId}>
                   <div class="tw-header">
                     <span class="tw-name">{kid.name}</span>
+                    <div class="tw-stats">
+                      <span class="tw-points">+{kid.totalPoints} pts</span>
+                      <span class="tw-days-count">{kid.totalDone}/7</span>
+                    </div>
                   </div>
                   <div class="tw-days">
                     {kid.days.map(day => (
                       <div class={`tw-day ${day.done ? "done" : ""}`} key={day.date}>
-                        <span class="tw-day-icon">{day.done ? "✓" : "○"}</span>
+                        <span class="tw-day-icon">{day.done ? day.points : "○"}</span>
                         <span class="tw-day-name">{day.dayName}</span>
                       </div>
                     ))}
@@ -214,11 +220,32 @@ export default function HabitInsights({ trends, streaks, routines, totalActiveDa
             padding: 0.75rem 1rem;
           }
           .tw-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 0.5rem;
           }
           .tw-name {
             font-weight: 600;
             font-size: 0.9rem;
+          }
+          .tw-stats {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+          }
+          .tw-points {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--color-primary);
+          }
+          .tw-days-count {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--color-text-light);
+            background: rgba(var(--color-primary-rgb), 0.08);
+            padding: 0.1rem 0.35rem;
+            border-radius: 4px;
           }
           .tw-days {
             display: flex;

@@ -9,6 +9,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { TransactionService } from "./transaction-service.ts";
 import { getActivityService } from "./activity-service.ts";
+import { getLocalDate } from "./insights-service.ts";
 import type {
   BalanceInfo,
   DailyEarning,
@@ -20,23 +21,29 @@ import type {
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-/** Get current week's dates (Mon-Sun) with day names */
-function getCurrentWeekDates(): Array<{ date: string; dayName: string }> {
-  const today = new Date();
-  const dayOfWeek = today.getDay(); // 0=Sun, 6=Sat
-  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-  const monday = new Date(today);
-  monday.setDate(today.getDate() + mondayOffset);
-  monday.setHours(0, 0, 0, 0);
+/** Get current week's dates (Sun-Sat) with day names - timezone aware */
+function getCurrentWeekDates(timezone: string = "America/Los_Angeles"): Array<{ date: string; dayName: string }> {
+  // Get today's date in user's timezone
+  const now = new Date();
+  const todayLocal = getLocalDate(now.toISOString(), timezone); // YYYY-MM-DD
+  const [yearStr, monthStr, dayStr] = todayLocal.split("-");
+  const year = parseInt(yearStr, 10);
+  const month = parseInt(monthStr, 10);
+  const day = parseInt(dayStr, 10);
 
-  const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  // Week start: Sunday (to match reports page)
+  const todayDate = new Date(year, month - 1, day);
+  const dayOfWeek = todayDate.getDay(); // 0=Sun, 6=Sat
+  const sundayDate = new Date(year, month - 1, day - dayOfWeek);
+
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const weekDates: Array<{ date: string; dayName: string }> = [];
 
   for (let i = 0; i < 7; i++) {
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
+    const d = new Date(sundayDate);
+    d.setDate(sundayDate.getDate() + i);
     weekDates.push({
-      date: d.toISOString().slice(0, 10),
+      date: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`,
       dayName: dayNames[i],
     });
   }
@@ -91,10 +98,12 @@ export class BalanceService {
 
   /**
    * Get balance info for all kids in a family
+   * Uses SAME query pattern as chore-service.getFamilyAnalytics for consistency
+   * @param timezone - IANA timezone for local date calculations
    */
-  async getFamilyBalances(familyId: string): Promise<BalanceInfo[]> {
+  async getFamilyBalances(familyId: string, timezone: string = "America/Los_Angeles"): Promise<BalanceInfo[]> {
     const financeSettings = await this.getFinanceSettings(familyId);
-    const weekDates = getCurrentWeekDates();
+    const weekDates = getCurrentWeekDates(timezone);
     const weekStart = weekDates[0].date;
 
     // Get all child profiles with their current points
@@ -111,24 +120,34 @@ export class BalanceService {
       return [];
     }
 
+    // Get ALL positive transactions for this FAMILY (same as chore-service.getFamilyAnalytics)
+    const { data: allTransactions } = await this.client
+      .schema("choretracker")
+      .from("chore_transactions")
+      .select("profile_id, points_change, created_at")
+      .eq("family_id", familyId)
+      .gt("points_change", 0);
+
     const balances: BalanceInfo[] = [];
 
     for (const profile of profiles || []) {
-      // Get transactions for this week with date
-      const { data: transactions } = await this.client
-        .schema("choretracker")
-        .from("chore_transactions")
-        .select("points_change, transaction_type, created_at")
-        .eq("profile_id", profile.id)
-        .gte("created_at", `${weekStart}T00:00:00`)
-        .in("transaction_type", ["chore_completed", "bonus_awarded"]);
+      // Filter transactions for this profile (same as chore-service)
+      const profileTx = (allTransactions || []).filter(
+        (t: any) => t.profile_id === profile.id
+      );
 
-      // Calculate daily earnings
+      // Filter transactions to this week using timezone-aware local date
+      const weekTransactions = profileTx.filter((t: any) => {
+        const txLocalDate = getLocalDate(t.created_at, timezone);
+        return txLocalDate >= weekStart;
+      });
+
+      // Calculate daily earnings using timezone-aware local date
       const dailyEarnings: DailyEarning[] = weekDates.map(({ date, dayName }) => {
-        const dayPoints = (transactions || [])
+        const dayPoints = weekTransactions
           .filter((t: any) => {
-            const txDate = t.created_at.slice(0, 10);
-            return txDate === date && t.points_change > 0;
+            const txLocalDate = getLocalDate(t.created_at, timezone);
+            return txLocalDate === date;
           })
           .reduce((sum: number, t: any) => sum + t.points_change, 0);
 
@@ -153,13 +172,16 @@ export class BalanceService {
 
   /**
    * Get balance info for a single profile
+   * Uses SAME query pattern as chore-service.getFamilyAnalytics for consistency
+   * @param timezone - IANA timezone for local date calculations
    */
   async getProfileBalance(
     profileId: string,
     familyId: string,
+    timezone: string = "America/Los_Angeles",
   ): Promise<BalanceInfo | null> {
     const financeSettings = await this.getFinanceSettings(familyId);
-    const weekDates = getCurrentWeekDates();
+    const weekDates = getCurrentWeekDates(timezone);
     const weekStart = weekDates[0].date;
 
     const { data: profile, error } = await this.client
@@ -173,21 +195,31 @@ export class BalanceService {
       return null;
     }
 
-    // Get transactions for this week with date
-    const { data: transactions } = await this.client
+    // Get transactions for this FAMILY and filter by profile (same as chore-service)
+    const { data: allTransactions } = await this.client
       .schema("choretracker")
       .from("chore_transactions")
-      .select("points_change, transaction_type, created_at")
-      .eq("profile_id", profileId)
-      .gte("created_at", `${weekStart}T00:00:00`)
-      .in("transaction_type", ["chore_completed", "bonus_awarded"]);
+      .select("profile_id, points_change, created_at")
+      .eq("family_id", familyId)
+      .gt("points_change", 0);
 
-    // Calculate daily earnings
+    // Filter for this profile
+    const profileTx = (allTransactions || []).filter(
+      (t: any) => t.profile_id === profileId
+    );
+
+    // Filter transactions to this week using timezone-aware local date
+    const weekTransactions = profileTx.filter((t: any) => {
+      const txLocalDate = getLocalDate(t.created_at, timezone);
+      return txLocalDate >= weekStart;
+    });
+
+    // Calculate daily earnings using timezone-aware local date
     const dailyEarnings: DailyEarning[] = weekDates.map(({ date, dayName }) => {
-      const dayPoints = (transactions || [])
+      const dayPoints = weekTransactions
         .filter((t: any) => {
-          const txDate = t.created_at.slice(0, 10);
-          return txDate === date && t.points_change > 0;
+          const txLocalDate = getLocalDate(t.created_at, timezone);
+          return txLocalDate === date;
         })
         .reduce((sum: number, t: any) => sum + t.points_change, 0);
 

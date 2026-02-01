@@ -8,6 +8,7 @@ interface ThisWeekDay {
   date: string;
   dayName: string;
   done: boolean;
+  points: number;
 }
 
 interface ThisWeekActivity {
@@ -15,6 +16,7 @@ interface ThisWeekActivity {
   name: string;
   days: ThisWeekDay[];
   totalDone: number;
+  totalPoints: number;
 }
 
 interface StreakData {
@@ -77,7 +79,10 @@ export default function WeeklyProgress({ thisWeekActivity, streaks, singleKid = 
             <div class="weekly-progress-card" key={kid.profileId}>
               <div class="wpc-header">
                 {nameElement}
-                <span class="wpc-count">{kid.totalDone}/7</span>
+                <div class="wpc-stats">
+                  <span class="wpc-points">+{kid.totalPoints} pts</span>
+                  <span class="wpc-days-count">{kid.totalDone}/7</span>
+                </div>
               </div>
               <div class="wpc-days">
                 {kid.days.map(day => {
@@ -86,7 +91,7 @@ export default function WeeklyProgress({ thisWeekActivity, streaks, singleKid = 
                   const isToday = day.date === today;
                   return (
                     <div class={`wpc-day ${day.done ? "done" : ""} ${isToday ? "today" : ""}`} key={day.date}>
-                      <span class="wpc-day-icon">{day.done ? "✓" : "○"}</span>
+                      <span class="wpc-day-icon">{day.done ? day.points : "○"}</span>
                       <span class="wpc-day-name">{day.dayName}</span>
                     </div>
                   );
@@ -173,13 +178,25 @@ export default function WeeklyProgress({ thisWeekActivity, streaks, singleKid = 
           gap: 0;
         }
 
-        .wpc-count {
-          font-size: 0.8rem;
-          font-weight: 600;
+        .wpc-stats {
+          display: flex;
+          gap: 0.5rem;
+          align-items: center;
+        }
+
+        .wpc-points {
+          font-size: 0.85rem;
+          font-weight: 700;
           color: var(--color-primary);
-          background: rgba(var(--color-primary-rgb), 0.1);
-          padding: 0.2rem 0.5rem;
-          border-radius: 6px;
+        }
+
+        .wpc-days-count {
+          font-size: 0.75rem;
+          font-weight: 600;
+          color: var(--color-text-light);
+          background: rgba(var(--color-primary-rgb), 0.08);
+          padding: 0.15rem 0.4rem;
+          border-radius: 4px;
         }
 
         .wpc-days {

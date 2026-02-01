@@ -14,6 +14,7 @@ const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 interface TransactionRow {
   profile_id: string;
   created_at: string;
+  points_change: number;
 }
 
 /** Row shape from chore_assignments for expected-day calculation. */
@@ -86,8 +87,9 @@ export interface RoutineData {
 export interface ThisWeekActivity {
   profileId: string;
   name: string;
-  days: Array<{ date: string; dayName: string; done: boolean }>;
+  days: Array<{ date: string; dayName: string; done: boolean; points: number }>;
   totalDone: number;
+  totalPoints: number;
 }
 
 /** Combined result from the single getInsights() call. */
@@ -137,12 +139,13 @@ export class InsightsService {
     const ninetyDaysAgo = new Date();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
+    // Get ALL positive transactions (same as chore-service.getFamilyAnalytics for consistency)
     const { data: rawTxData } = await this.client
       .schema("choretracker")
       .from("chore_transactions")
-      .select("profile_id, created_at")
+      .select("profile_id, created_at, points_change")
       .eq("family_id", familyId)
-      .eq("transaction_type", "chore_completed")
+      .gt("points_change", 0)
       .gte("created_at", ninetyDaysAgo.toISOString());
 
     const txData: TransactionRow[] = (rawTxData as TransactionRow[]) || [];
@@ -177,52 +180,68 @@ export class InsightsService {
   }
 
   /**
-   * Compute day-by-day activity for the current week (Mon-Sun).
-   * Used for "Getting Started" view for new users.
+   * Compute day-by-day activity for the current week (Sun-Sat).
+   * Uses timezone-aware dates to match Reports page.
    */
   private computeThisWeekActivity(
     txData: TransactionRow[],
     childProfiles: Array<{ id: string; name: string }>,
     timezone: string
   ): ThisWeekActivity[] {
-    const today = new Date();
-    const dayOfWeek = today.getDay(); // 0=Sun, 6=Sat
-    // Calculate Monday of this week
-    const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-    const monday = new Date(today);
-    monday.setDate(today.getDate() + mondayOffset);
-    monday.setHours(0, 0, 0, 0);
+    // Get today's date in user's timezone
+    const now = new Date();
+    const todayLocal = getLocalDate(now.toISOString(), timezone);
+    const [yearStr, monthStr, dayStr] = todayLocal.split("-");
+    const year = parseInt(yearStr, 10);
+    const month = parseInt(monthStr, 10);
+    const day = parseInt(dayStr, 10);
 
-    const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    // Week start: Sunday (to match Reports page)
+    const todayDate = new Date(year, month - 1, day);
+    const dayOfWeek = todayDate.getDay(); // 0=Sun, 6=Sat
+    const sundayDate = new Date(year, month - 1, day - dayOfWeek);
+
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     const weekDates: Array<{ date: string; dayName: string }> = [];
 
     for (let i = 0; i < 7; i++) {
-      const d = new Date(monday);
-      d.setDate(monday.getDate() + i);
+      const d = new Date(sundayDate);
+      d.setDate(sundayDate.getDate() + i);
       weekDates.push({
-        date: d.toISOString().slice(0, 10),
+        date: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`,
         dayName: dayNames[i],
       });
     }
 
     return childProfiles.map(kid => {
-      const kidTxDates = new Set(
-        txData
-          .filter(tx => tx.profile_id === kid.id)
-          .map(tx => getLocalDate(tx.created_at, timezone))
-      );
+      // Filter transactions for this kid
+      const kidTx = txData.filter(tx => tx.profile_id === kid.id);
 
-      const days = weekDates.map(({ date, dayName }) => ({
-        date,
-        dayName,
-        done: kidTxDates.has(date),
-      }));
+      // Calculate points per day
+      const pointsByDate: Record<string, number> = {};
+      kidTx.forEach(tx => {
+        const txDate = getLocalDate(tx.created_at, timezone);
+        pointsByDate[txDate] = (pointsByDate[txDate] || 0) + tx.points_change;
+      });
+
+      const days = weekDates.map(({ date, dayName }) => {
+        const points = pointsByDate[date] || 0;
+        return {
+          date,
+          dayName,
+          done: points > 0,
+          points,
+        };
+      });
+
+      const totalPoints = days.reduce((sum, d) => sum + d.points, 0);
 
       return {
         profileId: kid.id,
         name: kid.name,
         days,
         totalDone: days.filter(d => d.done).length,
+        totalPoints,
       };
     });
   }

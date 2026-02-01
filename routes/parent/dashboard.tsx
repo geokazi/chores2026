@@ -44,6 +44,10 @@ export const handler: Handlers<ParentDashboardData> = {
       const choreService = new ChoreService();
       const insightsService = new InsightsService();
 
+      // Get timezone from URL query param (sent by browser) or default
+      const url = new URL(req.url);
+      const timezone = url.searchParams.get("tz") || "America/Los_Angeles";
+
       // OPTIMIZATION: Use cached family + members from session
       const family = session.family;
       const members = family.members;
@@ -72,11 +76,6 @@ export const handler: Handlers<ParentDashboardData> = {
       const childProfiles = members
         .filter((m: any) => m.role === "child")
         .map((m: any) => ({ id: m.id, name: m.name }));
-
-      // Get timezone from parent's preferences
-      const timezone = parentProfileId
-        ? await insightsService.getTimezone(parentProfileId)
-        : "UTC";
 
       // Fetch insights data (thisWeekActivity + streaks)
       let thisWeekActivity: ThisWeekActivity[] = [];
@@ -124,9 +123,22 @@ export default function ParentDashboardPage(
 ) {
   const { family, members, chores, parentChores, parentProfileId, recentActivity, thisWeekActivity, streaks, error } = data;
 
+  // Script to detect browser timezone and reload with it if needed
+  const timezoneScript = `
+    (function() {
+      const url = new URL(window.location.href);
+      if (!url.searchParams.has('tz')) {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        url.searchParams.set('tz', tz);
+        window.location.replace(url.toString());
+      }
+    })();
+  `;
+
   if (error) {
     return (
       <div class="container">
+        <script dangerouslySetInnerHTML={{ __html: timezoneScript }} />
         <div class="header">
           <div>
             <a href="/" style={{ color: "white", textDecoration: "none" }}>
@@ -153,6 +165,8 @@ export default function ParentDashboardPage(
 
   return (
     <div class="container">
+      {/* Auto-detect and pass browser timezone */}
+      <script dangerouslySetInnerHTML={{ __html: timezoneScript }} />
       <AppHeader
         currentPage="dashboard"
         pageTitle="Family Dashboard"

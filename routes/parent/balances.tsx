@@ -49,8 +49,12 @@ export const handler: Handlers<BalancesData> = {
       const balanceService = new BalanceService();
       const rewardsService = new RewardsService();
 
+      // Get timezone from URL query param (sent by browser) or default
+      const url = new URL(req.url);
+      const timezone = url.searchParams.get("tz") || "America/Los_Angeles";
+
       const [balances, financeSettings, recentPurchases] = await Promise.all([
-        balanceService.getFamilyBalances(session.family.id),
+        balanceService.getFamilyBalances(session.family.id, timezone),
         balanceService.getFinanceSettings(session.family.id),
         rewardsService.getRecentPurchases(session.family.id, undefined, 10),
       ]);
@@ -88,8 +92,23 @@ export const handler: Handlers<BalancesData> = {
 export default function BalancesPage({ data }: PageProps<BalancesData>) {
   const currentUser = data.members.find((m) => m.id === data.currentProfileId) || null;
 
+  // Script to detect browser timezone and reload with it if needed
+  const timezoneScript = `
+    (function() {
+      const url = new URL(window.location.href);
+      if (!url.searchParams.has('tz')) {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        url.searchParams.set('tz', tz);
+        window.location.replace(url.toString());
+      }
+    })();
+  `;
+
   return (
     <div class="container">
+      {/* Auto-detect and pass browser timezone */}
+      <script dangerouslySetInnerHTML={{ __html: timezoneScript }} />
+
       <AppHeader
         currentPage="balances"
         pageTitle="Balances"
