@@ -336,6 +336,18 @@ export default function RegisterPage({ data }: PageProps<RegisterPageData>) {
             </>
           )}
 
+          {/* Demo Mode Link */}
+          <div class="demo-section">
+            <div class="demo-divider">
+              <span>or</span>
+            </div>
+            <a href="/demo" class="demo-button">
+              <span class="demo-icon">👀</span>
+              Try Demo First
+            </a>
+            <p class="demo-note">See how ChoreGami works before signing up</p>
+          </div>
+
           <div class="register-footer">
             <p>Already have an account? <a href="/login">Sign In</a></p>
             <p class="legal-note">
@@ -454,6 +466,56 @@ export default function RegisterPage({ data }: PageProps<RegisterPageData>) {
           }
           .legal-link:hover {
             text-decoration: underline;
+          }
+          .demo-section {
+            margin-top: 1.5rem;
+            text-align: center;
+          }
+          .demo-divider {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+          }
+          .demo-divider::before,
+          .demo-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e5e5e5;
+          }
+          .demo-divider span {
+            padding: 0 1rem;
+            color: #9ca3af;
+            font-size: 0.875rem;
+          }
+          .demo-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            padding: 0.875rem 1.5rem;
+            border: 2px solid var(--color-primary, #10b981);
+            border-radius: 8px;
+            background: transparent;
+            color: var(--color-primary, #10b981);
+            font-size: 1rem;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+          }
+          .demo-button:hover {
+            background: rgba(16, 185, 129, 0.1);
+            transform: translateY(-1px);
+          }
+          .demo-icon {
+            font-size: 1.25rem;
+          }
+          .demo-note {
+            margin: 0.75rem 0 0 0;
+            font-size: 0.75rem;
+            color: #6b7280;
           }
         `}</style>
       </div>
