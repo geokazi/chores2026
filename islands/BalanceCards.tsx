@@ -122,9 +122,12 @@ export default function BalanceCards({ balances, recentPurchases, dollarValuePer
             <div class="daily-earnings">
               <div class="daily-grid">
                 {balance.dailyEarnings.map((day: DailyEarning) => {
-                  const isFuture = new Date(day.date) > new Date();
+                  const now = new Date();
+                  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                  const isToday = day.date === today;
+                  const isFuture = day.date > today;
                   return (
-                    <div class={`daily-cell ${day.points > 0 ? "has-points" : ""} ${isFuture ? "future" : ""}`} key={day.date}>
+                    <div class={`daily-cell ${day.points > 0 ? "has-points" : ""} ${isFuture ? "future" : ""} ${isToday ? "today" : ""}`} key={day.date}>
                       <span class="daily-points">{isFuture ? "—" : day.points > 0 ? `+${day.points}` : "0"}</span>
                       <span class="daily-name">{day.dayName}</span>
                     </div>
@@ -319,6 +322,14 @@ export default function BalanceCards({ balances, recentPurchases, dollarValuePer
         }
         .daily-cell.future {
           opacity: 0.4;
+        }
+        .daily-cell.today {
+          border: 2px solid var(--color-primary);
+          background: rgba(var(--color-primary-rgb), 0.08);
+        }
+        .daily-cell.today .daily-name {
+          color: var(--color-primary);
+          font-weight: 700;
         }
         .daily-points {
           font-size: 0.8rem;

@@ -65,12 +65,17 @@ export default function WeeklyProgress({ thisWeekActivity, streaks }: Props) {
                 <span class="wpc-count">{kid.totalDone}/7</span>
               </div>
               <div class="wpc-days">
-                {kid.days.map(day => (
-                  <div class={`wpc-day ${day.done ? "done" : ""}`} key={day.date}>
-                    <span class="wpc-day-icon">{day.done ? "✓" : "○"}</span>
-                    <span class="wpc-day-name">{day.dayName}</span>
-                  </div>
-                ))}
+                {kid.days.map(day => {
+                  const now = new Date();
+                  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                  const isToday = day.date === today;
+                  return (
+                    <div class={`wpc-day ${day.done ? "done" : ""} ${isToday ? "today" : ""}`} key={day.date}>
+                      <span class="wpc-day-icon">{day.done ? "✓" : "○"}</span>
+                      <span class="wpc-day-name">{day.dayName}</span>
+                    </div>
+                  );
+                })}
               </div>
               <div class="wpc-encouragement">{encouragement}</div>
             </div>
@@ -172,6 +177,16 @@ export default function WeeklyProgress({ thisWeekActivity, streaks }: Props) {
 
         .wpc-day.done .wpc-day-icon {
           color: var(--color-primary);
+        }
+
+        .wpc-day.today {
+          border: 2px solid var(--color-primary);
+          background: rgba(var(--color-primary-rgb), 0.08);
+        }
+
+        .wpc-day.today .wpc-day-name {
+          color: var(--color-primary);
+          font-weight: 700;
         }
 
         .wpc-day-name {
