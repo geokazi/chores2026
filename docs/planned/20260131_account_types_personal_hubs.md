@@ -620,6 +620,8 @@ AI should reduce friction, not be a selling point.
 
 ## 2026 UX Trends Assessment
 
+**Full assessment**: [2026 UX Trends Assessment](./20260131_ux_trends_assessment.md)
+
 Based on [web research](#sources), our context-aware setup routes design aligns strongly with modern UX trends.
 
 ### ✅ Aligned with 2026 Trends

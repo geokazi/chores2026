@@ -85,6 +85,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | — | [↳ Outreach Templates](./planned/20260126_testimonial_outreach_templates.md) | 📖 Guide | Email scripts for collecting testimonials and reviews |
 | 2026-01-31 | [**Referral "Share ChoreGami"**](./planned/20260130_referral_share_feature.md) | ✅ Complete | Dedicated `/share` route (no PIN); profile menu link; JSONB+GIN O(1) lookup; 6-month cap |
 | TBD | [**Account Types & Personal Hubs**](./planned/20260131_account_types_personal_hubs.md) | 📋 Planned | Support families, roommates, couples, solo users; age-based gamification; fairness tracking |
+| TBD | [↳ 2026 UX Trends Assessment](./planned/20260131_ux_trends_assessment.md) | 📋 Planned | Progress indicators (P1), transparency banner (P1), demo mode (P2), passkey auth (P3) |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 
