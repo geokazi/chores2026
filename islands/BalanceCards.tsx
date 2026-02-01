@@ -4,7 +4,7 @@
  */
 
 import { useState } from "preact/hooks";
-import type { BalanceInfo, RewardPurchase } from "../lib/types/finance.ts";
+import type { BalanceInfo, DailyEarning, RewardPurchase } from "../lib/types/finance.ts";
 
 interface FamilyMember {
   id: string;
@@ -119,14 +119,21 @@ export default function BalanceCards({ balances, recentPurchases, dollarValuePer
               <span class="dollars">{formatDollars(balance.currentPoints)}</span>
             </div>
 
-            <div class="earnings-breakdown">
-              <div class="earning-row">
-                <span>This Week</span>
-                <span class="earning-value">+{balance.weeklyEarnings} pts</span>
+            <div class="daily-earnings">
+              <div class="daily-grid">
+                {balance.dailyEarnings.map((day: DailyEarning) => {
+                  const isFuture = new Date(day.date) > new Date();
+                  return (
+                    <div class={`daily-cell ${day.points > 0 ? "has-points" : ""} ${isFuture ? "future" : ""}`} key={day.date}>
+                      <span class="daily-points">{isFuture ? "—" : day.points > 0 ? `+${day.points}` : "0"}</span>
+                      <span class="daily-name">{day.dayName}</span>
+                    </div>
+                  );
+                })}
               </div>
-              <div class="earning-row">
-                <span>From Chores</span>
-                <span class="earning-value">+{balance.choreEarnings} pts</span>
+              <div class="weekly-total">
+                <span>This Week</span>
+                <span class="weekly-value">+{balance.weeklyEarnings} pts</span>
               </div>
             </div>
 
@@ -289,22 +296,57 @@ export default function BalanceCards({ balances, recentPurchases, dollarValuePer
           color: var(--color-text-light);
           font-size: 0.9rem;
         }
-        .earnings-breakdown {
+        .daily-earnings {
           margin-bottom: 1rem;
         }
-        .earning-row {
+        .daily-grid {
+          display: flex;
+          gap: 0.25rem;
+          margin-bottom: 0.75rem;
+        }
+        .daily-cell {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 0.5rem 0.25rem;
+          background: rgba(var(--color-primary-rgb), 0.04);
+          border-radius: 8px;
+          transition: all 0.15s ease;
+        }
+        .daily-cell.has-points {
+          background: rgba(var(--color-primary-rgb), 0.12);
+        }
+        .daily-cell.future {
+          opacity: 0.4;
+        }
+        .daily-points {
+          font-size: 0.8rem;
+          font-weight: 700;
+          color: var(--color-text-light);
+          line-height: 1.2;
+        }
+        .daily-cell.has-points .daily-points {
+          color: var(--color-primary);
+        }
+        .daily-name {
+          font-size: 0.6rem;
+          font-weight: 600;
+          color: var(--color-text-light);
+          text-transform: uppercase;
+          letter-spacing: 0.02em;
+          margin-top: 0.125rem;
+        }
+        .weekly-total {
           display: flex;
           justify-content: space-between;
-          padding: 0.5rem 0;
-          border-bottom: 1px solid var(--color-border);
-          font-size: 0.9rem;
+          padding-top: 0.5rem;
+          border-top: 1px solid var(--color-border);
+          font-size: 0.875rem;
         }
-        .earning-row:last-child {
-          border-bottom: none;
-        }
-        .earning-value {
+        .weekly-value {
           color: var(--color-success);
-          font-weight: 500;
+          font-weight: 600;
         }
         .payout-btn {
           width: 100%;

@@ -11,6 +11,7 @@ import { TransactionService } from "./transaction-service.ts";
 import { getActivityService } from "./activity-service.ts";
 import type {
   BalanceInfo,
+  DailyEarning,
   FinanceSettings,
   PayOutRequest,
   PayOutResult,
@@ -18,6 +19,30 @@ import type {
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+/** Get current week's dates (Mon-Sun) with day names */
+function getCurrentWeekDates(): Array<{ date: string; dayName: string }> {
+  const today = new Date();
+  const dayOfWeek = today.getDay(); // 0=Sun, 6=Sat
+  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const monday = new Date(today);
+  monday.setDate(today.getDate() + mondayOffset);
+  monday.setHours(0, 0, 0, 0);
+
+  const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const weekDates: Array<{ date: string; dayName: string }> = [];
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    weekDates.push({
+      date: d.toISOString().slice(0, 10),
+      dayName: dayNames[i],
+    });
+  }
+
+  return weekDates;
+}
 
 export class BalanceService {
   private client: any;
@@ -69,11 +94,13 @@ export class BalanceService {
    */
   async getFamilyBalances(familyId: string): Promise<BalanceInfo[]> {
     const financeSettings = await this.getFinanceSettings(familyId);
+    const weekDates = getCurrentWeekDates();
+    const weekStart = weekDates[0].date;
 
     // Get all child profiles with their current points
     const { data: profiles, error } = await this.client
       .from("family_profiles")
-      .select("id, name, current_points, role")
+      .select("id, name, current_points, role, avatar_emoji")
       .eq("family_id", familyId)
       .eq("role", "child")
       .eq("is_deleted", false);
@@ -83,39 +110,40 @@ export class BalanceService {
       return [];
     }
 
-    // Get weekly earnings for each kid (last 7 days of transactions)
-    const weekAgo = new Date();
-    weekAgo.setDate(weekAgo.getDate() - 7);
-
     const balances: BalanceInfo[] = [];
 
     for (const profile of profiles || []) {
-      // Get earnings breakdown
+      // Get transactions for this week with date
       const { data: transactions } = await this.client
         .schema("choretracker")
         .from("chore_transactions")
-        .select("points_change, transaction_type")
+        .select("points_change, transaction_type, created_at")
         .eq("profile_id", profile.id)
-        .gte("created_at", weekAgo.toISOString())
+        .gte("created_at", `${weekStart}T00:00:00`)
         .in("transaction_type", ["chore_completed", "bonus_awarded"]);
 
-      const weeklyEarnings = (transactions || []).reduce(
-        (sum: number, t: any) => sum + (t.points_change > 0 ? t.points_change : 0),
-        0,
-      );
+      // Calculate daily earnings
+      const dailyEarnings: DailyEarning[] = weekDates.map(({ date, dayName }) => {
+        const dayPoints = (transactions || [])
+          .filter((t: any) => {
+            const txDate = t.created_at.slice(0, 10);
+            return txDate === date && t.points_change > 0;
+          })
+          .reduce((sum: number, t: any) => sum + t.points_change, 0);
 
-      const choreEarnings = (transactions || [])
-        .filter((t: any) => t.transaction_type === "chore_completed")
-        .reduce((sum: number, t: any) => sum + (t.points_change > 0 ? t.points_change : 0), 0);
+        return { date, dayName, points: dayPoints };
+      });
+
+      const weeklyEarnings = dailyEarnings.reduce((sum, d) => sum + d.points, 0);
 
       balances.push({
         profileId: profile.id,
         profileName: profile.name,
-        avatarEmoji: "🧒", // Column doesn't exist in DB
+        avatarEmoji: profile.avatar_emoji || "🧒",
         currentPoints: profile.current_points || 0,
         dollarValue: (profile.current_points || 0) * financeSettings.dollarValuePerPoint,
         weeklyEarnings,
-        choreEarnings,
+        dailyEarnings,
       });
     }
 
@@ -130,10 +158,12 @@ export class BalanceService {
     familyId: string,
   ): Promise<BalanceInfo | null> {
     const financeSettings = await this.getFinanceSettings(familyId);
+    const weekDates = getCurrentWeekDates();
+    const weekStart = weekDates[0].date;
 
     const { data: profile, error } = await this.client
       .from("family_profiles")
-      .select("id, name, current_points")
+      .select("id, name, current_points, avatar_emoji")
       .eq("id", profileId)
       .single();
 
@@ -142,35 +172,37 @@ export class BalanceService {
       return null;
     }
 
-    // Get weekly earnings
-    const weekAgo = new Date();
-    weekAgo.setDate(weekAgo.getDate() - 7);
-
+    // Get transactions for this week with date
     const { data: transactions } = await this.client
       .schema("choretracker")
       .from("chore_transactions")
-      .select("points_change, transaction_type")
+      .select("points_change, transaction_type, created_at")
       .eq("profile_id", profileId)
-      .gte("created_at", weekAgo.toISOString())
+      .gte("created_at", `${weekStart}T00:00:00`)
       .in("transaction_type", ["chore_completed", "bonus_awarded"]);
 
-    const weeklyEarnings = (transactions || []).reduce(
-      (sum: number, t: any) => sum + (t.points_change > 0 ? t.points_change : 0),
-      0,
-    );
+    // Calculate daily earnings
+    const dailyEarnings: DailyEarning[] = weekDates.map(({ date, dayName }) => {
+      const dayPoints = (transactions || [])
+        .filter((t: any) => {
+          const txDate = t.created_at.slice(0, 10);
+          return txDate === date && t.points_change > 0;
+        })
+        .reduce((sum: number, t: any) => sum + t.points_change, 0);
 
-    const choreEarnings = (transactions || [])
-      .filter((t: any) => t.transaction_type === "chore_completed")
-      .reduce((sum: number, t: any) => sum + (t.points_change > 0 ? t.points_change : 0), 0);
+      return { date, dayName, points: dayPoints };
+    });
+
+    const weeklyEarnings = dailyEarnings.reduce((sum, d) => sum + d.points, 0);
 
     return {
       profileId: profile.id,
       profileName: profile.name,
-      avatarEmoji: "🧒", // Column doesn't exist in DB
+      avatarEmoji: profile.avatar_emoji || "🧒",
       currentPoints: profile.current_points || 0,
       dollarValue: (profile.current_points || 0) * financeSettings.dollarValuePerPoint,
       weeklyEarnings,
-      choreEarnings,
+      dailyEarnings,
     };
   }
 

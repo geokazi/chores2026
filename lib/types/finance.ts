@@ -5,6 +5,13 @@
 
 // ============ P2: Balance & Pay Out ============
 
+/** Day-by-day points earned this week */
+export interface DailyEarning {
+  date: string;      // YYYY-MM-DD
+  dayName: string;   // Mon, Tue, etc.
+  points: number;
+}
+
 export interface BalanceInfo {
   profileId: string;
   profileName: string;
@@ -12,7 +19,7 @@ export interface BalanceInfo {
   currentPoints: number;
   dollarValue: number;
   weeklyEarnings: number;
-  choreEarnings: number;
+  dailyEarnings: DailyEarning[];  // Mon-Sun breakdown
 }
 
 export interface PayOutRequest {
