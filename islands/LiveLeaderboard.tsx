@@ -17,12 +17,21 @@ interface Props {
   familyMembers: FamilyMember[];
   currentKidId?: string; // Optional since it might be a parent viewing
   familyId: string;
+  // Sync functionality (optional - only shown if provided)
+  onSync?: () => void;
+  syncStatus?: 'idle' | 'syncing' | 'success' | 'error';
+  syncMessage?: string;
+  lastSyncTime?: Date | null;
 }
 
 export default function LiveLeaderboard({
   familyMembers,
   currentKidId,
   familyId,
+  onSync,
+  syncStatus = 'idle',
+  syncMessage,
+  lastSyncTime,
 }: Props) {
   const [leaderboard, setLeaderboard] = useState(familyMembers);
   const [isLive, setIsLive] = useState(false);
@@ -79,20 +88,73 @@ export default function LiveLeaderboard({
       onLeaderboardUpdate={handleLeaderboardUpdate}
     >
       <div class="leaderboard">
-      <div class="leaderboard-header">
-        🏆 Family Leaderboard
-        {isLive && (
-          <span
+      <div class="leaderboard-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div>
+          🏆 Family Leaderboard
+          {isLive && (
+            <span
+              style={{
+                fontSize: "0.75rem",
+                color: "var(--color-success)",
+                marginLeft: "0.5rem",
+              }}
+            >
+              🟢 LIVE
+            </span>
+          )}
+        </div>
+        {onSync && (
+          <button
+            onClick={onSync}
+            disabled={syncStatus === 'syncing'}
             style={{
+              padding: "0.35rem 0.75rem",
               fontSize: "0.75rem",
-              color: "var(--color-success)",
-              marginLeft: "0.5rem",
+              fontWeight: "500",
+              border: "none",
+              borderRadius: "6px",
+              cursor: syncStatus === 'syncing' ? 'wait' : 'pointer',
+              backgroundColor: syncStatus === 'success' ? '#dcfce7' :
+                               syncStatus === 'error' ? '#fee2e2' :
+                               'var(--color-bg)',
+              color: syncStatus === 'success' ? '#166534' :
+                     syncStatus === 'error' ? '#991b1b' :
+                     'var(--color-text-light)',
+              opacity: syncStatus === 'syncing' ? 0.7 : 1,
+              transition: "all 0.2s",
             }}
+            title="Sync leaderboard with FamilyScore"
           >
-            🟢 LIVE
-          </span>
+            {syncStatus === 'syncing' ? '🔄 Syncing...' :
+             syncStatus === 'success' ? '✓ Synced' :
+             syncStatus === 'error' ? '✕ Error' :
+             '🔄 Sync'}
+          </button>
         )}
       </div>
+
+      {/* Sync status message */}
+      {syncMessage && (
+        <div
+          style={{
+            padding: "0.5rem 0.75rem",
+            marginBottom: "0.5rem",
+            fontSize: "0.75rem",
+            borderRadius: "6px",
+            backgroundColor: syncStatus === 'success' ? '#dcfce7' :
+                            syncStatus === 'error' ? '#fee2e2' : '#f1f5f9',
+            color: syncStatus === 'success' ? '#166534' :
+                   syncStatus === 'error' ? '#991b1b' : '#475569',
+          }}
+        >
+          {syncMessage}
+          {lastSyncTime && syncStatus === 'success' && (
+            <span style={{ marginLeft: "0.5rem", opacity: 0.7 }}>
+              ({lastSyncTime.toLocaleTimeString()})
+            </span>
+          )}
+        </div>
+      )}
 
       {allMembers.map((member, index) => {
         const isCurrentUser = Boolean(currentKidId && member.id === currentKidId);

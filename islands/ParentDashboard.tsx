@@ -288,95 +288,35 @@ export default function ParentDashboard(
 
 
 
-      {/* Quick Actions */}
-      <div class="card" style={{ marginBottom: "1.5rem" }}>
-        <h3
-          style={{
-            fontSize: "1.125rem",
-            fontWeight: "600",
-            marginBottom: "1rem",
-          }}
+      {/* Quick Actions - Compact inline */}
+      <div style={{
+        display: "flex",
+        gap: "0.5rem",
+        flexWrap: "wrap",
+        marginBottom: "1.5rem",
+        alignItems: "center"
+      }}>
+        <button
+          onClick={() => setShowAddChore(true)}
+          class="btn btn-primary"
+          style={{ fontSize: "0.8rem", padding: "0.5rem 1rem" }}
         >
-          Quick Actions
-        </h3>
-
-        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-          <button
-            onClick={() => setShowAddChore(true)}
-            class="btn btn-primary"
-            style={{ fontSize: "0.875rem" }}
-          >
-            ➕ Add Chore
-          </button>
-          <button
-            onClick={handleFamilyScoreSync}
-            disabled={syncStatus === 'syncing'}
-            class={`btn ${syncStatus === 'success' ? 'btn-success' : syncStatus === 'error' ? 'btn-danger' : 'btn-secondary'}`}
-            style={{ 
-              fontSize: "0.875rem",
-              opacity: syncStatus === 'syncing' ? 0.7 : 1,
-              transition: "opacity 0.2s"
-            }}
-            title="Sync family leaderboard with FamilyScore"
-          >
-            {syncStatus === 'syncing' ? '🔄 Syncing...' : 
-             syncStatus === 'success' ? '✅ Sync Success' : 
-             syncStatus === 'error' ? '❌ Sync Error' : 
-             '🔄 Sync Leaderboard'}
-          </button>
-          <a
-            href="/parent/settings"
-            class="btn btn-secondary"
-            style={{ fontSize: "0.875rem", textDecoration: "none" }}
-          >
-            ⚙️ Settings
-          </a>
-          <a
-            href="/reports"
-            class="btn btn-secondary"
-            style={{ fontSize: "0.875rem", textDecoration: "none" }}
-          >
-            📊 View Reports
-          </a>
-          <a
-            href="/parent/insights"
-            class="btn btn-secondary"
-            style={{ fontSize: "0.875rem", textDecoration: "none" }}
-          >
-            🧠 Habit Insights
-          </a>
-        </div>
-        
-        {/* Sync Status Message */}
-        {syncMessage && (
-          <div 
-            style={{ 
-              marginTop: "0.75rem",
-              padding: "0.5rem",
-              borderRadius: "0.375rem",
-              fontSize: "0.875rem",
-              backgroundColor: syncStatus === 'success' ? '#d4edda' : 
-                              syncStatus === 'error' ? '#f8d7da' : '#e2e8f0',
-              color: syncStatus === 'success' ? '#155724' : 
-                     syncStatus === 'error' ? '#721c24' : '#475569',
-              border: `1px solid ${syncStatus === 'success' ? '#c3e6cb' : 
-                                   syncStatus === 'error' ? '#f5c6cb' : '#cbd5e1'}`
-            }}
-          >
-            {syncMessage}
-          </div>
-        )}
-        
-        {/* Last Sync Time */}
-        {lastSyncTime && (
-          <div style={{ 
-            marginTop: "0.5rem", 
-            fontSize: "0.75rem", 
-            color: "#64748b" 
-          }}>
-            Last sync: {lastSyncTime.toLocaleString()}
-          </div>
-        )}
+          ➕ Add Chore
+        </button>
+        <a
+          href="/reports"
+          class="btn btn-secondary"
+          style={{ fontSize: "0.8rem", padding: "0.5rem 1rem", textDecoration: "none" }}
+        >
+          📊 Reports
+        </a>
+        <a
+          href="/parent/insights"
+          class="btn btn-secondary"
+          style={{ fontSize: "0.8rem", padding: "0.5rem 1rem", textDecoration: "none" }}
+        >
+          🧠 Insights
+        </a>
       </div>
 
       {/* Theme Selector */}
@@ -543,6 +483,10 @@ export default function ParentDashboard(
             familyMembers={liveMembers}
             currentKidId=""
             familyId={family.id}
+            onSync={handleFamilyScoreSync}
+            syncStatus={syncStatus}
+            syncMessage={syncMessage}
+            lastSyncTime={lastSyncTime}
           />
         </div>
       )}
