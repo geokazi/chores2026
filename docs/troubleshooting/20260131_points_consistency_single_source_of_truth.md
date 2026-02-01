@@ -1,14 +1,21 @@
 # Points Consistency: Single Source of Truth
 
 **Date**: January 31, 2026
+**Last Updated**: January 31, 2026 (Rolling 7-day window update)
 **Status**: Resolved
 **Criticality**: HIGH - User trust depends on accurate, consistent data
 
 ## Executive Summary
 
-ChoreGami's gamification system relies on **accurate, consistent points calculations** across all pages. Users must see the same numbers everywhere - if Reports shows Julia earned 5 points, then Dashboard, Balances, and Insights must all show 5 points. Any discrepancy destroys user trust.
+ChoreGami's gamification system relies on **accurate, consistent points calculations**. However, different contexts require different time windows:
 
-This document captures the architecture decisions and troubleshooting guide for maintaining **single source of truth** across all points-related displays.
+| Context | Time Window | Why |
+|---------|-------------|-----|
+| **Reports** (`/reports`) | Sunday-first calendar week | Financial tracking, allowance calculations |
+| **WeeklyProgress** (dashboards) | Rolling 7-day (today - 6 days) | Recent activity display, avoids "empty early week" |
+| **Balances** (`/parent/balances`) | Rolling 7-day (today - 6 days) | Recent earnings display |
+
+This document captures the architecture decisions and troubleshooting guide for maintaining data consistency across all points-related displays.
 
 ---
 
@@ -34,21 +41,42 @@ Different pages showed different point totals for the same kid in the same week:
 
 ## The Solution: Aligned Architecture
 
-### 1. Single Week Boundary: Sunday-First (Sun-Sat)
+### 1. Two Time Windows (Intentional Design)
 
-All services MUST use Sunday as the first day of the week to match US convention:
+**A. Sunday-First Calendar Week** (for Reports/Financial tracking):
 
 ```typescript
-// CORRECT: Sunday-first week calculation
+// Used by: chore-service.getFamilyAnalytics(), getFamilyGoalStatus()
 const todayDate = new Date(year, month - 1, day);
 const dayOfWeek = todayDate.getDay(); // 0=Sun, 6=Sat
 const sundayDate = new Date(year, month - 1, day - dayOfWeek);
 ```
 
-**Files that implement this:**
-- `lib/services/chore-service.ts` - `getFamilyAnalytics()`, `getFamilyGoalStatus()`
-- `lib/services/balance-service.ts` - `getCurrentWeekDates()`, `getFamilyBalances()`
-- `lib/services/insights-service.ts` - `computeThisWeekActivity()`
+**B. Rolling 7-Day Window** (for activity displays):
+
+```typescript
+// Used by: balance-service.getRolling7DayDates(), insights-service.computeThisWeekActivity()
+// Rolling window: start 6 days ago, end today (always shows 7 days of activity)
+for (let i = 6; i >= 0; i--) {
+  const d = new Date(todayDate);
+  d.setDate(todayDate.getDate() - i);
+  weekDates.push({ date: formatDate(d), dayName: dayNames[d.getDay()] });
+}
+```
+
+**Why Rolling 7-Day?**
+- Avoids "empty Sunday" problem (early in week, Sunday-first shows mostly empty days)
+- Always shows recent activity regardless of day of week
+- Better UX for "This Week" activity displays
+
+**Files that implement each:**
+
+| File | Function | Time Window |
+|------|----------|-------------|
+| `lib/services/chore-service.ts` | `getFamilyAnalytics()` | Sunday-first |
+| `lib/services/chore-service.ts` | `getFamilyGoalStatus()` | Sunday-first |
+| `lib/services/balance-service.ts` | `getRolling7DayDates()` | Rolling 7-day |
+| `lib/services/insights-service.ts` | `computeThisWeekActivity()` | Rolling 7-day |
 
 ### 2. Timezone-Aware Date Calculations
 
@@ -221,8 +249,9 @@ Compare this output against:
 
 When points don't match across pages:
 
-### 1. Check Week Boundaries
-- [ ] All services using Sunday as week start?
+### 1. Check Time Window Context
+- [ ] Is this a Reports vs Dashboard comparison? (Expected to differ - different time windows)
+- [ ] Reports uses Sunday-first; WeeklyProgress/Balances use rolling 7-day
 - [ ] Search for `getDay() === 1` or `Monday` - should not exist in production code
 
 ### 2. Check Timezone Handling
@@ -248,23 +277,23 @@ When points don't match across pages:
 
 ## Service Responsibility Matrix
 
-| Service | What It Calculates | Used By |
-|---------|-------------------|---------|
-| `chore-service.getFamilyAnalytics()` | Earned this week/month/YTD per member | `/reports` |
-| `chore-service.getFamilyGoalStatus()` | Family weekly goal progress | `/reports`, `/kid/dashboard` |
-| `balance-service.getFamilyBalances()` | Points + daily breakdown per kid | `/parent/balances` |
-| `insights-service.computeThisWeekActivity()` | Day-by-day activity + points | `/parent/dashboard`, `/kid/dashboard`, `/parent/insights` |
+| Service | What It Calculates | Time Window | Used By |
+|---------|-------------------|-------------|---------|
+| `chore-service.getFamilyAnalytics()` | Earned this week/month/YTD per member | Sunday-first | `/reports` |
+| `chore-service.getFamilyGoalStatus()` | Family weekly goal progress | Sunday-first | `/reports`, `/kid/dashboard` |
+| `balance-service.getFamilyBalances()` | Points + daily breakdown per kid | Rolling 7-day | `/parent/balances` |
+| `insights-service.computeThisWeekActivity()` | Day-by-day activity + points | Rolling 7-day | `/parent/dashboard`, `/kid/dashboard`, `/parent/insights` |
 
-**All four services MUST produce identical totals for the same week.**
+**Note**: Reports (Sunday-first) and Dashboard/Balances (rolling 7-day) may show different totals - this is **intentional** for UX reasons.
 
 ---
 
 ## Key Files Reference
 
-### Services (Single Source of Truth)
-- `lib/services/chore-service.ts` - Lines 916-1000 (`getFamilyAnalytics`)
-- `lib/services/balance-service.ts` - Lines 24-52 (`getCurrentWeekDates`), 104-171 (`getFamilyBalances`)
-- `lib/services/insights-service.ts` - Lines 38-50 (`getLocalDate`), 184-248 (`computeThisWeekActivity`)
+### Services
+- `lib/services/chore-service.ts` - `getFamilyAnalytics()` (Sunday-first week)
+- `lib/services/balance-service.ts` - `getRolling7DayDates()`, `getFamilyBalances()` (rolling 7-day)
+- `lib/services/insights-service.ts` - `getLocalDate()`, `computeThisWeekActivity()` (rolling 7-day)
 
 ### Routes (Timezone Detection)
 - `routes/reports.tsx` - Line 85 (timezone from URL)
@@ -280,12 +309,14 @@ When points don't match across pages:
 
 ## Principles for Future Development
 
-1. **Single Source of Truth**: One function calculates points, others call it
+1. **Context-Appropriate Time Windows**:
+   - Financial/allowance tracking → Sunday-first calendar week
+   - Activity displays → Rolling 7-day window
 2. **Timezone Awareness**: Never use UTC for user-facing dates
-3. **Sunday-First Weeks**: US convention, consistent everywhere
-4. **All Positive Transactions**: Don't filter by transaction_type for totals
-5. **Query by Family**: Fetch all family transactions, filter by profile in memory
-6. **Test with Real Data**: Always verify against database before shipping
+3. **All Positive Transactions**: Don't filter by transaction_type for totals
+4. **Query by Family**: Fetch all family transactions, filter by profile in memory
+5. **Test with Real Data**: Always verify against database before shipping
+6. **Document Intentional Differences**: If pages show different numbers, ensure it's documented and intentional
 
 ---
 
