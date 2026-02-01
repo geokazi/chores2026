@@ -26,6 +26,10 @@ interface StreakData {
 interface Props {
   thisWeekActivity: ThisWeekActivity[];
   streaks: StreakData[];
+  /** Single kid mode - hides header, shows just one card (for kid dashboard) */
+  singleKid?: boolean;
+  /** Make kid names clickable links to their dashboard (for parent view) */
+  linkToKidDashboard?: boolean;
 }
 
 /** Encouraging message based on streak/activity */
@@ -37,31 +41,42 @@ function getEncouragement(streak: number, totalDone: number): string {
   return "✨ Ready when you are!";
 }
 
-export default function WeeklyProgress({ thisWeekActivity, streaks }: Props) {
+export default function WeeklyProgress({ thisWeekActivity, streaks, singleKid = false, linkToKidDashboard = false }: Props) {
   if (thisWeekActivity.length === 0) {
     return (
       <div class="weekly-progress-empty">
-        <p>No kids in family yet. Add kids to see weekly progress.</p>
+        <p>{singleKid ? "No activity yet this week." : "No kids in family yet. Add kids to see weekly progress."}</p>
       </div>
     );
   }
 
   return (
-    <div class="weekly-progress">
-      <div class="weekly-progress-header">
-        <h2>This Week</h2>
-        <span class="weekly-progress-subtitle">Day-by-day progress</span>
-      </div>
+    <div class={`weekly-progress ${singleKid ? "single-kid" : ""}`}>
+      {!singleKid && (
+        <div class="weekly-progress-header">
+          <h2>This Week</h2>
+          <span class="weekly-progress-subtitle">Day-by-day progress</span>
+        </div>
+      )}
 
       <div class="weekly-progress-cards">
         {thisWeekActivity.map(kid => {
           const kidStreak = streaks.find(s => s.profileId === kid.profileId);
           const encouragement = getEncouragement(kidStreak?.currentStreak || 0, kid.totalDone);
 
+          const nameElement = linkToKidDashboard ? (
+            <a href="/kid/dashboard" class="wpc-name wpc-name-link" onClick={() => {
+              // Set the active kid in session before navigating
+              document.cookie = `active_kid_id=${kid.profileId};path=/;max-age=86400`;
+            }}>{kid.name}</a>
+          ) : (
+            <span class="wpc-name">{kid.name}</span>
+          );
+
           return (
             <div class="weekly-progress-card" key={kid.profileId}>
               <div class="wpc-header">
-                <span class="wpc-name">{kid.name}</span>
+                {nameElement}
                 <span class="wpc-count">{kid.totalDone}/7</span>
               </div>
               <div class="wpc-days">
@@ -136,6 +151,26 @@ export default function WeeklyProgress({ thisWeekActivity, streaks }: Props) {
           font-weight: 600;
           font-size: 0.95rem;
           color: var(--color-text);
+        }
+
+        .wpc-name-link {
+          text-decoration: none;
+          color: var(--color-primary);
+          transition: opacity 0.15s ease;
+        }
+
+        .wpc-name-link:hover {
+          opacity: 0.8;
+          text-decoration: underline;
+        }
+
+        /* Single kid mode - no outer margin, card is the container */
+        .weekly-progress.single-kid {
+          margin-bottom: 1rem;
+        }
+
+        .weekly-progress.single-kid .weekly-progress-cards {
+          gap: 0;
         }
 
         .wpc-count {

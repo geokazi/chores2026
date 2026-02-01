@@ -10,6 +10,7 @@ import { Handlers, PageProps } from "$fresh/server.ts";
 import { getAuthenticatedSession } from "../../lib/auth/session.ts";
 import { ChoreService } from "../../lib/services/chore-service.ts";
 import { getActivityService } from "../../lib/services/activity-service.ts";
+import { InsightsService, ThisWeekActivity, StreakData } from "../../lib/services/insights-service.ts";
 import SecureKidDashboard from "../../islands/SecureKidDashboard.tsx";
 import AppFooter from "../../components/AppFooter.tsx";
 
@@ -26,6 +27,8 @@ interface SecureKidDashboardData {
   familyMembers: any[];
   recentActivity: any[];
   goalStatus: GoalStatus | null;
+  thisWeekActivity: ThisWeekActivity[];
+  streaks: StreakData[];
   error?: string;
 }
 
@@ -41,9 +44,11 @@ export const handler: Handlers<SecureKidDashboardData> = {
 
     try {
       const choreService = new ChoreService();
+      const insightsService = new InsightsService();
 
       // OPTIMIZATION: Use cached family + members from session
       const { family } = session;
+      const familySettings = family.settings as Record<string, unknown> | null;
 
       // Query DB for dynamic data (recent activity + goal status)
       const activityService = getActivityService();
@@ -51,6 +56,22 @@ export const handler: Handlers<SecureKidDashboardData> = {
         activityService.getRecentActivity(family.id, 10),
         choreService.getFamilyGoalStatus(family.id),
       ]);
+
+      // Get weekly progress data for This Week view
+      const childProfiles = family.members
+        .filter((m: any) => m.role === "child")
+        .map((m: any) => ({ id: m.id, name: m.name }));
+
+      let thisWeekActivity: ThisWeekActivity[] = [];
+      let streaks: StreakData[] = [];
+
+      if (childProfiles.length > 0) {
+        const insights = await insightsService.getInsights(
+          family.id, familySettings, childProfiles, "UTC"
+        );
+        thisWeekActivity = insights.thisWeekActivity;
+        streaks = insights.streaks;
+      }
 
       console.log("✅ Kid dashboard (cached):", {
         family: family.name,
@@ -63,6 +84,8 @@ export const handler: Handlers<SecureKidDashboardData> = {
         familyMembers: family.members,
         recentActivity,
         goalStatus,
+        thisWeekActivity,
+        streaks,
       });
     } catch (error) {
       console.error("❌ Error loading kid dashboard:", error);
@@ -71,6 +94,8 @@ export const handler: Handlers<SecureKidDashboardData> = {
         familyMembers: session.family?.members || [],
         recentActivity: [],
         goalStatus: null,
+        thisWeekActivity: [],
+        streaks: [],
         error: "Failed to load dashboard",
       });
     }
@@ -80,7 +105,7 @@ export const handler: Handlers<SecureKidDashboardData> = {
 export default function SecureKidDashboardPage(
   { data }: PageProps<SecureKidDashboardData>,
 ) {
-  const { family, familyMembers, recentActivity, goalStatus, error } = data;
+  const { family, familyMembers, recentActivity, goalStatus, thisWeekActivity, streaks, error } = data;
 
   if (error) {
     return (
@@ -107,6 +132,8 @@ export default function SecureKidDashboardPage(
         familyMembers={familyMembers}
         recentActivity={recentActivity}
         goalStatus={goalStatus}
+        thisWeekActivity={thisWeekActivity}
+        streaks={streaks}
       />
       <AppFooter />
     </div>

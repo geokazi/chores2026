@@ -17,14 +17,35 @@ interface GoalStatus {
   achieved: boolean;
 }
 
+interface ThisWeekDay {
+  date: string;
+  dayName: string;
+  done: boolean;
+}
+
+interface ThisWeekActivity {
+  profileId: string;
+  name: string;
+  days: ThisWeekDay[];
+  totalDone: number;
+}
+
+interface StreakData {
+  profileId: string;
+  name: string;
+  currentStreak: number;
+}
+
 interface Props {
   family: any;
   familyMembers: any[];
   recentActivity: any[];
   goalStatus?: GoalStatus | null;
+  thisWeekActivity?: ThisWeekActivity[];
+  streaks?: StreakData[];
 }
 
-export default function SecureKidDashboard({ family, familyMembers, recentActivity, goalStatus }: Props) {
+export default function SecureKidDashboard({ family, familyMembers, recentActivity, goalStatus, thisWeekActivity = [], streaks = [] }: Props) {
   const [activeKid, setActiveKid] = useState<any>(null);
   const [todaysChores, setTodaysChores] = useState<any[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
@@ -333,6 +354,8 @@ export default function SecureKidDashboard({ family, familyMembers, recentActivi
         recentActivity={recentActivity}
         kidsCanCreateEvents={kidsCanCreateEvents}
         kidPinRequired={kidPinRequired}
+        thisWeekActivity={thisWeekActivity}
+        streaks={streaks}
         onChoreComplete={(result: { points_earned: number; choreName: string }) => {
           // Update active kid's points immediately
           setActiveKid((current: any) => ({

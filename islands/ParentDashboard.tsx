@@ -276,6 +276,7 @@ export default function ParentDashboard(
       <WeeklyProgress
         thisWeekActivity={thisWeekActivity}
         streaks={streaks}
+        linkToKidDashboard={true}
       />
 
 

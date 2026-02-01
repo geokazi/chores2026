@@ -11,6 +11,7 @@ import EventMissionGroup from "./EventMissionGroup.tsx";
 import AddEventModal from "./AddEventModal.tsx";
 import AddPrepTasksModal from "./AddPrepTasksModal.tsx";
 import PinEntryModal from "./PinEntryModal.tsx";
+import WeeklyProgress from "./WeeklyProgress.tsx";
 import { groupChoresByEvent, usePointsMode, formatTime, groupEventsByTimePeriod } from "../lib/utils/household.ts";
 
 interface FamilyMember {
@@ -68,6 +69,25 @@ interface LinkedChore {
   };
 }
 
+interface ThisWeekDay {
+  date: string;
+  dayName: string;
+  done: boolean;
+}
+
+interface ThisWeekActivity {
+  profileId: string;
+  name: string;
+  days: ThisWeekDay[];
+  totalDone: number;
+}
+
+interface StreakData {
+  profileId: string;
+  name: string;
+  currentStreak: number;
+}
+
 interface UpcomingEvent {
   id: string;
   title: string;
@@ -92,6 +112,8 @@ interface Props {
   recentActivity: any[];
   kidsCanCreateEvents?: boolean;
   kidPinRequired?: boolean;
+  thisWeekActivity?: ThisWeekActivity[];
+  streaks?: StreakData[];
   onChoreComplete?: (result: { points_earned: number; choreName: string }) => void;
   onEventCreated?: () => void;
   onPrepTaskToggle?: (eventId: string, taskId: string, done: boolean) => void;
@@ -106,6 +128,8 @@ export default function KidDashboard({
   recentActivity,
   kidsCanCreateEvents = false,
   kidPinRequired = false,
+  thisWeekActivity = [],
+  streaks = [],
   onChoreComplete,
   onEventCreated,
   onPrepTaskToggle,
@@ -130,6 +154,16 @@ export default function KidDashboard({
 
   // Smart grouping for events: Today, This Week, Later
   const groupedEvents = useMemo(() => groupEventsByTimePeriod(upcomingEvents), [upcomingEvents]);
+
+  // Filter weekly activity to show only this kid's data
+  const kidWeeklyActivity = useMemo(
+    () => thisWeekActivity.filter(a => a.profileId === kid.id),
+    [thisWeekActivity, kid.id]
+  );
+  const kidStreaks = useMemo(
+    () => streaks.filter(s => s.profileId === kid.id),
+    [streaks, kid.id]
+  );
 
   // Calculate kid's ranking and streak
   const sortedMembers = [...leaderboard]
@@ -268,6 +302,27 @@ export default function KidDashboard({
         )}
 
       </div>
+
+      {/* This Week Progress - Kid's day-by-day view */}
+      {kidWeeklyActivity.length > 0 && (
+        <div style={{ marginBottom: "1.5rem" }}>
+          <h2
+            style={{
+              fontSize: "1.125rem",
+              fontWeight: "600",
+              marginBottom: "1rem",
+              color: "var(--color-text)",
+            }}
+          >
+            This Week
+          </h2>
+          <WeeklyProgress
+            thisWeekActivity={kidWeeklyActivity}
+            streaks={kidStreaks}
+            singleKid={true}
+          />
+        </div>
+      )}
 
       {/* Upcoming Events - Smart grouping: Today, This Week, Later */}
       {(upcomingEvents.length > 0 || kidsCanCreateEvents) && (
