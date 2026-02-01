@@ -185,6 +185,16 @@ DENO_ENV=production
 
 **See Documentation**: [FamilyScore Sync Integration Guide](docs/familyscore-sync-integration.md)
 
+### Points Consistency (Critical)
+
+**Single Source of Truth**: All pages must show identical point totals. The system uses:
+- **Sunday-first weeks** (Sun-Sat) for US convention
+- **Browser timezone** detection via URL `?tz=` parameter
+- **All positive transactions** counted (not just `chore_completed`)
+- **Family-scoped queries** with profile filtering in memory
+
+**See Documentation**: [Points Consistency: Single Source of Truth](docs/20260131_points_consistency_single_source_of_truth.md)
+
 ## Application Structure
 
 ### Screen Map (13+ Screens)

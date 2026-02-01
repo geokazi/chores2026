@@ -244,3 +244,11 @@ When needed, extend without refactoring:
 - **Date range picker** → Add query params to route
 
 **No premature abstraction. Add when needed.**
+
+---
+
+## Related Documentation
+
+- [Points Consistency: Single Source of Truth](./20260131_points_consistency_single_source_of_truth.md) - Critical guide for timezone handling and ensuring all pages show consistent point totals
+- [FamilyScore Sync Integration](./20260112_familyscore_sync_integration.md) - How transactions sync with FamilyScore
+- [JSONB Settings Architecture](./20260114_JSONB_settings_architecture.md) - Family settings storage

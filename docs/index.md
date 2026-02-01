@@ -2,7 +2,7 @@
 
 **Version**: 1.34
 **Status**: ✅ Production Ready
-**Last Updated**: January 31, 2026 (Account Types & Personal Hubs architecture brainstorm)
+**Last Updated**: January 31, 2026 (Points Consistency architecture + Account Types brainstorm)
 
 **Project Overview**: A simplified, real-time chore completion system built with Deno Fresh, transforming routine family chores into an engaging, competitive experience with sub-second real-time updates across all family devices.
 
@@ -86,6 +86,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-31 | [**Referral "Share ChoreGami"**](./planned/20260130_referral_share_feature.md) | ✅ Complete | Dedicated `/share` route (no PIN); profile menu link; JSONB+GIN O(1) lookup; 6-month cap |
 | TBD | [**Account Types & Personal Hubs**](./planned/20260131_account_types_personal_hubs.md) | 📋 Planned | Support families, roommates, couples, solo users; age-based gamification; fairness tracking |
 | TBD | [↳ 2026 UX Trends Assessment](./planned/20260131_ux_trends_assessment.md) | 📋 Planned | Progress indicators (P1), transparency banner (P1), demo mode (P2), passkey auth (P3) |
+| 2026-01-31 | [**Points Consistency (Single Source of Truth)**](./20260131_points_consistency_single_source_of_truth.md) | ✅ Complete | All pages show identical point totals; timezone-aware week calculations; troubleshooting guide |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 
@@ -129,6 +130,8 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 - **RewardsService**: Catalog management, claim flow, purchase history
 - **GoalsService**: Savings goal CRUD, progress tracking, parent boost
 - **InsightsService**: Behavioral analytics, streaks, consistency trends
+
+> **Critical**: All services calculating weekly points MUST follow [Points Consistency guidelines](./20260131_points_consistency_single_source_of_truth.md) - Sunday-first weeks, browser timezone, all positive transactions.
 
 #### Real-time Features
 - **LiveLeaderboard**: Family rankings with streak calculations and sub-2-second updates
