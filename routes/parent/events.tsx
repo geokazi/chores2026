@@ -46,6 +46,7 @@ interface EventsPageData {
   members: any[];
   thisWeek: FamilyEvent[];
   upcoming: FamilyEvent[];
+  pastEventsCount: number;
   parentProfileId?: string;
   error?: string;
 }
@@ -99,6 +100,15 @@ export const handler: Handlers<EventsPageData> = {
         console.error("Error fetching events:", eventsError);
         throw eventsError;
       }
+
+      // Count past events (for context-aware empty state)
+      const { count: pastEventsCount } = await client
+        .schema("choretracker")
+        .from("family_events")
+        .select("*", { count: "exact", head: true })
+        .eq("family_id", familyId)
+        .eq("is_deleted", false)
+        .lt("event_date", todayStr);
 
       // Get chore counts per event
       const eventIds = (events || []).map((e: any) => e.id);
@@ -154,6 +164,7 @@ export const handler: Handlers<EventsPageData> = {
         members,
         thisWeek,
         upcoming,
+        pastEventsCount: pastEventsCount || 0,
         parentProfileId,
       });
     } catch (error) {
@@ -163,6 +174,7 @@ export const handler: Handlers<EventsPageData> = {
         members,
         thisWeek: [],
         upcoming: [],
+        pastEventsCount: 0,
         parentProfileId,
         error: "Failed to load events",
       });
@@ -171,7 +183,7 @@ export const handler: Handlers<EventsPageData> = {
 };
 
 export default function EventsPage({ data }: PageProps<EventsPageData>) {
-  const { family, members, thisWeek, upcoming, parentProfileId, error } = data;
+  const { family, members, thisWeek, upcoming, pastEventsCount, parentProfileId, error } = data;
 
   const currentUser = members.find((m) => m.id === parentProfileId) || null;
 
@@ -196,6 +208,7 @@ export default function EventsPage({ data }: PageProps<EventsPageData>) {
         <EventsList
           thisWeek={thisWeek}
           upcoming={upcoming}
+          pastEventsCount={pastEventsCount}
           familyMembers={members}
         />
       )}

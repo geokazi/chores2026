@@ -57,10 +57,11 @@ interface FamilyMember {
 interface Props {
   thisWeek: FamilyEvent[];
   upcoming: FamilyEvent[];
+  pastEventsCount?: number;
   familyMembers: FamilyMember[];
 }
 
-export default function EventsList({ thisWeek, upcoming, familyMembers }: Props) {
+export default function EventsList({ thisWeek, upcoming, pastEventsCount = 0, familyMembers }: Props) {
   const [showAddEventModal, setShowAddEventModal] = useState(false);
   const [showAddChoreModal, setShowAddChoreModal] = useState(false);
   const [showPrepTasksModal, setShowPrepTasksModal] = useState(false);
@@ -566,16 +567,36 @@ export default function EventsList({ thisWeek, upcoming, familyMembers }: Props)
       {isEmpty ? (
         <div class="card" style={{ textAlign: "center", padding: "3rem" }}>
           <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>📅</div>
-          <p style={{ color: "var(--color-text-light)", marginBottom: "1.5rem" }}>
-            No events scheduled yet.
-          </p>
-          <button
-            onClick={() => setShowAddEventModal(true)}
-            class="btn btn-secondary"
-            style={{ padding: "0.75rem 1.5rem" }}
-          >
-            Create your first event
-          </button>
+          {pastEventsCount > 0 ? (
+            <>
+              <p style={{ color: "var(--color-text-light)", marginBottom: "0.5rem" }}>
+                No upcoming events.
+              </p>
+              <p style={{ color: "var(--color-text-light)", marginBottom: "1.5rem", fontSize: "0.875rem" }}>
+                You've had <strong>{pastEventsCount}</strong> event{pastEventsCount === 1 ? "" : "s"} in the past.
+              </p>
+              <button
+                onClick={() => setShowAddEventModal(true)}
+                class="btn btn-secondary"
+                style={{ padding: "0.75rem 1.5rem" }}
+              >
+                Schedule your next one
+              </button>
+            </>
+          ) : (
+            <>
+              <p style={{ color: "var(--color-text-light)", marginBottom: "1.5rem" }}>
+                No events scheduled yet.
+              </p>
+              <button
+                onClick={() => setShowAddEventModal(true)}
+                class="btn btn-secondary"
+                style={{ padding: "0.75rem 1.5rem" }}
+              >
+                Create your first event
+              </button>
+            </>
+          )}
         </div>
       ) : (
         <>
