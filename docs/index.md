@@ -52,8 +52,8 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-19/20 | [↳ Original Planning](./milestones/20260119_events_calendar_original_plan.md) | ✅ Complete | Design decisions and philosophy |
 | 2026-01-19/20 | [↳ Hybrid Implementation Guide](./milestones/20260119_events_calendar_rev2_plan.md) | ✅ Complete | MealPlanner analysis and approach |
 | 2026-01-20 | [**Navigation UX Improvements**](./milestones/20260120_navigation_ux_improvements.md) | ✅ Complete | Inline user switcher, active nav indicator, reduced switching friction |
-| 2026-01-20 | [**Events Display Fixes**](./investigations/20260120_events_not_showing_diagnosis.md) | ✅ Complete | Event-linked chores default to event date, timezone fixes, explicit FK joins |
-| 2026-01-20 | [↳ Smart Event Grouping](./investigations/20260120_events_not_showing_diagnosis.md#fix-5-smart-event-grouping-removes-7-day-limit) | ✅ Complete | Removed 7-day limit; events grouped by Today/This Week/Later |
+| 2026-01-20 | [**Events Display Fixes**](./troubleshooting/20260120_events_not_showing_diagnosis.md) | ✅ Complete | Event-linked chores default to event date, timezone fixes, explicit FK joins |
+| 2026-01-20 | [↳ Smart Event Grouping](./troubleshooting/20260120_events_not_showing_diagnosis.md#fix-5-smart-event-grouping-removes-7-day-limit) | ✅ Complete | Removed 7-day limit; events grouped by Today/This Week/Later |
 | TBD | [Event Library & Reuse](./planned/20260120_event_library_reuse.md) | 📋 Planned | Quick recreation of past events |
 | 2026-01-20 | [**Kid Event Creation**](./milestones/20260120_kid_event_creation.md) | ✅ Complete | Teens create own events with parent visibility, PIN-gated |
 | 2026-01-20 | **Prep Tasks Inline Expansion** | ✅ Complete | Smart auto-expand (≤3 tasks), inline checkboxes, 1-click completion |
@@ -86,7 +86,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-31 | [**Referral "Share ChoreGami"**](./planned/20260130_referral_share_feature.md) | ✅ Complete | Dedicated `/share` route (no PIN); profile menu link; JSONB+GIN O(1) lookup; 6-month cap |
 | TBD | [**Account Types & Personal Hubs**](./planned/20260131_account_types_personal_hubs.md) | 📋 Planned | Support families, roommates, couples, solo users; age-based gamification; fairness tracking |
 | TBD | [↳ 2026 UX Trends Assessment](./planned/20260131_ux_trends_assessment.md) | 📋 Planned | Progress indicators (P1), transparency banner (P1), demo mode (P2), passkey auth (P3) |
-| 2026-01-31 | [**Points Consistency (Single Source of Truth)**](./20260131_points_consistency_single_source_of_truth.md) | ✅ Complete | All pages show identical point totals; timezone-aware week calculations; troubleshooting guide |
+| 2026-01-31 | [**Points Consistency (Single Source of Truth)**](./troubleshooting/20260131_points_consistency_single_source_of_truth.md) | ✅ Complete | All pages show identical point totals; timezone-aware week calculations; troubleshooting guide |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 
@@ -131,7 +131,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 - **GoalsService**: Savings goal CRUD, progress tracking, parent boost
 - **InsightsService**: Behavioral analytics, streaks, consistency trends
 
-> **Critical**: All services calculating weekly points MUST follow [Points Consistency guidelines](./20260131_points_consistency_single_source_of_truth.md) - Sunday-first weeks, browser timezone, all positive transactions.
+> **Critical**: All services calculating weekly points MUST follow [Points Consistency guidelines](./troubleshooting/20260131_points_consistency_single_source_of_truth.md) - Sunday-first weeks, browser timezone, all positive transactions.
 
 #### Real-time Features
 - **LiveLeaderboard**: Family rankings with streak calculations and sub-2-second updates

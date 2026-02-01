@@ -193,7 +193,7 @@ DENO_ENV=production
 - **All positive transactions** counted (not just `chore_completed`)
 - **Family-scoped queries** with profile filtering in memory
 
-**See Documentation**: [Points Consistency: Single Source of Truth](docs/20260131_points_consistency_single_source_of_truth.md)
+**See Documentation**: [Points Consistency: Single Source of Truth](docs/troubleshooting/20260131_points_consistency_single_source_of_truth.md)
 
 ## Application Structure
 
