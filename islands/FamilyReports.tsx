@@ -190,7 +190,7 @@ export default function FamilyReports({ analytics, goalsAchieved, pointsPerDolla
           <span></span>
           <span style={{ textAlign: "right" }}>Week</span>
           <span style={{ textAlign: "right" }}>Month</span>
-          <span style={{ textAlign: "right" }}>YTD</span>
+          <span style={{ textAlign: "right" }}>Year</span>
           <span style={{ textAlign: "right" }}>All Time</span>
         </div>
 
