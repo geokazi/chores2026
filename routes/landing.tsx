@@ -1,6 +1,7 @@
 /**
  * Landing Page - Value-first with inline demo
- * 2026 UX Best Practice: Show value in 3-5 seconds, signup after engagement
+ * Strategy: Parent-first messaging, quiet automation, low cognitive load
+ * Hero: "Chores that run themselves" - benefit over feature
  */
 
 import { Handlers, PageProps } from "$fresh/server.ts";
@@ -37,58 +38,121 @@ export default function LandingPage() {
         </nav>
       </header>
 
-      {/* Hero Section */}
+      {/* Hero Section - Benefit-driven, not feature-driven */}
       <section class="hero">
-        <h1 class="hero-title">Household tasks. Sorted.</h1>
-        <p class="hero-subtitle">For families, roommates, and you.</p>
-        <p class="hero-pwa">No app to download. Works on any device.</p>
+        <h1 class="hero-title">Chores that run themselves.</h1>
+        <p class="hero-subtitle">
+          Automatically assign, rotate, and track shared responsibilities —
+          without reminders, spreadsheets, or shared passwords.
+        </p>
+        <div class="hero-cta">
+          <a href="/register" class="btn btn-hero-primary">Get started in 2 minutes</a>
+          <a href="#demo" class="btn btn-hero-secondary">Try the live demo</a>
+        </div>
+        <p class="hero-microcopy">Works for families, roommates, or just you.</p>
+      </section>
+
+      {/* Value Proof - Outcomes, not features */}
+      <section class="value-section">
+        <div class="value-grid">
+          <div class="value-item">
+            <span class="value-icon">🔕</span>
+            <div>
+              <strong>No nagging.</strong>
+              <span>Tasks rotate automatically, so responsibility stays fair.</span>
+            </div>
+          </div>
+          <div class="value-item">
+            <span class="value-icon">🔐</span>
+            <div>
+              <strong>No shared passwords.</strong>
+              <span>Kids and roommates get their own simple access.</span>
+            </div>
+          </div>
+          <div class="value-item">
+            <span class="value-icon">📅</span>
+            <div>
+              <strong>No re-planning.</strong>
+              <span>Recurring tasks just show up — done or not.</span>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* Teaser Cards - Who's this for? */}
       <section class="teaser-section">
-        <h2 class="section-title">Who's this for?</h2>
+        <h2 class="section-title">Works wherever responsibility is shared</h2>
         <TeaserCards />
       </section>
 
-      {/* Inline Demo - The Hero */}
-      <section class="demo-section">
+      {/* Inline Demo */}
+      <section class="demo-section" id="demo">
         <div class="demo-container">
           <div class="demo-badge">Live Demo</div>
-          <h2 class="demo-title">See how it works</h2>
-          <p class="demo-subtitle">Try completing a chore - no signup needed</p>
+          <h2 class="demo-title">See it work — no signup required</h2>
+          <p class="demo-subtitle">Complete a chore. Watch it update.</p>
           <LandingDemo />
         </div>
       </section>
 
-      {/* How it works */}
+      {/* How it works - Outcome-focused */}
       <section class="how-it-works">
-        <h2 class="section-title">Simple as 1-2-3</h2>
+        <h2 class="section-title">How it works</h2>
         <div class="steps">
           <div class="step">
             <span class="step-number">1</span>
-            <span class="step-text">Set up tasks</span>
+            <div class="step-content">
+              <strong>Add people (or don't)</strong>
+              <span>Use it solo or invite others later.</span>
+            </div>
           </div>
-          <div class="step-arrow">→</div>
           <div class="step">
             <span class="step-number">2</span>
-            <span class="step-text">Assign & rotate</span>
+            <div class="step-content">
+              <strong>Create responsibilities</strong>
+              <span>Chores, routines — anything repeatable.</span>
+            </div>
           </div>
-          <div class="step-arrow">→</div>
           <div class="step">
             <span class="step-number">3</span>
-            <span class="step-text">Track & celebrate</span>
+            <div class="step-content">
+              <strong>Let it run</strong>
+              <span>Rotation and tracking happen automatically.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Good Fit / Not Fit - Builds trust without fake testimonials */}
+      <section class="fit-section">
+        <h2 class="section-title">Is ChoreGami right for you?</h2>
+        <div class="fit-grid">
+          <div class="fit-card fit-yes">
+            <h3>👍 A good fit if you want:</h3>
+            <ul>
+              <li>Less reminding and follow-ups</li>
+              <li>Fair rotation of shared tasks</li>
+              <li>A system that runs quietly in the background</li>
+              <li>Kids or roommates to see only their tasks</li>
+            </ul>
+          </div>
+          <div class="fit-card fit-no">
+            <h3>🚫 Not a good fit if you want:</h3>
+            <ul>
+              <li>A full family calendar or planner</li>
+              <li>Highly customized workflows</li>
+              <li>A tool you need to constantly manage</li>
+              <li>Complex scheduling with dependencies</li>
+            </ul>
           </div>
         </div>
       </section>
 
       {/* Final CTA */}
       <section class="cta-section">
-        <h2 class="cta-title">Ready to get started?</h2>
-        <p class="cta-subtitle">Free to use. No download. Set up in 2 minutes.</p>
-        <div class="cta-buttons">
-          <a href="/register" class="btn btn-primary btn-large">Create Free Account</a>
-          <a href="/login" class="btn btn-secondary">Sign In</a>
-        </div>
+        <h2 class="cta-title">Spend less time managing tasks.</h2>
+        <p class="cta-subtitle">Let responsibility take care of itself.</p>
+        <a href="/register" class="btn btn-cta-primary">Get started — it's free</a>
       </section>
 
       {/* Footer */}
@@ -153,36 +217,94 @@ export default function LandingPage() {
         .hero {
           text-align: center;
           padding: 3rem 1.5rem 2rem;
-          max-width: 800px;
+          max-width: 700px;
           margin: 0 auto;
         }
         .hero-title {
-          font-size: clamp(2rem, 5vw, 3rem);
+          font-size: clamp(2.25rem, 6vw, 3.5rem);
           font-weight: 800;
           color: var(--color-text, #064e3b);
-          margin: 0 0 0.75rem;
+          margin: 0 0 1rem;
           line-height: 1.1;
         }
         .hero-subtitle {
-          font-size: 1.25rem;
+          font-size: 1.125rem;
           color: #4b5563;
+          margin: 0 0 1.5rem;
+          line-height: 1.5;
+        }
+        .hero-cta {
+          display: flex;
+          gap: 0.75rem;
+          justify-content: center;
+          flex-wrap: wrap;
+          margin-bottom: 1rem;
+        }
+        .btn-hero-primary {
+          background: var(--color-primary, #10b981);
+          color: white;
+          padding: 0.875rem 1.5rem;
+          border-radius: 8px;
+          font-weight: 600;
+          text-decoration: none;
+          transition: all 0.2s;
+        }
+        .btn-hero-primary:hover {
+          background: #059669;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+        .btn-hero-secondary {
+          background: transparent;
+          color: var(--color-primary, #10b981);
+          padding: 0.875rem 1.5rem;
+          border-radius: 8px;
+          font-weight: 600;
+          text-decoration: none;
+          border: 2px solid var(--color-primary, #10b981);
+          transition: all 0.2s;
+        }
+        .btn-hero-secondary:hover {
+          background: rgba(16, 185, 129, 0.1);
+        }
+        .hero-microcopy {
+          font-size: 0.875rem;
+          color: #6b7280;
           margin: 0;
         }
-        .hero-pwa {
-          display: inline-flex;
-          align-items: center;
-          gap: 0.5rem;
-          margin: 1rem 0 0;
-          padding: 0.5rem 1rem;
-          background: rgba(255, 255, 255, 0.7);
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
-          border: 1px solid rgba(255, 255, 255, 0.3);
-          border-radius: 20px;
-          font-size: 0.875rem;
-          color: #059669;
-          font-weight: 500;
-          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+
+        /* Value Section */
+        .value-section {
+          padding: 2rem 1.5rem;
+          max-width: 800px;
+          margin: 0 auto;
+        }
+        .value-grid {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+        }
+        .value-item {
+          display: flex;
+          align-items: flex-start;
+          gap: 1rem;
+          padding: 1rem;
+          background: white;
+          border-radius: 12px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        .value-icon {
+          font-size: 1.5rem;
+          flex-shrink: 0;
+        }
+        .value-item strong {
+          color: var(--color-text, #064e3b);
+          display: block;
+          margin-bottom: 0.25rem;
+        }
+        .value-item span {
+          color: #6b7280;
+          font-size: 0.9rem;
         }
 
         /* Section titles */
@@ -247,28 +369,26 @@ export default function LandingPage() {
         /* How it works */
         .how-it-works {
           padding: 2rem 1.5rem;
-          max-width: 600px;
+          max-width: 700px;
           margin: 0 auto;
         }
         .steps {
           display: flex;
-          justify-content: center;
-          align-items: center;
-          gap: 0.5rem;
-          flex-wrap: wrap;
+          flex-direction: column;
+          gap: 1rem;
         }
         .step {
           display: flex;
-          align-items: center;
-          gap: 0.5rem;
+          align-items: flex-start;
+          gap: 1rem;
           background: white;
-          padding: 0.75rem 1rem;
+          padding: 1rem;
           border-radius: 12px;
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
         .step-number {
-          width: 28px;
-          height: 28px;
+          width: 32px;
+          height: 32px;
           background: var(--color-primary, #10b981);
           color: white;
           border-radius: 50%;
@@ -277,14 +397,57 @@ export default function LandingPage() {
           justify-content: center;
           font-weight: 700;
           font-size: 0.875rem;
+          flex-shrink: 0;
         }
-        .step-text {
-          font-weight: 500;
+        .step-content {
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+        }
+        .step-content strong {
           color: var(--color-text, #064e3b);
         }
-        .step-arrow {
-          color: #9ca3af;
-          font-size: 1.25rem;
+        .step-content span {
+          color: #6b7280;
+          font-size: 0.9rem;
+        }
+
+        /* Fit Section */
+        .fit-section {
+          padding: 2rem 1.5rem;
+          max-width: 800px;
+          margin: 0 auto;
+        }
+        .fit-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+          gap: 1rem;
+        }
+        .fit-card {
+          padding: 1.5rem;
+          border-radius: 12px;
+        }
+        .fit-card h3 {
+          font-size: 1rem;
+          margin: 0 0 1rem;
+          color: var(--color-text, #064e3b);
+        }
+        .fit-card ul {
+          margin: 0;
+          padding: 0 0 0 1.25rem;
+        }
+        .fit-card li {
+          margin-bottom: 0.5rem;
+          font-size: 0.9rem;
+          color: #4b5563;
+        }
+        .fit-yes {
+          background: #f0fdf4;
+          border: 1px solid #bbf7d0;
+        }
+        .fit-no {
+          background: #fef2f2;
+          border: 1px solid #fecaca;
         }
 
         /* CTA section */
@@ -304,42 +467,20 @@ export default function LandingPage() {
           opacity: 0.9;
           margin: 0 0 1.5rem;
         }
-        .cta-buttons {
-          display: flex;
-          gap: 0.75rem;
-          justify-content: center;
-          flex-wrap: wrap;
-        }
-        .btn {
-          padding: 0.875rem 1.5rem;
+        .btn-cta-primary {
+          display: inline-block;
+          background: white;
+          color: #1e40af;
+          padding: 1rem 2rem;
           border-radius: 8px;
           font-weight: 600;
           text-decoration: none;
-          transition: all 0.2s;
-          cursor: pointer;
-          border: none;
-          font-size: 1rem;
-        }
-        .btn-primary {
-          background: white;
-          color: var(--color-primary, #10b981);
-        }
-        .btn-primary:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-        .btn-secondary {
-          background: transparent;
-          color: white;
-          border: 2px solid rgba(255, 255, 255, 0.5);
-        }
-        .btn-secondary:hover {
-          background: rgba(255, 255, 255, 0.1);
-          border-color: white;
-        }
-        .btn-large {
-          padding: 1rem 2rem;
           font-size: 1.125rem;
+          transition: all 0.2s;
+        }
+        .btn-cta-primary:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
 
         /* Footer */
@@ -363,11 +504,12 @@ export default function LandingPage() {
 
         /* Mobile adjustments */
         @media (max-width: 480px) {
-          .steps {
+          .hero-cta {
             flex-direction: column;
           }
-          .step-arrow {
-            transform: rotate(90deg);
+          .btn-hero-primary, .btn-hero-secondary {
+            width: 100%;
+            text-align: center;
           }
         }
 
@@ -386,17 +528,23 @@ export default function LandingPage() {
         .hero {
           animation: fadeInUp 0.6s ease-out;
         }
-        .teaser-section {
+        .value-section {
           animation: fadeInUp 0.6s ease-out 0.1s both;
         }
-        .demo-section {
+        .teaser-section {
           animation: fadeInUp 0.6s ease-out 0.2s both;
         }
-        .how-it-works {
+        .demo-section {
           animation: fadeInUp 0.6s ease-out 0.3s both;
         }
-        .cta-section {
+        .how-it-works {
           animation: fadeInUp 0.6s ease-out 0.4s both;
+        }
+        .fit-section {
+          animation: fadeInUp 0.6s ease-out 0.5s both;
+        }
+        .cta-section {
+          animation: fadeInUp 0.6s ease-out 0.6s both;
         }
 
         /* Dark mode support - Ocean Depth blue */
@@ -425,10 +573,31 @@ export default function LandingPage() {
           .hero-subtitle {
             color: #cbd5e1;
           }
-          .hero-pwa {
-            background: rgba(30, 58, 95, 0.7);
-            border: 1px solid rgba(96, 165, 250, 0.2);
-            color: #93c5fd;
+          .hero-microcopy {
+            color: #94a3b8;
+          }
+          .btn-hero-primary {
+            background: #3b82f6;
+          }
+          .btn-hero-primary:hover {
+            background: #2563eb;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+          }
+          .btn-hero-secondary {
+            color: #60a5fa;
+            border-color: #3b82f6;
+          }
+          .btn-hero-secondary:hover {
+            background: rgba(59, 130, 246, 0.15);
+          }
+          .value-item {
+            background: #1e293b;
+          }
+          .value-item strong {
+            color: #f1f5f9;
+          }
+          .value-item span {
+            color: #94a3b8;
           }
           .section-title {
             color: #f1f5f9;
@@ -451,18 +620,35 @@ export default function LandingPage() {
             color: #94a3b8;
           }
           .step {
-            background: #1e3a5f;
+            background: #1e293b;
           }
           .step-number {
             background: #3b82f6;
           }
-          .step-text {
+          .step-content strong {
             color: #f1f5f9;
+          }
+          .step-content span {
+            color: #94a3b8;
+          }
+          .fit-card h3 {
+            color: #f1f5f9;
+          }
+          .fit-card li {
+            color: #cbd5e1;
+          }
+          .fit-yes {
+            background: rgba(34, 197, 94, 0.1);
+            border-color: rgba(34, 197, 94, 0.3);
+          }
+          .fit-no {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.3);
           }
           .cta-section {
             background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
           }
-          .btn-primary {
+          .btn-cta-primary {
             color: #d97706;
           }
           .landing-footer {
