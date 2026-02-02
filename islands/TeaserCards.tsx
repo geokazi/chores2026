@@ -94,22 +94,20 @@ export default function TeaserCards() {
           <button class="card-cta card-cta-primary">Try Demo</button>
         </div>
 
-        {/* Roommates - Coming Soon */}
+        {/* Roommates - Early Access */}
         <div class="teaser-card teaser-card-soon" onClick={() => handleCardClick("roommates")}>
-          <div class="card-badge">Coming Soon</div>
           <div class="card-emoji">🏠</div>
           <h3 class="card-title">Roommates</h3>
           <p class="card-desc">Fair splits without nagging. Automatic rotation.</p>
-          <button class="card-cta card-cta-secondary">Learn more</button>
+          <button class="card-cta card-cta-secondary">Get early access</button>
         </div>
 
-        {/* Just Me - Coming Soon */}
+        {/* Just Me - Early Access */}
         <div class="teaser-card teaser-card-soon" onClick={() => handleCardClick("just_me")}>
-          <div class="card-badge">Coming Soon</div>
           <div class="card-emoji">👤</div>
           <h3 class="card-title">Just Me</h3>
           <p class="card-desc">Stay on top of your tasks. Simple and focused.</p>
-          <button class="card-cta card-cta-secondary">Learn more</button>
+          <button class="card-cta card-cta-secondary">Get early access</button>
         </div>
       </div>
 
