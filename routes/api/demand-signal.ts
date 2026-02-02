@@ -13,7 +13,7 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 // Valid features to track
-const VALID_FEATURES = ["roommates", "just_me"];
+const VALID_FEATURES = ["roommates", "just_me", "theme_toggle"];
 
 // Valid result types from assessment quiz
 const VALID_RESULT_TYPES = [

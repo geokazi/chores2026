@@ -7,6 +7,7 @@ import { Handlers, PageProps } from "$fresh/server.ts";
 import { getAuthenticatedSession } from "../lib/auth/session.ts";
 import TeaserCards from "../islands/TeaserCards.tsx";
 import LandingDemo from "../islands/LandingDemo.tsx";
+import ThemeToggle from "../islands/ThemeToggle.tsx";
 
 export const handler: Handlers = {
   async GET(req, ctx) {
@@ -30,6 +31,7 @@ export default function LandingPage() {
           <span class="logo-text">ChoreGami</span>
         </div>
         <nav class="landing-nav">
+          <ThemeToggle />
           <a href="/login" class="nav-link">Log in</a>
           <a href="/register" class="nav-link nav-link-primary">Sign up</a>
         </nav>
