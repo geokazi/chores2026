@@ -32,11 +32,11 @@ export const handler: Handlers<IndexPageData> = {
   async GET(req, ctx) {
     const session = await getAuthenticatedSession(req);
 
-    // Redirect to login if not authenticated
+    // Redirect to landing page if not authenticated (value-first UX)
     if (!session.isAuthenticated || !session.family) {
       return new Response(null, {
         status: 303,
-        headers: { Location: "/login" },
+        headers: { Location: "/landing" },
       });
     }
 

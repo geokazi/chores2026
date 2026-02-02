@@ -16,6 +16,7 @@ import * as $api_chores_recurring from "./routes/api/chores/recurring.ts";
 import * as $api_cron_daily_digest from "./routes/api/cron/daily-digest.ts";
 import * as $api_cron_weekly_digest from "./routes/api/cron/weekly-digest.ts";
 import * as $api_debug_session from "./routes/api/debug/session.ts";
+import * as $api_demand_signal from "./routes/api/demand-signal.ts";
 import * as $api_events from "./routes/api/events.ts";
 import * as $api_events_id_ from "./routes/api/events/[id].ts";
 import * as $api_events_id_calendar from "./routes/api/events/[id]/calendar.ts";
@@ -56,12 +57,14 @@ import * as $api_rotation_today from "./routes/api/rotation/today.ts";
 import * as $api_settings_kids_events from "./routes/api/settings/kids-events.ts";
 import * as $api_settings_notifications from "./routes/api/settings/notifications.ts";
 import * as $api_settings_timezone from "./routes/api/settings/timezone.ts";
+import * as $demo from "./routes/demo.tsx";
 import * as $health from "./routes/health.ts";
 import * as $index from "./routes/index.tsx";
 import * as $join from "./routes/join.tsx";
 import * as $kid_dashboard from "./routes/kid/dashboard.tsx";
 import * as $kid_goals from "./routes/kid/goals.tsx";
 import * as $kid_rewards from "./routes/kid/rewards.tsx";
+import * as $landing from "./routes/landing.tsx";
 import * as $login from "./routes/login.tsx";
 import * as $logout from "./routes/logout.ts";
 import * as $parent_activity from "./routes/parent/activity.tsx";
@@ -88,6 +91,8 @@ import * as $BalanceCards from "./islands/BalanceCards.tsx";
 import * as $ChoreDetail from "./islands/ChoreDetail.tsx";
 import * as $ChoreList from "./islands/ChoreList.tsx";
 import * as $ConfettiTrigger from "./islands/ConfettiTrigger.tsx";
+import * as $DemoChoreCard from "./islands/DemoChoreCard.tsx";
+import * as $DemoKidDashboard from "./islands/DemoKidDashboard.tsx";
 import * as $EventMissionGroup from "./islands/EventMissionGroup.tsx";
 import * as $EventsList from "./islands/EventsList.tsx";
 import * as $FamilyReports from "./islands/FamilyReports.tsx";
@@ -96,6 +101,7 @@ import * as $HabitInsights from "./islands/HabitInsights.tsx";
 import * as $KidDashboard from "./islands/KidDashboard.tsx";
 import * as $KidSelector from "./islands/KidSelector.tsx";
 import * as $KidSessionValidator from "./islands/KidSessionValidator.tsx";
+import * as $LandingDemo from "./islands/LandingDemo.tsx";
 import * as $LiveActivityFeed from "./islands/LiveActivityFeed.tsx";
 import * as $LiveLeaderboard from "./islands/LiveLeaderboard.tsx";
 import * as $ParentActivityTab from "./islands/ParentActivityTab.tsx";
@@ -111,6 +117,7 @@ import * as $SecureKidDashboard from "./islands/SecureKidDashboard.tsx";
 import * as $SecureParentDashboard from "./islands/SecureParentDashboard.tsx";
 import * as $ShareReferralCard from "./islands/ShareReferralCard.tsx";
 import * as $SocialAuthButtons from "./islands/SocialAuthButtons.tsx";
+import * as $TeaserCards from "./islands/TeaserCards.tsx";
 import * as $TemplateSelector from "./islands/TemplateSelector.tsx";
 import * as $ThemeInitializer from "./islands/ThemeInitializer.tsx";
 import * as $WebSocketManager from "./islands/WebSocketManager.tsx";
@@ -145,6 +152,7 @@ const manifest = {
     "./routes/api/cron/daily-digest.ts": $api_cron_daily_digest,
     "./routes/api/cron/weekly-digest.ts": $api_cron_weekly_digest,
     "./routes/api/debug/session.ts": $api_debug_session,
+    "./routes/api/demand-signal.ts": $api_demand_signal,
     "./routes/api/events.ts": $api_events,
     "./routes/api/events/[id].ts": $api_events_id_,
     "./routes/api/events/[id]/calendar.ts": $api_events_id_calendar,
@@ -187,12 +195,14 @@ const manifest = {
     "./routes/api/settings/kids-events.ts": $api_settings_kids_events,
     "./routes/api/settings/notifications.ts": $api_settings_notifications,
     "./routes/api/settings/timezone.ts": $api_settings_timezone,
+    "./routes/demo.tsx": $demo,
     "./routes/health.ts": $health,
     "./routes/index.tsx": $index,
     "./routes/join.tsx": $join,
     "./routes/kid/dashboard.tsx": $kid_dashboard,
     "./routes/kid/goals.tsx": $kid_goals,
     "./routes/kid/rewards.tsx": $kid_rewards,
+    "./routes/landing.tsx": $landing,
     "./routes/login.tsx": $login,
     "./routes/logout.ts": $logout,
     "./routes/parent/activity.tsx": $parent_activity,
@@ -221,6 +231,8 @@ const manifest = {
     "./islands/ChoreDetail.tsx": $ChoreDetail,
     "./islands/ChoreList.tsx": $ChoreList,
     "./islands/ConfettiTrigger.tsx": $ConfettiTrigger,
+    "./islands/DemoChoreCard.tsx": $DemoChoreCard,
+    "./islands/DemoKidDashboard.tsx": $DemoKidDashboard,
     "./islands/EventMissionGroup.tsx": $EventMissionGroup,
     "./islands/EventsList.tsx": $EventsList,
     "./islands/FamilyReports.tsx": $FamilyReports,
@@ -229,6 +241,7 @@ const manifest = {
     "./islands/KidDashboard.tsx": $KidDashboard,
     "./islands/KidSelector.tsx": $KidSelector,
     "./islands/KidSessionValidator.tsx": $KidSessionValidator,
+    "./islands/LandingDemo.tsx": $LandingDemo,
     "./islands/LiveActivityFeed.tsx": $LiveActivityFeed,
     "./islands/LiveLeaderboard.tsx": $LiveLeaderboard,
     "./islands/ParentActivityTab.tsx": $ParentActivityTab,
@@ -244,6 +257,7 @@ const manifest = {
     "./islands/SecureParentDashboard.tsx": $SecureParentDashboard,
     "./islands/ShareReferralCard.tsx": $ShareReferralCard,
     "./islands/SocialAuthButtons.tsx": $SocialAuthButtons,
+    "./islands/TeaserCards.tsx": $TeaserCards,
     "./islands/TemplateSelector.tsx": $TemplateSelector,
     "./islands/ThemeInitializer.tsx": $ThemeInitializer,
     "./islands/WebSocketManager.tsx": $WebSocketManager,
