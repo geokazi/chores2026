@@ -174,12 +174,15 @@ export default function LandingPage() {
           gap: 0.5rem;
           margin: 1rem 0 0;
           padding: 0.5rem 1rem;
-          background: white;
+          background: rgba(255, 255, 255, 0.7);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border: 1px solid rgba(255, 255, 255, 0.3);
           border-radius: 20px;
           font-size: 0.875rem;
           color: #059669;
           font-weight: 500;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
         }
 
         /* Section titles */
@@ -206,10 +209,13 @@ export default function LandingPage() {
         .demo-container {
           max-width: 500px;
           margin: 0 auto;
-          background: white;
+          background: rgba(255, 255, 255, 0.75);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border: 1px solid rgba(255, 255, 255, 0.4);
           border-radius: 16px;
           padding: 1.5rem;
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
           position: relative;
         }
         .demo-badge {
@@ -420,7 +426,8 @@ export default function LandingPage() {
             color: #cbd5e1;
           }
           .hero-pwa {
-            background: #1e3a5f;
+            background: rgba(30, 58, 95, 0.7);
+            border: 1px solid rgba(96, 165, 250, 0.2);
             color: #93c5fd;
           }
           .section-title {
@@ -430,7 +437,8 @@ export default function LandingPage() {
             background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
           }
           .demo-container {
-            background: #1e3a5f;
+            background: rgba(30, 58, 95, 0.7);
+            border: 1px solid rgba(96, 165, 250, 0.15);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
           }
           .demo-badge {

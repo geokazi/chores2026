@@ -123,10 +123,10 @@ export default function ThemeToggle() {
         :root[data-theme-mode="light"] .nav-link-primary { background: #10b981 !important; color: white !important; }
         :root[data-theme-mode="light"] .hero-title { color: #064e3b !important; }
         :root[data-theme-mode="light"] .hero-subtitle { color: #4b5563 !important; }
-        :root[data-theme-mode="light"] .hero-pwa { background: white !important; color: #059669 !important; box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important; }
+        :root[data-theme-mode="light"] .hero-pwa { background: rgba(255,255,255,0.7) !important; backdrop-filter: blur(12px) !important; -webkit-backdrop-filter: blur(12px) !important; border: 1px solid rgba(255,255,255,0.3) !important; color: #059669 !important; box-shadow: 0 4px 16px rgba(0,0,0,0.08) !important; }
         :root[data-theme-mode="light"] .section-title { color: #064e3b !important; }
         :root[data-theme-mode="light"] .demo-section { background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%) !important; }
-        :root[data-theme-mode="light"] .demo-container { background: white !important; box-shadow: 0 8px 32px rgba(0,0,0,0.08) !important; }
+        :root[data-theme-mode="light"] .demo-container { background: rgba(255,255,255,0.75) !important; backdrop-filter: blur(16px) !important; -webkit-backdrop-filter: blur(16px) !important; border: 1px solid rgba(255,255,255,0.4) !important; box-shadow: 0 8px 32px rgba(0,0,0,0.1) !important; }
         :root[data-theme-mode="light"] .demo-badge { background: #10b981 !important; }
         :root[data-theme-mode="light"] .demo-title { color: #064e3b !important; }
         :root[data-theme-mode="light"] .demo-subtitle { color: #6b7280 !important; }
@@ -176,10 +176,10 @@ export default function ThemeToggle() {
         :root[data-theme-mode="dark"] .nav-link-primary { background: #3b82f6 !important; }
         :root[data-theme-mode="dark"] .hero-title { color: #f1f5f9 !important; }
         :root[data-theme-mode="dark"] .hero-subtitle { color: #cbd5e1 !important; }
-        :root[data-theme-mode="dark"] .hero-pwa { background: #1e3a5f !important; color: #93c5fd !important; }
+        :root[data-theme-mode="dark"] .hero-pwa { background: rgba(30,58,95,0.7) !important; backdrop-filter: blur(12px) !important; -webkit-backdrop-filter: blur(12px) !important; border: 1px solid rgba(96,165,250,0.2) !important; color: #93c5fd !important; }
         :root[data-theme-mode="dark"] .section-title { color: #f1f5f9 !important; }
         :root[data-theme-mode="dark"] .demo-section { background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%) !important; }
-        :root[data-theme-mode="dark"] .demo-container { background: #1e3a5f !important; box-shadow: 0 8px 32px rgba(0,0,0,0.4) !important; }
+        :root[data-theme-mode="dark"] .demo-container { background: rgba(30,58,95,0.7) !important; backdrop-filter: blur(16px) !important; -webkit-backdrop-filter: blur(16px) !important; border: 1px solid rgba(96,165,250,0.15) !important; box-shadow: 0 8px 32px rgba(0,0,0,0.4) !important; }
         :root[data-theme-mode="dark"] .demo-badge { background: #3b82f6 !important; }
         :root[data-theme-mode="dark"] .demo-title { color: #f1f5f9 !important; }
         :root[data-theme-mode="dark"] .demo-subtitle { color: #94a3b8 !important; }
