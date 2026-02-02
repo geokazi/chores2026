@@ -468,7 +468,7 @@ export default function TeaserCards() {
 
         /* Modal */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; padding: 1rem; z-index: 1000; }
-        .modal-content { background: white; border-radius: 16px; padding: 2rem; max-width: 440px; width: 100%; position: relative; max-height: 90vh; overflow-y: auto; }
+        .modal-content { background: white; border-radius: 16px; padding: 2rem 2rem 2.5rem; max-width: 440px; width: 100%; position: relative; max-height: 90vh; overflow-y: auto; }
         .modal-close { position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.5rem; color: #9ca3af; cursor: pointer; }
         .modal-close:hover { color: #4b5563; }
 
@@ -480,7 +480,7 @@ export default function TeaserCards() {
 
         /* Question */
         .question-text { font-size: 1.25rem; font-weight: 600; text-align: center; color: var(--color-text, #064e3b); margin: 0 0 1.5rem; }
-        .quiz-options { display: flex; flex-direction: column; gap: 0.75rem; }
+        .quiz-options { display: flex; flex-direction: column; gap: 0.75rem; padding-bottom: 0.5rem; }
         .quiz-option { display: flex; align-items: center; gap: 0.75rem; padding: 1rem; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 12px; cursor: pointer; transition: all 0.2s; text-align: left; }
         .quiz-option:hover { border-color: var(--color-primary, #10b981); background: #f0fdf4; }
         .option-emoji { font-size: 1.5rem; flex-shrink: 0; }
