@@ -3,7 +3,7 @@
 **Date**: February 1, 2026
 **Status**: ✅ COMPLETE (see [Implementation Milestone](../milestones/20260201_landing_page_demand_capture.md))
 **Author**: Product Team
-**Related**: Demo Mode, Account Types, UX Trends Assessment
+**Related**: Demo Mode, Account Types, UX Trends Assessment, [Assessment Questions Research](../research/20260201_assessment_questions_research.md)
 
 ## Executive Summary
 

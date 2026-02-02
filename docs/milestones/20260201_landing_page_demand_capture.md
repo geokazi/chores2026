@@ -3,7 +3,7 @@
 **Date**: February 1, 2026
 **Status**: ✅ Complete
 **Author**: Claude Code AI
-**Related**: [Planning Doc](../planned/20260201_landing_page_teaser_cards.md), [UX Trends Assessment](../planned/20260131_ux_trends_assessment.md), [Account Types](../planned/20260131_account_types_personal_hubs.md)
+**Related**: [Planning Doc](../planned/20260201_landing_page_teaser_cards.md), [UX Trends Assessment](../planned/20260131_ux_trends_assessment.md), [Account Types](../planned/20260131_account_types_personal_hubs.md), [Assessment Questions Research](../research/20260201_assessment_questions_research.md)
 
 ## Overview
 
@@ -37,7 +37,7 @@ Implemented a value-first landing page with inline demo, teaser cards for demand
 3. Personalized result based on answers (8 persona types)
 4. Optional email capture with context
 
-**Persona Types**:
+**Persona Types** (see [Assessment Questions Research](../research/20260201_assessment_questions_research.md) for detailed analysis):
 | Feature | Personas |
 |---------|----------|
 | Roommates | fair_seeker, peace_keeper, system_builder, optimizer |
