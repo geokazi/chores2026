@@ -1,8 +1,8 @@
 # ChoreGami 2026 Documentation
 
-**Version**: 1.34
+**Version**: 1.35
 **Status**: ✅ Production Ready
-**Last Updated**: January 31, 2026 (Points Consistency architecture + Account Types brainstorm)
+**Last Updated**: February 1, 2026 (Landing Page with demand capture, assessment quiz, theme toggle)
 
 **Project Overview**: A simplified, real-time chore completion system built with Deno Fresh, transforming routine family chores into an engaging, competitive experience with sub-second real-time updates across all family devices.
 
@@ -87,6 +87,8 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | TBD | [**Account Types & Personal Hubs**](./planned/20260131_account_types_personal_hubs.md) | 📋 Planned | Support families, roommates, couples, solo users; age-based gamification; fairness tracking |
 | TBD | [↳ 2026 UX Trends Assessment](./planned/20260131_ux_trends_assessment.md) | 📋 Planned | Progress indicators (P1), transparency banner (P1), demo mode (P2), passkey auth (P3) |
 | 2026-01-31 | [**Points Consistency (Single Source of Truth)**](./troubleshooting/20260131_points_consistency_single_source_of_truth.md) | ✅ Complete | All pages show identical point totals; timezone-aware week calculations; troubleshooting guide |
+| 2026-02-01 | [**Landing Page & Demand Capture**](./milestones/20260201_landing_page_demand_capture.md) | ✅ Complete | Value-first landing page, teaser cards, 3-question assessment quiz, theme toggle, rich analytics |
+| — | [↳ Planning Doc](./planned/20260201_landing_page_teaser_cards.md) | ✅ Complete | Original design spec with teaser card strategy |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 
@@ -278,6 +280,7 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 - ✅ **Rewards Marketplace (P3)**: Parent-defined JSONB catalog, **parent-approval flow** (kid claims → pending request, parent "Mark Done" → points deducted + transaction created), positive framing ("Claim" not "Buy"), family-friendly language ("Rewards to Give"), starter templates for empty catalog, encouraging "Earn X more pts 💪" for unaffordable rewards, purchase history in `reward_purchases` table; routes: `/kid/rewards`, `/parent/rewards`, `/api/rewards/*`
 - ✅ **Savings Goals (P4)**: Kid-created goals in profile preferences JSONB, progress bars with auto-update, parent "boost" contributions (no balance deduction), celebration on achievement, custom delete confirmation modal, **fun empty state** with bouncing icon + goal ideas (🍦10/🎮50/🎧60/🎢80 pts) + parent-assist CTA; routes: `/kid/goals`, `/api/goals`
 - ✅ **Confetti Celebrations**: Multi-sensory reward system - animated confetti (green/gold/multi-color), Web Audio tones (cheerful/cha-ching/fanfare), haptic feedback (Android vibration + iOS 18+ switch hack), weekly finale (5s confetti rain), CSS element animations (success pulse, milestone glow, screen shake); user preference toggle; canvas-confetti library via CDN
+- ✅ **Landing Page & Demand Capture**: Value-first landing at `/landing` with inline demo, teaser cards (Families/Roommates/Just Me), 3-question assessment quiz with 8 persona types, theme toggle (light/dark), rich analytics (navigator API, anonymized IP, timezone), glassmorphism styling, Ocean Depth dark mode theme
 
 ### Known Limitations
 - **Testing**: Comprehensive test suite not yet implemented
@@ -326,5 +329,5 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 
 ---
 
-*Last updated: January 30, 2026 (v1.33)*
+*Last updated: February 1, 2026 (v1.35)*
 *Maintained by: Claude Code AI Assistant*

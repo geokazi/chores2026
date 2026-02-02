@@ -36,15 +36,15 @@ Web research assessment of ChoreGami's planned context-aware setup routes agains
 
 ## Identified Gaps
 
-| Gap | Effort | Impact | Priority |
-|-----|--------|--------|----------|
-| Progress indicators ("Step 1 of 2") | **2-4 hrs** | Medium | P1 |
-| Gamification transparency banner | **2-4 hrs** | Medium | P1 |
-| Static demo mode (value before signup) | **1-2 days** | High | P2 |
-| Biometric/passkey auth | **1-2 days** | Low-Medium | P3 |
+| Gap | Effort | Impact | Priority | Status |
+|-----|--------|--------|----------|--------|
+| Progress indicators ("Step 1 of 2") | **2-4 hrs** | Medium | P1 | 📋 Planned |
+| Gamification transparency banner | **2-4 hrs** | Medium | P1 | 📋 Planned |
+| Static demo mode (value before signup) | **1-2 days** | High | P2 | ✅ Complete |
+| Biometric/passkey auth | **1-2 days** | Low-Medium | P3 | 📋 Planned |
 
 **Total for P1s**: ~4-8 hours
-**Total with P2**: ~2-3 days
+**P2 completed**: Feb 1, 2026 via [Landing Page inline demo](../milestones/20260201_landing_page_demand_capture.md)
 
 ---
 
@@ -104,7 +104,9 @@ Web research assessment of ChoreGami's planned context-aware setup routes agains
 
 ---
 
-## P2: Static Demo Mode (1-2 days)
+## P2: Static Demo Mode (1-2 days) ✅ IMPLEMENTED
+
+**Status**: Implemented via Landing Page inline demo. See [Landing Page Milestone](../milestones/20260201_landing_page_demand_capture.md).
 
 **Trend**: "Value before signup" - let users experience the product before committing to account creation.
 
@@ -187,14 +189,14 @@ Web research assessment of ChoreGami's planned context-aware setup routes agains
 
 ## Implementation Priority
 
-| Priority | Feature | Effort | Cumulative |
-|----------|---------|--------|------------|
-| **P1** | Progress indicators | 2-4 hrs | 2-4 hrs |
-| **P1** | Transparency banner | 2-4 hrs | 4-8 hrs |
-| **P2** | Static demo mode | 1-2 days | 2-3 days |
-| **P3** | Passkey auth | 1-2 days | 3-5 days |
+| Priority | Feature | Effort | Status |
+|----------|---------|--------|--------|
+| **P1** | Progress indicators | 2-4 hrs | 📋 Planned |
+| **P1** | Transparency banner | 2-4 hrs | 📋 Planned |
+| **P2** | Static demo mode | 1-2 days | ✅ Complete (via Landing Page) |
+| **P3** | Passkey auth | 1-2 days | 📋 Planned |
 
-**Recommendation**: Implement P1s immediately (quick wins), P2 for next sprint, P3 when Supabase WebAuthn stabilizes.
+**Recommendation**: P2 implemented via landing page inline demo (Feb 1, 2026). P1s still available as quick wins. P3 when Supabase WebAuthn stabilizes.
 
 ---
 
@@ -226,6 +228,7 @@ After implementing these improvements, track:
 ## Related Documentation
 
 - [Account Types & Personal Hubs](./20260131_account_types_personal_hubs.md) - Main architecture brainstorm
+- [Landing Page & Demand Capture](../milestones/20260201_landing_page_demand_capture.md) - **P2 Demo Mode implementation** + assessment quiz
 - [Family Member Invites](../milestones/20260127_family_member_invites.md) - Invite flow implementation
 - [Referral Share Feature](./20260130_referral_share_feature.md) - Referral system
 - [Authentication Security Hardening](../milestones/20260118_authentication_security_hardening.md) - Current auth implementation

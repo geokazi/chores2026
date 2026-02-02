@@ -1,7 +1,7 @@
 # Landing Page & Teaser Cards for Demand Tracking
 
 **Date**: February 1, 2026
-**Status**: Ready for Implementation
+**Status**: ✅ COMPLETE (see [Implementation Milestone](../milestones/20260201_landing_page_demand_capture.md))
 **Author**: Product Team
 **Related**: Demo Mode, Account Types, UX Trends Assessment
 
@@ -392,16 +392,24 @@ ORDER BY date DESC, clicks DESC;
 
 ## Next Steps
 
-1. [ ] Create `routes/landing.tsx` with hero + teaser cards
-2. [ ] Create `islands/TeaserCard.tsx` with click tracking
-3. [ ] Create `islands/LearnMoreModal.tsx` for coming soon
-4. [ ] Create `routes/api/demand-signal.ts` endpoint
-5. [ ] Run migration for `demand_signals` table
-6. [ ] Connect "Try Demo" to existing `/demo` route
-7. [ ] Deploy and monitor signals
+1. [x] Create `routes/landing.tsx` with hero + teaser cards
+2. [x] Create `islands/TeaserCards.tsx` with assessment quiz (enhanced from original TeaserCard)
+3. [x] Create `islands/ThemeToggle.tsx` for light/dark mode with analytics
+4. [x] Create `routes/api/demand-signal.ts` endpoint with rich analytics
+5. [x] Document v2 schema in `sql/20260201_demand_signals_v2_assessment.sql`
+6. [x] Connect "Try Demo" to inline LandingDemo component
+7. [x] Deploy and monitor signals
+
+**Enhancements beyond original plan**:
+- 3-question assessment quiz with 8 persona types (40%+ conversion potential)
+- Theme toggle with time-of-day analytics
+- Rich analytics (navigator API, anonymized IP, timezone)
+- Glassmorphism styling on demo container and PWA badge
+- Full dark mode support with Ocean Depth blue theme
 
 ---
 
-**Status**: Ready for Implementation
+**Status**: ✅ COMPLETE
 **Priority**: P1 (drives product roadmap decisions)
-**Effort**: 2-4 hours
+**Effort**: ~4 hours (as estimated)
+**Implementation**: [Milestone Doc](../milestones/20260201_landing_page_demand_capture.md)
