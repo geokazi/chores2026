@@ -362,6 +362,91 @@ export default function LandingPage() {
             transform: rotate(90deg);
           }
         }
+
+        /* Scroll reveal animations */
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .hero {
+          animation: fadeInUp 0.6s ease-out;
+        }
+        .teaser-section {
+          animation: fadeInUp 0.6s ease-out 0.1s both;
+        }
+        .demo-section {
+          animation: fadeInUp 0.6s ease-out 0.2s both;
+        }
+        .how-it-works {
+          animation: fadeInUp 0.6s ease-out 0.3s both;
+        }
+        .cta-section {
+          animation: fadeInUp 0.6s ease-out 0.4s both;
+        }
+
+        /* Dark mode support */
+        @media (prefers-color-scheme: dark) {
+          .landing-page {
+            background: linear-gradient(180deg, #0a1f14 0%, #1a2e23 100%);
+          }
+          .landing-logo {
+            color: #34d399;
+          }
+          .nav-link {
+            color: #d1fae5;
+          }
+          .nav-link:hover {
+            background: rgba(52, 211, 153, 0.15);
+          }
+          .hero-title {
+            color: #ecfdf5;
+          }
+          .hero-subtitle {
+            color: #a7f3d0;
+          }
+          .hero-pwa {
+            background: #1f3d2d;
+            color: #6ee7b7;
+          }
+          .section-title {
+            color: #ecfdf5;
+          }
+          .demo-section {
+            background: linear-gradient(180deg, #1a2e23 0%, #0a1f14 100%);
+          }
+          .demo-container {
+            background: #1f3d2d;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+          }
+          .demo-title {
+            color: #ecfdf5;
+          }
+          .demo-subtitle {
+            color: #a7f3d0;
+          }
+          .step {
+            background: #1f3d2d;
+          }
+          .step-text {
+            color: #ecfdf5;
+          }
+          .landing-footer {
+            color: #9ca3af;
+          }
+          .landing-footer a {
+            color: #9ca3af;
+          }
+          .landing-footer a:hover {
+            color: #34d399;
+          }
+        }
       `}</style>
     </div>
   );
