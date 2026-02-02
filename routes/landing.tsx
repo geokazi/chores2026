@@ -38,7 +38,8 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section class="hero">
         <h1 class="hero-title">Household tasks. Sorted.</h1>
-        <p class="hero-subtitle">One app for families, roommates, and you.</p>
+        <p class="hero-subtitle">For families, roommates, and you.</p>
+        <p class="hero-pwa">No app to download. Works on any device.</p>
       </section>
 
       {/* Teaser Cards - Who's this for? */}
@@ -81,7 +82,7 @@ export default function LandingPage() {
       {/* Final CTA */}
       <section class="cta-section">
         <h2 class="cta-title">Ready to get started?</h2>
-        <p class="cta-subtitle">Free to use. Set up in under 2 minutes.</p>
+        <p class="cta-subtitle">Free to use. No download. Set up in 2 minutes.</p>
         <div class="cta-buttons">
           <a href="/register" class="btn btn-primary btn-large">Create Free Account</a>
           <a href="/login" class="btn btn-secondary">Sign In</a>
@@ -164,6 +165,19 @@ export default function LandingPage() {
           font-size: 1.25rem;
           color: #4b5563;
           margin: 0;
+        }
+        .hero-pwa {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          margin: 1rem 0 0;
+          padding: 0.5rem 1rem;
+          background: white;
+          border-radius: 20px;
+          font-size: 0.875rem;
+          color: #059669;
+          font-weight: 500;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
 
         /* Section titles */
