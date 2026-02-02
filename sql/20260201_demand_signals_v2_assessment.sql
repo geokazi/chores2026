@@ -68,20 +68,28 @@
 -- }
 --
 -- ============================================================================
--- Result Types by Feature
+-- Result Types by Feature (13 total personas)
 -- ============================================================================
 --
--- Roommates:
+-- Families (5 types):
+--   - "fairness_seeker"        : Kids complain about fairness, q1 = "unfair" OR q2 = "fair_distribution"
+--   - "reminder_weary"         : Tired of repeating, q1 = "eventually"
+--   - "negotiation_exhausted"  : Endless arguments, q1 = "negotiate"
+--   - "system_builder"         : Needs structure, q1 = "forgot" OR q2 = "clear_expectations"
+--   - "motivation_maker"       : Wants real rewards, q2 = "real_motivation"
+--
+-- Roommates (4 types):
 --   - "fair_seeker"     : Values equality, q2 = "unfair"
---   - "peace_keeper"    : Tired of nagging, q2 = "nagging"
---   - "system_builder"  : Needs structure, q1 = "none" OR q2 = "no_system"
+--   - "peace_keeper"    : Conflict avoidant, q2 = "avoiding" OR q2 = "passive_aggressive"
+--   - "lone_warrior"    : Does most of the work, q1 = "i_do_it"
+--   - "system_builder"  : Needs structure, q1 = "none" OR q2 = "standards"
 --   - "optimizer"       : Default - wants improvement
 --
--- Just Me:
---   - "motivation_seeker"      : Needs motivation, q2 = "motivation"
---   - "overwhelmed_organizer"  : Too many tasks, q2 = "overwhelmed"
---   - "memory_helper"          : Forgets tasks, q2 = "forgetting"
---   - "habit_builder"          : Default - building habits
+-- Just Me (4 types):
+--   - "motivation_seeker"      : Needs motivation, q1 = "motivation" OR q2 = "gamification"
+--   - "overwhelmed_organizer"  : Too many tasks, q1 = "overwhelmed" OR q2 = "small_chunks"
+--   - "memory_helper"          : Forgets tasks, q1 = "forgetting" OR q2 = "reminders"
+--   - "habit_builder"          : Building routines, q1 = "procrastinating" OR q2 = "progress"
 --
 -- ============================================================================
 -- Analytics Queries

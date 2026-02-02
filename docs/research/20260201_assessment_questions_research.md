@@ -223,41 +223,68 @@ Email capture: "Get your personalized action plan"
 
 Based on this research, the landing page quiz (`islands/TeaserCards.tsx`) implemented:
 
-### Simplified 3-Question Flow
+### Full 3-Question Flow for All Personas
 
-| Question | Roommates | Just Me |
-|----------|-----------|---------|
-| Q1: Current method | How do you currently split chores? | How do you currently manage tasks? |
-| Q2: Pain point | What's your biggest frustration? | What's your biggest challenge? |
-| Q3: Context | How many people in your household? | What would help you most? |
+| Persona | Q1 | Q2 | Q3 |
+|---------|----|----|-----|
+| **Families** | How do your kids respond? | What would make the biggest difference? | How many kids? |
+| **Roommates** | How do you currently handle chores? | What causes the most tension? | How many people share your place? |
+| **Just Me** | What makes managing your place hardest? | What would help you most? | Which best describes you? |
 
-### 8 Persona Types Implemented
+### 13 Persona Types Implemented
 
-**Roommates**:
+**Families (5 types)**:
+- `fairness_seeker` - Kids complain about fairness (Q1: unfair OR Q2: fair_distribution)
+- `reminder_weary` - Tired of repeating (Q1: eventually)
+- `negotiation_exhausted` - Endless arguments (Q1: negotiate)
+- `system_builder` - Needs structure (Q1: forgot OR Q2: clear_expectations)
+- `motivation_maker` - Wants real rewards (Q2: real_motivation)
+
+**Roommates (4 types)**:
 - `fair_seeker` - Values equality (Q2: unfair)
-- `peace_keeper` - Tired of nagging (Q2: nagging)
-- `system_builder` - Needs structure (Q1: none OR Q2: no_system)
-- `optimizer` - Default type
+- `peace_keeper` - Conflict avoidant (Q2: avoiding OR passive_aggressive)
+- `lone_warrior` - Does most of the work (Q1: i_do_it)
+- `system_builder` / `optimizer` - Needs/has structure
 
-**Just Me**:
-- `motivation_seeker` - Needs motivation (Q2: motivation)
-- `overwhelmed_organizer` - Too many tasks (Q2: overwhelmed)
-- `memory_helper` - Forgets tasks (Q2: forgetting)
-- `habit_builder` - Default type
+**Just Me (4 types)**:
+- `motivation_seeker` - Needs motivation (Q1: motivation OR Q2: gamification)
+- `overwhelmed_organizer` - Too many tasks (Q1: overwhelmed OR Q2: small_chunks)
+- `memory_helper` - Forgets tasks (Q1: forgetting OR Q2: reminders)
+- `habit_builder` - Building routines (Q1: procrastinating OR Q2: progress)
 
-### Key Insight Applied
+### Emotional Language Applied
 
-The implementation uses **specific language busy parents actually say** ("That's not fair!", "I forgot", "After the 5th reminder"). This mirrors the "psychological assessment" pattern that converts 40%+ because users see themselves in the answers.
+Questions now use **specific language people actually say**:
+- "That's not fair! Why do I have to?"
+- "I forgot" / "I didn't know"
+- "They do them... after the 5th reminder"
+- "Honestly, I do most of it to avoid conflict"
+- "Procrastinating - no one sees the mess"
+
+### Expanded Result Messages
+
+Each result now includes:
+- **Title**: Persona name (e.g., "The Reminder-Weary Parent")
+- **Hook**: One-line emotional hook (e.g., "Imagine never saying 'did you do your chores?' again.")
+- **Description**: 3-sentence copy following affirm → gap → hope framework
+
+### Families Path Enhancement
+
+For the "Families" persona (live product):
+- Quiz still captures demand signals
+- Primary CTA is "Try the demo" (scrolls to demo section)
+- Secondary option: "Get tips" via email capture
+- After email submit: "Try the demo now" button
 
 ---
 
 ## Future Enhancements
 
 - [ ] A/B test question order
-- [ ] Add emotional impact question for families path
-- [ ] Expand to 13 persona types (from current 8)
+- [ ] Add emotional impact question ("How do you feel at the end of most days?")
 - [ ] Test "Skip to email" option for impatient users
 - [ ] Add meal planning and calendar question paths
+- [ ] Add social proof counter to results
 
 ---
 
