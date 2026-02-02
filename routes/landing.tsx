@@ -391,60 +391,78 @@ export default function LandingPage() {
           animation: fadeInUp 0.6s ease-out 0.4s both;
         }
 
-        /* Dark mode support */
+        /* Dark mode support - Ocean Depth blue */
         @media (prefers-color-scheme: dark) {
           .landing-page {
-            background: linear-gradient(180deg, #0a1f14 0%, #1a2e23 100%);
+            background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
           }
           .landing-logo {
-            color: #34d399;
+            color: #60a5fa;
           }
           .nav-link {
-            color: #d1fae5;
+            color: #e0e7ff;
           }
           .nav-link:hover {
-            background: rgba(52, 211, 153, 0.15);
+            background: rgba(96, 165, 250, 0.15);
+          }
+          .nav-link-primary {
+            background: #3b82f6;
+          }
+          .nav-link-primary:hover {
+            background: #2563eb;
           }
           .hero-title {
-            color: #ecfdf5;
+            color: #f1f5f9;
           }
           .hero-subtitle {
-            color: #a7f3d0;
+            color: #cbd5e1;
           }
           .hero-pwa {
-            background: #1f3d2d;
-            color: #6ee7b7;
+            background: #1e3a5f;
+            color: #93c5fd;
           }
           .section-title {
-            color: #ecfdf5;
+            color: #f1f5f9;
           }
           .demo-section {
-            background: linear-gradient(180deg, #1a2e23 0%, #0a1f14 100%);
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
           }
           .demo-container {
-            background: #1f3d2d;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            background: #1e3a5f;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+          }
+          .demo-badge {
+            background: #3b82f6;
           }
           .demo-title {
-            color: #ecfdf5;
+            color: #f1f5f9;
           }
           .demo-subtitle {
-            color: #a7f3d0;
+            color: #94a3b8;
           }
           .step {
-            background: #1f3d2d;
+            background: #1e3a5f;
+          }
+          .step-number {
+            background: #3b82f6;
           }
           .step-text {
-            color: #ecfdf5;
+            color: #f1f5f9;
+          }
+          .cta-section {
+            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+          }
+          .btn-primary {
+            color: #1e40af;
           }
           .landing-footer {
-            color: #9ca3af;
+            color: #94a3b8;
           }
           .landing-footer a {
-            color: #9ca3af;
+            color: #94a3b8;
           }
           .landing-footer a:hover {
-            color: #34d399;
+            color: #60a5fa;
           }
         }
       `}</style>
