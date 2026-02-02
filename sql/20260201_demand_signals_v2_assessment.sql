@@ -1,6 +1,7 @@
--- Demand Signals v2: Assessment Quiz Support
+-- Demand Signals v2: Assessment Quiz + Rich Analytics
 -- Date: February 1, 2026
--- Purpose: Document extended JSONB schema for assessment quiz data
+-- Updated: February 1, 2026 (added navigator/IP analytics)
+-- Purpose: Document extended JSONB schema for assessment quiz data + analytics
 -- Note: No schema migration needed - JSONB handles new fields automatically
 
 -- ============================================================================
@@ -17,20 +18,53 @@
 --   "referrer": "https://..."          -- Referral source
 -- }
 --
--- v2 (assessment quiz results):
+-- v2 (assessment quiz results + rich analytics):
 -- {
 --   "v": 2,
---   "feature": "roommates" | "just_me",
+--   "feature": "roommates" | "just_me" | "theme_toggle",
 --   "email": "user@example.com",       -- Optional (captured after quiz)
 --   "session_id": "uuid",
+--
+--   -- Server-side context (from request headers)
+--   "ip_anon": "192.168.1.0",          -- Anonymized IP (last octet zeroed for GDPR)
 --   "user_agent": "Mozilla/...",
 --   "referrer": "https://...",
---   "assessment": {                    -- Quiz answers
+--   "origin": "https://choregami.com",
+--   "host": "choregami.com",
+--
+--   -- Client-side navigator details
+--   "navigator": {
+--     "language": "en-US",             -- Primary language
+--     "languages": ["en-US", "es"],    -- Preferred languages (top 3)
+--     "platform": "MacIntel",          -- OS/device platform
+--     "vendor": "Google Inc.",         -- Browser vendor
+--     "cookieEnabled": true,
+--     "online": true,
+--     "screen": {
+--       "width": 1920,
+--       "height": 1080,
+--       "pixelRatio": 2                -- Retina/HiDPI detection
+--     },
+--     "timezone": "America/New_York"   -- IANA timezone
+--   },
+--
+--   -- Assessment quiz data (for roommates/just_me)
+--   "assessment": {
 --     "q1": "informal",                -- How they currently handle tasks
 --     "q2": "nagging",                 -- Their biggest frustration
 --     "q3": "3-4"                      -- Household size / improvement goal
 --   },
 --   "result_type": "peace_keeper"      -- Computed persona type
+-- }
+--
+-- Theme toggle assessment format:
+-- {
+--   "assessment": {
+--     "switched_to": "light" | "dark",
+--     "hour_utc": 14,
+--     "hour_local": 9,
+--     "day_of_week": 6                 -- 0=Sunday, 6=Saturday
+--   }
 -- }
 --
 -- ============================================================================
@@ -109,3 +143,73 @@
 --     NULLIF(COUNT(*) FILTER (WHERE data->'assessment' IS NOT NULL), 0), 1) as email_conversion
 -- FROM demand_signals
 -- GROUP BY 1;
+
+-- ============================================================================
+-- Navigator & Device Analytics
+-- ============================================================================
+
+-- Users by timezone (understand geographic distribution)
+-- SELECT
+--   data->'navigator'->>'timezone' as timezone,
+--   COUNT(*)
+-- FROM demand_signals
+-- WHERE data->'navigator'->>'timezone' IS NOT NULL
+-- GROUP BY 1 ORDER BY 2 DESC;
+
+-- Device breakdown (mobile vs desktop by screen width)
+-- SELECT
+--   CASE
+--     WHEN (data->'navigator'->'screen'->>'width')::int < 768 THEN 'mobile'
+--     WHEN (data->'navigator'->'screen'->>'width')::int < 1024 THEN 'tablet'
+--     ELSE 'desktop'
+--   END as device_type,
+--   COUNT(*)
+-- FROM demand_signals
+-- WHERE data->'navigator'->'screen'->>'width' IS NOT NULL
+-- GROUP BY 1 ORDER BY 2 DESC;
+
+-- Language preferences (i18n prioritization)
+-- SELECT
+--   data->'navigator'->>'language' as language,
+--   COUNT(*)
+-- FROM demand_signals
+-- WHERE data->'navigator'->>'language' IS NOT NULL
+-- GROUP BY 1 ORDER BY 2 DESC;
+
+-- Platform breakdown (OS/device detection)
+-- SELECT
+--   data->'navigator'->>'platform' as platform,
+--   COUNT(*)
+-- FROM demand_signals
+-- WHERE data->'navigator'->>'platform' IS NOT NULL
+-- GROUP BY 1 ORDER BY 2 DESC;
+
+-- Retina/HiDPI users (design considerations)
+-- SELECT
+--   CASE
+--     WHEN (data->'navigator'->'screen'->>'pixelRatio')::float >= 2 THEN 'retina'
+--     ELSE 'standard'
+--   END as display_type,
+--   COUNT(*)
+-- FROM demand_signals
+-- WHERE data->'navigator'->'screen'->>'pixelRatio' IS NOT NULL
+-- GROUP BY 1;
+
+-- Theme toggle patterns by time of day
+-- SELECT
+--   data->'assessment'->>'switched_to' as switched_to,
+--   data->'assessment'->>'hour_local' as hour,
+--   COUNT(*)
+-- FROM demand_signals
+-- WHERE data->>'feature' = 'theme_toggle'
+-- GROUP BY 1, 2 ORDER BY 1, 2;
+
+-- Geographic distribution by anonymized IP prefix
+-- SELECT
+--   SPLIT_PART(data->>'ip_anon', '.', 1) || '.' ||
+--   SPLIT_PART(data->>'ip_anon', '.', 2) || '.x.x' as ip_prefix,
+--   COUNT(*)
+-- FROM demand_signals
+-- WHERE data->>'ip_anon' IS NOT NULL
+-- GROUP BY 1 ORDER BY 2 DESC
+-- LIMIT 20;
