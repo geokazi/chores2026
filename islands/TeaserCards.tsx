@@ -428,6 +428,115 @@ export default function TeaserCards() {
           color: #4b5563;
           margin: 0;
         }
+
+        /* Dark mode - Ocean Depth blue */
+        @media (prefers-color-scheme: dark) {
+          .teaser-card {
+            background: #1e293b;
+          }
+          .teaser-card:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+          }
+          .teaser-card-live {
+            border-color: #3b82f6;
+          }
+          .teaser-card-live:hover {
+            border-color: #60a5fa;
+          }
+          .teaser-card-soon {
+            border-color: #334155;
+          }
+          .teaser-card-soon:hover {
+            border-color: #475569;
+          }
+          .card-badge {
+            background: #334155;
+            color: #94a3b8;
+          }
+          .card-title {
+            color: #f1f5f9;
+          }
+          .card-desc {
+            color: #94a3b8;
+          }
+          .card-cta-primary {
+            background: #3b82f6;
+          }
+          .card-cta-primary:hover {
+            background: #2563eb;
+          }
+          .card-cta-secondary {
+            background: #334155;
+            color: #cbd5e1;
+          }
+          .card-cta-secondary:hover {
+            background: #475569;
+          }
+
+          /* Modal dark mode */
+          .modal-overlay {
+            background: rgba(0, 0, 0, 0.7);
+          }
+          .modal-content {
+            background: #1e293b;
+          }
+          .modal-close {
+            color: #64748b;
+          }
+          .modal-close:hover {
+            color: #94a3b8;
+          }
+          .modal-title {
+            color: #f1f5f9;
+          }
+          .modal-desc {
+            color: #94a3b8;
+          }
+          .modal-features {
+            background: #0f172a;
+          }
+          .modal-features h4 {
+            color: #f1f5f9;
+          }
+          .modal-features ul {
+            color: #94a3b8;
+          }
+          .modal-notify {
+            border-color: #334155;
+          }
+          .notify-label {
+            color: #94a3b8;
+          }
+          .notify-input {
+            background: #0f172a;
+            border-color: #334155;
+            color: #f1f5f9;
+          }
+          .notify-input:focus {
+            border-color: #3b82f6;
+          }
+          .notify-input::placeholder {
+            color: #64748b;
+          }
+          .btn-primary {
+            background: #3b82f6;
+          }
+          .btn-primary:hover:not(:disabled) {
+            background: #2563eb;
+          }
+          .btn-ghost {
+            color: #94a3b8;
+          }
+          .btn-ghost:hover {
+            background: #334155;
+          }
+          .success-icon {
+            background: #3b82f6;
+          }
+          .modal-success p {
+            color: #94a3b8;
+          }
+        }
       `}</style>
     </>
   );

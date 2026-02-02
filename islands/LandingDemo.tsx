@@ -229,6 +229,69 @@ export default function LandingDemo() {
           background: #059669;
           transform: translateY(-2px);
         }
+
+        /* Dark mode - Ocean Depth blue */
+        @media (prefers-color-scheme: dark) {
+          .demo-kid {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0.1) 100%);
+          }
+          .kid-name {
+            color: #f1f5f9;
+          }
+          .kid-progress {
+            color: #94a3b8;
+          }
+          .points-value {
+            color: #60a5fa;
+          }
+          .points-label {
+            color: #94a3b8;
+          }
+          .demo-chore {
+            background: #1e293b;
+          }
+          .demo-chore.completed {
+            background: #1e3a5f;
+          }
+          .demo-chore:not(.completed):hover {
+            background: #334155;
+          }
+          .chore-checkbox {
+            background: #0f172a;
+            border-color: #475569;
+            color: #64748b;
+          }
+          .chore-checkbox:hover:not(:disabled) {
+            border-color: #60a5fa;
+            color: #60a5fa;
+          }
+          .demo-chore.completed .chore-checkbox {
+            background: #3b82f6;
+            border-color: #3b82f6;
+          }
+          .chore-name {
+            color: #f1f5f9;
+          }
+          .demo-chore.completed .chore-name {
+            color: #64748b;
+          }
+          .chore-points {
+            color: #34d399;
+          }
+          .demo-chore.completed .chore-points {
+            color: #64748b;
+          }
+          .demo-hint {
+            background: #1e3a5f;
+            color: #94a3b8;
+          }
+          .demo-cta {
+            background: #3b82f6;
+          }
+          .demo-cta:hover {
+            background: #2563eb;
+          }
+        }
       `}</style>
     </div>
   );
