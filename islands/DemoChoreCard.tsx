@@ -87,7 +87,7 @@ export default function DemoChoreCard({ chore, onComplete }: Props) {
             textAlign: "center",
           }}
         >
-          \u2728 Completed! Great job!
+          ✨ Completed! Great job!
         </div>
       )}
 

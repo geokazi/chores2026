@@ -174,7 +174,7 @@ export default function DemoKidDashboard({
         {kidChores.length === 0 && (
           <div class="card" style={{ textAlign: "center", padding: "2rem" }}>
             <p style={{ color: "var(--color-text-light)" }}>
-              \u{1F389} No chores assigned!
+              🎉 No chores assigned!
             </p>
           </div>
         )}
@@ -209,7 +209,7 @@ export default function DemoKidDashboard({
       {/* Leaderboard */}
       <div class="leaderboard" style={{ marginBottom: "1.5rem" }}>
         <div class="leaderboard-header">
-          \u{1F3C6} {familyName} Leaderboard
+          🏆 {familyName} Leaderboard
         </div>
         {sortedKids.map((member, index) => (
           <div
@@ -255,10 +255,10 @@ export default function DemoKidDashboard({
               margin: 0,
             }}
           >
-            \u{1F4DD} Recent Activity
+            📝 Recent Activity
           </h3>
           <span class="live-indicator">
-            \u{1F7E2} Live
+            🟢 Live
           </span>
         </div>
         <div class="activity-feed">
@@ -288,7 +288,7 @@ export default function DemoKidDashboard({
         }}
       >
         <div style={{ fontSize: "0.875rem", color: "var(--color-text)" }}>
-          \u{1F4A1} <strong>Try it!</strong> Tap the checkbox on any chore to complete it and see the points update in real-time.
+          💡 <strong>Try it!</strong> Tap the checkbox on any chore to complete it and see the points update in real-time.
         </div>
       </div>
     </div>
