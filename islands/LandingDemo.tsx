@@ -276,10 +276,12 @@ export default function LandingDemo() {
             color: #64748b;
           }
           .chore-points {
-            color: #34d399;
+            color: white;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
           }
           .demo-chore.completed .chore-points {
-            color: #64748b;
+            color: rgba(255, 255, 255, 0.6);
+            text-shadow: none;
           }
           .demo-hint {
             background: #1e3a5f;
