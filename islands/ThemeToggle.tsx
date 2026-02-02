@@ -133,8 +133,8 @@ export default function ThemeToggle() {
         :root[data-theme-mode="light"] .step { background: white !important; box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important; }
         :root[data-theme-mode="light"] .step-number { background: #10b981 !important; }
         :root[data-theme-mode="light"] .step-text { color: #064e3b !important; }
-        :root[data-theme-mode="light"] .cta-section { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important; }
-        :root[data-theme-mode="light"] .btn-primary { background: white !important; color: #d97706 !important; }
+        :root[data-theme-mode="light"] .cta-section { background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%) !important; }
+        :root[data-theme-mode="light"] .btn-primary { background: white !important; color: #1e40af !important; }
         :root[data-theme-mode="light"] .btn-secondary { background: transparent !important; color: white !important; border: 2px solid rgba(255,255,255,0.5) !important; }
         :root[data-theme-mode="light"] .landing-footer { color: #6b7280 !important; }
         :root[data-theme-mode="light"] .landing-footer a { color: #6b7280 !important; }
@@ -162,8 +162,8 @@ export default function ThemeToggle() {
         :root[data-theme-mode="light"] .demo-chore.completed .chore-checkbox { background: #10b981 !important; border-color: #10b981 !important; color: white !important; }
         :root[data-theme-mode="light"] .chore-name { color: #064e3b !important; }
         :root[data-theme-mode="light"] .demo-chore.completed .chore-name { color: #9ca3af !important; }
-        :root[data-theme-mode="light"] .chore-points { color: #10b981 !important; }
-        :root[data-theme-mode="light"] .demo-chore.completed .chore-points { color: #9ca3af !important; }
+        :root[data-theme-mode="light"] .chore-points { color: white !important; text-shadow: 0 1px 2px rgba(0,0,0,0.3) !important; }
+        :root[data-theme-mode="light"] .demo-chore.completed .chore-points { color: rgba(255,255,255,0.7) !important; text-shadow: none !important; }
         :root[data-theme-mode="light"] .demo-hint { background: #fffbeb !important; color: #6b7280 !important; }
         :root[data-theme-mode="light"] .demo-cta { background: #10b981 !important; color: white !important; }
 

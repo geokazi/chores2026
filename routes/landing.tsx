@@ -285,7 +285,7 @@ export default function LandingPage() {
         .cta-section {
           text-align: center;
           padding: 3rem 1.5rem;
-          background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+          background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
           color: white;
         }
         .cta-title {
