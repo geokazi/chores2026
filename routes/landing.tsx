@@ -285,7 +285,7 @@ export default function LandingPage() {
         .cta-section {
           text-align: center;
           padding: 3rem 1.5rem;
-          background: linear-gradient(135deg, var(--color-primary, #10b981) 0%, #059669 100%);
+          background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
           color: white;
         }
         .cta-title {
@@ -452,10 +452,10 @@ export default function LandingPage() {
             color: #f1f5f9;
           }
           .cta-section {
-            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
           }
           .btn-primary {
-            color: #1e40af;
+            color: #d97706;
           }
           .landing-footer {
             color: #94a3b8;
