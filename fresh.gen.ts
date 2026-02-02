@@ -120,6 +120,7 @@ import * as $SocialAuthButtons from "./islands/SocialAuthButtons.tsx";
 import * as $TeaserCards from "./islands/TeaserCards.tsx";
 import * as $TemplateSelector from "./islands/TemplateSelector.tsx";
 import * as $ThemeInitializer from "./islands/ThemeInitializer.tsx";
+import * as $ThemeToggle from "./islands/ThemeToggle.tsx";
 import * as $WebSocketManager from "./islands/WebSocketManager.tsx";
 import * as $WeeklyProgress from "./islands/WeeklyProgress.tsx";
 import * as $auth_AuthModeSelector from "./islands/auth/AuthModeSelector.tsx";
@@ -260,6 +261,7 @@ const manifest = {
     "./islands/TeaserCards.tsx": $TeaserCards,
     "./islands/TemplateSelector.tsx": $TemplateSelector,
     "./islands/ThemeInitializer.tsx": $ThemeInitializer,
+    "./islands/ThemeToggle.tsx": $ThemeToggle,
     "./islands/WebSocketManager.tsx": $WebSocketManager,
     "./islands/WeeklyProgress.tsx": $WeeklyProgress,
     "./islands/auth/AuthModeSelector.tsx": $auth_AuthModeSelector,
