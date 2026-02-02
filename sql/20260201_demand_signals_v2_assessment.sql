@@ -1,0 +1,111 @@
+-- Demand Signals v2: Assessment Quiz Support
+-- Date: February 1, 2026
+-- Purpose: Document extended JSONB schema for assessment quiz data
+-- Note: No schema migration needed - JSONB handles new fields automatically
+
+-- ============================================================================
+-- JSONB Data Schema v2 (backwards compatible with v1)
+-- ============================================================================
+--
+-- v1 (basic click tracking):
+-- {
+--   "v": 1,
+--   "feature": "roommates" | "just_me",
+--   "email": "user@example.com",       -- Optional
+--   "session_id": "uuid",              -- Anonymous session
+--   "user_agent": "Mozilla/...",       -- Browser context
+--   "referrer": "https://..."          -- Referral source
+-- }
+--
+-- v2 (assessment quiz results):
+-- {
+--   "v": 2,
+--   "feature": "roommates" | "just_me",
+--   "email": "user@example.com",       -- Optional (captured after quiz)
+--   "session_id": "uuid",
+--   "user_agent": "Mozilla/...",
+--   "referrer": "https://...",
+--   "assessment": {                    -- Quiz answers
+--     "q1": "informal",                -- How they currently handle tasks
+--     "q2": "nagging",                 -- Their biggest frustration
+--     "q3": "3-4"                      -- Household size / improvement goal
+--   },
+--   "result_type": "peace_keeper"      -- Computed persona type
+-- }
+--
+-- ============================================================================
+-- Result Types by Feature
+-- ============================================================================
+--
+-- Roommates:
+--   - "fair_seeker"     : Values equality, q2 = "unfair"
+--   - "peace_keeper"    : Tired of nagging, q2 = "nagging"
+--   - "system_builder"  : Needs structure, q1 = "none" OR q2 = "no_system"
+--   - "optimizer"       : Default - wants improvement
+--
+-- Just Me:
+--   - "motivation_seeker"      : Needs motivation, q2 = "motivation"
+--   - "overwhelmed_organizer"  : Too many tasks, q2 = "overwhelmed"
+--   - "memory_helper"          : Forgets tasks, q2 = "forgetting"
+--   - "habit_builder"          : Default - building habits
+--
+-- ============================================================================
+-- Analytics Queries
+-- ============================================================================
+
+-- Total signals by version
+-- SELECT data->>'v' as version, COUNT(*)
+-- FROM demand_signals
+-- GROUP BY 1 ORDER BY 1;
+
+-- Assessment completion rate (v2 signals with assessment data)
+-- SELECT
+--   data->>'feature' as feature,
+--   COUNT(*) FILTER (WHERE data->'assessment' IS NOT NULL) as completed_quiz,
+--   COUNT(*) as total_signals,
+--   ROUND(100.0 * COUNT(*) FILTER (WHERE data->'assessment' IS NOT NULL) / COUNT(*), 1) as completion_rate
+-- FROM demand_signals
+-- GROUP BY 1;
+
+-- Top frustrations by feature
+-- SELECT
+--   data->>'feature' as feature,
+--   data->'assessment'->>'q2' as frustration,
+--   COUNT(*)
+-- FROM demand_signals
+-- WHERE data->'assessment' IS NOT NULL
+-- GROUP BY 1, 2
+-- ORDER BY 1, 3 DESC;
+
+-- Result type distribution
+-- SELECT
+--   data->>'feature' as feature,
+--   data->>'result_type' as persona,
+--   COUNT(*)
+-- FROM demand_signals
+-- WHERE data->>'result_type' IS NOT NULL
+-- GROUP BY 1, 2
+-- ORDER BY 1, 3 DESC;
+
+-- Emails captured with assessment context
+-- SELECT
+--   data->>'email' as email,
+--   data->>'feature' as feature,
+--   data->>'result_type' as persona,
+--   data->'assessment'->>'q2' as frustration,
+--   created_at
+-- FROM demand_signals
+-- WHERE data->>'email' IS NOT NULL
+--   AND data->'assessment' IS NOT NULL
+-- ORDER BY created_at DESC;
+
+-- Conversion funnel: clicked → completed quiz → gave email
+-- SELECT
+--   data->>'feature' as feature,
+--   COUNT(*) as clicked,
+--   COUNT(*) FILTER (WHERE data->'assessment' IS NOT NULL) as completed_quiz,
+--   COUNT(*) FILTER (WHERE data->>'email' IS NOT NULL) as gave_email,
+--   ROUND(100.0 * COUNT(*) FILTER (WHERE data->>'email' IS NOT NULL) /
+--     NULLIF(COUNT(*) FILTER (WHERE data->'assessment' IS NOT NULL), 0), 1) as email_conversion
+-- FROM demand_signals
+-- GROUP BY 1;
