@@ -127,6 +127,22 @@ export default function TeaserCards() {
 
       const resultType = feature ? getResultType(feature, answers) : undefined;
 
+      // Collect navigator details for analytics
+      const nav = typeof navigator !== "undefined" ? {
+        language: navigator.language,
+        languages: navigator.languages?.slice(0, 3),
+        platform: navigator.platform,
+        vendor: navigator.vendor,
+        cookieEnabled: navigator.cookieEnabled,
+        online: navigator.onLine,
+        screen: typeof screen !== "undefined" ? {
+          width: screen.width,
+          height: screen.height,
+          pixelRatio: window.devicePixelRatio,
+        } : undefined,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      } : undefined;
+
       await fetch("/api/demand-signal", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -137,6 +153,7 @@ export default function TeaserCards() {
           session_id: sessionId,
           assessment: answers.q1 ? answers : undefined,
           result_type: resultType,
+          navigator: nav,
         }),
       });
     } catch (error) {

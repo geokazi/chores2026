@@ -43,15 +43,31 @@ export const handler: Handlers = {
         );
       }
 
+      // Get IP address (anonymized - remove last octet for privacy)
+      const forwardedFor = req.headers.get("x-forwarded-for");
+      const realIp = req.headers.get("x-real-ip");
+      const rawIp = forwardedFor?.split(",")[0]?.trim() || realIp || undefined;
+      const anonIp = rawIp ? rawIp.replace(/\.\d+$/, ".0") : undefined; // 192.168.1.123 → 192.168.1.0
+
       // Build JSONB payload - supports both v1 and v2
       const data: Record<string, unknown> = {
         v: v || 1,
         feature,
         email: email || undefined,
         session_id: session_id || undefined,
+        // Server-side context
+        ip_anon: anonIp,
         user_agent: req.headers.get("user-agent") || undefined,
         referrer: req.headers.get("referer") || undefined,
+        origin: req.headers.get("origin") || undefined,
+        host: req.headers.get("host") || undefined,
       };
+
+      // Client-side navigator details (if provided)
+      const { navigator: nav } = body;
+      if (nav && typeof nav === "object") {
+        data.navigator = nav;
+      }
 
       // v2: Include assessment data if provided
       if (assessment && typeof assessment === "object") {

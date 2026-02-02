@@ -36,6 +36,19 @@ export default function ThemeToggle() {
       }
 
       const now = new Date();
+
+      // Collect navigator details for analytics
+      const nav = typeof navigator !== "undefined" ? {
+        language: navigator.language,
+        platform: navigator.platform,
+        screen: typeof screen !== "undefined" ? {
+          width: screen.width,
+          height: screen.height,
+          pixelRatio: window.devicePixelRatio,
+        } : undefined,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      } : undefined;
+
       await fetch("/api/demand-signal", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -49,6 +62,7 @@ export default function ThemeToggle() {
             hour_local: now.getHours(),
             day_of_week: now.getDay(),
           },
+          navigator: nav,
         }),
       });
     } catch (e) {
