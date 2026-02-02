@@ -467,8 +467,8 @@ export default function TeaserCards() {
         .card-cta-secondary:hover { background: #e5e7eb; }
 
         /* Modal */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; padding: 1rem; z-index: 1000; }
-        .modal-content { background: white; border-radius: 16px; padding: 2rem 2rem 2.5rem; max-width: 440px; width: 100%; position: relative; max-height: 90vh; overflow-y: auto; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; padding: 1rem; z-index: 1000; overflow-y: auto; }
+        .modal-content { background: white; border-radius: 16px; padding: 2rem; max-width: 440px; width: 100%; position: relative; margin: auto; }
         .modal-close { position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.5rem; color: #9ca3af; cursor: pointer; }
         .modal-close:hover { color: #4b5563; }
 
