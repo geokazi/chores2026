@@ -58,8 +58,8 @@ export default function LandingPage() {
       <section class="demo-section" id="demo">
         <div class="demo-container">
           <div class="demo-badge">Live Demo</div>
-          <h2 class="demo-title">See it work</h2>
-          <p class="demo-subtitle">Tap to complete a chore. Watch points update.</p>
+          <h2 class="demo-title">See the magic</h2>
+          <p class="demo-subtitle">Chores rotate automatically. No more "that's not fair!"</p>
           <LandingDemo />
         </div>
       </section>
@@ -224,7 +224,7 @@ export default function LandingPage() {
           background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%);
         }
         .demo-container {
-          max-width: 500px;
+          max-width: 520px;
           margin: 0 auto;
           background: rgba(255, 255, 255, 0.9);
           backdrop-filter: blur(16px);

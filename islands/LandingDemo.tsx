@@ -1,6 +1,7 @@
 /**
- * LandingDemo - Simplified inline demo for landing page
- * Shows one kid's chores with interactive completion
+ * LandingDemo - Smart Rotation demo for landing page
+ * Shows two kids with rotating chores + points that update
+ * Key differentiator: automatic weekly rotation for fairness
  */
 
 import { useState } from "preact/hooks";
@@ -11,31 +12,86 @@ interface DemoChore {
   name: string;
   icon: string;
   points: number;
-  status: "pending" | "completed";
+  completed: boolean;
 }
 
-const INITIAL_CHORES: DemoChore[] = [
-  { id: "1", name: "Make Your Bed", icon: "🛏️", points: 10, status: "completed" },
-  { id: "2", name: "Feed the Dog", icon: "🐕", points: 15, status: "pending" },
-  { id: "3", name: "Do Homework", icon: "📚", points: 20, status: "pending" },
-];
+interface KidData {
+  name: string;
+  emoji: string;
+  points: number;
+  chores: DemoChore[];
+}
+
+// Week A chores - Emma gets dishes/trash, Jake gets vacuum/bathroom
+const WEEK_A: { emma: DemoChore[]; jake: DemoChore[] } = {
+  emma: [
+    { id: "e1", name: "Dishes", icon: "🍽️", points: 10, completed: false },
+    { id: "e2", name: "Take out trash", icon: "🗑️", points: 5, completed: true },
+    { id: "e3", name: "Feed the dog", icon: "🐕", points: 5, completed: false },
+  ],
+  jake: [
+    { id: "j1", name: "Vacuum living room", icon: "🧹", points: 15, completed: false },
+    { id: "j2", name: "Clean bathroom", icon: "🚿", points: 10, completed: false },
+    { id: "j3", name: "Take out trash", icon: "🗑️", points: 5, completed: true },
+  ],
+};
+
+// Week B chores - SWAPPED for fairness
+const WEEK_B: { emma: DemoChore[]; jake: DemoChore[] } = {
+  emma: [
+    { id: "e1b", name: "Vacuum living room", icon: "🧹", points: 15, completed: false },
+    { id: "e2b", name: "Clean bathroom", icon: "🚿", points: 10, completed: false },
+    { id: "e3b", name: "Take out trash", icon: "🗑️", points: 5, completed: false },
+  ],
+  jake: [
+    { id: "j1b", name: "Dishes", icon: "🍽️", points: 10, completed: false },
+    { id: "j2b", name: "Feed the dog", icon: "🐕", points: 5, completed: false },
+    { id: "j3b", name: "Take out trash", icon: "🗑️", points: 5, completed: true },
+  ],
+};
 
 export default function LandingDemo() {
-  const [chores, setChores] = useState<DemoChore[]>(INITIAL_CHORES);
-  const [points, setPoints] = useState(245);
+  const [week, setWeek] = useState<"A" | "B">("A");
+  const [emmaPoints, setEmmaPoints] = useState(125);
+  const [jakePoints, setJakePoints] = useState(98);
+  const [emmaChores, setEmmaChores] = useState<DemoChore[]>(WEEK_A.emma);
+  const [jakeChores, setJakeChores] = useState<DemoChore[]>(WEEK_A.jake);
   const [isAnimating, setIsAnimating] = useState<string | null>(null);
+  const [isSwapping, setIsSwapping] = useState(false);
 
-  const completedCount = chores.filter(c => c.status === "completed").length;
+  const handleWeekToggle = (newWeek: "A" | "B") => {
+    if (newWeek === week || isSwapping) return;
 
-  const handleComplete = (choreId: string) => {
+    setIsSwapping(true);
+
+    setTimeout(() => {
+      setWeek(newWeek);
+      if (newWeek === "A") {
+        setEmmaChores(WEEK_A.emma.map(c => ({ ...c, completed: false })));
+        setJakeChores(WEEK_A.jake.map(c => ({ ...c, completed: false })));
+      } else {
+        setEmmaChores(WEEK_B.emma.map(c => ({ ...c, completed: false })));
+        setJakeChores(WEEK_B.jake.map(c => ({ ...c, completed: false })));
+      }
+      setIsSwapping(false);
+    }, 300);
+  };
+
+  const handleComplete = (kid: "emma" | "jake", choreId: string) => {
+    if (isAnimating || isSwapping) return;
+
+    const chores = kid === "emma" ? emmaChores : jakeChores;
+    const setChores = kid === "emma" ? setEmmaChores : setJakeChores;
+    const setPoints = kid === "emma" ? setEmmaPoints : setJakePoints;
+
     const chore = chores.find(c => c.id === choreId);
-    if (!chore || chore.status === "completed" || isAnimating) return;
+    if (!chore || chore.completed) return;
 
     setIsAnimating(choreId);
 
     setTimeout(() => {
       setChores(prev => prev.map(c =>
-        c.id === choreId ? { ...c, status: "completed" } : c
+        c.id === choreId ? { ...c, completed: true } : c
       ));
       setPoints(prev => prev + chore.points);
       setIsAnimating(null);
@@ -44,183 +100,248 @@ export default function LandingDemo() {
   };
 
   return (
-    <div class="landing-demo">
-      {/* Kid info */}
-      <div class="demo-kid">
-        <div class="kid-avatar">👧</div>
-        <div class="kid-info">
-          <span class="kid-name">Emma's Chores</span>
-          <span class="kid-progress">{completedCount}/{chores.length} done today</span>
-        </div>
-        <div class="kid-points">
-          <span class="points-value">{points}</span>
-          <span class="points-label">pts</span>
-        </div>
+    <div class="rotation-demo">
+      {/* Week Toggle */}
+      <div class="week-toggle">
+        <button
+          class={`week-tab ${week === "A" ? "active" : ""}`}
+          onClick={() => handleWeekToggle("A")}
+        >
+          This Week
+        </button>
+        <button
+          class={`week-tab ${week === "B" ? "active" : ""}`}
+          onClick={() => handleWeekToggle("B")}
+        >
+          Next Week
+        </button>
       </div>
 
-      {/* Chore list */}
-      <div class="demo-chores">
-        {chores.map(chore => (
-          <div
-            key={chore.id}
-            class={`demo-chore ${chore.status === "completed" ? "completed" : ""}`}
-          >
-            <button
-              class="chore-checkbox"
-              onClick={() => handleComplete(chore.id)}
-              disabled={chore.status === "completed" || isAnimating === chore.id}
-            >
-              {isAnimating === chore.id ? "⏳" : chore.status === "completed" ? "✓" : "○"}
-            </button>
-            <span class="chore-icon">{chore.icon}</span>
-            <span class="chore-name">{chore.name}</span>
-            <span class="chore-points">+{chore.points}</span>
+      {/* Kids side by side */}
+      <div class={`kids-container ${isSwapping ? "swapping" : ""}`}>
+        {/* Emma */}
+        <div class="kid-column">
+          <div class="kid-header">
+            <span class="kid-emoji">👧</span>
+            <span class="kid-name">Emma</span>
+            <span class="kid-points">{emmaPoints} pts</span>
           </div>
-        ))}
+          <div class="kid-chores">
+            {emmaChores.map(chore => (
+              <div
+                key={chore.id}
+                class={`chore-row ${chore.completed ? "completed" : ""}`}
+                onClick={() => handleComplete("emma", chore.id)}
+              >
+                <span class="chore-check">
+                  {isAnimating === chore.id ? "⏳" : chore.completed ? "✓" : "○"}
+                </span>
+                <span class="chore-icon">{chore.icon}</span>
+                <span class="chore-name">{chore.name}</span>
+                <span class="chore-pts">+{chore.points}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Jake */}
+        <div class="kid-column">
+          <div class="kid-header">
+            <span class="kid-emoji">👦</span>
+            <span class="kid-name">Jake</span>
+            <span class="kid-points">{jakePoints} pts</span>
+          </div>
+          <div class="kid-chores">
+            {jakeChores.map(chore => (
+              <div
+                key={chore.id}
+                class={`chore-row ${chore.completed ? "completed" : ""}`}
+                onClick={() => handleComplete("jake", chore.id)}
+              >
+                <span class="chore-check">
+                  {isAnimating === chore.id ? "⏳" : chore.completed ? "✓" : "○"}
+                </span>
+                <span class="chore-icon">{chore.icon}</span>
+                <span class="chore-name">{chore.name}</span>
+                <span class="chore-pts">+{chore.points}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* Hint */}
-      <div class="demo-hint">
-        💡 Tap the circles to complete chores and earn points!
+      {/* Rotation hint */}
+      <div class="rotation-hint">
+        🔄 Tap "Next Week" to see chores rotate automatically
       </div>
 
       {/* CTA */}
       <a href="/register" class="demo-cta">
-        Create Your Family →
+        Create your household →
       </a>
 
       <style>{`
-        .landing-demo {
+        .rotation-demo {
           display: flex;
           flex-direction: column;
-          gap: 1rem;
+          gap: 0.75rem;
         }
 
-        .demo-kid {
+        /* Week Toggle */
+        .week-toggle {
+          display: flex;
+          background: #f1f5f9;
+          border-radius: 10px;
+          padding: 4px;
+          gap: 4px;
+        }
+        .week-tab {
+          flex: 1;
+          padding: 8px 12px;
+          border: none;
+          border-radius: 8px;
+          font-size: 0.8rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+          background: transparent;
+          color: #6b7280;
+        }
+        .week-tab.active {
+          background: white;
+          color: var(--color-primary, #10b981);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        .week-tab:hover:not(.active) {
+          color: #374151;
+        }
+
+        /* Kids Container */
+        .kids-container {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 0.75rem;
+          transition: opacity 0.3s, transform 0.3s;
+        }
+        .kids-container.swapping {
+          opacity: 0.5;
+          transform: scale(0.98);
+        }
+
+        /* Kid Column */
+        .kid-column {
+          background: #f9fafb;
+          border-radius: 12px;
+          padding: 0.75rem;
+          border: 1px solid #e5e7eb;
+        }
+        .kid-header {
           display: flex;
           align-items: center;
-          gap: 0.75rem;
-          padding: 0.75rem;
-          background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
-          border-radius: 12px;
+          gap: 0.5rem;
+          margin-bottom: 0.75rem;
+          padding-bottom: 0.5rem;
+          border-bottom: 1px solid #e5e7eb;
         }
-        .kid-avatar {
-          font-size: 2rem;
-        }
-        .kid-info {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
+        .kid-emoji {
+          font-size: 1.25rem;
         }
         .kid-name {
+          flex: 1;
           font-weight: 600;
+          font-size: 0.9rem;
           color: var(--color-text, #064e3b);
         }
-        .kid-progress {
-          font-size: 0.75rem;
-          color: #6b7280;
-        }
         .kid-points {
-          display: flex;
-          align-items: baseline;
-          gap: 0.25rem;
-        }
-        .points-value {
-          font-size: 1.5rem;
           font-weight: 700;
+          font-size: 0.85rem;
           color: var(--color-primary, #10b981);
         }
-        .points-label {
-          font-size: 0.75rem;
-          color: #6b7280;
-        }
 
-        .demo-chores {
+        /* Chore Rows */
+        .kid-chores {
           display: flex;
           flex-direction: column;
           gap: 0.5rem;
         }
-        .demo-chore {
+        .chore-row {
           display: flex;
           align-items: center;
-          gap: 0.75rem;
-          padding: 0.75rem;
-          background: #f9fafb;
-          border-radius: 10px;
-          transition: all 0.2s;
-        }
-        .demo-chore.completed {
-          background: #f0fdf4;
-          opacity: 0.8;
-        }
-        .demo-chore:not(.completed):hover {
-          background: #f3f4f6;
-        }
-
-        .chore-checkbox {
-          width: 32px;
-          height: 32px;
-          border: 2px solid #d1d5db;
-          border-radius: 8px;
+          gap: 0.4rem;
+          padding: 0.5rem;
           background: white;
-          font-size: 1rem;
+          border-radius: 8px;
           cursor: pointer;
+          transition: all 0.2s;
+          font-size: 0.75rem;
+        }
+        .chore-row:hover:not(.completed) {
+          background: #f0fdf4;
+          transform: translateX(2px);
+        }
+        .chore-row.completed {
+          opacity: 0.6;
+        }
+        .chore-check {
+          width: 20px;
+          height: 20px;
           display: flex;
           align-items: center;
           justify-content: center;
-          transition: all 0.2s;
+          border: 2px solid #d1d5db;
+          border-radius: 6px;
+          font-size: 0.7rem;
           color: #9ca3af;
+          flex-shrink: 0;
+          background: white;
         }
-        .chore-checkbox:hover:not(:disabled) {
-          border-color: var(--color-primary, #10b981);
-          color: var(--color-primary, #10b981);
-        }
-        .demo-chore.completed .chore-checkbox {
+        .chore-row.completed .chore-check {
           background: var(--color-primary, #10b981);
           border-color: var(--color-primary, #10b981);
           color: white;
         }
-        .chore-checkbox:disabled {
-          cursor: default;
-        }
-
         .chore-icon {
-          font-size: 1.25rem;
+          font-size: 0.9rem;
         }
         .chore-name {
           flex: 1;
-          font-weight: 500;
           color: var(--color-text, #064e3b);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
-        .demo-chore.completed .chore-name {
+        .chore-row.completed .chore-name {
           text-decoration: line-through;
           color: #9ca3af;
         }
-        .chore-points {
+        .chore-pts {
           font-weight: 600;
           color: var(--color-primary, #10b981);
-          font-size: 0.875rem;
+          font-size: 0.7rem;
         }
-        .demo-chore.completed .chore-points {
+        .chore-row.completed .chore-pts {
           color: #9ca3af;
         }
 
-        .demo-hint {
+        /* Hint */
+        .rotation-hint {
           text-align: center;
-          font-size: 0.8rem;
+          font-size: 0.75rem;
           color: #6b7280;
           padding: 0.5rem;
           background: #fffbeb;
           border-radius: 8px;
         }
 
+        /* CTA */
         .demo-cta {
           display: block;
           text-align: center;
-          padding: 0.875rem;
+          padding: 0.75rem;
           background: var(--color-primary, #10b981);
           color: white;
           font-weight: 600;
+          font-size: 0.9rem;
           text-decoration: none;
           border-radius: 10px;
           transition: all 0.2s;
@@ -230,60 +351,137 @@ export default function LandingDemo() {
           transform: translateY(-2px);
         }
 
-        /* Dark mode - Ocean Depth blue */
+        /* Mobile: stack on very small screens */
+        @media (max-width: 380px) {
+          .kids-container {
+            grid-template-columns: 1fr;
+          }
+          .chore-name {
+            max-width: 100px;
+          }
+        }
+
+        /* Dark mode - manual toggle */
+        :root[data-theme-mode="dark"] .week-toggle {
+          background: #1e3a5f;
+        }
+        :root[data-theme-mode="dark"] .week-tab {
+          color: #94a3b8;
+        }
+        :root[data-theme-mode="dark"] .week-tab.active {
+          background: #334155;
+          color: #60a5fa;
+        }
+        :root[data-theme-mode="dark"] .week-tab:hover:not(.active) {
+          color: #cbd5e1;
+        }
+        :root[data-theme-mode="dark"] .kid-column {
+          background: #1e3a5f;
+          border-color: #334155;
+        }
+        :root[data-theme-mode="dark"] .kid-header {
+          border-color: #475569;
+        }
+        :root[data-theme-mode="dark"] .kid-name {
+          color: #f1f5f9;
+        }
+        :root[data-theme-mode="dark"] .kid-points {
+          color: #60a5fa;
+        }
+        :root[data-theme-mode="dark"] .chore-row {
+          background: #0f172a;
+        }
+        :root[data-theme-mode="dark"] .chore-row:hover:not(.completed) {
+          background: #1e293b;
+        }
+        :root[data-theme-mode="dark"] .chore-check {
+          background: #0f172a;
+          border-color: #475569;
+          color: #64748b;
+        }
+        :root[data-theme-mode="dark"] .chore-row.completed .chore-check {
+          background: #3b82f6;
+          border-color: #3b82f6;
+        }
+        :root[data-theme-mode="dark"] .chore-name {
+          color: #f1f5f9;
+        }
+        :root[data-theme-mode="dark"] .chore-row.completed .chore-name {
+          color: #64748b;
+        }
+        :root[data-theme-mode="dark"] .chore-pts {
+          color: #60a5fa;
+        }
+        :root[data-theme-mode="dark"] .chore-row.completed .chore-pts {
+          color: #64748b;
+        }
+        :root[data-theme-mode="dark"] .rotation-hint {
+          background: #1e3a5f;
+          color: #94a3b8;
+        }
+        :root[data-theme-mode="dark"] .demo-cta {
+          background: #3b82f6;
+        }
+        :root[data-theme-mode="dark"] .demo-cta:hover {
+          background: #2563eb;
+        }
+
+        /* Dark mode - system preference fallback */
         @media (prefers-color-scheme: dark) {
-          .demo-kid {
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0.1) 100%);
+          .week-toggle {
+            background: #1e3a5f;
+          }
+          .week-tab {
+            color: #94a3b8;
+          }
+          .week-tab.active {
+            background: #334155;
+            color: #60a5fa;
+          }
+          .week-tab:hover:not(.active) {
+            color: #cbd5e1;
+          }
+          .kid-column {
+            background: #1e3a5f;
+            border-color: #334155;
+          }
+          .kid-header {
+            border-color: #475569;
           }
           .kid-name {
             color: #f1f5f9;
           }
-          .kid-progress {
-            color: #94a3b8;
-          }
-          .points-value {
+          .kid-points {
             color: #60a5fa;
           }
-          .points-label {
-            color: #94a3b8;
+          .chore-row {
+            background: #0f172a;
           }
-          .demo-chore {
+          .chore-row:hover:not(.completed) {
             background: #1e293b;
           }
-          .demo-chore.completed {
-            background: #1e3a5f;
-          }
-          .demo-chore:not(.completed):hover {
-            background: #334155;
-          }
-          .chore-checkbox {
+          .chore-check {
             background: #0f172a;
             border-color: #475569;
             color: #64748b;
           }
-          .chore-checkbox:hover:not(:disabled) {
-            border-color: #60a5fa;
-            color: #60a5fa;
-          }
-          .demo-chore.completed .chore-checkbox {
+          .chore-row.completed .chore-check {
             background: #3b82f6;
             border-color: #3b82f6;
           }
           .chore-name {
             color: #f1f5f9;
           }
-          .demo-chore.completed .chore-name {
+          .chore-row.completed .chore-name {
             color: #64748b;
           }
-          .chore-points {
-            color: white;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+          .chore-pts {
+            color: #60a5fa;
           }
-          .demo-chore.completed .chore-points {
-            color: rgba(255, 255, 255, 0.6);
-            text-shadow: none;
+          .chore-row.completed .chore-pts {
+            color: #64748b;
           }
-          .demo-hint {
+          .rotation-hint {
             background: #1e3a5f;
             color: #94a3b8;
           }
@@ -293,6 +491,52 @@ export default function LandingDemo() {
           .demo-cta:hover {
             background: #2563eb;
           }
+        }
+
+        /* Light mode override when manually selected */
+        :root[data-theme-mode="light"] .week-toggle {
+          background: #f1f5f9;
+        }
+        :root[data-theme-mode="light"] .week-tab {
+          color: #6b7280;
+        }
+        :root[data-theme-mode="light"] .week-tab.active {
+          background: white;
+          color: #10b981;
+        }
+        :root[data-theme-mode="light"] .kid-column {
+          background: #f9fafb;
+          border-color: #e5e7eb;
+        }
+        :root[data-theme-mode="light"] .kid-header {
+          border-color: #e5e7eb;
+        }
+        :root[data-theme-mode="light"] .kid-name {
+          color: #064e3b;
+        }
+        :root[data-theme-mode="light"] .kid-points {
+          color: #10b981;
+        }
+        :root[data-theme-mode="light"] .chore-row {
+          background: white;
+        }
+        :root[data-theme-mode="light"] .chore-check {
+          background: white;
+          border-color: #d1d5db;
+          color: #9ca3af;
+        }
+        :root[data-theme-mode="light"] .chore-name {
+          color: #064e3b;
+        }
+        :root[data-theme-mode="light"] .chore-pts {
+          color: #10b981;
+        }
+        :root[data-theme-mode="light"] .rotation-hint {
+          background: #fffbeb;
+          color: #6b7280;
+        }
+        :root[data-theme-mode="light"] .demo-cta {
+          background: #10b981;
         }
       `}</style>
     </div>
