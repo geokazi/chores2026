@@ -108,11 +108,8 @@ export default function AppHeader({
         )}
       </button>
 
-      {/* Page Title with Logo */}
-      <div class="header-title-wrapper">
-        <img src="/ChoreGami-Purple-Bird-in-Flight.svg" alt="" class="header-logo" />
-        <h1 class="header-title">{pageTitle}</h1>
-      </div>
+      {/* Page Title */}
+      <h1 class="header-title">{pageTitle}</h1>
 
       {/* User Avatar Button */}
       <button
@@ -308,16 +305,6 @@ export default function AppHeader({
         }
         .header-btn:hover { background: rgba(255,255,255,0.2); }
         .header-btn:active { transform: scale(0.95); }
-        .header-title-wrapper {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-        }
-        .header-logo {
-          width: 28px;
-          height: 28px;
-          border-radius: 4px;
-        }
         .header-title {
           margin: 0;
           font-size: 1.25rem;
