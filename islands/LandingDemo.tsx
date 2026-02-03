@@ -26,27 +26,27 @@ interface KidData {
 const WEEK_A: { emma: DemoChore[]; jake: DemoChore[] } = {
   emma: [
     { id: "e1", name: "Dishes", icon: "🍽️", points: 10, completed: false },
-    { id: "e2", name: "Take out trash", icon: "🗑️", points: 5, completed: true },
-    { id: "e3", name: "Feed the dog", icon: "🐕", points: 5, completed: false },
+    { id: "e2", name: "Trash", icon: "🗑️", points: 5, completed: true },
+    { id: "e3", name: "Feed dog", icon: "🐕", points: 5, completed: false },
   ],
   jake: [
-    { id: "j1", name: "Vacuum living room", icon: "🧹", points: 15, completed: false },
-    { id: "j2", name: "Clean bathroom", icon: "🚿", points: 10, completed: false },
-    { id: "j3", name: "Take out trash", icon: "🗑️", points: 5, completed: true },
+    { id: "j1", name: "Vacuum", icon: "🧹", points: 15, completed: false },
+    { id: "j2", name: "Bathroom", icon: "🚿", points: 10, completed: false },
+    { id: "j3", name: "Trash", icon: "🗑️", points: 5, completed: true },
   ],
 };
 
 // Week B chores - SWAPPED for fairness
 const WEEK_B: { emma: DemoChore[]; jake: DemoChore[] } = {
   emma: [
-    { id: "e1b", name: "Vacuum living room", icon: "🧹", points: 15, completed: false },
-    { id: "e2b", name: "Clean bathroom", icon: "🚿", points: 10, completed: false },
-    { id: "e3b", name: "Take out trash", icon: "🗑️", points: 5, completed: false },
+    { id: "e1b", name: "Vacuum", icon: "🧹", points: 15, completed: false },
+    { id: "e2b", name: "Bathroom", icon: "🚿", points: 10, completed: false },
+    { id: "e3b", name: "Trash", icon: "🗑️", points: 5, completed: false },
   ],
   jake: [
     { id: "j1b", name: "Dishes", icon: "🍽️", points: 10, completed: false },
-    { id: "j2b", name: "Feed the dog", icon: "🐕", points: 5, completed: false },
-    { id: "j3b", name: "Take out trash", icon: "🗑️", points: 5, completed: true },
+    { id: "j2b", name: "Feed dog", icon: "🐕", points: 5, completed: false },
+    { id: "j3b", name: "Trash", icon: "🗑️", points: 5, completed: true },
   ],
 };
 
@@ -185,6 +185,7 @@ export default function LandingDemo() {
           display: flex;
           flex-direction: column;
           gap: 0.75rem;
+          overflow-x: hidden;
         }
 
         /* Week Toggle */
@@ -351,13 +352,24 @@ export default function LandingDemo() {
           transform: translateY(-2px);
         }
 
-        /* Mobile: stack on very small screens */
-        @media (max-width: 380px) {
+        /* Mobile: stack kids vertically */
+        @media (max-width: 500px) {
           .kids-container {
             grid-template-columns: 1fr;
+            gap: 0.5rem;
           }
-          .chore-name {
-            max-width: 100px;
+          .kid-column {
+            padding: 0.5rem;
+          }
+          .kid-header {
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.4rem;
+          }
+          .kid-chores {
+            gap: 0.4rem;
+          }
+          .chore-row {
+            padding: 0.4rem;
           }
         }
 
