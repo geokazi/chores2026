@@ -2,32 +2,35 @@
 
 **Date**: February 2, 2026
 **Status**: ✅ Complete
-**Version**: 1.0
+**Version**: 2.0
 
 ---
 
 ## Overview
 
-Implemented consistent ChoreGami bird branding across the application with theme-aware coloring. The bird icon now adapts to light and dark modes, displaying green in light mode and blue in dark mode, matching the app's Fresh Meadow theme palette.
+Comprehensive branding update for ChoreGami, including theme-aware icons, the original purple bird logo, and app name simplification from "ChoreGami 2026" to "ChoreGami".
 
 ### Features Delivered
 
 | Feature | Description |
 |---------|-------------|
 | Favicon | Copied official ChoreGami favicon from fresh-auth repo |
-| Landing Page Logo | Replaced ✨ emoji with inline SVG bird icon |
-| Nav Header Logo | White bird icon on colored header background |
-| Dashboard Nav Item | Replaced 🏠 emoji with theme-aware bird icon |
-| Light Mode Color | Green (#10b981) matching Fresh Meadow primary |
-| Dark Mode Color | Blue (#60a5fa) matching dark mode accent |
+| Landing Page Logo | Inline SVG bird with theme-aware colors (green/blue) |
+| Login/Register Logo | Inline SVG bird with blue color (#3b5998) |
+| Nav Menu Header | Original purple bird logo (multi-color SVG) |
+| Dashboard Nav Item | 🏠 emoji (reverted from bird for clarity) |
+| App Rebrand | Simplified name from "ChoreGami 2026" to "ChoreGami" |
+| Dark Mode CTA | Updated from amber to blue gradient |
 
 ---
 
 ## Architecture
 
-### SVG with `currentColor`
+### Two Bird Logo Variants
 
-The key technique is using `fill="currentColor"` in the SVG, which allows the icon to inherit its color from CSS:
+#### 1. Theme-Aware Bird (currentColor)
+
+Used on landing page, login, and register pages. Uses `fill="currentColor"` to inherit color from CSS:
 
 ```svg
 <svg viewBox="0 0 1024 1024" fill="currentColor">
@@ -35,67 +38,81 @@ The key technique is using `fill="currentColor"` in the SVG, which allows the ic
 </svg>
 ```
 
-### Why Inline SVG (Not `<img>`)
+**Locations:**
+- Landing page header (green light / blue dark)
+- Login page (blue #3b5998)
+- Register page (blue #3b5998)
 
-| Method | `currentColor` Support | Theme Switching |
-|--------|----------------------|-----------------|
-| Inline `<svg>` | ✅ Works | ✅ Inherits from CSS |
-| `<img src="*.svg">` | ❌ Doesn't work | ❌ Static color only |
-| CSS `background-image` | ❌ Doesn't work | ❌ Requires separate files |
+#### 2. Original Purple Bird (Multi-Color)
 
-**Critical insight**: `currentColor` only works when the SVG is inlined directly in the HTML. Using `<img src="bird.svg">` ignores the fill color and displays the SVG's default color.
-
-### Theme CSS Architecture
-
-The app uses a dual-layer theme system:
+The official ChoreGami brand logo with purple gradient colors. Cannot use `currentColor` because it has multiple fill colors:
 
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                         System Detection                                 │
-├─────────────────────────────────────────────────────────────────────────┤
-│ @media (prefers-color-scheme: dark/light)                               │
-│   → Detects OS/browser preference                                        │
-│   → Used as initial fallback                                             │
-└─────────────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────────┐
-│                         Manual Override (Primary)                        │
-├─────────────────────────────────────────────────────────────────────────┤
-│ :root[data-theme-mode="light"] { ... }                                  │
-│ :root[data-theme-mode="dark"] { ... }                                   │
-│   → Set by ThemeToggle component                                         │
-│   → Stored in localStorage                                               │
-│   → Takes precedence over system preference                              │
-└─────────────────────────────────────────────────────────────────────────┘
+static/ChoreGami-Purple-Bird-in-Flight.svg
+Colors: #6B50FE, #5E42FE, #593CFD, #583BFE, #5133FB, etc.
 ```
 
-**Important**: All theme-specific CSS must be in `ThemeToggle.tsx` because it controls the `data-theme-mode` attribute and has the highest specificity for theme overrides.
+**Location:** Nav menu header only (slide-out menu)
+
+### Why Inline SVG vs `<img>`
+
+| Method | `currentColor` Support | Multi-Color SVG | Use Case |
+|--------|----------------------|-----------------|----------|
+| Inline `<svg>` | ✅ Works | ❌ Loses colors | Theme-aware icons |
+| `<img src="*.svg">` | ❌ Doesn't work | ✅ Preserves colors | Purple brand logo |
+
+---
+
+## Design Decisions
+
+### Purple Bird in Main Header - REJECTED
+
+We tested adding the purple bird to the main app header (center bar). This was **removed** because:
+
+1. **Color clash** - Purple (#6B50FE) doesn't harmonize with all themes:
+   - Orange/Citrus: Purple vs orange creates visual tension
+   - Green/Ocean: Purple on green is jarring
+   - Only works naturally on blue theme
+
+2. **White background badge effect** - The logo's rounded white background creates a "floating sticker" look
+
+3. **Visual weight imbalance** - Hamburger (☰) and avatar are simple; detailed logo creates asymmetry
+
+4. **Redundancy** - "ChoreGami" text already identifies the app
+
+**Decision:** Keep purple bird in nav menu header only (brand showcase area).
+
+### Dashboard Icon - 🏠 Emoji
+
+The Dashboard nav item uses 🏠 instead of the bird logo because:
+- Universal "home/main page" recognition
+- Consistent with other emoji-based nav items (📊 📅 ⚙️)
+- Bird logo is for branding, not navigation function
 
 ---
 
 ## Color Palette
 
-### Light Mode (Fresh Meadow)
+### Landing Page (Theme-Aware)
 
-```css
---color-primary: #10b981  /* Emerald Green - used for bird icon */
---color-text: #064e3b     /* Dark Green */
---color-bg: #f0fdf4       /* Mint Cream */
-```
+| Theme | Bird Color | CSS Variable |
+|-------|------------|--------------|
+| Light Mode | Green #10b981 | `--color-primary` |
+| Dark Mode | Blue #60a5fa | Dark mode accent |
 
-### Dark Mode (Night Mode)
+### Login/Register Pages
 
-```css
---color-accent: #60a5fa   /* Sky Blue - used for bird icon */
---color-text: #f1f5f9     /* Light Gray */
---color-bg: #0f172a       /* Dark Navy */
-```
+| Element | Color | Hex |
+|---------|-------|-----|
+| Bird Logo | Blue | #3b5998 |
+| Title Text | Blue | #3b5998 |
 
-### Nav Header (Both Modes)
+### Nav Menu Header
 
-```css
-.nav-logo { color: white; }  /* White bird on emerald/blue header */
-```
+| Element | Color |
+|---------|-------|
+| Purple Bird | Multi-color (preserved from SVG) |
+| Brand Text | White |
 
 ---
 
@@ -103,20 +120,15 @@ The app uses a dual-layer theme system:
 
 ### `static/favicon.ico`
 
-Copied from `/Users/georgekariuki/repos/deno2/fresh-auth/favicon.ico` - the official ChoreGami favicon.
+Copied from `/Users/georgekariuki/repos/deno2/fresh-auth/favicon.ico`
 
 ### `static/choregami-bird.svg`
 
-Simplified origami bird SVG for use in the application:
+Simplified bird with `fill="currentColor"` for theme adaptation.
 
-```svg
-<?xml version="1.0" encoding="UTF-8"?>
-<svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
-<path d="M0 0 C6.87 2.31..." fill="currentColor" transform="translate(253,195)"/>
-</svg>
-```
+### `static/ChoreGami-Purple-Bird-in-Flight.svg`
 
-**Note**: Uses `fill="currentColor"` to enable CSS color control. The SVG is simplified from the original purple bird for better rendering at small sizes.
+Original brand logo with purple gradient colors (1024x1024).
 
 ---
 
@@ -124,124 +136,48 @@ Simplified origami bird SVG for use in the application:
 
 ### `routes/landing.tsx`
 
-Replaced ✨ emoji with inline SVG in the logo:
+- Replaced ✨ emoji with inline SVG bird
+- Theme-aware coloring via ThemeToggle.tsx overrides
 
-```tsx
-// Before
-<div class="landing-logo">
-  <span class="logo-icon">✨</span>
-  <span class="logo-text">ChoreGami</span>
-</div>
+### `routes/login.tsx`
 
-// After
-<div class="landing-logo">
-  <svg class="logo-icon" viewBox="0 0 1024 1024" width="28" height="28" fill="currentColor">
-    <path d="M253 195c7 2 14 5 21 7l6 2c9 4 19 7 28 11..." transform="translate(253,195)"/>
-  </svg>
-  <span class="logo-text">ChoreGami</span>
-</div>
-```
+- Added bird logo next to "ChoreGami 2026" title
+- Blue color (#3b5998) matching auth page theme
+- Flexbox layout for logo + title alignment
 
-Added base CSS for the logo icon:
+### `routes/register.tsx`
 
-```css
-.landing-logo .logo-icon {
-  width: 1.75rem;
-  height: 1.75rem;
-  color: #10b981 !important;
-}
-```
+- Added bird logo next to "ChoreGami 2026" title
+- Blue color (#3b5998) matching auth page theme
 
 ### `islands/AppHeader.tsx`
 
-Replaced 🏠 emoji with inline SVG in two locations:
-
-#### 1. Nav Logo (Header)
-
-```tsx
-// Before
-<a href="/" class="nav-logo">🏠</a>
-
-// After
-<a href="/" class="nav-logo-link" aria-label="Home">
-  <svg class="nav-logo" viewBox="0 0 1024 1024" fill="currentColor">
-    <path d="M253 195c7 2 14 5 21 7..."/>
-  </svg>
-</a>
-```
-
-CSS:
-```css
-.nav-logo {
-  width: 1.5rem;
-  height: 1.5rem;
-  color: white;
-}
-```
-
-#### 2. Dashboard Nav Item
-
-```tsx
-// Before
-<a href={dashboardUrl} class={`nav-item ${isActive ? "active" : ""}`}>
-  <span class="nav-icon">🏠</span>
-  <span class="nav-label">Dashboard</span>
-</a>
-
-// After
-<a href={dashboardUrl} class={`nav-item ${isActive ? "active" : ""}`}>
-  <svg class="nav-icon-svg" viewBox="0 0 1024 1024" fill="currentColor">
-    <path d="M253 195c7 2 14 5 21 7..."/>
-  </svg>
-  <span class="nav-label">Dashboard</span>
-</a>
-```
-
-CSS:
-```css
-.nav-icon-svg {
-  width: 1.5rem;
-  height: 1.5rem;
-  color: var(--color-primary);
-}
-.nav-item.active .nav-icon-svg {
-  color: white;
-}
-```
+- Nav menu header: Purple bird image (`<img>` tag)
+- Dashboard nav item: 🏠 emoji (reverted from bird SVG)
+- Removed `.nav-icon-svg` CSS (no longer used)
 
 ### `islands/ThemeToggle.tsx`
 
-Added logo icon color rules to the theme override CSS:
+- Added `.logo-icon` color rules for light/dark modes
+- Updated dark mode CTA from amber to blue gradient
 
-```css
-/* ========== LIGHT MODE OVERRIDES ========== */
-:root[data-theme-mode="light"] .landing-logo { color: #10b981 !important; }
-:root[data-theme-mode="light"] .landing-logo .logo-icon { color: #10b981 !important; }
+### Multiple Routes (Rebrand)
 
-/* ========== DARK MODE OVERRIDES ========== */
-:root[data-theme-mode="dark"] .landing-logo { color: #60a5fa !important; }
-:root[data-theme-mode="dark"] .landing-logo .logo-icon { color: #60a5fa !important; }
-```
-
-**Why ThemeToggle.tsx?** The theme toggle component manages all manual theme overrides via `data-theme-mode` attribute. Adding the rules here ensures they:
-1. Have the correct specificity to override default colors
-2. Are applied when the user manually switches themes
-3. Stay consistent with other theme-dependent elements
+Changed "ChoreGami 2026" to "ChoreGami" in:
+- `routes/_app.tsx` (page title)
+- `routes/index.tsx`
+- `routes/demo.tsx`
+- `routes/setup.tsx`
+- `routes/kid/dashboard.tsx`
+- `routes/parent/dashboard.tsx`
 
 ---
 
 ## Implementation Notes
 
-### Debugging Theme Issues
+### Theme CSS Location
 
-If the icon shows the wrong color in a theme:
-
-1. **Check the CSS selector specificity** - Theme overrides need `!important` and specific selectors
-2. **Verify the attribute is set** - Check `document.documentElement.getAttribute('data-theme-mode')`
-3. **Check where CSS is defined** - Rules in ThemeToggle.tsx override rules in landing.tsx
-4. **Test both manual and system themes** - Toggle in UI vs changing OS settings
-
-### Common Pitfall: CSS Location
+All theme-specific CSS must be in `ThemeToggle.tsx`:
 
 ```
 ❌ Adding theme rules in landing.tsx or AppHeader.tsx
@@ -249,6 +185,18 @@ If the icon shows the wrong color in a theme:
 
 ✅ Adding theme rules in ThemeToggle.tsx
    → Correct location for data-theme-mode overrides
+```
+
+### Multi-Color SVG Loading
+
+For the purple bird (multi-color), use `<img>` not inline SVG:
+
+```tsx
+// ✅ Correct - preserves multiple fill colors
+<img src="/ChoreGami-Purple-Bird-in-Flight.svg" class="nav-logo-img" />
+
+// ❌ Wrong - would need to inline all paths, loses color info with currentColor
+<svg>...</svg>
 ```
 
 ---
@@ -259,18 +207,33 @@ If the icon shows the wrong color in a theme:
 - [x] Bird icon visible in light mode (green #10b981)
 - [x] Bird icon visible in dark mode (blue #60a5fa)
 - [x] Theme toggle switches icon color correctly
-- [x] Icon scales properly on mobile
 
-### App Header
-- [x] White bird icon visible in nav header (both modes)
-- [x] Dashboard nav item shows theme-appropriate color
-- [x] Active dashboard nav item shows white icon
-- [x] Icons maintain size consistency with other nav items
+### Login/Register Pages
+- [x] Bird logo displays with blue color (#3b5998)
+- [x] Logo aligned with title text
 
-### Cross-Browser
-- [x] Safari - inline SVG renders correctly
-- [x] Chrome - currentColor inheritance works
-- [x] Mobile Safari - touch interactions work
+### Nav Menu
+- [x] Purple bird displays in nav menu header
+- [x] Multi-color gradient preserved
+- [x] Dashboard uses 🏠 emoji
+
+### App Rebrand
+- [x] "ChoreGami" (not "ChoreGami 2026") across all pages
+- [x] Dark mode CTA uses blue gradient
+
+---
+
+## Git Commits
+
+| Commit | Description |
+|--------|-------------|
+| `eef5c24` | Initial branding - favicon, landing page logo, nav icons |
+| `12b2dff` | Add bird logo to login and register pages |
+| `86326d4` | Rebrand to "ChoreGami", update dark mode CTA colors |
+| `8cc73be` | Add purple bird to nav menu header |
+| `679579e` | Add purple bird to main app header (later reverted) |
+| `2f51e63` | Remove logo from main app header (design decision) |
+| `6d1f8df` | Use 🏠 emoji for Dashboard menu item |
 
 ---
 
@@ -286,4 +249,5 @@ If the icon shows the wrong color in a theme:
 
 | Date | Version | Changes |
 |------|---------|---------|
-| Feb 2, 2026 | 1.0 | Initial implementation - favicon, landing page logo, nav header icons, theme-aware coloring |
+| Feb 2, 2026 | 1.0 | Initial implementation - favicon, landing page logo, theme-aware coloring |
+| Feb 2, 2026 | 2.0 | Login/register logos, purple bird in nav, app rebrand, design refinements |
