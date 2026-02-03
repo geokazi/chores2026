@@ -58,7 +58,6 @@ export default function LandingPage() {
       <section class="demo-section" id="demo">
         <div class="demo-container">
           <div class="demo-badge">Live Demo</div>
-          <h2 class="demo-title">See the magic</h2>
           <p class="demo-subtitle">Chores rotate automatically. No more "that's not fair!"</p>
           <LandingDemo />
         </div>
@@ -247,18 +246,12 @@ export default function LandingPage() {
           font-size: 0.75rem;
           font-weight: 600;
         }
-        .demo-title {
-          text-align: center;
-          font-size: 1.25rem;
-          font-weight: 600;
-          margin: 0.5rem 0 0.25rem;
-          color: var(--color-text, #064e3b);
-        }
         .demo-subtitle {
           text-align: center;
-          font-size: 0.875rem;
-          color: #6b7280;
-          margin: 0 0 1rem;
+          font-size: 0.95rem;
+          font-weight: 500;
+          color: var(--color-text, #064e3b);
+          margin: 0.5rem 0 1rem;
         }
 
         /* How it works */
@@ -465,11 +458,8 @@ export default function LandingPage() {
           .demo-badge {
             background: #3b82f6;
           }
-          .demo-title {
-            color: #f1f5f9;
-          }
           .demo-subtitle {
-            color: #cbd5e1;
+            color: #f1f5f9;
           }
           .step {
             background: #1e3a5f;
