@@ -135,8 +135,9 @@ export default function ThemeToggle() {
         :root[data-theme-mode="light"] .step-number { background: #10b981 !important; }
         :root[data-theme-mode="light"] .step-content strong { color: #064e3b !important; }
         :root[data-theme-mode="light"] .step-content span { color: #6b7280 !important; }
-        :root[data-theme-mode="light"] .cta-section { background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%) !important; }
-        :root[data-theme-mode="light"] .btn-primary { background: white !important; color: #1e40af !important; }
+        :root[data-theme-mode="light"] .cta-section { background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important; }
+        :root[data-theme-mode="light"] .btn-cta-primary { background: white !important; color: #059669 !important; }
+        :root[data-theme-mode="light"] .btn-primary { background: white !important; color: #059669 !important; }
         :root[data-theme-mode="light"] .btn-hero-primary { background: #10b981 !important; }
         :root[data-theme-mode="light"] .btn-hero-primary:hover { background: #059669 !important; }
         :root[data-theme-mode="light"] .btn-secondary { background: transparent !important; color: white !important; border: 2px solid rgba(255,255,255,0.5) !important; }
