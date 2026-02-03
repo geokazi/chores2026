@@ -145,7 +145,7 @@ export default function ParentDashboardPage(
               ← Back
             </a>
           </div>
-          <h1>ChoreGami 2026</h1>
+          <h1>ChoreGami</h1>
           <div></div>
         </div>
         <div class="card">

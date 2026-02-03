@@ -8,7 +8,7 @@ export default function App({ Component }: PageProps) {
       <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>ChoreGami 2026</title>
+        <title>ChoreGami</title>
         <link rel="stylesheet" href="/styles.css" />
         {/* canvas-confetti library for celebration animations */}
         <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>

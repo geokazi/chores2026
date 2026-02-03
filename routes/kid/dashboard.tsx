@@ -128,7 +128,7 @@ export default function SecureKidDashboardPage(
       <div class="container">
         <script dangerouslySetInnerHTML={{ __html: timezoneScript }} />
         <div class="header">
-          <h1>ChoreGami 2026</h1>
+          <h1>ChoreGami</h1>
         </div>
         <div class="card">
           <p style={{ color: "var(--color-warning)", textAlign: "center" }}>

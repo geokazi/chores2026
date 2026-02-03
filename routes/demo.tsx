@@ -152,7 +152,7 @@ export default function DemoPage({ data }: PageProps<DemoData>) {
               DEMO
             </span>
           </div>
-          <h1>ChoreGami 2026</h1>
+          <h1>ChoreGami</h1>
         </div>
         <div class="user-info">
           <a

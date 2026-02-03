@@ -282,7 +282,7 @@ export default function SetupPage({ data }: PageProps<SetupPageData>) {
       }} />
       <div class="setup-card">
         <div class="setup-header">
-          <h1>ChoreGami 2026</h1>
+          <h1>ChoreGami</h1>
           <p>Complete Your Profile</p>
         </div>
 

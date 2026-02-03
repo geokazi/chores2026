@@ -69,7 +69,7 @@ export default function IndexPage({ data }: PageProps<IndexPageData>) {
     return (
       <div class="container">
         <div class="header">
-          <h1>ChoreGami 2026</h1>
+          <h1>ChoreGami</h1>
         </div>
         <div class="card">
           <p style={{ color: "var(--color-warning)", textAlign: "center" }}>
@@ -103,7 +103,7 @@ export default function IndexPage({ data }: PageProps<IndexPageData>) {
       }} />
       <AppHeader
         currentPage="selector"
-        pageTitle="ChoreGami 2026"
+        pageTitle="ChoreGami"
         familyMembers={familyMembers}
         currentUser={null}
         userRole="parent"
