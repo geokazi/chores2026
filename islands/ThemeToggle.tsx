@@ -132,7 +132,8 @@ export default function ThemeToggle() {
         :root[data-theme-mode="light"] .demo-subtitle { color: #6b7280 !important; }
         :root[data-theme-mode="light"] .step { background: white !important; box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important; }
         :root[data-theme-mode="light"] .step-number { background: #10b981 !important; }
-        :root[data-theme-mode="light"] .step-text { color: #064e3b !important; }
+        :root[data-theme-mode="light"] .step-content strong { color: #064e3b !important; }
+        :root[data-theme-mode="light"] .step-content span { color: #6b7280 !important; }
         :root[data-theme-mode="light"] .cta-section { background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%) !important; }
         :root[data-theme-mode="light"] .btn-primary { background: white !important; color: #1e40af !important; }
         :root[data-theme-mode="light"] .btn-secondary { background: transparent !important; color: white !important; border: 2px solid rgba(255,255,255,0.5) !important; }
@@ -185,7 +186,8 @@ export default function ThemeToggle() {
         :root[data-theme-mode="dark"] .demo-subtitle { color: #94a3b8 !important; }
         :root[data-theme-mode="dark"] .step { background: #1e3a5f !important; }
         :root[data-theme-mode="dark"] .step-number { background: #3b82f6 !important; }
-        :root[data-theme-mode="dark"] .step-text { color: #f1f5f9 !important; }
+        :root[data-theme-mode="dark"] .step-content strong { color: #ffffff !important; }
+        :root[data-theme-mode="dark"] .step-content span { color: #f1f5f9 !important; }
         :root[data-theme-mode="dark"] .cta-section { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important; }
         :root[data-theme-mode="dark"] .btn-primary { background: white !important; color: #d97706 !important; }
         :root[data-theme-mode="dark"] .btn-secondary { background: transparent !important; color: white !important; border: 2px solid rgba(255,255,255,0.5) !important; }

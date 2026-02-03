@@ -322,22 +322,22 @@ export default function TeaserCards() {
         <div class="teaser-card teaser-card-live" onClick={() => handleCardClick("families")}>
           <div class="card-emoji">👨‍👩‍👧‍👦</div>
           <h3 class="card-title">Families</h3>
-          <p class="card-desc">Kids earn points for chores. Parents track progress.</p>
-          <button class="card-cta card-cta-primary">See if it's for you</button>
+          <p class="card-desc">Stop asking "did you do your chores?" 5 times a day.</p>
+          <button class="card-cta card-cta-primary">Start your quiz</button>
         </div>
 
         <div class="teaser-card teaser-card-soon" onClick={() => handleCardClick("roommates")}>
           <div class="card-emoji">🏠</div>
           <h3 class="card-title">Roommates</h3>
-          <p class="card-desc">Fair splits without the awkward conversations.</p>
-          <button class="card-cta card-cta-secondary">See if it's for you</button>
+          <p class="card-desc">No more passive-aggressive notes on the fridge.</p>
+          <button class="card-cta card-cta-secondary">Start your quiz</button>
         </div>
 
         <div class="teaser-card teaser-card-soon" onClick={() => handleCardClick("just_me")}>
           <div class="card-emoji">👤</div>
           <h3 class="card-title">Just Me</h3>
-          <p class="card-desc">Stay on top of tasks without the mental load.</p>
-          <button class="card-cta card-cta-secondary">See if it's for you</button>
+          <p class="card-desc">Finally, a system you'll actually stick to.</p>
+          <button class="card-cta card-cta-secondary">Start your quiz</button>
         </div>
       </div>
 
