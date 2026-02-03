@@ -26,6 +26,7 @@ interface BalancesData {
   familyName: string;
   members: FamilyMember[];
   currentProfileId?: string;
+  pointsOnlyMode: boolean;
   error?: string;
 }
 
@@ -76,6 +77,7 @@ export const handler: Handlers<BalancesData> = {
         familyName: session.family.name,
         members,
         currentProfileId: session.user?.profileId,
+        pointsOnlyMode: session.family.points_only_mode,
       });
     } catch (error) {
       console.error("❌ Balances error:", error);
@@ -86,6 +88,7 @@ export const handler: Handlers<BalancesData> = {
         familyName: session.family.name,
         members: [],
         currentProfileId: session.user?.profileId,
+        pointsOnlyMode: session.family.points_only_mode,
         error: "Failed to load balances",
       });
     }
@@ -131,6 +134,7 @@ export default function BalancesPage({ data }: PageProps<BalancesData>) {
             recentPurchases={data.recentPurchases}
             dollarValuePerPoint={data.dollarValuePerPoint}
             members={data.members}
+            pointsOnlyMode={data.pointsOnlyMode}
           />
         )}
       </div>

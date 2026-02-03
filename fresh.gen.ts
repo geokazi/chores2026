@@ -56,6 +56,7 @@ import * as $api_rotation_status from "./routes/api/rotation/status.ts";
 import * as $api_rotation_today from "./routes/api/rotation/today.ts";
 import * as $api_settings_kids_events from "./routes/api/settings/kids-events.ts";
 import * as $api_settings_notifications from "./routes/api/settings/notifications.ts";
+import * as $api_settings_points_only_mode from "./routes/api/settings/points-only-mode.ts";
 import * as $api_settings_timezone from "./routes/api/settings/timezone.ts";
 import * as $demo from "./routes/demo.tsx";
 import * as $health from "./routes/health.ts";
@@ -133,6 +134,7 @@ import * as $settings_KidPinSection from "./islands/settings/KidPinSection.tsx";
 import * as $settings_ParentPinSection from "./islands/settings/ParentPinSection.tsx";
 import * as $settings_PinSetupModal from "./islands/settings/PinSetupModal.tsx";
 import * as $settings_PointManagementSection from "./islands/settings/PointManagementSection.tsx";
+import * as $settings_PointsOnlySection from "./islands/settings/PointsOnlySection.tsx";
 import * as $settings_ThemeSection from "./islands/settings/ThemeSection.tsx";
 import * as $settings_WeeklyGoalSection from "./islands/settings/WeeklyGoalSection.tsx";
 import type { Manifest } from "$fresh/server.ts";
@@ -195,6 +197,7 @@ const manifest = {
     "./routes/api/rotation/today.ts": $api_rotation_today,
     "./routes/api/settings/kids-events.ts": $api_settings_kids_events,
     "./routes/api/settings/notifications.ts": $api_settings_notifications,
+    "./routes/api/settings/points-only-mode.ts": $api_settings_points_only_mode,
     "./routes/api/settings/timezone.ts": $api_settings_timezone,
     "./routes/demo.tsx": $demo,
     "./routes/health.ts": $health,
@@ -276,6 +279,7 @@ const manifest = {
     "./islands/settings/PinSetupModal.tsx": $settings_PinSetupModal,
     "./islands/settings/PointManagementSection.tsx":
       $settings_PointManagementSection,
+    "./islands/settings/PointsOnlySection.tsx": $settings_PointsOnlySection,
     "./islands/settings/ThemeSection.tsx": $settings_ThemeSection,
     "./islands/settings/WeeklyGoalSection.tsx": $settings_WeeklyGoalSection,
   },

@@ -9,9 +9,10 @@ interface WeeklyGoalSectionProps {
     weekly_goal?: number;
     goal_bonus?: number;
   };
+  pointsOnlyMode?: boolean;
 }
 
-export default function WeeklyGoalSection({ settings }: WeeklyGoalSectionProps) {
+export default function WeeklyGoalSection({ settings, pointsOnlyMode = false }: WeeklyGoalSectionProps) {
   const [weeklyGoal, setWeeklyGoal] = useState<string>(
     settings?.weekly_goal?.toString() || ""
   );
@@ -54,7 +55,7 @@ export default function WeeklyGoalSection({ settings }: WeeklyGoalSectionProps) 
       <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
           <label style={{ minWidth: "60px", fontWeight: "500" }}>Goal</label>
-          <span>$</span>
+          {!pointsOnlyMode && <span>$</span>}
           <input
             type="number"
             value={weeklyGoal}
@@ -70,12 +71,12 @@ export default function WeeklyGoalSection({ settings }: WeeklyGoalSectionProps) 
               fontSize: "1rem"
             }}
           />
-          <span style={{ color: "var(--color-text-light)" }}>/week</span>
+          <span style={{ color: "var(--color-text-light)" }}>{pointsOnlyMode ? "pts /week" : "/week"}</span>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
           <label style={{ minWidth: "60px", fontWeight: "500" }}>Bonus</label>
-          <span>$</span>
+          {!pointsOnlyMode && <span>$</span>}
           <input
             type="number"
             value={goalBonus}
@@ -91,7 +92,7 @@ export default function WeeklyGoalSection({ settings }: WeeklyGoalSectionProps) 
               fontSize: "1rem"
             }}
           />
-          <span style={{ color: "var(--color-text-light)" }}>per person</span>
+          <span style={{ color: "var(--color-text-light)" }}>{pointsOnlyMode ? "pts per person" : "per person"}</span>
         </div>
 
         <p style={{ fontSize: "0.8rem", color: "var(--color-text-light)", margin: 0 }}>

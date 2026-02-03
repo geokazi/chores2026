@@ -157,6 +157,7 @@ export default function ReportsPage({ data }: PageProps<ReportsData>) {
           pointsPerDollar={family.points_per_dollar}
           goalStatus={goalStatus}
           weeklyPatterns={weeklyPatterns}
+          pointsOnlyMode={family.points_only_mode}
         />
       )}
       <AppFooter />

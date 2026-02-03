@@ -6,12 +6,13 @@
  * 2. Chore Rotation Templates - Core functionality (requires kids)
  * 3. Point Management - Regular adjustments
  * 4. Weekly Family Goal - Occasional updates
- * 5. App Theme - Personalization
- * 6. Celebrations - Confetti animations toggle
- * 7. Kid Event Creation - Teen autonomy with oversight
- * 8. Email Digests - Notifications
- * 9. Kid PIN Security - One-time setup
- * 10. Parent PIN Security - One-time setup
+ * 5. Points Display - Hide dollar values (points-only mode)
+ * 6. App Theme - Personalization
+ * 7. Celebrations - Confetti animations toggle
+ * 8. Kid Event Creation - Teen autonomy with oversight
+ * 9. Email Digests - Notifications
+ * 10. Kid PIN Security - One-time setup
+ * 11. Parent PIN Security - One-time setup
  */
 
 import { useState, useEffect } from "preact/hooks";
@@ -20,6 +21,7 @@ import FamilyMembersSection from "./settings/FamilyMembersSection.tsx";
 import PointManagementSection from "./settings/PointManagementSection.tsx";
 import WeeklyGoalSection from "./settings/WeeklyGoalSection.tsx";
 import ThemeSection from "./settings/ThemeSection.tsx";
+import PointsOnlySection from "./settings/PointsOnlySection.tsx";
 import KidPinSection from "./settings/KidPinSection.tsx";
 import ParentPinSection from "./settings/ParentPinSection.tsx";
 import PinSetupModal from "./settings/PinSetupModal.tsx";
@@ -251,12 +253,20 @@ export default function FamilySettings({ family, members, settings, digestChanne
       <PointManagementSection members={members} familyId={family.id} />
 
       {/* 4. Occasional - Weekly Family Goal */}
-      <WeeklyGoalSection settings={settings} />
+      <WeeklyGoalSection
+        settings={settings}
+        pointsOnlyMode={settings?.apps?.choregami?.points_only_mode ?? false}
+      />
 
-      {/* 5. Personalization - App Theme */}
+      {/* 5. Points Display - Hide dollar values */}
+      <PointsOnlySection
+        initialEnabled={settings?.apps?.choregami?.points_only_mode ?? false}
+      />
+
+      {/* 6. Personalization - App Theme */}
       <ThemeSection />
 
-      {/* 6. Celebrations - Confetti animations */}
+      {/* 7. Celebrations - Confetti animations */}
       <div class="card" style={{ marginBottom: "1.5rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
           <span style={{ fontSize: "1.25rem" }}>🎉</span>
@@ -329,7 +339,7 @@ export default function FamilySettings({ family, members, settings, digestChanne
         )}
       </div>
 
-      {/* 7. Teen autonomy - Kid Event Creation */}
+      {/* 8. Teen autonomy - Kid Event Creation */}
       <div class="card" style={{ marginBottom: "1.5rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
           <span style={{ fontSize: "1.25rem" }}>📅</span>
@@ -404,7 +414,7 @@ export default function FamilySettings({ family, members, settings, digestChanne
         )}
       </div>
 
-      {/* 8. Notifications - Email Digests */}
+      {/* 9. Notifications - Email Digests */}
       {digestChannel && (
         <div class="card" style={{ marginBottom: "1.5rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
@@ -605,14 +615,14 @@ export default function FamilySettings({ family, members, settings, digestChanne
         </div>
       )}
 
-      {/* 9. One-time setup - Kid PIN Security */}
+      {/* 10. One-time setup - Kid PIN Security */}
       <KidPinSection
         family={family}
         members={childMembers}
         onSetPin={(member) => setPinModalMember(member)}
       />
 
-      {/* 10. One-time setup - Parent PIN Security */}
+      {/* 11. One-time setup - Parent PIN Security */}
       <ParentPinSection
         members={parentMembers}
         onSetPin={(member) => setPinModalMember(member)}

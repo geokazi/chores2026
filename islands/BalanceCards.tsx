@@ -17,9 +17,10 @@ interface Props {
   recentPurchases: RewardPurchase[];
   dollarValuePerPoint: number;
   members?: FamilyMember[];
+  pointsOnlyMode?: boolean;
 }
 
-export default function BalanceCards({ balances, recentPurchases, dollarValuePerPoint, members = [] }: Props) {
+export default function BalanceCards({ balances, recentPurchases, dollarValuePerPoint, members = [], pointsOnlyMode = false }: Props) {
   // Create a map of profileId -> name for quick lookup
   const memberNames = new Map(members.map(m => [m.id, m.name]));
   const [selectedKid, setSelectedKid] = useState<BalanceInfo | null>(null);
@@ -116,7 +117,9 @@ export default function BalanceCards({ balances, recentPurchases, dollarValuePer
 
             <div class="balance-amount">
               <span class="points">{balance.currentPoints} pts</span>
-              <span class="dollars">{formatDollars(balance.currentPoints)}</span>
+              {!pointsOnlyMode && (
+                <span class="dollars">{formatDollars(balance.currentPoints)}</span>
+              )}
             </div>
 
             <div class="daily-earnings">
@@ -140,18 +143,20 @@ export default function BalanceCards({ balances, recentPurchases, dollarValuePer
               </div>
             </div>
 
-            <button
-              class="payout-btn"
-              onClick={() => {
-                setSelectedKid(balance);
-                setShowPayOut(true);
-                setError("");
-                setSuccess("");
-              }}
-              disabled={balance.currentPoints === 0}
-            >
-              💵 Pay Out
-            </button>
+            {!pointsOnlyMode && (
+              <button
+                class="payout-btn"
+                onClick={() => {
+                  setSelectedKid(balance);
+                  setShowPayOut(true);
+                  setError("");
+                  setSuccess("");
+                }}
+                disabled={balance.currentPoints === 0}
+              >
+                💵 Pay Out
+              </button>
+            )}
           </div>
         ))}
       </div>
@@ -203,7 +208,7 @@ export default function BalanceCards({ balances, recentPurchases, dollarValuePer
               <div class="current-balance">
                 <span>Available Balance</span>
                 <span class="balance-value">
-                  {selectedKid.currentPoints} pts ({formatDollars(selectedKid.currentPoints)})
+                  {selectedKid.currentPoints} pts{!pointsOnlyMode && ` (${formatDollars(selectedKid.currentPoints)})`}
                 </span>
               </div>
 
@@ -217,7 +222,7 @@ export default function BalanceCards({ balances, recentPurchases, dollarValuePer
                   min="1"
                   max={selectedKid.currentPoints}
                 />
-                {payoutAmount && (
+                {payoutAmount && !pointsOnlyMode && (
                   <span class="dollar-preview">
                     = {formatDollars(parseInt(payoutAmount, 10) || 0)}
                   </span>

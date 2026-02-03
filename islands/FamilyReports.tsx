@@ -60,9 +60,10 @@ interface FamilyReportsProps {
   pointsPerDollar: number;
   goalStatus?: GoalStatus | null;
   weeklyPatterns?: WeeklyPatterns | null;
+  pointsOnlyMode?: boolean;
 }
 
-export default function FamilyReports({ analytics, goalsAchieved, pointsPerDollar, goalStatus, weeklyPatterns }: FamilyReportsProps) {
+export default function FamilyReports({ analytics, goalsAchieved, pointsPerDollar, goalStatus, weeklyPatterns, pointsOnlyMode = false }: FamilyReportsProps) {
   const { members, totals } = analytics;
 
   // Detect "new period" situations for helpful context
@@ -112,7 +113,12 @@ export default function FamilyReports({ analytics, goalsAchieved, pointsPerDolla
 
           {/* Progress Header */}
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem" }}>
-            <span style={{ fontWeight: "500" }}>${goalStatus.progress} of ${goalStatus.target}</span>
+            <span style={{ fontWeight: "500" }}>
+              {pointsOnlyMode
+                ? `${goalStatus.progress} of ${goalStatus.target} pts`
+                : `$${goalStatus.progress} of $${goalStatus.target}`
+              }
+            </span>
             <span style={{ color: "var(--color-text-light)" }}>
               {Math.min(Math.round((goalStatus.progress / goalStatus.target) * 100), 100)}%
             </span>
@@ -145,8 +151,12 @@ export default function FamilyReports({ analytics, goalsAchieved, pointsPerDolla
             color: goalStatus.achieved ? "var(--color-success)" : "var(--color-text)"
           }}>
             {goalStatus.achieved
-              ? `🎉 Goal reached! Everyone gets +$${goalStatus.bonus}!`
-              : `💪 $${goalStatus.target - goalStatus.progress} more together → everyone gets +$${goalStatus.bonus}!`
+              ? pointsOnlyMode
+                ? `🎉 Goal reached! Everyone gets +${goalStatus.bonus} pts!`
+                : `🎉 Goal reached! Everyone gets +$${goalStatus.bonus}!`
+              : pointsOnlyMode
+                ? `💪 ${goalStatus.target - goalStatus.progress} pts more together → everyone gets +${goalStatus.bonus} pts!`
+                : `💪 $${goalStatus.target - goalStatus.progress} more together → everyone gets +$${goalStatus.bonus}!`
             }
           </p>
         </div>
@@ -183,9 +193,11 @@ export default function FamilyReports({ analytics, goalsAchieved, pointsPerDolla
                   <span style={{ fontFamily: "monospace", minWidth: "70px", textAlign: "right" }}>
                     {member.savings} pts
                   </span>
-                  <span style={{ color: "var(--color-success)", fontFamily: "monospace", minWidth: "70px", textAlign: "right" }}>
-                    (${member.savings_dollars.toFixed(2)})
-                  </span>
+                  {!pointsOnlyMode && (
+                    <span style={{ color: "var(--color-success)", fontFamily: "monospace", minWidth: "70px", textAlign: "right" }}>
+                      (${member.savings_dollars.toFixed(2)})
+                    </span>
+                  )}
                 </div>
               </div>
             ))}
@@ -301,7 +313,7 @@ export default function FamilyReports({ analytics, goalsAchieved, pointsPerDolla
                 </div>
                 <div style={{ textAlign: "right" }}>
                   <div style={{ fontWeight: "600", fontFamily: "monospace" }}>
-                    {person.totalPoints} pts (${(person.totalPoints / pointsPerDollar).toFixed(0)})
+                    {person.totalPoints} pts{!pointsOnlyMode && ` ($${(person.totalPoints / pointsPerDollar).toFixed(0)})`}
                   </div>
                   <div style={{ fontSize: "0.8rem", color: "var(--color-text-light)" }}>
                     {person.rewardCount} reward{person.rewardCount !== 1 ? "s" : ""} earned
@@ -325,7 +337,7 @@ export default function FamilyReports({ analytics, goalsAchieved, pointsPerDolla
             <span>Family Total</span>
             <div style={{ textAlign: "right" }}>
               <div style={{ fontFamily: "monospace" }}>
-                {goalsAchieved.familyTotal.totalPoints} pts (${(goalsAchieved.familyTotal.totalPoints / pointsPerDollar).toFixed(0)})
+                {goalsAchieved.familyTotal.totalPoints} pts{!pointsOnlyMode && ` ($${(goalsAchieved.familyTotal.totalPoints / pointsPerDollar).toFixed(0)})`}
               </div>
               <div style={{ fontSize: "0.8rem", color: "var(--color-text-light)" }}>
                 {goalsAchieved.familyTotal.rewardCount} rewards earned

@@ -28,6 +28,7 @@ export interface ChoreGamiSession {
     name: string;
     points_per_dollar: number;
     children_pins_enabled: boolean;
+    points_only_mode: boolean;  // Hide $ displays, show only points
     theme: string;
     members: FamilyMember[];  // All family members cached
     settings: Record<string, unknown>;  // Full JSONB settings for rotation config access
@@ -142,6 +143,7 @@ export async function getAuthenticatedSession(
         name: familyInfo.name,
         points_per_dollar: choregamiSettings.points_per_dollar || 1,
         children_pins_enabled: choregamiSettings.children_pins_enabled || false,
+        points_only_mode: choregamiSettings.points_only_mode ?? false,
         theme: settings.theme || "fresh_meadow",
         members,
         // Include full JSONB settings for rotation config access
