@@ -152,12 +152,14 @@ This indicates why `getUser` is failing (token expiry, project mismatch, network
 
 ## Cross-References
 
+- [OAuth Landing Page Fix](./20260203_oauth_landing_page_fix.md) — **Extends this fix** to handle OAuth tokens landing on `/landing` (Fly.io domain migration)
 - [Legal Pages & Auth Flow Fixes](./20260118_legal_pages_auth_flow_fixes.md) — Phone OTP redirect fix (same pattern: avoid Supabase redirect, verify locally)
 - [Authentication Security Hardening](./20260118_authentication_security_hardening.md) — Rate limiting, honeypot, enumeration protection
 - [Signup & PIN Detection Fixes](./20260119_signup_and_pin_fixes.md) — Supabase schema config blocking signups
 - [Session Management](../session-management.md) — Multi-layer session architecture
 - [Architecture: Authentication Flow](../architecture.md#authentication-flow) — High-level auth flow diagram
 - [SMS 10DLC Compliance](../planned/20260123_sms_10dlc_compliance.md) — Related carrier delivery issue (same session)
+- [Domain Migration Guide](../domains/20260203_flyio_migration_guide.md) — DNS migration that triggered the landing page fix
 
 ---
 

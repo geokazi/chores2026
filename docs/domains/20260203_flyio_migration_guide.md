@@ -425,6 +425,17 @@ fly apps restart choregami
 - `https://choregami.app/auth/callback/meta`
 - `https://choregami.app/auth/callback/apple`
 
+### Issue: OAuth Tokens Landing on Wrong Page
+
+**Cause**: After domain migration, OAuth tokens may land on `/landing` instead of `/login` due to server-side redirect logic.
+
+**Solution**: Ensure `oauth-fragment-handler.js` is included on all pages that might receive OAuth redirects:
+- `/login` (original)
+- `/register` (original)
+- `/landing` (added Feb 3, 2026)
+
+**Implemented Fix**: [OAuth Landing Page Fix](../milestones/20260203_oauth_landing_page_fix.md) adds the handler to `/landing` to process tokens regardless of where Supabase redirects the user.
+
 ---
 
 ## Migration Status
@@ -436,6 +447,7 @@ fly apps restart choregami
 | DNS Migration | Complete | Feb 3, 2026 | Squarespace updated |
 | SSL Verification | Complete | Feb 3, 2026 | Both certs issued (rsa,ecdsa) |
 | Validation Testing | Complete | Feb 3, 2026 | HTTPS working on root, www, /login |
+| OAuth Fragment Fix | Complete | Feb 3, 2026 | [See milestone](../milestones/20260203_oauth_landing_page_fix.md) |
 | GCP Cleanup | Pending | - | After 24-48 hours of monitoring |
 
 ---
