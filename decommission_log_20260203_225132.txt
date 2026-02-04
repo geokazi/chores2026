@@ -1,0 +1,57 @@
+Decommission Log - Tue Feb  3 22:51:32 PST 2026
+Project: nruka-269205
+Region: us-central1
+DRY_RUN: false
+---
+GCP Legacy Infrastructure Decommission
+Pre-flight Checks
+SUCCESS: gcloud CLI installed
+SUCCESS: Authenticated with gcloud
+SUCCESS: Project set to: nruka-269205
+INFO: Verifying Fly.io is serving traffic...
+SUCCESS: DNS confirmed pointing to Fly.io (66.241.125.185)
+WARNING: Could not verify Fly.io is responding
+PHASE: Phase 1: Remove Cloud Run Domain Mappings
+INFO: Domain mappings prevent Cloud Run service deletion
+INFO: These must be removed first
+EXECUTE: Delete domain mapping: choregami.app
+SUCCESS: Delete domain mapping: choregami.app completed
+EXECUTE: Delete domain mapping: www.choregami.app
+SUCCESS: Delete domain mapping: www.choregami.app completed
+EXECUTE: Delete domain mapping: choregami.com
+SUCCESS: Delete domain mapping: choregami.com completed
+EXECUTE: Delete domain mapping: www.choregami.com
+SUCCESS: Delete domain mapping: www.choregami.com completed
+SUCCESS: Phase 1 complete - Domain mappings removed
+PHASE: Phase 2: Delete Cloud Run Services
+INFO: Deleting Cloud Run services and their revisions
+WARNING: This will delete ALL revisions and cannot be undone
+INFO: Service choregami currently has 100% traffic
+EXECUTE: Delete Cloud Run service: choregami
+SUCCESS: Delete Cloud Run service: choregami completed
+INFO: Service deno-fresh currently has 100% traffic
+EXECUTE: Delete Cloud Run service: deno-fresh
+SUCCESS: Delete Cloud Run service: deno-fresh completed
+SUCCESS: Phase 2 complete - Cloud Run services removed
+PHASE: Phase 3: Delete Load Balancer Components
+INFO: Load Balancer components must be deleted in order:
+INFO:   1. Forwarding rules
+INFO:   2. Target proxies
+INFO:   3. URL maps
+INFO:   4. Backend services
+INFO:   5. SSL certificates
+INFO:   6. Network Endpoint Groups
+INFO: Step 3.1: Deleting forwarding rules...
+EXECUTE: Delete forwarding rule: choregami-cdn-rule
+SUCCESS: Delete forwarding rule: choregami-cdn-rule completed
+INFO: Step 3.2: Deleting target HTTPS proxies...
+EXECUTE: Delete HTTPS proxy: choregami-cdn-proxy
+SUCCESS: Delete HTTPS proxy: choregami-cdn-proxy completed
+INFO: Step 3.3: Deleting target HTTP proxies...
+INFO: Step 3.4: Deleting URL maps...
+EXECUTE: Delete URL map: choregami-cdn-map
+SUCCESS: Delete URL map: choregami-cdn-map completed
+INFO: Step 3.5: Deleting backend services...
+INFO: Step 3.6: Deleting SSL certificates...
+EXECUTE: Delete SSL certificate: blog-choregami-com-ssl
+ERROR: Delete SSL certificate: blog-choregami-com-ssl failed
