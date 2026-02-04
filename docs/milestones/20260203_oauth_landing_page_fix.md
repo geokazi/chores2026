@@ -2,41 +2,53 @@
 
 **Date**: February 3, 2026
 **Status**: ✅ Complete
-**Commit**: `01fa32a`
+**Commits**: `01fa32a`, `523d192`
 **Related**: [Domain Migration Guide](../domains/20260203_flyio_migration_guide.md), [OAuth Signup Redirect Fix](./20260123_oauth_signup_redirect_fix.md)
 
 ---
 
 ## Problem Summary
 
-After completing the DNS migration from Google Cloud Run to Fly.io (choregami.app → Fly.io IPs), OAuth authentication failed because the token fragment was landing on `/landing` instead of `/login` where the fragment handler was located.
+After completing the DNS migration from Google Cloud Run to Fly.io (choregami.app → Fly.io IPs), OAuth authentication failed due to two issues:
+
+1. Token fragments were landing on `/landing` instead of `/login` where the handler was located
+2. `SocialAuthButtons.tsx` was configured to redirect to `/auth/callback` which doesn't exist
 
 ### Observed Behavior
 
 ```
 User clicks "Continue with Google" on /login
   → Google OAuth completes successfully
+  → SocialAuthButtons requested redirect to /auth/callback (doesn't exist!)
+  → Fresh has no handler → cascades to / → redirects to /landing
   → Supabase redirects to choregami.app/landing#access_token=...&refresh_token=...
   → Landing page loads BUT no fragment handler present
   → Tokens ignored, user sees landing page instead of being logged in
 ```
 
-### Root Cause
+### Root Cause (Two Issues)
 
-When the domain migration was completed, Supabase's OAuth redirect behavior combined with the application's unauthenticated user routing caused tokens to land on `/landing`:
+**Issue 1: Missing Fragment Handler on Landing Page**
 
-1. **Supabase Site URL Configuration**: Configured to redirect to the app root
-2. **App Routing Logic**: Unauthenticated users visiting `/` are redirected to `/landing`
-3. **Fragment Handler Location**: `oauth-fragment-handler.js` was only included on `/login` and `/register`, not on `/landing`
-4. **Fragment Preservation**: The redirect from `/` to `/landing` preserved the URL fragment, but no handler existed to process it
+1. **App Routing Logic**: Unauthenticated users visiting `/` are redirected to `/landing`
+2. **Fragment Handler Location**: `oauth-fragment-handler.js` was only on `/login` and `/register`
+3. **Fragment Preservation**: Redirects preserved the URL fragment, but no handler existed on `/landing`
+
+**Issue 2: Invalid OAuth Redirect URL**
+
+1. **Misconfigured redirectTo**: `SocialAuthButtons.tsx` used `${origin}/auth/callback`
+2. **Route Doesn't Exist**: No `/auth/callback` route in Fresh application
+3. **Cascading Redirects**: Non-existent route → root `/` → `/landing` (for unauthenticated users)
 
 ---
 
 ## Solution
 
-Added `oauth-fragment-handler.js` to the landing page so that OAuth tokens arriving via any entry point are properly processed.
+Two fixes were applied:
 
-### Code Change
+### Fix 1: Add Fragment Handler to Landing Page (commit `01fa32a`)
+
+Added `oauth-fragment-handler.js` to the landing page as a safety net for any tokens that land there.
 
 ```typescript
 // routes/landing.tsx
@@ -50,6 +62,24 @@ export default function LandingPage() {
       <header class="landing-header">
         // ... rest of landing page
 ```
+
+### Fix 2: Correct OAuth Redirect URL (commit `523d192`)
+
+Changed the OAuth redirect from non-existent `/auth/callback` to `/login` where the user initiated the flow.
+
+```typescript
+// islands/SocialAuthButtons.tsx
+
+// BEFORE (broken - route doesn't exist)
+const finalRedirectTo = redirectTo || `${origin}/auth/callback`;
+
+// AFTER (correct - user returns where they started)
+// Redirect back to /login where the user initiated OAuth
+// The oauth-fragment-handler.js on /login will process the tokens
+const finalRedirectTo = redirectTo || `${origin}/login`;
+```
+
+This eliminates the cascading redirect chain and sends users directly back to `/login` where the fragment handler has been battle-tested since January 2026.
 
 ### How the Fragment Handler Works
 
@@ -80,14 +110,15 @@ if (hash && hash.includes("access_token=")) {
 
 ## OAuth Flow After Fix
 
+### Primary Flow (Direct to /login)
+
 ```
-1. User on /landing (or /login or /register) clicks "Continue with Google"
+1. User on /login clicks "Continue with Google"
 2. SocialAuthButtons calls supabase.auth.signInWithOAuth({ provider: "google" })
-   - redirectTo: ${origin}/auth/callback (or as configured)
+   - redirectTo: ${origin}/login ← FIXED (was /auth/callback)
 3. Google OAuth consent screen → user approves
-4. Supabase redirects to app with fragment: /landing#access_token=...&refresh_token=...
-   (or /login#... depending on entry point)
-5. Page loads, oauth-fragment-handler.js executes:
+4. Supabase redirects to: /login#access_token=...&refresh_token=...
+5. Page loads, oauth-fragment-handler.js on /login executes:
    a. Parses hash fragment, extracts access_token + refresh_token
    b. Decodes JWT to get user metadata
    c. Stores user data in localStorage (chores2026_user_data)
@@ -100,6 +131,16 @@ if (hash && hash.includes("access_token=")) {
    c. If user exists and has profile → redirects to /
    d. Otherwise → renders profile setup form
 7. User fills form → POST submits → creates family + profile → redirects to /
+```
+
+### Fallback Flow (Landing Page Safety Net)
+
+If tokens ever land on `/landing` (e.g., from external links or Supabase Site URL override):
+
+```
+1. Browser arrives at /landing#access_token=...
+2. oauth-fragment-handler.js on /landing processes tokens
+3. Same flow as above from step 5 onwards
 ```
 
 ---
@@ -147,31 +188,42 @@ This fix **extends** the [OAuth Signup Redirect Fix (20260123)](./20260123_oauth
 
 | Scenario | Before This Fix | After This Fix |
 |----------|-----------------|----------------|
-| OAuth landing on `/login` | ✅ Handler processes tokens | ✅ Handler processes tokens |
-| OAuth landing on `/register` | ✅ Handler processes tokens | ✅ Handler processes tokens |
-| OAuth landing on `/landing` | ❌ Tokens ignored | ✅ Handler processes tokens |
+| OAuth from `/login` | ❌ Redirected to non-existent `/auth/callback` | ✅ Returns to `/login`, handler processes |
+| OAuth from `/register` | ❌ Same cascading redirect issue | ✅ Returns to `/login`, handler processes |
+| OAuth landing on `/landing` | ❌ Tokens ignored (no handler) | ✅ Handler processes tokens (safety net) |
 | Direct navigation to `/landing` | ✅ Works normally | ✅ Works normally |
 
-### Same Handler, Multiple Entry Points
+### Defense in Depth
+
+The two fixes provide layered protection:
+
+1. **Fix 2 (Primary)**: OAuth redirects directly to `/login` where user started
+   - Clean flow, no cascading redirects
+   - Battle-tested handler location
+
+2. **Fix 1 (Safety Net)**: Handler on `/landing` catches edge cases
+   - External links with token fragments
+   - Supabase Site URL override scenarios
+   - Any other unexpected token delivery
+
+### Fragment Handler Locations
 
 The same `oauth-fragment-handler.js` is now included on three pages:
-- `/login` - Original location
+- `/login` - **Primary** (where OAuth redirects after Fix 2)
 - `/register` - Original location
-- `/landing` - **New** (this fix)
-
-This ensures OAuth tokens are processed regardless of where Supabase redirects the user.
+- `/landing` - **Safety net** (Fix 1)
 
 ---
 
 ## Files Modified
 
-| File | Change |
-|------|--------|
-| `routes/landing.tsx` | Added `<script src="/oauth-fragment-handler.js">` |
+| File | Change | Commit |
+|------|--------|--------|
+| `routes/landing.tsx` | Added `<script src="/oauth-fragment-handler.js">` | `01fa32a` |
+| `islands/SocialAuthButtons.tsx` | Changed redirectTo from `/auth/callback` to `/login` | `523d192` |
 
 No changes to:
 - `static/oauth-fragment-handler.js` (unchanged)
-- `islands/auth/SocialAuthButtons.tsx` (unchanged)
 - `routes/login.tsx` (unchanged)
 - `routes/setup.tsx` (unchanged)
 
@@ -204,7 +256,8 @@ This fix was discovered during the Fly.io domain migration:
 | Fly.io App Deployed | ✅ Complete (Jan 13) | https://choregami.fly.dev |
 | DNS Migration | ✅ Complete (Feb 3) | choregami.app → Fly.io IPs |
 | SSL Certificates | ✅ Complete (Feb 3) | Let's Encrypt issued |
-| OAuth Fragment Fix | ✅ Complete (Feb 3) | **This milestone** |
+| OAuth Fix 1: Landing Handler | ✅ Complete (Feb 3) | `01fa32a` - Safety net on /landing |
+| OAuth Fix 2: Correct Redirect | ✅ Complete (Feb 3) | `523d192` - Direct to /login |
 | GCP Cleanup | Pending | After 24-48 hours monitoring |
 
 See [Domain Migration Guide](../domains/20260203_flyio_migration_guide.md) for complete migration details.
@@ -241,4 +294,5 @@ This pattern ensures OAuth authentication works regardless of:
 ---
 
 *Created: February 3, 2026*
+*Updated: February 3, 2026 (added Fix 2: correct OAuth redirect URL)*
 *Pattern source: [OAuth Signup Redirect Fix](./20260123_oauth_signup_redirect_fix.md)*
