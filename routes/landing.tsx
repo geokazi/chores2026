@@ -48,9 +48,10 @@ export default function LandingPage() {
         <h1 class="hero-title">Household tasks. Sorted.</h1>
         <p class="hero-subtitle">For families, roommates, and you.</p>
         <div class="hero-cta">
-          <a href="/register" class="btn btn-hero-primary">Create your household</a>
+          <a href="/register" class="btn btn-hero-primary">Start Organizing</a>
         </div>
         <p class="hero-pwa">No app to download. Works on any device.</p>
+        <p class="hero-trust">Built by parents, for families.</p>
       </section>
 
       {/* Who's this for - Identity first */}
@@ -64,6 +65,7 @@ export default function LandingPage() {
         <div class="demo-container">
           <div class="demo-badge">Live Demo</div>
           <p class="demo-subtitle">Chores rotate automatically. No more "that's not fair!"</p>
+          <p class="demo-instruction">👉 Tap "Next Week" to see chores rotate</p>
           <LandingDemo />
         </div>
       </section>
@@ -100,8 +102,8 @@ export default function LandingPage() {
       <section class="cta-section">
         <h2 class="cta-title">Ready to get organized?</h2>
         <p class="cta-subtitle">Setup takes 2 minutes. No credit card required.</p>
-        <a href="/register" class="btn btn-cta-primary">Create your household</a>
-        <a href="#demo" class="btn btn-cta-secondary">See how it works</a>
+        <a href="/register" class="btn btn-cta-primary">Start Organizing</a>
+        <p class="cta-secondary-link"><a href="#demo">See how it works ↑</a></p>
       </section>
 
       {/* Footer */}
@@ -109,7 +111,7 @@ export default function LandingPage() {
         <p>
           <a href="/terms">Terms</a> · <a href="/privacy">Privacy</a>
         </p>
-        <p class="footer-copy">© 2026 ChoreGami</p>
+        <p class="footer-copy">© 2026 ChoreGami™ · All rights reserved · Built with ❤️ for busy families</p>
       </footer>
 
       <style>{`
@@ -207,6 +209,12 @@ export default function LandingPage() {
           color: #6b7280;
           margin: 0;
         }
+        .hero-trust {
+          font-size: 0.8rem;
+          color: #9ca3af;
+          margin: 0.75rem 0 0;
+          font-style: italic;
+        }
 
         /* Section titles */
         .section-title {
@@ -258,7 +266,13 @@ export default function LandingPage() {
           font-size: 0.95rem;
           font-weight: 500;
           color: var(--color-text, #064e3b);
-          margin: 0.5rem 0 1rem;
+          margin: 0.5rem 0 0.5rem;
+        }
+        .demo-instruction {
+          text-align: center;
+          font-size: 0.85rem;
+          color: #6b7280;
+          margin: 0 0 1rem;
         }
 
         /* How it works */
@@ -341,21 +355,18 @@ export default function LandingPage() {
           transform: translateY(-2px);
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
-        .btn-cta-secondary {
-          display: inline-block;
-          background: transparent;
-          color: white;
-          padding: 1rem 2rem;
-          border-radius: 8px;
-          font-weight: 600;
-          text-decoration: none;
-          font-size: 1rem;
-          border: 2px solid rgba(255, 255, 255, 0.5);
-          transition: all 0.2s;
+        .cta-secondary-link {
+          margin: 1rem 0 0;
+          font-size: 0.9rem;
         }
-        .btn-cta-secondary:hover {
-          background: rgba(255, 255, 255, 0.1);
-          border-color: white;
+        .cta-secondary-link a {
+          color: rgba(255, 255, 255, 0.85);
+          text-decoration: none;
+          transition: color 0.2s;
+        }
+        .cta-secondary-link a:hover {
+          color: white;
+          text-decoration: underline;
         }
 
         /* Footer */
@@ -379,7 +390,7 @@ export default function LandingPage() {
 
         /* Mobile adjustments */
         @media (max-width: 480px) {
-          .btn-cta-primary, .btn-cta-secondary {
+          .btn-cta-primary {
             display: block;
             width: 100%;
             margin: 0 0 0.75rem 0;
@@ -447,6 +458,9 @@ export default function LandingPage() {
           .hero-pwa {
             color: #cbd5e1;
           }
+          .hero-trust {
+            color: #94a3b8;
+          }
           .btn-hero-primary {
             background: #3b82f6;
           }
@@ -471,6 +485,9 @@ export default function LandingPage() {
           .demo-subtitle {
             color: #f1f5f9;
           }
+          .demo-instruction {
+            color: #94a3b8;
+          }
           .step {
             background: #1e3a5f;
           }
@@ -489,13 +506,11 @@ export default function LandingPage() {
           .btn-cta-primary {
             color: #d97706;
           }
-          .btn-cta-secondary {
-            color: white;
-            border-color: rgba(255, 255, 255, 0.5);
+          .cta-secondary-link a {
+            color: rgba(255, 255, 255, 0.85);
           }
-          .btn-cta-secondary:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: white;
+          .cta-secondary-link a:hover {
+            color: white;
           }
           .landing-footer {
             color: #cbd5e1;
