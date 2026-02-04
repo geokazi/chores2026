@@ -436,6 +436,25 @@ fly apps restart choregami
 
 **Implemented Fix**: [OAuth Landing Page Fix](../milestones/20260203_oauth_landing_page_fix.md) adds the handler to `/landing` to process tokens regardless of where Supabase redirects the user.
 
+### Issue: Supabase Ignores redirectTo Parameter
+
+**Cause**: Supabase only respects the `redirectTo` parameter in `signInWithOAuth()` if the URL is in the Redirect URLs allowlist. Without it, Supabase falls back to the Site URL.
+
+**Symptoms**: OAuth works in code but still redirects to `/landing` instead of `/login`.
+
+**Solution**: Add all domain variants to Supabase Dashboard → Authentication → URL Configuration → Redirect URLs:
+
+```
+https://choregami.app/**
+https://www.choregami.app/**
+https://choregami.fly.dev/**
+http://localhost:8000/
+```
+
+**Critical**: The `www.choregami.app/**` wildcard is essential because users may access the app via either `choregami.app` or `www.choregami.app`.
+
+**Implemented**: February 3, 2026 - Added `www.choregami.app/**` to Supabase allowlist.
+
 ---
 
 ## Migration Status
@@ -448,6 +467,7 @@ fly apps restart choregami
 | SSL Verification | Complete | Feb 3, 2026 | Both certs issued (rsa,ecdsa) |
 | Validation Testing | Complete | Feb 3, 2026 | HTTPS working on root, www, /login |
 | OAuth Fragment Fix | Complete | Feb 3, 2026 | [See milestone](../milestones/20260203_oauth_landing_page_fix.md) |
+| Supabase URL Config | Complete | Feb 3, 2026 | Added `www.choregami.app/**` to redirect allowlist |
 | GCP Cleanup | Pending | - | After 24-48 hours of monitoring |
 
 ---

@@ -81,6 +81,30 @@ const finalRedirectTo = redirectTo || `${origin}/login`;
 
 This eliminates the cascading redirect chain and sends users directly back to `/login` where the fragment handler has been battle-tested since January 2026.
 
+### Fix 3: Supabase Redirect URLs Configuration
+
+**Critical**: The code change alone wasn't sufficient. Supabase must have the redirect URLs in its allowlist, otherwise it ignores the `redirectTo` parameter and falls back to the Site URL.
+
+**Supabase Dashboard → Authentication → URL Configuration:**
+
+| Setting | Value |
+|---------|-------|
+| Site URL | `https://choregami.app/` |
+| Redirect URLs | Must include wildcards for all domains |
+
+**Required Redirect URLs:**
+```
+https://choregami.app/**
+https://www.choregami.app/**
+https://choregami.fly.dev/**
+http://localhost:8000/
+```
+
+**Why wildcards are needed:**
+- `https://choregami.app/**` covers `/login`, `/landing`, `/register`, etc.
+- `https://www.choregami.app/**` covers www subdomain (users may access via www)
+- Without matching redirect URL, Supabase ignores `redirectTo` parameter
+
 ### How the Fragment Handler Works
 
 The `oauth-fragment-handler.js` script (already production-tested) performs these steps:
@@ -258,6 +282,7 @@ This fix was discovered during the Fly.io domain migration:
 | SSL Certificates | ✅ Complete (Feb 3) | Let's Encrypt issued |
 | OAuth Fix 1: Landing Handler | ✅ Complete (Feb 3) | `01fa32a` - Safety net on /landing |
 | OAuth Fix 2: Correct Redirect | ✅ Complete (Feb 3) | `523d192` - Direct to /login |
+| OAuth Fix 3: Supabase Config | ✅ Complete (Feb 3) | Added `www.choregami.app/**` to allowlist |
 | GCP Cleanup | Pending | After 24-48 hours monitoring |
 
 See [Domain Migration Guide](../domains/20260203_flyio_migration_guide.md) for complete migration details.
