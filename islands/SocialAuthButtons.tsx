@@ -140,12 +140,14 @@ export default function SocialAuthButtons(
 
     try {
       const origin = window.location.origin;
-      const finalRedirectTo = redirectTo || `${origin}/auth/callback`;
+      // Redirect back to /login where the user initiated OAuth
+      // The oauth-fragment-handler.js on /login will process the tokens
+      const finalRedirectTo = redirectTo || `${origin}/login`;
 
       // CRITICAL: Force staging to use staging redirect instead of Supabase Site URL
       let actualRedirectTo = finalRedirectTo;
       if (origin.includes("stg") || origin.includes("staging")) {
-        actualRedirectTo = `${origin}/auth/callback`;
+        actualRedirectTo = `${origin}/login`;
         console.log(
           "🎯 Staging OAuth: Forcing redirect to staging callback:",
           actualRedirectTo,
