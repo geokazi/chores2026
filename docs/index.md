@@ -1,8 +1,8 @@
 # ChoreGami 2026 Documentation
 
-**Version**: 1.35
+**Version**: 1.36
 **Status**: ✅ Production Ready
-**Last Updated**: February 1, 2026 (Landing Page with demand capture, assessment quiz, theme toggle)
+**Last Updated**: February 3, 2026 (Domain migration to Fly.io complete)
 
 **Project Overview**: A simplified, real-time chore completion system built with Deno Fresh, transforming routine family chores into an engaging, competitive experience with sub-second real-time updates across all family devices.
 
@@ -29,7 +29,8 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-10 | [**Personal Parent Dashboards**](./milestones/20260110_personal_parent_dashboards.md) | ✅ Complete | Individual parent views separate from family dashboard |
 | 2026-01-11 | [**Real-Time WebSocket & Critical Security**](./milestones/20260111_real_time_websocket_security_implementation.md) | ✅ Complete | Strategic WebSocket integration + complete URL GUID elimination |
 | 2026-01-11 | [**Parent PIN Security System**](./20260111_parent_pin_security_implementation.md) | ✅ Complete | PIN protection with profile-switch clearing & instant verification |
-| 2026-01-11 | [**Fly.io Deployment Migration Guide**](./20260111_flyio_deployment_migration_guide.md) | 📋 Ready | Comprehensive migration plan from Cloud Run to Fly.io |
+| 2026-01-11 | [**Fly.io Deployment Migration Guide**](./20260111_flyio_deployment_migration_guide.md) | ✅ Complete | Comprehensive migration plan from Cloud Run to Fly.io |
+| 2026-02-03 | [**Domain Migration (choregami.app)**](./domains/20260203_flyio_migration_guide.md) | ✅ Complete | DNS migration from Cloud Run to Fly.io with SSL certificates |
 | 2026-01-12 | [**Complete Chore Workflow & Theme Access**](./milestones/20260112_complete_chore_workflow_and_theme_access.md) | ✅ Complete | Universal chore completion + kid theme access + security fixes |
 | 2026-01-12 | [**FamilyScore Sync Integration**](./20260112_familyscore_sync_integration.md) | ✅ Complete | Production-ready sync endpoint with data consistency management |
 | 2026-01-13 | [**Sync Fixes & UI Improvements**](./milestones/20260113_sync_fixes_and_ui_improvements.md) | ✅ Complete | Enhanced sync functionality + improved interface labeling |
@@ -325,6 +326,7 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 - **FamilyScore**: Integration with existing family gamification platform
 - **Security Implementation**: [Parent PIN System](./20260111_parent_pin_security_implementation.md) - PIN protection architecture
 - **Deployment Guide**: [Fly.io Migration](./20260111_flyio_deployment_migration_guide.md) - Production deployment strategy
+- **Domain Migration**: [choregami.app DNS Migration](./domains/20260203_flyio_migration_guide.md) - Cloud Run to Fly.io domain migration (complete)
 - **Financial Features**: [Balance, Rewards & Goals](./milestones/20260125_balance_rewards_goals_implementation.md) - P2-P4 implementation
 - **Market Strategy**: [Rewards Market Strategy](./planned/20260125_rewards_market_strategy.md) - Competitive analysis and feature prioritization
 
@@ -335,5 +337,5 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 
 ---
 
-*Last updated: February 1, 2026 (v1.35)*
+*Last updated: February 3, 2026 (v1.36)*
 *Maintained by: Claude Code AI Assistant*

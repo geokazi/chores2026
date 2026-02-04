@@ -1,9 +1,12 @@
 # Fly.io Deployment Migration Guide
 
-**Document Created**: January 11, 2026  
-**Status**: 📋 **READY FOR IMPLEMENTATION**  
-**Migration Effort**: 🟢 **Low** (Minimal code changes required)  
+**Document Created**: January 11, 2026
+**Status**: ✅ **COMPLETE**
+**Migration Effort**: 🟢 **Low** (Minimal code changes required)
 **Performance Impact**: 🚀 **Improved** (Better WebSocket + edge deployment)
+
+> **Update (February 3, 2026)**: Domain migration complete. choregami.app now points to Fly.io.
+> See [Domain Migration Guide](./domains/20260203_flyio_migration_guide.md) for DNS details.
 
 ## Executive Summary
 
