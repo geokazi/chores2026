@@ -25,6 +25,9 @@ export const handler: Handlers = {
 export default function LandingPage() {
   return (
     <div class="landing-page">
+      {/* OAuth fragment handler - processes tokens from OAuth redirects */}
+      <script src="/oauth-fragment-handler.js"></script>
+
       {/* Header */}
       <header class="landing-header">
         <div class="landing-logo">
