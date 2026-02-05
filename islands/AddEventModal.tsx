@@ -82,6 +82,7 @@ export default function AddEventModal({ isOpen, onClose, familyMembers, onSucces
 
   const [formData, setFormData] = useState(getInitialFormData());
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Reset form when modal opens/closes or editingEvent changes
@@ -138,6 +139,30 @@ export default function AddEventModal({ isOpen, onClose, familyMembers, onSucces
       setError(`Failed to ${isEditing ? "update" : "create"} event`);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!editingEvent || !confirm("Delete this event?")) return;
+
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/events/${editingEvent.id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        onSuccess?.();
+        onClose();
+      } else {
+        const result = await response.json();
+        setError(result.error || "Failed to delete event");
+      }
+    } catch (err) {
+      console.error("Error deleting event:", err);
+      setError("Failed to delete event");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -555,6 +580,28 @@ export default function AddEventModal({ isOpen, onClose, familyMembers, onSucces
               ))}
             </div>
           </div>
+
+          {/* Delete button - only when editing */}
+          {isEditing && (
+            <div style={{ marginTop: "1.5rem", paddingTop: "1rem", borderTop: "1px solid var(--color-border)" }}>
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={isDeleting}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: "var(--color-warning)",
+                  fontSize: "0.875rem",
+                  cursor: isDeleting ? "wait" : "pointer",
+                  padding: 0,
+                  opacity: isDeleting ? 0.6 : 1,
+                }}
+              >
+                {isDeleting ? "Deleting..." : "Delete Event"}
+              </button>
+            </div>
+          )}
 
         </form>
       </div>

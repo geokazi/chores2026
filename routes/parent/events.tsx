@@ -70,11 +70,16 @@ export const handler: Handlers<EventsPageData> = {
     try {
       const client = getServiceSupabaseClient();
 
-      // Date calculations - use local date components to avoid UTC timezone issues
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      // Date calculations - use localDate from query param (browser's local date)
+      // This fixes UTC timezone issues where server time differs from user's local time
+      const url = new URL(req.url);
+      const todayStr = url.searchParams.get("localDate") || (() => {
+        // Fallback: calculate server local date (will be UTC on Fly.io)
+        const today = new Date();
+        return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      })();
+      const today = new Date(todayStr + "T00:00:00");
       const toLocalDateStr = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-      const todayStr = toLocalDateStr(today);
 
       const weekFromNow = new Date(today);
       weekFromNow.setDate(weekFromNow.getDate() + 7);
@@ -187,8 +192,25 @@ export default function EventsPage({ data }: PageProps<EventsPageData>) {
 
   const currentUser = members.find((m) => m.id === parentProfileId) || null;
 
+  // Script to detect browser timezone and reload with localDate if needed
+  const timezoneScript = `
+    (function() {
+      const url = new URL(window.location.href);
+      if (!url.searchParams.has('localDate')) {
+        const now = new Date();
+        const localDate = now.getFullYear() + '-' +
+          String(now.getMonth() + 1).padStart(2, '0') + '-' +
+          String(now.getDate()).padStart(2, '0');
+        url.searchParams.set('localDate', localDate);
+        window.location.replace(url.toString());
+      }
+    })();
+  `;
+
   return (
     <div class="container">
+      {/* Auto-detect and pass browser local date for timezone-correct filtering */}
+      <script dangerouslySetInnerHTML={{ __html: timezoneScript }} />
       <AppHeader
         currentPage="events"
         pageTitle="Family Events"

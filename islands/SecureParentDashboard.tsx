@@ -8,6 +8,7 @@ import { ActiveKidSessionManager } from "../lib/active-kid-session.ts";
 import { groupEventsByTimePeriod } from "../lib/utils/household.ts";
 import AppHeader from "./AppHeader.tsx";
 import LiveActivityFeed from "./LiveActivityFeed.tsx";
+import AddEventModal from "./AddEventModal.tsx";
 
 interface Props {
   family: any;
@@ -24,6 +25,8 @@ export default function SecureParentDashboard({ family, familyMembers, recentAct
   const [completingChoreId, setCompletingChoreId] = useState<string | null>(null);
   const [togglingTaskId, setTogglingTaskId] = useState<string | null>(null);
   const [showLaterEvents, setShowLaterEvents] = useState(false);
+  const [showEditEventModal, setShowEditEventModal] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<any>(null);
 
   // Smart grouping for events: Today, This Week, Later
   const groupedEvents = useMemo(() => groupEventsByTimePeriod(upcomingEvents), [upcomingEvents]);
@@ -420,26 +423,46 @@ export default function SecureParentDashboard({ family, familyMembers, recentAct
       )}
 
       {/* What's Next - Events with Smart Grouping */}
-      {upcomingEvents.length > 0 && (
-        <div class="card" style={{ marginBottom: "1.5rem" }}>
-          <h2 style={{
-            fontSize: "1.125rem",
-            fontWeight: "600",
-            marginBottom: "1rem",
-            display: "flex",
-            alignItems: "center",
-            gap: "0.5rem",
-          }}>
-            📅 What's Next
-          </h2>
+      <div class="card" style={{ marginBottom: "1.5rem" }}>
+        <h2 style={{
+          fontSize: "1.125rem",
+          fontWeight: "600",
+          marginBottom: "1rem",
+          display: "flex",
+          alignItems: "center",
+          gap: "0.5rem",
+        }}>
+          📅 What's Next
+        </h2>
 
+        {upcomingEvents.length === 0 ? (
+          <div style={{
+            textAlign: "center",
+            padding: "1.5rem",
+            color: "var(--color-text-light)",
+          }}>
+            <div style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>📅</div>
+            <p style={{ margin: 0 }}>No upcoming events</p>
+            <a
+              href="/parent/events"
+              style={{
+                display: "inline-block",
+                marginTop: "0.75rem",
+                fontSize: "0.875rem",
+                color: "var(--color-primary)",
+              }}
+            >
+              + Add Event
+            </a>
+          </div>
+        ) : (
+          <>
           {/* Helper to render event card */}
           {(() => {
             const renderEventCard = (event: any) => {
               const prepTasks = event.metadata?.prep_tasks || [];
               const myTasks = prepTasks.filter((t: any) => !t.assignee_id || t.assignee_id === activeParent.id);
               const myChores = event.linked_chores || [];
-              const emoji = event.metadata?.emoji || "";
 
               const hasMissions = myTasks.length > 0 || myChores.length > 0;
               const totalTasks = myTasks.length + myChores.length;
@@ -457,9 +480,7 @@ export default function SecureParentDashboard({ family, familyMembers, recentAct
                   }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.25rem" }}>
-                    <span style={{ fontWeight: "600" }}>
-                      {emoji}{emoji ? " " : ""}{event.title}
-                    </span>
+                    <span style={{ fontWeight: "600" }}>{event.title}</span>
                     {hasMissions && (
                       <span style={{
                         fontSize: "0.75rem",
@@ -473,15 +494,34 @@ export default function SecureParentDashboard({ family, familyMembers, recentAct
                       </span>
                     )}
                   </div>
-                  <div style={{ fontSize: "0.875rem", color: "var(--color-text-light)" }}>
-                    {new Date(event.event_date + "T00:00:00").toLocaleDateString("en-US", {
-                      weekday: "short",
-                      month: "short",
-                      day: "numeric",
-                    })}
-                    {event.schedule_data?.start_time && !event.schedule_data?.all_day && (
-                      <> at {event.schedule_data.start_time}</>
-                    )}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ fontSize: "0.875rem", color: "var(--color-text-light)" }}>
+                      {new Date(event.event_date + "T00:00:00").toLocaleDateString("en-US", {
+                        weekday: "short",
+                        month: "short",
+                        day: "numeric",
+                      })}
+                      {event.schedule_data?.start_time && !event.schedule_data?.all_day && (
+                        <> at {event.schedule_data.start_time}</>
+                      )}
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingEvent(event);
+                        setShowEditEventModal(true);
+                      }}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "var(--color-primary)",
+                        fontSize: "0.75rem",
+                        cursor: "pointer",
+                        padding: "0.25rem",
+                      }}
+                    >
+                      Edit
+                    </button>
                   </div>
                   {hasMissions && (
                     <div style={{ marginTop: "0.75rem", paddingTop: "0.75rem", borderTop: "1px solid var(--color-border)" }}>
@@ -628,8 +668,9 @@ export default function SecureParentDashboard({ family, familyMembers, recentAct
               </div>
             );
           })()}
-        </div>
-      )}
+          </>
+        )}
+      </div>
 
       {/* Recent Activity Feed */}
       {recentActivity.length > 0 && (
@@ -651,6 +692,25 @@ export default function SecureParentDashboard({ family, familyMembers, recentAct
           👨‍👩‍👧‍👦 View Family Dashboard
         </a>
       </div>
+
+      {/* Edit Event Modal */}
+      <AddEventModal
+        isOpen={showEditEventModal}
+        onClose={() => {
+          setShowEditEventModal(false);
+          setEditingEvent(null);
+        }}
+        familyMembers={familyMembers}
+        onSuccess={() => {
+          setShowEditEventModal(false);
+          setEditingEvent(null);
+          // Reload events
+          if (activeParent) {
+            loadParentEvents(activeParent.id);
+          }
+        }}
+        editingEvent={editingEvent}
+      />
     </>
   );
 }

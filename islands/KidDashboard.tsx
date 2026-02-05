@@ -328,7 +328,7 @@ export default function KidDashboard({
 
       {/* Upcoming Events - Smart grouping: Today, This Week, Later */}
       {(upcomingEvents.length > 0 || kidsCanCreateEvents) && (
-        <div style={{ marginBottom: "1.5rem" }}>
+        <div class="card" style={{ marginBottom: "1.5rem" }}>
           <div style={{
             display: "flex",
             justifyContent: "space-between",
@@ -417,41 +417,34 @@ export default function KidDashboard({
               return (
                 <div
                   key={event.id}
-                  class="card"
                   style={{
-                    padding: "0.75rem 1rem",
+                    padding: "0.75rem",
+                    backgroundColor: "var(--color-bg)",
+                    borderRadius: "0.5rem",
+                    borderLeft: "3px solid var(--color-primary)",
                   }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                    <span style={{ fontSize: "1.5rem" }}>{emoji}</span>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: "500" }}>{event.title}</div>
-                      <div style={{ fontSize: "0.875rem", color: "var(--color-text-light)" }}>
-                        {dateLabel}
-                        {timeStr && ` at ${timeStr}`}
-                      </div>
+                  <div style={{ fontWeight: "600", marginBottom: "0.25rem" }}>{event.title}</div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div style={{ fontSize: "0.875rem", color: "var(--color-text-light)" }}>
+                      {dateLabel}
+                      {timeStr && ` at ${timeStr}`}
                     </div>
-                  </div>
-
-                  {/* Add Prep Tasks button for kids */}
-                  <div style={{ marginTop: "0.5rem" }}>
                     <button
                       onClick={() => {
                         setSelectedEventForPrep(event);
                         setShowPrepTasksModal(true);
                       }}
                       style={{
-                        padding: "0.375rem 0.75rem",
-                        border: "1px solid var(--color-primary)",
-                        background: "white",
-                        cursor: "pointer",
+                        background: "none",
+                        border: "none",
                         color: "var(--color-primary)",
                         fontSize: "0.75rem",
-                        borderRadius: "0.25rem",
-                        fontWeight: "500",
+                        cursor: "pointer",
+                        padding: "0.25rem",
                       }}
                     >
-                      {myPrepTasks.length > 0 ? `+ Prep (${myPrepTasks.length})` : "+ Add Prep Task"}
+                      {myPrepTasks.length > 0 ? `Prep (${myPrepTasks.length})` : "+ Prep"}
                     </button>
                   </div>
 
@@ -595,9 +588,32 @@ export default function KidDashboard({
                 )}
 
                 {/* Empty state */}
-                {upcomingEvents.length === 0 && !kidsCanCreateEvents && (
+                {upcomingEvents.length === 0 && (
                   <div class="card" style={{ textAlign: "center", padding: "1.5rem", color: "var(--color-text-light)" }}>
-                    No upcoming events
+                    <div style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>📅</div>
+                    <p style={{ margin: 0 }}>No upcoming events</p>
+                    {kidsCanCreateEvents && (
+                      <button
+                        onClick={() => {
+                          if (kidPinRequired) {
+                            setShowPinModal(true);
+                          } else {
+                            setShowAddEventModal(true);
+                          }
+                        }}
+                        style={{
+                          marginTop: "0.75rem",
+                          background: "none",
+                          border: "none",
+                          color: "var(--color-primary)",
+                          fontSize: "0.875rem",
+                          cursor: "pointer",
+                          padding: 0,
+                        }}
+                      >
+                        + Add Event
+                      </button>
+                    )}
                   </div>
                 )}
               </div>

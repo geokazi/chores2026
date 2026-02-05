@@ -125,9 +125,13 @@ export const handler: Handlers = {
       }
 
       // Use local date from query param to avoid timezone issues
+      // IMPORTANT: localDate should be passed from client (browser's local date)
+      // Fallback uses server time which may be UTC and differ from user's timezone
       const url = new URL(req.url);
-      const localDate = url.searchParams.get("localDate") ||
-        new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD format in server's local time
+      const localDate = url.searchParams.get("localDate") || (() => {
+        const now = new Date();
+        return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      })();
 
       // End date for range queries (default: 30 days from start)
       const defaultEndDate = (() => {
