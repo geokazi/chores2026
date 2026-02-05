@@ -228,6 +228,8 @@ ADD COLUMN family_event_id UUID REFERENCES choretracker.family_events(id);
 - [Architecture](../architecture.md#events-calendar-integration)
 - [Original Planning Doc](./20260119_events_calendar_original_plan.md)
 - [Revised Planning Doc](./20260119_events_calendar_rev2_plan.md)
+- [Multi-day & Repeating Events](./20260121_events-multiday-repeating-endtime.md)
+- [Events UX Improvements](./20260204_events_ux_improvements.md) - Timezone fix, edit/delete, consistent UI
 
 ---
 

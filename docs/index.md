@@ -1,8 +1,8 @@
 # ChoreGami 2026 Documentation
 
-**Version**: 1.38
+**Version**: 1.39
 **Status**: ✅ Production Ready
-**Last Updated**: February 3, 2026 (Landing page conversion optimization)
+**Last Updated**: February 4, 2026 (Events UX improvements)
 
 **Project Overview**: A simplified, real-time chore completion system built with Deno Fresh, transforming routine family chores into an engaging, competitive experience with sub-second real-time updates across all family devices.
 
@@ -93,6 +93,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | — | [↳ Planning Doc](./planned/20260201_landing_page_teaser_cards.md) | ✅ Complete | Original design spec with teaser card strategy |
 | 2026-02-03 | **Landing Page Conversion Optimization** | ✅ Complete | CTA "Start Organizing", trust signal, demo microcopy, single-action focus, updated footer |
 | — | [↳ Interest Capture (Deferred)](./planned/20260203_landing_interest_capture.md) | 📋 Planned | Post-signup interest signals for product direction |
+| 2026-02-04 | [**Events UX Improvements**](./milestones/20260204_events_ux_improvements.md) | ✅ Complete | Timezone fix (localDate param), event edit/delete from dashboard, consistent left-border UI |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 

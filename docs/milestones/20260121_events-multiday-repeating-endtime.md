@@ -506,6 +506,7 @@ The JSONB approach makes all these extensions trivial - just add new fields to t
 - **Events Calendar Implementation**: [Events Prep Tasks](./20260120_events_prep_tasks_implementation.md) - Base events system
 - **MealPlanner Analysis**: [Events Calendar Rev2 Plan](./20260119_events_calendar_rev2_plan.md) - Original hybrid approach
 - **JSONB Pattern**: [JSONB Settings Architecture](../20260114_JSONB_settings_architecture.md) - Schema flexibility pattern
+- **Events UX Improvements**: [Feb 2026](./20260204_events_ux_improvements.md) - Timezone fix, dashboard edit/delete, consistent left-border UI
 
 ---
 
