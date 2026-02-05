@@ -24,6 +24,7 @@ interface LinkedChore {
   id: string;
   status: string;
   point_value: number;
+  assigned_to_profile_id?: string;
   chore_template?: {
     id: string;
     name: string;
@@ -163,6 +164,20 @@ export default function EventCard({
       return names.join(" & ");
     }
     return `${names[0]} +${names.length - 1}`;
+  };
+
+  // Get assignee name if different from event participants
+  const getAssigneeLabel = (assigneeId?: string): string | null => {
+    if (!assigneeId) return null;
+    // If event has participants, check if assignee is one of them
+    if (event.participants && event.participants.length > 0) {
+      if (event.participants.includes(assigneeId)) {
+        return null; // Assignee is a participant, don't show
+      }
+    }
+    // Find the name
+    const member = familyMembers.find((m) => m.id === assigneeId);
+    return member?.name || null;
   };
 
   // Tasks for current user (if currentUserId is undefined, show all tasks)
@@ -571,6 +586,19 @@ export default function EventCard({
                               >
                                 {task.text}
                               </span>
+                              {/* Show assignee if different from event participants */}
+                              {getAssigneeLabel(task.assignee_id) && (
+                                <span
+                                  style={{
+                                    fontSize: "0.75rem",
+                                    color: "var(--color-text-light)",
+                                    marginLeft: "0.5rem",
+                                    fontStyle: "italic",
+                                  }}
+                                >
+                                  → {getAssigneeLabel(task.assignee_id)}
+                                </span>
+                              )}
                             </div>
                           </button>
                           {/* Mini overflow menu for prep task */}
@@ -784,6 +812,19 @@ export default function EventCard({
                               >
                                 {chore.chore_template?.name || "Task"}
                               </span>
+                              {/* Show assignee if different from event participants */}
+                              {getAssigneeLabel(chore.assigned_to_profile_id) && (
+                                <span
+                                  style={{
+                                    fontSize: "0.75rem",
+                                    color: "var(--color-text-light)",
+                                    marginLeft: "0.5rem",
+                                    fontStyle: "italic",
+                                  }}
+                                >
+                                  ({getAssigneeLabel(chore.assigned_to_profile_id)})
+                                </span>
+                              )}
                             </div>
                             {chore.point_value > 0 && (
                               <span
