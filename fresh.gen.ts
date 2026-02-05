@@ -10,6 +10,7 @@ import * as $api_auth_validate_oauth from "./routes/api/auth/validate-oauth.ts";
 import * as $api_chores_chore_id_complete from "./routes/api/chores/[chore_id]/complete.ts";
 import * as $api_chores_chore_id_delete from "./routes/api/chores/[chore_id]/delete.ts";
 import * as $api_chores_chore_id_edit from "./routes/api/chores/[chore_id]/edit.ts";
+import * as $api_chores_chore_id_unlink_event from "./routes/api/chores/[chore_id]/unlink-event.ts";
 import * as $api_chores_by_events from "./routes/api/chores/by-events.ts";
 import * as $api_chores_create from "./routes/api/chores/create.ts";
 import * as $api_chores_recurring from "./routes/api/chores/recurring.ts";
@@ -94,6 +95,7 @@ import * as $ChoreList from "./islands/ChoreList.tsx";
 import * as $ConfettiTrigger from "./islands/ConfettiTrigger.tsx";
 import * as $DemoChoreCard from "./islands/DemoChoreCard.tsx";
 import * as $DemoKidDashboard from "./islands/DemoKidDashboard.tsx";
+import * as $EventCard from "./islands/EventCard.tsx";
 import * as $EventMissionGroup from "./islands/EventMissionGroup.tsx";
 import * as $EventsList from "./islands/EventsList.tsx";
 import * as $FamilyReports from "./islands/FamilyReports.tsx";
@@ -149,6 +151,8 @@ const manifest = {
     "./routes/api/chores/[chore_id]/complete.ts": $api_chores_chore_id_complete,
     "./routes/api/chores/[chore_id]/delete.ts": $api_chores_chore_id_delete,
     "./routes/api/chores/[chore_id]/edit.ts": $api_chores_chore_id_edit,
+    "./routes/api/chores/[chore_id]/unlink-event.ts":
+      $api_chores_chore_id_unlink_event,
     "./routes/api/chores/by-events.ts": $api_chores_by_events,
     "./routes/api/chores/create.ts": $api_chores_create,
     "./routes/api/chores/recurring.ts": $api_chores_recurring,
@@ -237,6 +241,7 @@ const manifest = {
     "./islands/ConfettiTrigger.tsx": $ConfettiTrigger,
     "./islands/DemoChoreCard.tsx": $DemoChoreCard,
     "./islands/DemoKidDashboard.tsx": $DemoKidDashboard,
+    "./islands/EventCard.tsx": $EventCard,
     "./islands/EventMissionGroup.tsx": $EventMissionGroup,
     "./islands/EventsList.tsx": $EventsList,
     "./islands/FamilyReports.tsx": $FamilyReports,

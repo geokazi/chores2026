@@ -1,7 +1,10 @@
 /**
- * Prep Task API - Toggle completion status
+ * Prep Task API - Toggle completion status or delete a task
  * POST /api/events/[id]/prep-task
  * Body: { taskId: string, done: boolean }
+ *
+ * DELETE /api/events/[id]/prep-task
+ * Body: { taskId: string }
  */
 
 import { Handlers } from "$fresh/server.ts";
@@ -142,6 +145,97 @@ export const handler: Handlers = {
     } catch (error) {
       console.error("Prep task toggle error:", error);
       return new Response(JSON.stringify({ error: "Failed to update task" }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+  },
+
+  async DELETE(req, ctx) {
+    try {
+      const cookies = getCookies(req.headers);
+      const accessToken = cookies["sb-access-token"];
+      if (!accessToken) {
+        return new Response(JSON.stringify({ error: "Not authenticated" }), {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      const client = getServiceSupabaseClient();
+      const familyId = await getUserFamilyId(client, accessToken);
+      if (!familyId) {
+        return new Response(JSON.stringify({ error: "Family not found" }), {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      const eventId = ctx.params.id;
+      const body = await req.json();
+      const { taskId } = body;
+
+      if (!taskId) {
+        return new Response(JSON.stringify({ error: "taskId is required" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      // Get the event
+      const { data: event, error: fetchError } = await client
+        .schema("choretracker")
+        .from("family_events")
+        .select("*")
+        .eq("id", eventId)
+        .eq("family_id", familyId)
+        .eq("is_deleted", false)
+        .single();
+
+      if (fetchError || !event) {
+        return new Response(JSON.stringify({ error: "Event not found" }), {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      // Remove the prep task from metadata
+      const metadata = event.metadata || {};
+      const prepTasks = metadata.prep_tasks || [];
+      const filteredTasks = prepTasks.filter((t: any) => t.id !== taskId);
+
+      if (filteredTasks.length === prepTasks.length) {
+        return new Response(JSON.stringify({ error: "Task not found" }), {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      // Save updated metadata
+      const { error: updateError } = await client
+        .schema("choretracker")
+        .from("family_events")
+        .update({
+          metadata: { ...metadata, prep_tasks: filteredTasks },
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", eventId);
+
+      if (updateError) {
+        console.error("Prep task delete error:", updateError);
+        return new Response(JSON.stringify({ error: "Failed to delete task" }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (error) {
+      console.error("Prep task delete error:", error);
+      return new Response(JSON.stringify({ error: "Failed to delete task" }), {
         status: 500,
         headers: { "Content-Type": "application/json" },
       });

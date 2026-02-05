@@ -1,8 +1,8 @@
 # ChoreGami 2026 Documentation
 
-**Version**: 1.39
+**Version**: 1.40
 **Status**: ✅ Production Ready
-**Last Updated**: February 4, 2026 (Events UX improvements)
+**Last Updated**: February 5, 2026 (Events progressive disclosure UI)
 
 **Project Overview**: A simplified, real-time chore completion system built with Deno Fresh, transforming routine family chores into an engaging, competitive experience with sub-second real-time updates across all family devices.
 
@@ -94,6 +94,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-02-03 | **Landing Page Conversion Optimization** | ✅ Complete | CTA "Start Organizing", trust signal, demo microcopy, single-action focus, updated footer |
 | — | [↳ Interest Capture (Deferred)](./planned/20260203_landing_interest_capture.md) | 📋 Planned | Post-signup interest signals for product direction |
 | 2026-02-04 | [**Events UX Improvements**](./milestones/20260204_events_ux_improvements.md) | ✅ Complete | Timezone fix (localDate param), event edit/delete from dashboard, consistent left-border UI |
+| 2026-02-05 | [**Events Progressive Disclosure**](./milestones/20260205_events_progressive_disclosure_implementation.md) | ✅ Complete | Shared EventCard component, collapsed/expanded states, swipe gestures, item-level overflow menus for prep tasks and chores |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 
@@ -292,6 +293,7 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 - ✅ **Savings Goals (P4)**: Kid-created goals in profile preferences JSONB, progress bars with auto-update, parent "boost" contributions (no balance deduction), celebration on achievement, custom delete confirmation modal, **fun empty state** with bouncing icon + goal ideas (🍦10/🎮50/🎧60/🎢80 pts) + parent-assist CTA; routes: `/kid/goals`, `/api/goals`
 - ✅ **Confetti Celebrations**: Multi-sensory reward system - animated confetti (green/gold/multi-color), Web Audio tones (cheerful/cha-ching/fanfare), haptic feedback (Android vibration + iOS 18+ switch hack), weekly finale (5s confetti rain), CSS element animations (success pulse, milestone glow, screen shake); user preference toggle; canvas-confetti library via CDN
 - ✅ **Landing Page & Demand Capture**: Value-first landing at `/landing` with inline demo, teaser cards (Families/Roommates/Just Me), 3-question assessment quiz with 8 persona types, theme toggle (light/dark), rich analytics (navigator API, anonymized IP, timezone), glassmorphism styling, Ocean Depth dark mode theme
+- ✅ **Events Progressive Disclosure UI**: Shared EventCard component across all dashboards; collapsed/expanded states with CSS transitions; swipe gestures for mobile; item-level overflow menus (⋮) for prep task edit/delete and chore unlink; auto-expand today's events
 
 ### Known Limitations
 - **Testing**: Comprehensive test suite not yet implemented
@@ -341,5 +343,5 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 
 ---
 
-*Last updated: February 3, 2026 (v1.38)*
+*Last updated: February 5, 2026 (v1.40)*
 *Maintained by: Claude Code AI Assistant*

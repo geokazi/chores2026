@@ -3,7 +3,7 @@
  * Main interface for kids showing their status, chores, and family leaderboard
  */
 
-import { useEffect, useState, useMemo } from "preact/hooks";
+import { useEffect, useMemo, useState } from "preact/hooks";
 import ChoreList from "./ChoreList.tsx";
 import LiveLeaderboard from "./LiveLeaderboard.tsx";
 import LiveActivityFeed from "./LiveActivityFeed.tsx";
@@ -12,7 +12,13 @@ import AddEventModal from "./AddEventModal.tsx";
 import AddPrepTasksModal from "./AddPrepTasksModal.tsx";
 import PinEntryModal from "./PinEntryModal.tsx";
 import WeeklyProgress from "./WeeklyProgress.tsx";
-import { groupChoresByEvent, usePointsMode, formatTime, groupEventsByTimePeriod } from "../lib/utils/household.ts";
+import EventCard from "./EventCard.tsx";
+import {
+  formatTime,
+  groupChoresByEvent,
+  groupEventsByTimePeriod,
+  usePointsMode,
+} from "../lib/utils/household.ts";
 
 interface FamilyMember {
   id: string;
@@ -103,6 +109,7 @@ interface UpcomingEvent {
     prep_tasks?: PrepTask[];
   };
   linked_chores?: LinkedChore[];
+  created_by_profile_id?: string;
 }
 
 interface Props {
@@ -116,7 +123,9 @@ interface Props {
   kidPinRequired?: boolean;
   thisWeekActivity?: ThisWeekActivity[];
   streaks?: StreakData[];
-  onChoreComplete?: (result: { points_earned: number; choreName: string }) => void;
+  onChoreComplete?: (
+    result: { points_earned: number; choreName: string },
+  ) => void;
   onEventCreated?: () => void;
   onPrepTaskToggle?: (eventId: string, taskId: string, done: boolean) => void;
 }
@@ -141,30 +150,84 @@ export default function KidDashboard({
   const [activity, setActivity] = useState(recentActivity);
   const [showAddEventModal, setShowAddEventModal] = useState(false);
   const [showPrepTasksModal, setShowPrepTasksModal] = useState(false);
-  const [selectedEventForPrep, setSelectedEventForPrep] = useState<UpcomingEvent | null>(null);
+  const [selectedEventForPrep, setSelectedEventForPrep] = useState<
+    UpcomingEvent | null
+  >(null);
   const [showPinModal, setShowPinModal] = useState(false);
   const [showLaterEvents, setShowLaterEvents] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<UpcomingEvent | null>(null);
+  const [togglingTaskId, setTogglingTaskId] = useState<string | null>(null);
+  // Calendar added state (persisted in localStorage)
+  const [calendarAddedIds, setCalendarAddedIds] = useState<Set<string>>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("choregami_calendar_events");
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    }
+    return new Set();
+  });
+
+  // Auto-expand "Today" events by default
+  const todayStr = useMemo(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${
+      String(now.getMonth() + 1).padStart(2, "0")
+    }-${String(now.getDate()).padStart(2, "0")}`;
+  }, []);
+
+  const [expandedEvents, setExpandedEvents] = useState<Set<string>>(() => {
+    // Start with today's events expanded
+    const todayEvents = upcomingEvents.filter((e) => e.event_date === todayStr);
+    return new Set(todayEvents.map((e) => e.id));
+  });
+
+  const toggleExpanded = (eventId: string) => {
+    setExpandedEvents((prev) => {
+      const next = new Set(prev);
+      if (next.has(eventId)) {
+        next.delete(eventId);
+      } else {
+        next.add(eventId);
+      }
+      return next;
+    });
+  };
 
   // Update chores when props change (after refresh)
   useEffect(() => {
     setChores(todaysChores);
   }, [todaysChores]);
 
+  // Update expanded events when props change
+  useEffect(() => {
+    if (upcomingEvents.length > 0) {
+      const todayEvents = upcomingEvents.filter((e) =>
+        e.event_date === todayStr
+      );
+      setExpandedEvents((prev) => {
+        const next = new Set(prev);
+        todayEvents.forEach((e) => next.add(e.id));
+        return next;
+      });
+    }
+  }, [upcomingEvents, todayStr]);
+
   // Group chores by event for mission display
   const groupedChores = useMemo(() => groupChoresByEvent(chores), [chores]);
   const showPoints = useMemo(() => usePointsMode(chores), [chores]);
 
   // Smart grouping for events: Today, This Week, Later
-  const groupedEvents = useMemo(() => groupEventsByTimePeriod(upcomingEvents), [upcomingEvents]);
+  const groupedEvents = useMemo(() => groupEventsByTimePeriod(upcomingEvents), [
+    upcomingEvents,
+  ]);
 
   // Filter weekly activity to show only this kid's data
   const kidWeeklyActivity = useMemo(
-    () => thisWeekActivity.filter(a => a.profileId === kid.id),
-    [thisWeekActivity, kid.id]
+    () => thisWeekActivity.filter((a) => a.profileId === kid.id),
+    [thisWeekActivity, kid.id],
   );
   const kidStreaks = useMemo(
-    () => streaks.filter(s => s.profileId === kid.id),
-    [streaks, kid.id]
+    () => streaks.filter((s) => s.profileId === kid.id),
+    [streaks, kid.id],
   );
 
   // Calculate kid's ranking and streak
@@ -201,7 +264,10 @@ export default function KidDashboard({
     return "";
   };
 
-  const handleChoreComplete = (choreId: string, result: { points_earned: number; choreName: string }) => {
+  const handleChoreComplete = (
+    choreId: string,
+    result: { points_earned: number; choreName: string },
+  ) => {
     // 1. Update local chore status immediately for responsive UI
     setChores((prev) =>
       prev.map((chore) =>
@@ -215,7 +281,10 @@ export default function KidDashboard({
     setLeaderboard((prev) =>
       prev.map((member) =>
         member.id === kid.id
-          ? { ...member, current_points: member.current_points + result.points_earned }
+          ? {
+            ...member,
+            current_points: member.current_points + result.points_earned,
+          }
           : member
       )
     );
@@ -242,7 +311,56 @@ export default function KidDashboard({
       onChoreComplete(result);
     }
 
-    console.log('🎉 Chore completed:', choreId, `+${result.points_earned} pts`);
+    console.log("🎉 Chore completed:", choreId, `+${result.points_earned} pts`);
+  };
+
+  const handleAddToCalendar = (event: UpcomingEvent) => {
+    // Trigger download via hidden link
+    const link = document.createElement("a");
+    link.href = `/api/events/${event.id}/calendar`;
+    link.download = `${event.title}.ics`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // Mark as added in localStorage
+    const newIds = new Set(calendarAddedIds).add(event.id);
+    setCalendarAddedIds(newIds);
+    localStorage.setItem(
+      "choregami_calendar_events",
+      JSON.stringify([...newIds]),
+    );
+  };
+
+  const handleDeleteEvent = async (eventId: string) => {
+    try {
+      const response = await fetch(`/api/events/${eventId}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        // Refresh events
+        onEventCreated?.();
+      } else {
+        alert("Failed to delete event");
+      }
+    } catch (error) {
+      console.error("Error deleting event:", error);
+      alert("Failed to delete event");
+    }
+  };
+
+  const handlePrepTaskToggleWithState = async (
+    eventId: string,
+    taskId: string,
+    done: boolean,
+  ) => {
+    setTogglingTaskId(taskId);
+    try {
+      await onPrepTaskToggle?.(eventId, taskId, done);
+    } finally {
+      setTogglingTaskId(null);
+    }
   };
 
   return (
@@ -273,7 +391,11 @@ export default function KidDashboard({
 
         {/* Regular Chores - Not linked to any event */}
         {groupedChores.unlinked.length > 0 && (
-          <div style={{ marginTop: groupedChores.events.length > 0 ? "1rem" : "0" }}>
+          <div
+            style={{
+              marginTop: groupedChores.events.length > 0 ? "1rem" : "0",
+            }}
+          >
             {groupedChores.events.length > 0 && (
               <h3
                 style={{
@@ -302,7 +424,6 @@ export default function KidDashboard({
             </p>
           </div>
         )}
-
       </div>
 
       {/* This Week Progress - Kid's day-by-day view */}
@@ -329,12 +450,14 @@ export default function KidDashboard({
       {/* Upcoming Events - Smart grouping: Today, This Week, Later */}
       {(upcomingEvents.length > 0 || kidsCanCreateEvents) && (
         <div class="card" style={{ marginBottom: "1.5rem" }}>
-          <div style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "1rem",
-          }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: "1rem",
+            }}
+          >
             <h2
               style={{
                 fontSize: "1.125rem",
@@ -371,174 +494,72 @@ export default function KidDashboard({
             )}
           </div>
 
-          {/* Helper to render event card */}
+          {/* Render event using shared EventCard component */}
           {(() => {
             const renderEventCard = (event: UpcomingEvent) => {
-              const eventDate = new Date(event.event_date + "T00:00:00");
-              const today = new Date();
-              today.setHours(0, 0, 0, 0);
-              const tomorrow = new Date(today);
-              tomorrow.setDate(tomorrow.getDate() + 1);
-              const eventDateOnly = new Date(event.event_date + "T00:00:00");
-              eventDateOnly.setHours(0, 0, 0, 0);
-
-              let dateLabel: string;
-              if (eventDateOnly.getTime() === today.getTime()) {
-                dateLabel = "Today";
-              } else if (eventDateOnly.getTime() === tomorrow.getTime()) {
-                dateLabel = "Tomorrow";
-              } else {
-                dateLabel = eventDate.toLocaleDateString("en-US", {
-                  weekday: "short",
-                  month: "short",
-                  day: "numeric",
-                });
-              }
-
-              const timeStr = event.schedule_data?.start_time
-                ? formatTime(event.schedule_data.start_time)
-                : event.schedule_data?.all_day
-                ? "All day"
-                : "";
-
-              const emoji = event.metadata?.emoji || "📅";
-
-              // Get prep tasks assigned to this kid
-              const myPrepTasks = (event.metadata?.prep_tasks || []).filter(
-                task => !task.assignee_id || task.assignee_id === kid.id
-              );
-
-              // Get linked chores for this event
-              const myLinkedChores = event.linked_chores || [];
-
-              // Show missions section if either prep tasks or linked chores exist
-              const hasMissions = myPrepTasks.length > 0 || myLinkedChores.length > 0;
+              // Kids see overflow menu ONLY if they created the event
+              const kidCreatedEvent = event.created_by_profile_id === kid.id;
 
               return (
-                <div
-                  key={event.id}
-                  style={{
-                    padding: "0.75rem",
-                    backgroundColor: "var(--color-bg)",
-                    borderRadius: "0.5rem",
-                    borderLeft: "3px solid var(--color-primary)",
-                  }}
-                >
-                  <div style={{ fontWeight: "600", marginBottom: "0.25rem" }}>{event.title}</div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <div style={{ fontSize: "0.875rem", color: "var(--color-text-light)" }}>
-                      {dateLabel}
-                      {timeStr && ` at ${timeStr}`}
-                    </div>
-                    <button
-                      onClick={() => {
-                        setSelectedEventForPrep(event);
-                        setShowPrepTasksModal(true);
-                      }}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        color: "var(--color-primary)",
-                        fontSize: "0.75rem",
-                        cursor: "pointer",
-                        padding: "0.25rem",
-                      }}
-                    >
-                      {myPrepTasks.length > 0 ? `Prep (${myPrepTasks.length})` : "+ Prep"}
-                    </button>
-                  </div>
-
-                  {/* Prep tasks and linked chores for this kid */}
-                  {hasMissions && (
-                    <div style={{ marginTop: "0.75rem", paddingTop: "0.75rem", borderTop: "1px solid var(--color-border)" }}>
-                      <div style={{ fontSize: "0.75rem", color: "var(--color-text-light)", marginBottom: "0.5rem" }}>
-                        Your missions:
-                      </div>
-                      <div style={{ display: "flex", flexDirection: "column", gap: "0.375rem" }}>
-                        {/* Prep tasks */}
-                        {myPrepTasks.map((task) => (
-                          <button
-                            key={task.id}
-                            onClick={() => onPrepTaskToggle?.(event.id, task.id, !task.done)}
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "0.5rem",
-                              padding: "0.5rem",
-                              border: "1px solid var(--color-border)",
-                              borderRadius: "0.375rem",
-                              background: task.done ? "var(--color-bg)" : "white",
-                              cursor: "pointer",
-                              textAlign: "left",
-                              width: "100%",
-                            }}
-                          >
-                            <span style={{ fontSize: "1rem" }}>
-                              {task.done ? "✅" : "⬜"}
-                            </span>
-                            <span
-                              style={{
-                                flex: 1,
-                                fontSize: "0.875rem",
-                                textDecoration: task.done ? "line-through" : "none",
-                                color: task.done ? "var(--color-text-light)" : "var(--color-text)",
-                              }}
-                            >
-                              {task.text}
-                            </span>
-                          </button>
-                        ))}
-                        {/* Linked chores */}
-                        {myLinkedChores.map((chore) => (
-                          <div
-                            key={chore.id}
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "0.5rem",
-                              padding: "0.5rem",
-                              border: "1px solid var(--color-border)",
-                              borderRadius: "0.375rem",
-                              background: chore.status === "completed" ? "var(--color-bg)" : "white",
-                            }}
-                          >
-                            <span style={{ fontSize: "1rem" }}>
-                              {chore.status === "completed" ? "✅" : "⬜"}
-                            </span>
-                            <span style={{ fontSize: "1rem" }}>
-                              {chore.chore_template?.icon || "📋"}
-                            </span>
-                            <span
-                              style={{
-                                flex: 1,
-                                fontSize: "0.875rem",
-                                textDecoration: chore.status === "completed" ? "line-through" : "none",
-                                color: chore.status === "completed" ? "var(--color-text-light)" : "var(--color-text)",
-                              }}
-                            >
-                              {chore.chore_template?.name || "Task"}
-                            </span>
-                            <span style={{ fontSize: "0.75rem", color: "var(--color-text-light)" }}>
-                              (due {event.event_date.slice(5)})
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                <div key={event.id} style={{ marginBottom: "0.5rem" }}>
+                  <EventCard
+                    event={event}
+                    isExpanded={expandedEvents.has(event.id)}
+                    onToggleExpand={() => toggleExpanded(event.id)}
+                    onEdit={kidCreatedEvent
+                      ? () => {
+                        setEditingEvent(event);
+                        setShowAddEventModal(true);
+                      }
+                      : undefined}
+                    onDelete={kidCreatedEvent
+                      ? () =>
+                        handleDeleteEvent(event.id)
+                      : undefined}
+                    onTaskToggle={(taskId, done) =>
+                      handlePrepTaskToggleWithState(event.id, taskId, done)}
+                    onAddToCalendar={() =>
+                      handleAddToCalendar(event)}
+                    currentUserId={kid.id}
+                    familyMembers={familyMembers}
+                    showOverflowMenu={kidCreatedEvent}
+                    showAddTask={false}
+                    calendarAdded={calendarAddedIds.has(event.id)}
+                    togglingTaskId={togglingTaskId || undefined}
+                  />
                 </div>
               );
             };
 
             return (
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.75rem",
+                }}
+              >
                 {/* Today's Events */}
                 {groupedEvents.today.length > 0 && (
                   <div>
-                    <div style={{ fontSize: "0.75rem", fontWeight: "600", color: "var(--color-primary)", marginBottom: "0.5rem", textTransform: "uppercase" }}>
+                    <div
+                      style={{
+                        fontSize: "0.75rem",
+                        fontWeight: "600",
+                        color: "var(--color-primary)",
+                        marginBottom: "0.5rem",
+                        textTransform: "uppercase",
+                      }}
+                    >
                       Today ({groupedEvents.today.length})
                     </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "0.5rem",
+                      }}
+                    >
                       {groupedEvents.today.map(renderEventCard)}
                     </div>
                   </div>
@@ -547,10 +568,24 @@ export default function KidDashboard({
                 {/* This Week's Events */}
                 {groupedEvents.thisWeek.length > 0 && (
                   <div>
-                    <div style={{ fontSize: "0.75rem", fontWeight: "600", color: "var(--color-text-light)", marginBottom: "0.5rem", textTransform: "uppercase" }}>
+                    <div
+                      style={{
+                        fontSize: "0.75rem",
+                        fontWeight: "600",
+                        color: "var(--color-text-light)",
+                        marginBottom: "0.5rem",
+                        textTransform: "uppercase",
+                      }}
+                    >
                       This Week ({groupedEvents.thisWeek.length})
                     </div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "0.5rem",
+                      }}
+                    >
                       {groupedEvents.thisWeek.map(renderEventCard)}
                     </div>
                   </div>
@@ -576,11 +611,26 @@ export default function KidDashboard({
                         padding: 0,
                       }}
                     >
-                      <span style={{ transform: showLaterEvents ? "rotate(90deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>▶</span>
+                      <span
+                        style={{
+                          transform: showLaterEvents
+                            ? "rotate(90deg)"
+                            : "rotate(0deg)",
+                          transition: "transform 0.2s",
+                        }}
+                      >
+                        ▶
+                      </span>
                       Later ({groupedEvents.later.length})
                     </button>
                     {showLaterEvents && (
-                      <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "0.5rem",
+                        }}
+                      >
                         {groupedEvents.later.map(renderEventCard)}
                       </div>
                     )}
@@ -589,8 +639,17 @@ export default function KidDashboard({
 
                 {/* Empty state */}
                 {upcomingEvents.length === 0 && (
-                  <div class="card" style={{ textAlign: "center", padding: "1.5rem", color: "var(--color-text-light)" }}>
-                    <div style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>📅</div>
+                  <div
+                    class="card"
+                    style={{
+                      textAlign: "center",
+                      padding: "1.5rem",
+                      color: "var(--color-text-light)",
+                    }}
+                  >
+                    <div style={{ fontSize: "1.5rem", marginBottom: "0.5rem" }}>
+                      📅
+                    </div>
                     <p style={{ margin: 0 }}>No upcoming events</p>
                     {kidsCanCreateEvents && (
                       <button
@@ -651,7 +710,8 @@ export default function KidDashboard({
           <div
             style={{ fontSize: "0.875rem", color: "var(--color-text-light)" }}
           >
-            Today's Progress: {completedChores}/{totalChores} {showPoints ? "chores" : "tasks"} ⭐
+            Today's Progress: {completedChores}/{totalChores}{" "}
+            {showPoints ? "chores" : "tasks"} ⭐
           </div>
         )}
       </div>
@@ -692,17 +752,22 @@ export default function KidDashboard({
         </a>
       </div>
 
-      {/* Kid Event Creation Modal */}
+      {/* Kid Event Creation/Edit Modal */}
       {kidsCanCreateEvents && (
         <AddEventModal
           isOpen={showAddEventModal}
-          onClose={() => setShowAddEventModal(false)}
+          onClose={() => {
+            setShowAddEventModal(false);
+            setEditingEvent(null);
+          }}
           familyMembers={familyMembers}
           onSuccess={() => {
             setShowAddEventModal(false);
+            setEditingEvent(null);
             onEventCreated?.();
           }}
           creatorId={kid.id}
+          editingEvent={editingEvent}
         />
       )}
 

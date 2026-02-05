@@ -7,10 +7,26 @@
 import { Handlers, PageProps } from "$fresh/server.ts";
 import { getAuthenticatedSession } from "../../lib/auth/session.ts";
 import { getServiceSupabaseClient } from "../../lib/supabase.ts";
-import { expandEventsForDateRange, ExpandedEvent } from "../../lib/utils/event-expansion.ts";
+import {
+  ExpandedEvent,
+  expandEventsForDateRange,
+} from "../../lib/utils/event-expansion.ts";
 import AppHeader from "../../islands/AppHeader.tsx";
 import AppFooter from "../../components/AppFooter.tsx";
 import EventsList from "../../islands/EventsList.tsx";
+
+interface LinkedChore {
+  id: string;
+  status: string;
+  point_value: number;
+  assigned_to_profile_id?: string;
+  chore_template?: {
+    id: string;
+    name: string;
+    icon?: string;
+    description?: string;
+  };
+}
 
 interface FamilyEvent {
   id: string;
@@ -32,6 +48,7 @@ interface FamilyEvent {
     source_app?: string;
     emoji?: string;
   };
+  linked_chores?: LinkedChore[];
   linked_chores_count?: number;
   completed_chores_count?: number;
   // Expansion fields
@@ -76,10 +93,15 @@ export const handler: Handlers<EventsPageData> = {
       const todayStr = url.searchParams.get("localDate") || (() => {
         // Fallback: calculate server local date (will be UTC on Fly.io)
         const today = new Date();
-        return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        return `${today.getFullYear()}-${
+          String(today.getMonth() + 1).padStart(2, "0")
+        }-${String(today.getDate()).padStart(2, "0")}`;
       })();
       const today = new Date(todayStr + "T00:00:00");
-      const toLocalDateStr = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const toLocalDateStr = (d: Date) =>
+        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${
+          String(d.getDate()).padStart(2, "0")
+        }`;
 
       const weekFromNow = new Date(today);
       weekFromNow.setDate(weekFromNow.getDate() + 7);
@@ -115,21 +137,43 @@ export const handler: Handlers<EventsPageData> = {
         .eq("is_deleted", false)
         .lt("event_date", todayStr);
 
-      // Get chore counts per event
+      // Get linked chores per event (full data for EventCard display)
       const eventIds = (events || []).map((e: any) => e.id);
-      let choreCounts: Record<string, { total: number; completed: number }> = {};
+      let linkedChoresMap: Record<string, any[]> = {};
+      let choreCounts: Record<string, { total: number; completed: number }> =
+        {};
 
       if (eventIds.length > 0) {
         const { data: chores } = await client
           .schema("choretracker")
           .from("chore_assignments")
-          .select("family_event_id, status")
+          .select(`
+            id,
+            family_event_id,
+            status,
+            point_value,
+            assigned_to_profile_id,
+            chore_template:chore_template_id (
+              id,
+              name,
+              icon,
+              description
+            )
+          `)
           .in("family_event_id", eventIds)
           .eq("is_deleted", false);
 
         if (chores) {
           for (const chore of chores) {
             if (!chore.family_event_id) continue;
+
+            // Build linked chores array
+            if (!linkedChoresMap[chore.family_event_id]) {
+              linkedChoresMap[chore.family_event_id] = [];
+            }
+            linkedChoresMap[chore.family_event_id].push(chore);
+
+            // Also track counts for backward compatibility
             if (!choreCounts[chore.family_event_id]) {
               choreCounts[chore.family_event_id] = { total: 0, completed: 0 };
             }
@@ -142,11 +186,16 @@ export const handler: Handlers<EventsPageData> = {
       }
 
       // Expand multi-day and recurring events
-      const expandedEvents = expandEventsForDateRange(events || [], todayStr, queryEndStr);
+      const expandedEvents = expandEventsForDateRange(
+        events || [],
+        todayStr,
+        queryEndStr,
+      );
 
-      // Enrich expanded events with chore counts
+      // Enrich expanded events with linked chores data
       const enrichedEvents = expandedEvents.map((event) => ({
         ...event,
+        linked_chores: linkedChoresMap[event.id] || [],
         linked_chores_count: choreCounts[event.id]?.total || 0,
         completed_chores_count: choreCounts[event.id]?.completed || 0,
       }));
@@ -162,7 +211,11 @@ export const handler: Handlers<EventsPageData> = {
         return displayDate > weekFromNowStr;
       });
 
-      console.log(`📅 Parent events page: ${events?.length || 0} raw, ${enrichedEvents.length} expanded, ${thisWeek.length} this week, ${upcoming.length} upcoming`);
+      console.log(
+        `📅 Parent events page: ${
+          events?.length || 0
+        } raw, ${enrichedEvents.length} expanded, ${thisWeek.length} this week, ${upcoming.length} upcoming`,
+      );
 
       return ctx.render({
         family,
@@ -188,7 +241,15 @@ export const handler: Handlers<EventsPageData> = {
 };
 
 export default function EventsPage({ data }: PageProps<EventsPageData>) {
-  const { family, members, thisWeek, upcoming, pastEventsCount, parentProfileId, error } = data;
+  const {
+    family,
+    members,
+    thisWeek,
+    upcoming,
+    pastEventsCount,
+    parentProfileId,
+    error,
+  } = data;
 
   const currentUser = members.find((m) => m.id === parentProfileId) || null;
 
@@ -219,21 +280,27 @@ export default function EventsPage({ data }: PageProps<EventsPageData>) {
         userRole="parent"
       />
 
-      {error ? (
-        <div class="card" style={{ textAlign: "center", padding: "2rem" }}>
-          <p style={{ color: "var(--color-warning)" }}>{error}</p>
-          <a href="/parent/dashboard" class="btn btn-primary" style={{ marginTop: "1rem" }}>
-            Back to Dashboard
-          </a>
-        </div>
-      ) : (
-        <EventsList
-          thisWeek={thisWeek}
-          upcoming={upcoming}
-          pastEventsCount={pastEventsCount}
-          familyMembers={members}
-        />
-      )}
+      {error
+        ? (
+          <div class="card" style={{ textAlign: "center", padding: "2rem" }}>
+            <p style={{ color: "var(--color-warning)" }}>{error}</p>
+            <a
+              href="/parent/dashboard"
+              class="btn btn-primary"
+              style={{ marginTop: "1rem" }}
+            >
+              Back to Dashboard
+            </a>
+          </div>
+        )
+        : (
+          <EventsList
+            thisWeek={thisWeek}
+            upcoming={upcoming}
+            pastEventsCount={pastEventsCount}
+            familyMembers={members}
+          />
+        )}
 
       <AppFooter />
     </div>
