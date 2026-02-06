@@ -1066,7 +1066,7 @@ export default function EventCard({
                     padding: "0.5rem 0.75rem",
                     backgroundColor: calendarAdded
                       ? "var(--color-bg)"
-                      : "var(--color-secondary)",
+                      : "var(--color-primary)",
                     border: "none",
                     borderRadius: "0.375rem",
                     color: calendarAdded ? "var(--color-success)" : "white",
