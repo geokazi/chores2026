@@ -156,16 +156,16 @@ export default function ShareReferralCard({ code, conversions, monthsEarned, bas
           onClick={(e) => (e.target as HTMLInputElement).select()}
         />
         <div class="referral-actions">
-          <button type="button" onClick={handleCopy} class={`referral-btn referral-btn-copy ${copied.value ? 'copied' : ''}`}>
+          <button type="button" onClick={handleCopy} class={`referral-btn referral-btn-secondary ${copied.value ? 'copied' : ''}`}>
             {copied.value ? "✓ Copied!" : "📋 Copy"}
+          </button>
+          <button type="button" onClick={handleEmail} class="referral-btn referral-btn-secondary">
+            📧 Email
           </button>
           <button type="button" onClick={handleShare} class="referral-btn referral-btn-share">
             📤 Share
           </button>
         </div>
-        <button type="button" onClick={handleEmail} class="email-link">
-          📧 Or email a friend
-        </button>
       </div>
 
       {/* Progress section with bar */}
@@ -304,18 +304,18 @@ export default function ShareReferralCard({ code, conversions, monthsEarned, bas
           transform: scale(0.97);
         }
 
-        /* Copy button */
-        .referral-btn-copy {
+        /* Secondary buttons (Copy, Email) */
+        .referral-btn-secondary {
           background: rgba(var(--color-primary-rgb, 16, 185, 129), 0.1);
           color: var(--color-primary);
           border: 1px solid rgba(var(--color-primary-rgb, 16, 185, 129), 0.3);
         }
-        .referral-btn-copy:hover {
+        .referral-btn-secondary:hover {
           background: rgba(var(--color-primary-rgb, 16, 185, 129), 0.15);
           transform: translateY(-2px);
           box-shadow: 0 4px 12px rgba(var(--color-primary-rgb, 16, 185, 129), 0.15);
         }
-        .referral-btn-copy.copied {
+        .referral-btn-secondary.copied {
           background: var(--color-primary);
           color: white;
           border-color: transparent;
@@ -334,24 +334,6 @@ export default function ShareReferralCard({ code, conversions, monthsEarned, bas
         .referral-btn-share:hover {
           transform: translateY(-2px);
           box-shadow: 0 4px 16px rgba(var(--color-primary-rgb, 16, 185, 129), 0.4);
-        }
-
-        /* Email link */
-        .email-link {
-          display: block;
-          width: 100%;
-          margin-top: 12px;
-          padding: 10px;
-          background: transparent;
-          border: none;
-          color: var(--color-primary);
-          font-size: 0.9rem;
-          cursor: pointer;
-          text-align: center;
-          transition: opacity 0.2s;
-        }
-        .email-link:hover {
-          opacity: 0.8;
         }
 
         /* Progress section */
