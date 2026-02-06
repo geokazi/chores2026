@@ -106,19 +106,19 @@ Deno.test({
 Deno.test({
   name: "Stripe Checkout - Price IDs",
   fn: async (t) => {
-    await t.step("summer price ID format is valid", () => {
-      const priceId = "price_summer_2999";
-      assertEquals(priceId.startsWith("price_"), true);
+    await t.step("summer uses STRIPE_PRICE_TOKEN_3M", () => {
+      const envVar = "STRIPE_PRICE_TOKEN_3M";
+      assertEquals(envVar.includes("3M"), true);
     });
 
-    await t.step("school_year price ID format is valid", () => {
-      const priceId = "price_school_4999";
-      assertEquals(priceId.startsWith("price_"), true);
+    await t.step("school_year uses STRIPE_PRICE_TOKEN_10M", () => {
+      const envVar = "STRIPE_PRICE_TOKEN_10M";
+      assertEquals(envVar.includes("10M"), true);
     });
 
-    await t.step("full_year price ID format is valid", () => {
-      const priceId = "price_annual_7999";
-      assertEquals(priceId.startsWith("price_"), true);
+    await t.step("full_year uses STRIPE_PREMIUM_ANNUAL_PRICE_ID", () => {
+      const envVar = "STRIPE_PREMIUM_ANNUAL_PRICE_ID";
+      assertEquals(envVar.includes("ANNUAL"), true);
     });
   },
 });

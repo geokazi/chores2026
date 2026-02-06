@@ -661,10 +661,10 @@ STRIPE_SECRET_KEY=sk_live_xxx
 STRIPE_PUBLISHABLE_KEY=pk_live_xxx
 STRIPE_WEBHOOK_SECRET=whsec_xxx
 
-# Price IDs (create in Stripe Dashboard)
-STRIPE_PRICE_SUMMER=price_xxx      # $29.99
-STRIPE_PRICE_SCHOOL_YEAR=price_xxx # $49.99
-STRIPE_PRICE_FULL_YEAR=price_xxx   # $79.99
+# Price IDs (aligned with fresh-auth naming convention)
+STRIPE_PRICE_TOKEN_3M=price_xxx         # $29.99 (summer, 3 months)
+STRIPE_PRICE_TOKEN_10M=price_xxx        # $49.99 (school_year, 10 months)
+STRIPE_PREMIUM_ANNUAL_PRICE_ID=price_xxx # $79.99 (full_year, 12 months)
 ```
 
 ---

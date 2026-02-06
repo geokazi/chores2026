@@ -14,11 +14,11 @@ export const PLAN_DURATIONS_DAYS: Record<Exclude<PlanType, 'free'>, number> = {
   full_year: 365,    // 12 months
 };
 
-// Stripe price IDs (set in environment)
+// Stripe price IDs (set in environment) - aligned with fresh-auth naming
 export const STRIPE_PRICE_IDS: Record<Exclude<PlanType, 'free' | 'trial'>, string> = {
-  summer: Deno.env.get('STRIPE_PRICE_SUMMER') || 'price_summer_placeholder',
-  school_year: Deno.env.get('STRIPE_PRICE_SCHOOL_YEAR') || 'price_school_year_placeholder',
-  full_year: Deno.env.get('STRIPE_PRICE_FULL_YEAR') || 'price_full_year_placeholder',
+  summer: Deno.env.get('STRIPE_PRICE_TOKEN_3M') || 'price_token_3m_placeholder',
+  school_year: Deno.env.get('STRIPE_PRICE_TOKEN_10M') || 'price_token_10m_placeholder',
+  full_year: Deno.env.get('STRIPE_PREMIUM_ANNUAL_PRICE_ID') || 'price_annual_placeholder',
 };
 
 // Price display values
