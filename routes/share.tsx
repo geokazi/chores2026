@@ -8,7 +8,7 @@ import { Handlers, PageProps } from "$fresh/server.ts";
 import { Head } from "$fresh/runtime.ts";
 import { getAuthenticatedSession } from "../lib/auth/session.ts";
 import { ReferralService } from "../lib/services/referral-service.ts";
-import { calculateStreak } from "../lib/services/insights-service.ts";
+import { calculateStreak, getLocalDate } from "../lib/services/insights-service.ts";
 import { createClient } from "../lib/supabase.ts";
 import ShareReferralCard from "../islands/ShareReferralCard.tsx";
 import AppHeader from "../islands/AppHeader.tsx";
@@ -82,20 +82,52 @@ export const handler: Handlers<SharePageData> = {
     }
 
     // Fetch weekly stats for personalized sharing (non-blocking)
+    // Uses same logic as Reports page: Sunday-first weeks, all positive transactions
     let weeklyStats: WeeklyStats | null = null;
     try {
       const supabase = createClient();
-      const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-      // Get chore completions from last 7 days
+      // Get timezone from URL or default (same as Reports page)
+      const url = new URL(req.url);
+      const timezone = url.searchParams.get("tz") || "America/Los_Angeles";
+
+      // Calculate Sunday-first week start (same as getFamilyAnalytics in chore-service)
+      const now = new Date();
+      const todayLocal = getLocalDate(now.toISOString(), timezone);
+      const [yearStr, monthStr, dayStr] = todayLocal.split("-");
+      const year = parseInt(yearStr, 10);
+      const month = parseInt(monthStr, 10);
+      const day = parseInt(dayStr, 10);
+      const todayDate = new Date(year, month - 1, day);
+      const dayOfWeek = todayDate.getDay(); // 0=Sun
+      const weekStartLocal = new Date(year, month - 1, day - dayOfWeek);
+      const weekStartStr = `${weekStartLocal.getFullYear()}-${String(weekStartLocal.getMonth() + 1).padStart(2, "0")}-${String(weekStartLocal.getDate()).padStart(2, "0")}`;
+
+      // Get ALL positive transactions (same as Reports - not just chore_completed)
       const { data: transactions } = await supabase
         .schema("choretracker")
         .from("chore_transactions")
-        .select("created_at")
+        .select("profile_id, created_at, points_change")
         .eq("family_id", family.id)
-        .eq("transaction_type", "chore_completed")
-        .gte("created_at", oneWeekAgo)
-        .order("created_at", { ascending: false });
+        .gt("points_change", 0);
+
+      // Filter to this week using local dates (same as Reports)
+      const weekTransactions = (transactions || []).filter(
+        (t) => getLocalDate(t.created_at, timezone) >= weekStartStr
+      );
+
+      // Count chores completed this week (matches Reports' earned_week logic)
+      const choresCompleted = weekTransactions.length;
+
+      // Calculate max individual streak (not combined family streak)
+      // Group transactions by profile_id and find the best streak
+      const profileIds = [...new Set((transactions || []).map((t) => t.profile_id))];
+      let maxStreak = 0;
+      for (const profileId of profileIds) {
+        const profileTx = (transactions || []).filter((t) => t.profile_id === profileId);
+        const profileStreak = calculateStreak(profileTx.map((t) => t.created_at));
+        if (profileStreak > maxStreak) maxStreak = profileStreak;
+      }
 
       // Get total events planned for this family
       const { count: eventsCount } = await supabase
@@ -105,13 +137,11 @@ export const handler: Handlers<SharePageData> = {
         .eq("family_id", family.id)
         .eq("is_deleted", false);
 
-      const choresCompleted = transactions?.length || 0;
-      const streakDays = transactions && transactions.length > 0
-        ? calculateStreak(transactions.map(t => t.created_at))
-        : 0;
-      const eventsPlanned = eventsCount || 0;
-
-      weeklyStats = { choresCompleted, streakDays, eventsPlanned };
+      weeklyStats = {
+        choresCompleted,
+        streakDays: maxStreak,
+        eventsPlanned: eventsCount || 0,
+      };
     } catch (e) {
       console.warn("[Share] Could not load weekly stats:", e);
       // Non-blocking - continue with simple version
@@ -180,8 +210,8 @@ export default function SharePage({ data }: PageProps<SharePageData>) {
 
       <main class="share-page">
         <div class="share-hero">
-          <div class="share-emoji">💬</div>
-          <p class="share-subtitle">Know a family who'd like this?</p>
+          <div class="share-emoji">💛</div>
+          <h2 class="share-title">Help another family feel more organized</h2>
         </div>
 
         {progressMessage && (
@@ -253,12 +283,13 @@ const pageStyles = `
     0%, 100% { transform: translateY(0) scale(1); }
     50% { transform: translateY(-10px) scale(1.02); }
   }
-  .share-subtitle {
-    font-size: 1.1rem;
+  .share-title {
+    font-size: 1.35rem;
     color: var(--color-text, #064e3b);
     margin: 0;
-    font-weight: 500;
-    letter-spacing: -0.01em;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.3;
   }
 
   /* Progress encouragement */

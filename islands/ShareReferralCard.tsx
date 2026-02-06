@@ -110,37 +110,39 @@ export default function ShareReferralCard({ code, conversions, monthsEarned, bas
 
   return (
     <div class="share-card" id="share-referral-section">
-      <h3 class="referral-title">Send to a friend</h3>
-      <p class="referral-tagline">
-        If they sign up, you both get 1 free month.
+      <p class="share-intro">
+        We've been using <strong>ChoreGami</strong> to manage chores and family plans in one shared place—and it's made a real difference.
+      </p>
+      <p class="share-incentive">
+        If they join, you'll both get <strong>1 free month</strong> 🎉
       </p>
 
-      {/* Stats badge - only shown when there's meaningful activity */}
+      {/* Stats badge - quiet credibility, only shown when meaningful */}
       {weeklyStats && (weeklyStats.choresCompleted > 0 || weeklyStats.eventsPlanned > 0) && (
-        <div class="referral-stats-badge">
-          {weeklyStats.choresCompleted > 0 && (
-            <span>✓ {weeklyStats.choresCompleted} chores this week</span>
-          )}
-          {weeklyStats.eventsPlanned > 0 && weeklyStats.choresCompleted > 0 && (
-            <span> • </span>
-          )}
-          {weeklyStats.eventsPlanned > 0 && (
-            <span>📅 {weeklyStats.eventsPlanned} event{weeklyStats.eventsPlanned !== 1 ? "s" : ""} planned</span>
-          )}
-          {weeklyStats.streakDays >= 3 && (
-            <span> • 🔥 {weeklyStats.streakDays}-day streak</span>
-          )}
+        <div class="stats-badge">
+          <span class="stats-label">This week:</span>
+          <span class="stats-items">
+            {weeklyStats.choresCompleted > 0 && (
+              <span>🎉 {weeklyStats.choresCompleted} chores</span>
+            )}
+            {weeklyStats.streakDays >= 3 && (
+              <span> • 🔥 {weeklyStats.streakDays}-day streak</span>
+            )}
+            {weeklyStats.eventsPlanned > 0 && (
+              <span> • 📅 {weeklyStats.eventsPlanned} event{weeklyStats.eventsPlanned !== 1 ? "s" : ""}</span>
+            )}
+          </span>
         </div>
       )}
 
       <div class="referral-link-section">
-        <label class="referral-label">Your referral link</label>
+        <label class="referral-label">Your personal invite link</label>
         <input
           type="text"
           value={shareUrl}
           readOnly
           class="referral-link-input"
-          aria-label="Your referral link"
+          aria-label="Your personal invite link"
           onClick={(e) => (e.target as HTMLInputElement).select()}
         />
         <div class="referral-actions">
@@ -197,35 +199,46 @@ export default function ShareReferralCard({ code, conversions, monthsEarned, bas
         }
 
         /* Typography */
-        .referral-title {
-          margin: 0 0 6px 0;
-          font-size: 1.25rem;
-          font-weight: 700;
-          color: var(--color-text);
-          letter-spacing: -0.02em;
-        }
-        .referral-tagline {
-          margin: 0 0 20px 0;
+        .share-intro {
+          margin: 0 0 12px 0;
           font-size: 0.95rem;
+          color: var(--color-text);
+          line-height: 1.5;
+        }
+        .share-intro strong {
+          color: var(--color-primary);
+        }
+        .share-incentive {
+          margin: 0 0 20px 0;
+          font-size: 0.9rem;
           color: var(--text-secondary);
           line-height: 1.4;
         }
+        .share-incentive strong {
+          color: var(--color-text);
+        }
 
-        /* Stats badge */
-        .referral-stats-badge {
+        /* Stats badge - quiet credibility */
+        .stats-badge {
           background: linear-gradient(
             135deg,
-            rgba(var(--color-primary-rgb, 16, 185, 129), 0.12) 0%,
-            rgba(var(--color-primary-rgb, 16, 185, 129), 0.06) 100%
+            rgba(var(--color-primary-rgb, 16, 185, 129), 0.08) 0%,
+            rgba(var(--color-primary-rgb, 16, 185, 129), 0.04) 100%
           );
-          border: 1px solid rgba(var(--color-primary-rgb, 16, 185, 129), 0.3);
+          border: 1px solid rgba(var(--color-primary-rgb, 16, 185, 129), 0.2);
           border-radius: 12px;
           padding: 12px 16px;
           margin-bottom: 20px;
-          font-size: 0.9rem;
-          font-weight: 600;
-          color: var(--color-primary);
+          font-size: 0.85rem;
           text-align: center;
+        }
+        .stats-label {
+          font-weight: 600;
+          color: var(--text-secondary);
+          margin-right: 6px;
+        }
+        .stats-items {
+          color: var(--color-text);
         }
 
         /* Link section */
