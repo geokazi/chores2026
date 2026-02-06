@@ -1,5 +1,6 @@
 import { useSignal } from "@preact/signals";
 import { useEffect } from "preact/hooks";
+import EmailInviteForm from "./EmailInviteForm.tsx";
 
 interface WeeklyStats {
   choresCompleted: number;
@@ -30,6 +31,7 @@ const PERSONALIZED_THRESHOLD = 5;
 
 export default function ShareReferralCard({ code, conversions, monthsEarned, baseUrl, weeklyStats, familyName }: ShareReferralCardProps) {
   const copied = useSignal(false);
+  const showEmailForm = useSignal(false);
   const shareUrl = `${baseUrl}/r/${code}`;
 
   // Show personalized version if >= 5 chores completed this week
@@ -106,13 +108,10 @@ export default function ShareReferralCard({ code, conversions, monthsEarned, bas
     }
   };
 
-  // Email via mailto: - opens user's email app with pre-filled subject/body
+  // Toggle email form
   const handleEmail = () => {
-    trackFeature("referral_email_mailto");
-    const displayName = familyName || "A friend";
-    const subject = encodeURIComponent(`${displayName} thinks you'd like ChoreGami`);
-    const body = encodeURIComponent(`${getShareMessage()}\n\n${shareUrl}`);
-    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    trackFeature("referral_email_form_open");
+    showEmailForm.value = !showEmailForm.value;
   };
 
   // Progress percentage for the bar
@@ -159,13 +158,23 @@ export default function ShareReferralCard({ code, conversions, monthsEarned, bas
           <button type="button" onClick={handleCopy} class={`referral-btn referral-btn-secondary ${copied.value ? 'copied' : ''}`}>
             {copied.value ? "✓ Copied!" : "📋 Copy"}
           </button>
-          <button type="button" onClick={handleEmail} class="referral-btn referral-btn-secondary">
+          <button type="button" onClick={handleEmail} class={`referral-btn referral-btn-secondary ${showEmailForm.value ? 'active' : ''}`}>
             📧 Email
           </button>
           <button type="button" onClick={handleShare} class="referral-btn referral-btn-share">
             📤 Share
           </button>
         </div>
+
+        {/* Email form */}
+        {showEmailForm.value && (
+          <EmailInviteForm
+            shareUrl={shareUrl}
+            familyName={familyName || "A friend"}
+            stats={weeklyStats}
+            onClose={() => { showEmailForm.value = false; }}
+          />
+        )}
       </div>
 
       {/* Progress section with bar */}
@@ -315,7 +324,8 @@ export default function ShareReferralCard({ code, conversions, monthsEarned, bas
           transform: translateY(-2px);
           box-shadow: 0 4px 12px rgba(var(--color-primary-rgb, 16, 185, 129), 0.15);
         }
-        .referral-btn-secondary.copied {
+        .referral-btn-secondary.copied,
+        .referral-btn-secondary.active {
           background: var(--color-primary);
           color: white;
           border-color: transparent;
