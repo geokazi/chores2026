@@ -520,7 +520,16 @@ export default function EventCard({
                         letterSpacing: "0.05em",
                       }}
                     >
-                      PREP ({myPrepTasks.length})
+                      PREP ({myPrepTasks.length}){" "}
+                      <span
+                        style={{
+                          fontWeight: "400",
+                          textTransform: "lowercase",
+                          letterSpacing: "normal",
+                        }}
+                      >
+                        • checklist
+                      </span>
                     </div>
                     <div
                       style={{
@@ -736,7 +745,16 @@ export default function EventCard({
                         letterSpacing: "0.05em",
                       }}
                     >
-                      CHORES ({linkedChores.length})
+                      CHORES ({linkedChores.length}){" "}
+                      <span
+                        style={{
+                          fontWeight: "400",
+                          textTransform: "lowercase",
+                          letterSpacing: "normal",
+                        }}
+                      >
+                        • earns points
+                      </span>
                     </div>
                     <div
                       style={{
