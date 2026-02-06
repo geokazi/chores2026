@@ -59,6 +59,7 @@ import * as $api_settings_kids_events from "./routes/api/settings/kids-events.ts
 import * as $api_settings_notifications from "./routes/api/settings/notifications.ts";
 import * as $api_settings_points_only_mode from "./routes/api/settings/points-only-mode.ts";
 import * as $api_settings_timezone from "./routes/api/settings/timezone.ts";
+import * as $api_share_email from "./routes/api/share/email.ts";
 import * as $demo from "./routes/demo.tsx";
 import * as $health from "./routes/health.ts";
 import * as $index from "./routes/index.tsx";
@@ -95,6 +96,7 @@ import * as $ChoreList from "./islands/ChoreList.tsx";
 import * as $ConfettiTrigger from "./islands/ConfettiTrigger.tsx";
 import * as $DemoChoreCard from "./islands/DemoChoreCard.tsx";
 import * as $DemoKidDashboard from "./islands/DemoKidDashboard.tsx";
+import * as $EmailInviteForm from "./islands/EmailInviteForm.tsx";
 import * as $EventCard from "./islands/EventCard.tsx";
 import * as $EventMissionGroup from "./islands/EventMissionGroup.tsx";
 import * as $EventsList from "./islands/EventsList.tsx";
@@ -203,6 +205,7 @@ const manifest = {
     "./routes/api/settings/notifications.ts": $api_settings_notifications,
     "./routes/api/settings/points-only-mode.ts": $api_settings_points_only_mode,
     "./routes/api/settings/timezone.ts": $api_settings_timezone,
+    "./routes/api/share/email.ts": $api_share_email,
     "./routes/demo.tsx": $demo,
     "./routes/health.ts": $health,
     "./routes/index.tsx": $index,
@@ -241,6 +244,7 @@ const manifest = {
     "./islands/ConfettiTrigger.tsx": $ConfettiTrigger,
     "./islands/DemoChoreCard.tsx": $DemoChoreCard,
     "./islands/DemoKidDashboard.tsx": $DemoKidDashboard,
+    "./islands/EmailInviteForm.tsx": $EmailInviteForm,
     "./islands/EventCard.tsx": $EventCard,
     "./islands/EventMissionGroup.tsx": $EventMissionGroup,
     "./islands/EventsList.tsx": $EventsList,
