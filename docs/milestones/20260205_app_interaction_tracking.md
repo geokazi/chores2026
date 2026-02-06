@@ -56,6 +56,10 @@ trackInteraction("reward_tab", { tab: "catalog" });
 | **BalanceCards** | `payout_click` |
 | **PinEntryModal** | `pin_attempt` (success/fail, type: kid) |
 | **FamilySettings** | `setting_toggle` (confetti, kids_events, weekly_digest, daily_digest) |
+| **RewardsCatalog** | `reward_claim_click` (kid claiming reward) |
+| **SavingsGoals** | `goal_create_click`, `goal_add_points_click` |
+| **KidDashboard** | `kid_plan_event_click` |
+| **ChoreList** | `chore_complete_click` |
 
 ## Files Changed
 
@@ -68,8 +72,12 @@ trackInteraction("reward_tab", { tab: "catalog" });
 | `islands/BalanceCards.tsx` | Payout tracking | +3 |
 | `islands/PinEntryModal.tsx` | PIN attempt tracking | +4 |
 | `islands/FamilySettings.tsx` | Setting toggle tracking | +6 |
+| `islands/RewardsCatalog.tsx` | Kid reward claim tracking | +3 |
+| `islands/SavingsGoals.tsx` | Kid goal tracking | +4 |
+| `islands/KidDashboard.tsx` | Kid event creation tracking | +4 |
+| `islands/ChoreList.tsx` | Chore completion tracking | +3 |
 
-**Total: ~70 new lines** (well under 500 limit)
+**Total: ~85 new lines** (well under 500 limit)
 
 ## Design Decisions
 

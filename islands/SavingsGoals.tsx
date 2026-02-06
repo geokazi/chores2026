@@ -5,6 +5,7 @@
 
 import { useState } from "preact/hooks";
 import type { BalanceInfo, SavingsGoal } from "../lib/types/finance.ts";
+import { trackInteraction } from "../lib/utils/track-interaction.ts";
 
 interface Props {
   goals: SavingsGoal[];
@@ -205,7 +206,7 @@ export default function SavingsGoals({
       <div class="section">
         <div class="section-header">
           <span>🎯 My Goals</span>
-          <button class="add-goal-btn" onClick={() => setShowCreate(true)}>
+          <button class="add-goal-btn" onClick={() => { trackInteraction("goal_create_click"); setShowCreate(true); }}>
             + New Goal
           </button>
         </div>
@@ -268,6 +269,7 @@ export default function SavingsGoals({
                   <button
                     class="add-btn"
                     onClick={() => {
+                      trackInteraction("goal_add_points_click");
                       setShowAddTo(goal);
                       setError("");
                     }}

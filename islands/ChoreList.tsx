@@ -5,6 +5,7 @@
 
 import { useState } from "preact/hooks";
 import { triggerCelebration } from "./ConfettiTrigger.tsx";
+import { trackInteraction } from "../lib/utils/track-interaction.ts";
 
 interface ChoreAssignment {
   id: string;
@@ -39,6 +40,7 @@ export default function ChoreList({ chores, onChoreComplete, kidId, showPoints =
       return; // Already completed or in progress
     }
 
+    trackInteraction("chore_complete_click", { points: chore.point_value });
     setCompletingChore(chore.id);
 
     try {

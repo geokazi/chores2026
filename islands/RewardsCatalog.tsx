@@ -7,6 +7,7 @@
 
 import { useState } from "preact/hooks";
 import type { AvailableReward, BalanceInfo, RewardPurchase } from "../lib/types/finance.ts";
+import { trackInteraction } from "../lib/utils/track-interaction.ts";
 
 interface Props {
   rewards: AvailableReward[];
@@ -115,6 +116,7 @@ export default function RewardsCatalog({
                 <button
                   class="claim-btn"
                   onClick={() => {
+                    trackInteraction("reward_claim_click", { cost: reward.pointCost });
                     setSelectedReward(reward);
                     setShowConfirm(true);
                     setError("");

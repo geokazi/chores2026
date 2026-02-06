@@ -19,6 +19,7 @@ import {
   groupEventsByTimePeriod,
   usePointsMode,
 } from "../lib/utils/household.ts";
+import { trackInteraction } from "../lib/utils/track-interaction.ts";
 
 interface FamilyMember {
   id: string;
@@ -471,6 +472,7 @@ export default function KidDashboard({
             {kidsCanCreateEvents && (
               <button
                 onClick={() => {
+                  trackInteraction("kid_plan_event_click");
                   // If PIN required, show PIN modal first
                   if (kidPinRequired) {
                     setShowPinModal(true);
@@ -654,6 +656,7 @@ export default function KidDashboard({
                     {kidsCanCreateEvents && (
                       <button
                         onClick={() => {
+                          trackInteraction("kid_plan_event_click");
                           if (kidPinRequired) {
                             setShowPinModal(true);
                           } else {
