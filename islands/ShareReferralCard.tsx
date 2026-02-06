@@ -4,6 +4,7 @@ import { useEffect } from "preact/hooks";
 interface WeeklyStats {
   choresCompleted: number;
   streakDays: number;
+  eventsPlanned: number;
 }
 
 interface ShareReferralCardProps {
@@ -62,16 +63,28 @@ export default function ShareReferralCard({ code, conversions, monthsEarned, bas
     }
   };
 
-  // Generate share message based on stats
+  // Generate share message based on stats - peer-to-peer friendly, not promotional
   const getShareMessage = () => {
     if (isPersonalized && weeklyStats) {
-      const { choresCompleted, streakDays } = weeklyStats;
-      if (streakDays >= 3) {
-        return `My family completed ${choresCompleted} chores this week with a ${streakDays}-day streak! ChoreGami actually works.`;
+      const { choresCompleted, streakDays, eventsPlanned } = weeklyStats;
+
+      // Pick the most impressive stat to highlight
+      if (streakDays >= 5) {
+        return `We've been using ChoreGami for ${streakDays} days straight and the kids actually do their chores now. Wild, I know.`;
       }
-      return `My family completed ${choresCompleted} chores this week! ChoreGami actually works.`;
+      if (eventsPlanned > 0 && choresCompleted >= 10) {
+        return `Finally stopped juggling apps. ${choresCompleted} chores done this week, ${eventsPlanned} family events planned—one place for everything.`;
+      }
+      if (choresCompleted >= 10) {
+        return `${choresCompleted} chores completed this week. Our family actually uses this app together. Thought you might like it.`;
+      }
+      if (eventsPlanned > 0) {
+        return `We track chores and family events in one app now. ${eventsPlanned} events planned so far. Works surprisingly well.`;
+      }
+      return `${choresCompleted} chores this week—we're actually using it. Thought of you.`;
     }
-    return "ChoreGami helps families stay organized with chores, events, and more. Check it out!";
+    // Generic peer-to-peer message
+    return "We stopped juggling apps. Chores, points, family events—one shared place. Works for real families.";
   };
 
   const handleShare = async () => {
@@ -79,7 +92,7 @@ export default function ShareReferralCard({ code, conversions, monthsEarned, bas
     if (navigator.share) {
       try {
         await navigator.share({
-          title: "Join my family on ChoreGami!",
+          title: "ChoreGami",
           text: getShareMessage(),
           url: shareUrl,
         });
@@ -97,15 +110,23 @@ export default function ShareReferralCard({ code, conversions, monthsEarned, bas
 
   return (
     <div class="share-card" id="share-referral-section">
-      <h3 class="referral-title">Share ChoreGami</h3>
+      <h3 class="referral-title">Send to a friend</h3>
       <p class="referral-tagline">
-        Tell a friend. Get 1 free month when they join.
+        If they sign up, you both get 1 free month.
       </p>
 
-      {/* Stats badge - only shown when personalized (>= 5 chores this week) */}
-      {isPersonalized && weeklyStats && (
+      {/* Stats badge - only shown when there's meaningful activity */}
+      {weeklyStats && (weeklyStats.choresCompleted > 0 || weeklyStats.eventsPlanned > 0) && (
         <div class="referral-stats-badge">
-          <span>🎉 {weeklyStats.choresCompleted} chores this week</span>
+          {weeklyStats.choresCompleted > 0 && (
+            <span>✓ {weeklyStats.choresCompleted} chores this week</span>
+          )}
+          {weeklyStats.eventsPlanned > 0 && weeklyStats.choresCompleted > 0 && (
+            <span> • </span>
+          )}
+          {weeklyStats.eventsPlanned > 0 && (
+            <span>📅 {weeklyStats.eventsPlanned} event{weeklyStats.eventsPlanned !== 1 ? "s" : ""} planned</span>
+          )}
           {weeklyStats.streakDays >= 3 && (
             <span> • 🔥 {weeklyStats.streakDays}-day streak</span>
           )}

@@ -25,6 +25,7 @@ interface FamilyMember {
 interface WeeklyStats {
   choresCompleted: number;
   streakDays: number;
+  eventsPlanned: number;
 }
 
 interface SharePageData {
@@ -96,11 +97,21 @@ export const handler: Handlers<SharePageData> = {
         .gte("created_at", oneWeekAgo)
         .order("created_at", { ascending: false });
 
-      if (transactions && transactions.length > 0) {
-        const choresCompleted = transactions.length;
-        const streakDays = calculateStreak(transactions.map(t => t.created_at));
-        weeklyStats = { choresCompleted, streakDays };
-      }
+      // Get total events planned for this family
+      const { count: eventsCount } = await supabase
+        .schema("choretracker")
+        .from("family_events")
+        .select("id", { count: "exact", head: true })
+        .eq("family_id", family.id)
+        .eq("is_deleted", false);
+
+      const choresCompleted = transactions?.length || 0;
+      const streakDays = transactions && transactions.length > 0
+        ? calculateStreak(transactions.map(t => t.created_at))
+        : 0;
+      const eventsPlanned = eventsCount || 0;
+
+      weeklyStats = { choresCompleted, streakDays, eventsPlanned };
     } catch (e) {
       console.warn("[Share] Could not load weekly stats:", e);
       // Non-blocking - continue with simple version
@@ -169,8 +180,8 @@ export default function SharePage({ data }: PageProps<SharePageData>) {
 
       <main class="share-page">
         <div class="share-hero">
-          <div class="share-emoji">🎁</div>
-          <p class="share-subtitle">Help other families discover ChoreGami</p>
+          <div class="share-emoji">💬</div>
+          <p class="share-subtitle">Know a family who'd like this?</p>
         </div>
 
         {progressMessage && (
@@ -188,7 +199,7 @@ export default function SharePage({ data }: PageProps<SharePageData>) {
         />
 
         <div class="share-tip">
-          💡 Text, post, or just tell someone!
+          📱 Text it, or just mention it next time you chat
         </div>
       </main>
 
