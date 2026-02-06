@@ -1,6 +1,5 @@
 import { useSignal } from "@preact/signals";
 import { useEffect } from "preact/hooks";
-import EmailInviteForm from "./EmailInviteForm.tsx";
 
 interface WeeklyStats {
   choresCompleted: number;
@@ -28,12 +27,9 @@ const trackFeature = (feature: string) => {
 // Threshold for showing personalized stats
 const PERSONALIZED_THRESHOLD = 5;
 
-export default function ShareReferralCard({ code, conversions, monthsEarned, baseUrl, weeklyStats, senderName }: ShareReferralCardProps & { senderName?: string }) {
+export default function ShareReferralCard({ code, conversions, monthsEarned, baseUrl, weeklyStats }: ShareReferralCardProps) {
   const copied = useSignal(false);
   const shareUrl = `${baseUrl}/r/${code}`;
-
-  // Email form state
-  const showEmailForm = useSignal(false);
 
   // Show personalized version if >= 5 chores completed this week
   const isPersonalized = weeklyStats && weeklyStats.choresCompleted >= PERSONALIZED_THRESHOLD;
@@ -157,25 +153,6 @@ export default function ShareReferralCard({ code, conversions, monthsEarned, bas
             📤 Share
           </button>
         </div>
-
-        {/* Email invite button */}
-        <button
-          type="button"
-          onClick={() => { showEmailForm.value = !showEmailForm.value; }}
-          class={`email-toggle-btn ${showEmailForm.value ? 'active' : ''}`}
-        >
-          📧 Share via email
-        </button>
-
-        {/* Email form (expandable) */}
-        {showEmailForm.value && (
-          <EmailInviteForm
-            shareUrl={shareUrl}
-            message={getShareMessage()}
-            senderName={senderName}
-            onClose={() => { showEmailForm.value = false; }}
-          />
-        )}
       </div>
 
       {/* Progress section with bar */}
@@ -408,34 +385,6 @@ export default function ShareReferralCard({ code, conversions, monthsEarned, bas
           font-size: 0.8rem;
           color: var(--text-secondary);
           text-align: center;
-        }
-
-        /* Email invite section */
-        .email-toggle-btn {
-          width: 100%;
-          margin-top: 12px;
-          padding: 14px 20px;
-          background: linear-gradient(
-            135deg,
-            var(--color-primary) 0%,
-            var(--color-primary-dark, var(--color-primary)) 100%
-          );
-          border: none;
-          border-radius: 12px;
-          color: white;
-          font-size: 0.95rem;
-          font-weight: 600;
-          cursor: pointer;
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
-          box-shadow: 0 2px 8px rgba(var(--color-primary-rgb, 16, 185, 129), 0.3);
-        }
-        .email-toggle-btn:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 4px 16px rgba(var(--color-primary-rgb, 16, 185, 129), 0.4);
-        }
-        .email-toggle-btn.active {
-          background: var(--color-primary);
-          box-shadow: 0 2px 8px rgba(var(--color-primary-rgb, 16, 185, 129), 0.3);
         }
 
         /* Reduced motion */

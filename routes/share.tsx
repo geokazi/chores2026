@@ -53,7 +53,11 @@ export const handler: Handlers<SharePageData> = {
     const userRole = currentUser?.role === "parent" ? "parent" : "child";
 
     // Load or create referral code
-    const appBaseUrl = Deno.env.get("APP_BASE_URL") || "https://choregami.fly.dev";
+    // Use request host for URL, defaulting to production domain
+    const url = new URL(req.url);
+    const appBaseUrl = url.hostname === "localhost"
+      ? `${url.protocol}//${url.host}`
+      : "https://choregami.app";
     let referral: { code: string; conversions: number; monthsEarned: number; baseUrl: string };
 
     try {
@@ -236,7 +240,6 @@ export default function SharePage({ data }: PageProps<SharePageData>) {
           monthsEarned={referral.monthsEarned}
           baseUrl={referral.baseUrl}
           weeklyStats={weeklyStats}
-          senderName={currentUser?.name}
         />
 
         <div class="share-tip">
