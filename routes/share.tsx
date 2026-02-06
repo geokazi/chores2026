@@ -129,13 +129,17 @@ export const handler: Handlers<SharePageData> = {
         if (profileStreak > maxStreak) maxStreak = profileStreak;
       }
 
-      // Get total events planned for this family
-      const { count: eventsCount } = await supabase
+      // Get total events planned for this family (matching pattern from events.tsx)
+      const { count: eventsCount, error: eventsError } = await supabase
         .schema("choretracker")
         .from("family_events")
-        .select("id", { count: "exact", head: true })
+        .select("*", { count: "exact", head: true })
         .eq("family_id", family.id)
         .eq("is_deleted", false);
+
+      if (eventsError) {
+        console.warn("[Share] Error fetching events count:", eventsError);
+      }
 
       weeklyStats = {
         choresCompleted,
