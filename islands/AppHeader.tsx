@@ -7,6 +7,7 @@
 import { useState, useEffect } from "preact/hooks";
 import { changeTheme, type ThemeId } from "../lib/theme-manager.ts";
 import { ActiveKidSessionManager } from "../lib/active-kid-session.ts";
+import { trackInteraction } from "../lib/utils/track-interaction.ts";
 
 interface FamilyMember {
   id: string;
@@ -74,6 +75,7 @@ export default function AppHeader({
   const kids = familyMembers.filter((m) => m.role === "child");
 
   const handleThemeChange = (theme: string) => {
+    trackInteraction("theme_change", { theme, from: currentTheme });
     // Use centralized theme manager (same as /parent/settings)
     changeTheme(theme as ThemeId);
     if (onThemeChange) {
@@ -82,6 +84,7 @@ export default function AppHeader({
   };
 
   const handleSwitchUser = () => {
+    trackInteraction("user_switch", { from: currentUser?.id });
     // Clear kid session and go to family selector
     sessionStorage.removeItem("active_kid_id");
     sessionStorage.removeItem("active_kid_name");
@@ -89,6 +92,7 @@ export default function AppHeader({
   };
 
   const handleLogout = () => {
+    trackInteraction("logout", { role: userRole });
     // Navigate to /logout which handles cookie clearing and redirects
     window.location.href = "/logout";
   };
@@ -98,7 +102,10 @@ export default function AppHeader({
       {/* Hamburger Menu Button */}
       <button
         class="header-btn menu-btn"
-        onClick={() => setMenuOpen(!menuOpen)}
+        onClick={() => {
+          if (!menuOpen) trackInteraction("nav_open_left", { page: currentPage });
+          setMenuOpen(!menuOpen);
+        }}
         aria-label="Menu"
         style={{ position: "relative" }}
       >
@@ -114,7 +121,10 @@ export default function AppHeader({
       {/* User Avatar Button */}
       <button
         class="header-btn user-btn"
-        onClick={() => setUserMenuOpen(!userMenuOpen)}
+        onClick={() => {
+          if (!userMenuOpen) trackInteraction("nav_open_right", { page: currentPage, role: userRole });
+          setUserMenuOpen(!userMenuOpen);
+        }}
         aria-label="User menu"
       >
         {currentUser?.avatar_emoji || (isParent ? "👤" : "🧒")}

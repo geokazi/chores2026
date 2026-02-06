@@ -26,6 +26,7 @@ import KidPinSection from "./settings/KidPinSection.tsx";
 import ParentPinSection from "./settings/ParentPinSection.tsx";
 import PinSetupModal from "./settings/PinSetupModal.tsx";
 import { isConfettiEnabled, setConfettiEnabled, triggerCelebration } from "./ConfettiTrigger.tsx";
+import { trackInteraction } from "../lib/utils/track-interaction.ts";
 
 interface FamilySettingsProps {
   family: {
@@ -93,6 +94,7 @@ export default function FamilySettings({ family, members, settings, digestChanne
 
   const handleKidsEventToggle = async () => {
     const newValue = !kidsCanCreateEvents;
+    trackInteraction("setting_toggle", { setting: "kids_events", enabled: newValue });
     setSavingEventSetting(true);
 
     try {
@@ -118,6 +120,7 @@ export default function FamilySettings({ family, members, settings, digestChanne
 
   const handleConfettiToggle = () => {
     const newValue = !confettiEnabled;
+    trackInteraction("setting_toggle", { setting: "confetti", enabled: newValue });
     setConfettiEnabled(newValue);
     setConfettiEnabledState(newValue);
 
@@ -129,6 +132,7 @@ export default function FamilySettings({ family, members, settings, digestChanne
 
   const handleWeeklyDigestToggle = async () => {
     const newValue = !weeklyDigest;
+    trackInteraction("setting_toggle", { setting: "weekly_digest", enabled: newValue });
     setSavingDigest(true);
 
     try {
@@ -156,6 +160,7 @@ export default function FamilySettings({ family, members, settings, digestChanne
 
   const handleDailyDigestToggle = async () => {
     const newValue = !dailyDigest;
+    trackInteraction("setting_toggle", { setting: "daily_digest", enabled: newValue });
     setSavingDigest(true);
 
     try {

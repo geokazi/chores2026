@@ -7,6 +7,7 @@ import { useEffect, useState } from "preact/hooks";
 // @ts-ignore: bcrypt types not compatible with Deno 2
 import * as bcrypt from "bcryptjs";
 import { createKidSession, KidProfile } from "../lib/auth/kid-session.ts";
+import { trackInteraction } from "../lib/utils/track-interaction.ts";
 
 interface FamilyMember {
   id: string;
@@ -63,6 +64,7 @@ export default function PinEntryModal({ kid, onSuccess, onCancel }: Props) {
         const isValid = await bcrypt.compare(enteredPin, localHash);
         console.log("🔧 localStorage validation result:", isValid);
         if (isValid) {
+          trackInteraction("pin_attempt", { success: true, type: "kid" });
           // Create kid session for validated access
           const kidProfile: KidProfile = {
             id: kid.id,
@@ -72,7 +74,7 @@ export default function PinEntryModal({ kid, onSuccess, onCancel }: Props) {
             pin_hash: localHash,
           };
           createKidSession(kidProfile);
-          
+
           onSuccess();
           return;
         }
@@ -143,6 +145,7 @@ export default function PinEntryModal({ kid, onSuccess, onCancel }: Props) {
 
       // Invalid PIN
       console.log("❌ PIN validation failed - incorrect PIN");
+      trackInteraction("pin_attempt", { success: false, type: "kid" });
       setError("Incorrect PIN. Try again.");
       setPin("");
     } catch (error) {

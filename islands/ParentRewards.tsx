@@ -5,6 +5,7 @@
 
 import { useState } from "preact/hooks";
 import type { AvailableReward, RewardPurchase, SavingsGoal } from "../lib/types/finance.ts";
+import { trackInteraction } from "../lib/utils/track-interaction.ts";
 
 interface KidWithGoals {
   id: string;
@@ -266,19 +267,19 @@ export default function ParentRewards({
       <div class="tabs">
         <button
           class={`tab ${activeTab === "pending" ? "active" : ""}`}
-          onClick={() => setActiveTab("pending")}
+          onClick={() => { trackInteraction("reward_tab", { tab: "pending" }); setActiveTab("pending"); }}
         >
           📋 Pending {pending.length > 0 && <span class="badge">{pending.length}</span>}
         </button>
         <button
           class={`tab ${activeTab === "catalog" ? "active" : ""}`}
-          onClick={() => setActiveTab("catalog")}
+          onClick={() => { trackInteraction("reward_tab", { tab: "catalog" }); setActiveTab("catalog"); }}
         >
           🎁 Catalog
         </button>
         <button
           class={`tab ${activeTab === "goals" ? "active" : ""}`}
-          onClick={() => setActiveTab("goals")}
+          onClick={() => { trackInteraction("reward_tab", { tab: "goals" }); setActiveTab("goals"); }}
         >
           🎯 Goals
         </button>
@@ -474,7 +475,7 @@ export default function ParentRewards({
                     </div>
                     <button
                       class="boost-btn"
-                      onClick={() => { setBoostingGoal({ kid, goal }); setBoostAmount(50); }}
+                      onClick={() => { trackInteraction("goal_boost_click"); setBoostingGoal({ kid, goal }); setBoostAmount(50); }}
                     >
                       💪 Boost
                     </button>

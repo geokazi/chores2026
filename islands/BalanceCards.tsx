@@ -5,6 +5,7 @@
 
 import { useState } from "preact/hooks";
 import type { BalanceInfo, DailyEarning, RewardPurchase } from "../lib/types/finance.ts";
+import { trackInteraction } from "../lib/utils/track-interaction.ts";
 
 interface FamilyMember {
   id: string;
@@ -147,6 +148,7 @@ export default function BalanceCards({ balances, recentPurchases, dollarValuePer
               <button
                 class="payout-btn"
                 onClick={() => {
+                  trackInteraction("payout_click", { points: balance.currentPoints });
                   setSelectedKid(balance);
                   setShowPayOut(true);
                   setError("");

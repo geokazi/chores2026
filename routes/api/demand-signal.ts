@@ -12,8 +12,8 @@ import { createClient } from "@supabase/supabase-js";
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-// Valid features to track
-const VALID_FEATURES = ["roommates", "just_me", "theme_toggle"];
+// Valid features to track (v1/v2: landing page, v3: app interactions)
+const VALID_FEATURES = ["roommates", "just_me", "theme_toggle", "app_interaction"];
 
 // Valid result types from assessment quiz
 const VALID_RESULT_TYPES = [
@@ -75,6 +75,12 @@ export const handler: Handlers = {
       }
       if (result_type && VALID_RESULT_TYPES.includes(result_type)) {
         data.result_type = result_type;
+      }
+
+      // v3: Include app interaction data if provided
+      const { interaction } = body;
+      if (interaction && typeof interaction === "object") {
+        data.interaction = interaction;
       }
 
       // Insert into demand_signals table
