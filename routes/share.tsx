@@ -9,7 +9,7 @@ import { Head } from "$fresh/runtime.ts";
 import { getAuthenticatedSession } from "../lib/auth/session.ts";
 import { ReferralService } from "../lib/services/referral-service.ts";
 import { calculateStreak, getLocalDate } from "../lib/services/insights-service.ts";
-import { createClient } from "../lib/supabase.ts";
+import { getServiceSupabaseClient } from "../lib/supabase.ts";
 import ShareReferralCard from "../islands/ShareReferralCard.tsx";
 import AppHeader from "../islands/AppHeader.tsx";
 import AppFooter from "../components/AppFooter.tsx";
@@ -85,7 +85,7 @@ export const handler: Handlers<SharePageData> = {
     // Uses same logic as Reports page: Sunday-first weeks, all positive transactions
     let weeklyStats: WeeklyStats | null = null;
     try {
-      const supabase = createClient();
+      const supabase = getServiceSupabaseClient();
 
       // Get timezone from URL or default (same as Reports page)
       const url = new URL(req.url);
@@ -111,8 +111,12 @@ export const handler: Handlers<SharePageData> = {
         .eq("family_id", family.id)
         .gt("points_change", 0);
 
+      // Type for transaction rows
+      interface TxRow { profile_id: string; created_at: string; points_change: number; }
+      const txData = (transactions || []) as TxRow[];
+
       // Filter to this week using local dates (same as Reports)
-      const weekTransactions = (transactions || []).filter(
+      const weekTransactions = txData.filter(
         (t) => getLocalDate(t.created_at, timezone) >= weekStartStr
       );
 
@@ -121,10 +125,10 @@ export const handler: Handlers<SharePageData> = {
 
       // Calculate max individual streak (not combined family streak)
       // Group transactions by profile_id and find the best streak
-      const profileIds = [...new Set((transactions || []).map((t) => t.profile_id))];
+      const profileIds = [...new Set(txData.map((t) => t.profile_id))];
       let maxStreak = 0;
       for (const profileId of profileIds) {
-        const profileTx = (transactions || []).filter((t) => t.profile_id === profileId);
+        const profileTx = txData.filter((t) => t.profile_id === profileId);
         const profileStreak = calculateStreak(profileTx.map((t) => t.created_at));
         if (profileStreak > maxStreak) maxStreak = profileStreak;
       }
@@ -137,9 +141,11 @@ export const handler: Handlers<SharePageData> = {
         .eq("family_id", family.id)
         .eq("is_deleted", false);
 
-      if (eventsError) {
-        console.warn("[Share] Error fetching events count:", eventsError);
-      }
+      console.log("[Share] Events query result:", {
+        familyId: family.id,
+        eventsCount,
+        eventsError: eventsError?.message || null,
+      });
 
       weeklyStats = {
         choresCompleted,
