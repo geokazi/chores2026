@@ -13,6 +13,7 @@ interface ShareReferralCardProps {
   monthsEarned: number;
   baseUrl: string;
   weeklyStats?: WeeklyStats | null;
+  familyName?: string;
 }
 
 /** Track feature interaction for analytics */
@@ -27,7 +28,7 @@ const trackFeature = (feature: string) => {
 // Threshold for showing personalized stats
 const PERSONALIZED_THRESHOLD = 5;
 
-export default function ShareReferralCard({ code, conversions, monthsEarned, baseUrl, weeklyStats }: ShareReferralCardProps) {
+export default function ShareReferralCard({ code, conversions, monthsEarned, baseUrl, weeklyStats, familyName }: ShareReferralCardProps) {
   const copied = useSignal(false);
   const shareUrl = `${baseUrl}/r/${code}`;
 
@@ -105,6 +106,15 @@ export default function ShareReferralCard({ code, conversions, monthsEarned, bas
     }
   };
 
+  // Email via mailto: - opens user's email app with pre-filled subject/body
+  const handleEmail = () => {
+    trackFeature("referral_email_mailto");
+    const displayName = familyName || "A friend";
+    const subject = encodeURIComponent(`${displayName} thinks you'd like ChoreGami`);
+    const body = encodeURIComponent(`${getShareMessage()}\n\n${shareUrl}`);
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  };
+
   // Progress percentage for the bar
   const progressPercent = Math.min((monthsEarned / 6) * 100, 100);
 
@@ -153,6 +163,9 @@ export default function ShareReferralCard({ code, conversions, monthsEarned, bas
             📤 Share
           </button>
         </div>
+        <button type="button" onClick={handleEmail} class="email-link">
+          📧 Or email a friend
+        </button>
       </div>
 
       {/* Progress section with bar */}
@@ -321,6 +334,24 @@ export default function ShareReferralCard({ code, conversions, monthsEarned, bas
         .referral-btn-share:hover {
           transform: translateY(-2px);
           box-shadow: 0 4px 16px rgba(var(--color-primary-rgb, 16, 185, 129), 0.4);
+        }
+
+        /* Email link */
+        .email-link {
+          display: block;
+          width: 100%;
+          margin-top: 12px;
+          padding: 10px;
+          background: transparent;
+          border: none;
+          color: var(--color-primary);
+          font-size: 0.9rem;
+          cursor: pointer;
+          text-align: center;
+          transition: opacity 0.2s;
+        }
+        .email-link:hover {
+          opacity: 0.8;
         }
 
         /* Progress section */

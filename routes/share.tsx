@@ -32,7 +32,7 @@ interface SharePageData {
   familyMembers: FamilyMember[];
   currentUser: FamilyMember | null;
   userRole: "parent" | "child";
-  referral: { code: string; conversions: number; monthsEarned: number; baseUrl: string };
+  referral: { code: string; conversions: number; monthsEarned: number; baseUrl: string; familyName: string };
   weeklyStats: WeeklyStats | null;
   error?: string;
 }
@@ -58,13 +58,13 @@ export const handler: Handlers<SharePageData> = {
     const appBaseUrl = url.hostname === "localhost"
       ? `${url.protocol}//${url.host}`
       : "https://choregami.app";
-    let referral: { code: string; conversions: number; monthsEarned: number; baseUrl: string };
+    let referral: { code: string; conversions: number; monthsEarned: number; baseUrl: string; familyName: string };
 
     try {
       const referralService = new ReferralService();
       const stats = await referralService.getStats(family.id);
       if (stats) {
-        referral = { ...stats, baseUrl: appBaseUrl };
+        referral = { ...stats, baseUrl: appBaseUrl, familyName: family.name };
       } else {
         return ctx.render({
           familyMembers: family.members,
@@ -240,6 +240,7 @@ export default function SharePage({ data }: PageProps<SharePageData>) {
           monthsEarned={referral.monthsEarned}
           baseUrl={referral.baseUrl}
           weeklyStats={weeklyStats}
+          familyName={referral.familyName}
         />
 
         <div class="share-tip">
