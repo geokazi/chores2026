@@ -996,9 +996,16 @@ export default function EventCard({
                             fontSize: "0.875rem",
                             fontWeight: "500",
                             cursor: "pointer",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            lineHeight: "1.2",
                           }}
                         >
-                          Prep
+                          <span>Prep</span>
+                          <span style={{ fontSize: "0.625rem", opacity: 0.8 }}>
+                            checklist
+                          </span>
                         </button>
                         <button
                           onClick={(e) => {
@@ -1015,9 +1022,16 @@ export default function EventCard({
                             fontSize: "0.875rem",
                             fontWeight: "500",
                             cursor: "pointer",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            lineHeight: "1.2",
                           }}
                         >
-                          Chore
+                          <span>Chore</span>
+                          <span style={{ fontSize: "0.625rem", opacity: 0.8 }}>
+                            earns pts
+                          </span>
                         </button>
                         <button
                           onClick={(e) => {
