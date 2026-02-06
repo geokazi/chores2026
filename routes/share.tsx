@@ -236,6 +236,7 @@ export default function SharePage({ data }: PageProps<SharePageData>) {
           monthsEarned={referral.monthsEarned}
           baseUrl={referral.baseUrl}
           weeklyStats={weeklyStats}
+          senderName={currentUser?.name}
         />
 
         <div class="share-tip">
