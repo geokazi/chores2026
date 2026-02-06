@@ -310,6 +310,33 @@ const { data } = await supabase
 
 **Lint check**: `deno task lint:schema` catches violations automatically.
 
+### 🔐 Supabase Client Selection (RLS)
+
+**Server-side routes MUST use `getServiceSupabaseClient()`** to bypass Row Level Security:
+
+```typescript
+// ✅ CORRECT - for server-side routes (bypasses RLS)
+import { getServiceSupabaseClient } from "../lib/supabase.ts";
+const supabase = getServiceSupabaseClient();
+
+// ❌ WRONG - anon key is blocked by RLS on choretracker tables
+import { createClient } from "../lib/supabase.ts";
+const supabase = createClient();
+```
+
+**Why this matters:**
+- `createClient()` uses `SUPABASE_KEY` (anon key) → subject to RLS policies
+- `getServiceSupabaseClient()` uses `SUPABASE_SERVICE_ROLE_KEY` → bypasses RLS
+- All `choretracker.*` tables have RLS enabled
+- Server routes already have session auth, so service key is safe
+
+**When to use which:**
+| Context | Client | Why |
+|---------|--------|-----|
+| Server routes (`routes/*.tsx`) | `getServiceSupabaseClient()` | Bypass RLS, session already validates access |
+| API routes (`routes/api/*.ts`) | `getServiceSupabaseClient()` | Same - server context |
+| Client islands (`islands/*.tsx`) | Never query DB directly | Use fetch to API routes |
+
 ### 🔥 TransactionService Integration
 
 **Copy EXACTLY from existing implementation** - this is production-tested code:
