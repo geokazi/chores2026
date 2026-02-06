@@ -7,7 +7,9 @@
 import { Handlers, PageProps } from "$fresh/server.ts";
 import { getCookies } from "@std/http/cookie";
 import { getServiceSupabaseClient } from "../lib/supabase.ts";
+import { PlanService } from "../lib/services/plan-service.ts";
 import AppFooter from "../components/AppFooter.tsx";
+import DeviceFingerprintCollector from "../islands/DeviceFingerprintCollector.tsx";
 
 interface SetupPageData {
   error?: string;
@@ -220,6 +222,22 @@ export const handler: Handlers<SetupPageData> = {
         kids: kidProfileIds.length, template: template || "skip",
       });
 
+      // Initialize trial with device fingerprint (fraud prevention)
+      const deviceHash = formData.get("deviceHash") as string;
+      if (deviceHash && deviceHash.length === 64) {
+        try {
+          const planService = new PlanService();
+          const trialResult = await planService.initializeTrial(family.id, deviceHash);
+          if (trialResult.success) {
+            console.log("🎉 Trial initialized for family:", family.id);
+          } else if (trialResult.error === "device_exists") {
+            console.log("⚠️ Device hash already exists, skipping trial:", deviceHash.slice(0, 8) + "...");
+          }
+        } catch (e) {
+          console.warn("⚠️ Trial initialization failed (non-blocking):", e);
+        }
+      }
+
       // Track referral conversion if ref code provided
       const refCode = formData.get("ref") as string;
       if (refCode) {
@@ -325,6 +343,8 @@ export default function SetupPage({ data }: PageProps<SetupPageData>) {
         <form method="POST" class="setup-form">
           {/* Preserve referral code through form submission */}
           {refCode && <input type="hidden" name="ref" value={refCode} />}
+          {/* Collect device fingerprint for trial fraud prevention */}
+          <DeviceFingerprintCollector />
 
           <div class="form-group">
             <label for="parentName">Your Name</label>

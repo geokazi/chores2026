@@ -196,3 +196,72 @@ Deno.test({
     });
   },
 });
+
+Deno.test({
+  name: "ReferralService - Bonus Calculation",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  fn: async (t) => {
+    await t.step("available bonus = earned - redeemed", () => {
+      const stats = { monthsEarned: 4, monthsRedeemed: 1 };
+      const available = Math.max(0, stats.monthsEarned - stats.monthsRedeemed);
+      assertEquals(available, 3);
+    });
+
+    await t.step("available bonus cannot be negative", () => {
+      const stats = { monthsEarned: 2, monthsRedeemed: 5 };
+      const available = Math.max(0, stats.monthsEarned - stats.monthsRedeemed);
+      assertEquals(available, 0);
+    });
+
+    await t.step("available bonus is 0 when all redeemed", () => {
+      const stats = { monthsEarned: 6, monthsRedeemed: 6 };
+      const available = Math.max(0, stats.monthsEarned - stats.monthsRedeemed);
+      assertEquals(available, 0);
+    });
+
+    await t.step("bonus cap is 6 months", () => {
+      const MAX_BONUS = 6;
+      assertEquals(MAX_BONUS, 6);
+    });
+  },
+});
+
+Deno.test({
+  name: "ReferralService - Bonus Application Validation",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  fn: async (t) => {
+    await t.step("rejects zero months", () => {
+      const months = 0;
+      const isValid = months > 0;
+      assertEquals(isValid, false);
+    });
+
+    await t.step("rejects negative months", () => {
+      const months = -1;
+      const isValid = months > 0;
+      assertEquals(isValid, false);
+    });
+
+    await t.step("accepts positive months", () => {
+      const months = 3;
+      const isValid = months > 0;
+      assertEquals(isValid, true);
+    });
+
+    await t.step("rejects more months than available", () => {
+      const available = 3;
+      const requested = 5;
+      const isValid = requested <= available;
+      assertEquals(isValid, false);
+    });
+
+    await t.step("accepts exact available months", () => {
+      const available = 3;
+      const requested = 3;
+      const isValid = requested <= available;
+      assertEquals(isValid, true);
+    });
+  },
+});

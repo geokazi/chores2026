@@ -60,6 +60,8 @@ import * as $api_settings_notifications from "./routes/api/settings/notification
 import * as $api_settings_points_only_mode from "./routes/api/settings/points-only-mode.ts";
 import * as $api_settings_timezone from "./routes/api/settings/timezone.ts";
 import * as $api_share_email from "./routes/api/share/email.ts";
+import * as $api_stripe_checkout from "./routes/api/stripe/checkout.ts";
+import * as $api_stripe_webhook from "./routes/api/stripe/webhook.ts";
 import * as $demo from "./routes/demo.tsx";
 import * as $health from "./routes/health.ts";
 import * as $index from "./routes/index.tsx";
@@ -78,6 +80,7 @@ import * as $parent_insights from "./routes/parent/insights.tsx";
 import * as $parent_my_chores from "./routes/parent/my-chores.tsx";
 import * as $parent_rewards from "./routes/parent/rewards.tsx";
 import * as $parent_settings from "./routes/parent/settings.tsx";
+import * as $pricing from "./routes/pricing.tsx";
 import * as $privacy from "./routes/privacy.tsx";
 import * as $r_code_ from "./routes/r/[code].tsx";
 import * as $redeem from "./routes/redeem.tsx";
@@ -85,6 +88,7 @@ import * as $register from "./routes/register.tsx";
 import * as $reports from "./routes/reports.tsx";
 import * as $setup from "./routes/setup.tsx";
 import * as $share from "./routes/share.tsx";
+import * as $stripe_success from "./routes/stripe/success.tsx";
 import * as $terms from "./routes/terms.tsx";
 import * as $AddChoreModal from "./islands/AddChoreModal.tsx";
 import * as $AddEventModal from "./islands/AddEventModal.tsx";
@@ -96,6 +100,7 @@ import * as $ChoreList from "./islands/ChoreList.tsx";
 import * as $ConfettiTrigger from "./islands/ConfettiTrigger.tsx";
 import * as $DemoChoreCard from "./islands/DemoChoreCard.tsx";
 import * as $DemoKidDashboard from "./islands/DemoKidDashboard.tsx";
+import * as $DeviceFingerprintCollector from "./islands/DeviceFingerprintCollector.tsx";
 import * as $EmailInviteForm from "./islands/EmailInviteForm.tsx";
 import * as $EventCard from "./islands/EventCard.tsx";
 import * as $EventMissionGroup from "./islands/EventMissionGroup.tsx";
@@ -115,6 +120,7 @@ import * as $ParentPinGate from "./islands/ParentPinGate.tsx";
 import * as $ParentPinModal from "./islands/ParentPinModal.tsx";
 import * as $ParentRewards from "./islands/ParentRewards.tsx";
 import * as $PinEntryModal from "./islands/PinEntryModal.tsx";
+import * as $PricingCard from "./islands/PricingCard.tsx";
 import * as $RedeemForm from "./islands/RedeemForm.tsx";
 import * as $RewardsCatalog from "./islands/RewardsCatalog.tsx";
 import * as $SavingsGoals from "./islands/SavingsGoals.tsx";
@@ -126,6 +132,7 @@ import * as $TeaserCards from "./islands/TeaserCards.tsx";
 import * as $TemplateSelector from "./islands/TemplateSelector.tsx";
 import * as $ThemeInitializer from "./islands/ThemeInitializer.tsx";
 import * as $ThemeToggle from "./islands/ThemeToggle.tsx";
+import * as $TrialBanner from "./islands/TrialBanner.tsx";
 import * as $WebSocketManager from "./islands/WebSocketManager.tsx";
 import * as $WeeklyProgress from "./islands/WeeklyProgress.tsx";
 import * as $auth_AuthModeSelector from "./islands/auth/AuthModeSelector.tsx";
@@ -206,6 +213,8 @@ const manifest = {
     "./routes/api/settings/points-only-mode.ts": $api_settings_points_only_mode,
     "./routes/api/settings/timezone.ts": $api_settings_timezone,
     "./routes/api/share/email.ts": $api_share_email,
+    "./routes/api/stripe/checkout.ts": $api_stripe_checkout,
+    "./routes/api/stripe/webhook.ts": $api_stripe_webhook,
     "./routes/demo.tsx": $demo,
     "./routes/health.ts": $health,
     "./routes/index.tsx": $index,
@@ -224,6 +233,7 @@ const manifest = {
     "./routes/parent/my-chores.tsx": $parent_my_chores,
     "./routes/parent/rewards.tsx": $parent_rewards,
     "./routes/parent/settings.tsx": $parent_settings,
+    "./routes/pricing.tsx": $pricing,
     "./routes/privacy.tsx": $privacy,
     "./routes/r/[code].tsx": $r_code_,
     "./routes/redeem.tsx": $redeem,
@@ -231,6 +241,7 @@ const manifest = {
     "./routes/reports.tsx": $reports,
     "./routes/setup.tsx": $setup,
     "./routes/share.tsx": $share,
+    "./routes/stripe/success.tsx": $stripe_success,
     "./routes/terms.tsx": $terms,
   },
   islands: {
@@ -244,6 +255,7 @@ const manifest = {
     "./islands/ConfettiTrigger.tsx": $ConfettiTrigger,
     "./islands/DemoChoreCard.tsx": $DemoChoreCard,
     "./islands/DemoKidDashboard.tsx": $DemoKidDashboard,
+    "./islands/DeviceFingerprintCollector.tsx": $DeviceFingerprintCollector,
     "./islands/EmailInviteForm.tsx": $EmailInviteForm,
     "./islands/EventCard.tsx": $EventCard,
     "./islands/EventMissionGroup.tsx": $EventMissionGroup,
@@ -263,6 +275,7 @@ const manifest = {
     "./islands/ParentPinModal.tsx": $ParentPinModal,
     "./islands/ParentRewards.tsx": $ParentRewards,
     "./islands/PinEntryModal.tsx": $PinEntryModal,
+    "./islands/PricingCard.tsx": $PricingCard,
     "./islands/RedeemForm.tsx": $RedeemForm,
     "./islands/RewardsCatalog.tsx": $RewardsCatalog,
     "./islands/SavingsGoals.tsx": $SavingsGoals,
@@ -274,6 +287,7 @@ const manifest = {
     "./islands/TemplateSelector.tsx": $TemplateSelector,
     "./islands/ThemeInitializer.tsx": $ThemeInitializer,
     "./islands/ThemeToggle.tsx": $ThemeToggle,
+    "./islands/TrialBanner.tsx": $TrialBanner,
     "./islands/WebSocketManager.tsx": $WebSocketManager,
     "./islands/WeeklyProgress.tsx": $WeeklyProgress,
     "./islands/auth/AuthModeSelector.tsx": $auth_AuthModeSelector,

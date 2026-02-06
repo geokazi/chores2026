@@ -205,4 +205,69 @@ export class ReferralService {
       monthsRedeemed: referral.reward_months_redeemed,
     };
   }
+
+  /** Get available referral bonus months (earned - redeemed) */
+  async getAvailableBonus(familyId: string): Promise<number> {
+    const stats = await this.getStats(familyId);
+    if (!stats) return 0;
+    return Math.max(0, stats.monthsEarned - stats.monthsRedeemed);
+  }
+
+  /** Apply referral bonus months (marks them as redeemed) */
+  async applyReferralBonus(familyId: string, months: number): Promise<{ success: boolean; error?: string }> {
+    if (months <= 0) {
+      return { success: false, error: "Invalid months value" };
+    }
+
+    // Get current referral data
+    const { data: family, error: fetchError } = await this.supabase
+      .from("families")
+      .select("settings")
+      .eq("id", familyId)
+      .single();
+
+    if (fetchError || !family) {
+      return { success: false, error: "Failed to fetch family" };
+    }
+
+    const referral = family.settings?.apps?.choregami?.referral;
+    if (!referral) {
+      return { success: false, error: "No referral data found" };
+    }
+
+    const available = (referral.reward_months_earned || 0) - (referral.reward_months_redeemed || 0);
+    if (months > available) {
+      return { success: false, error: `Only ${available} bonus months available` };
+    }
+
+    // Update redeemed count
+    const newRedeemed = (referral.reward_months_redeemed || 0) + months;
+    const currentSettings = family.settings;
+    const newSettings = {
+      ...currentSettings,
+      apps: {
+        ...currentSettings.apps,
+        choregami: {
+          ...currentSettings.apps?.choregami,
+          referral: {
+            ...referral,
+            reward_months_redeemed: newRedeemed,
+          },
+        },
+      },
+    };
+
+    const { error: updateError } = await this.supabase
+      .from("families")
+      .update({ settings: newSettings })
+      .eq("id", familyId);
+
+    if (updateError) {
+      console.error("[ReferralService] Failed to apply bonus:", updateError);
+      return { success: false, error: "Failed to apply bonus" };
+    }
+
+    console.log("[ReferralService] Bonus applied:", { familyId, months, newRedeemed });
+    return { success: true };
+  }
 }
