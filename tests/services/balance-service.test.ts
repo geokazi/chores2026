@@ -19,7 +19,13 @@ const mockBalances: BalanceInfo[] = [
     currentPoints: 247,
     dollarValue: 247.0,
     weeklyEarnings: 85,
-    choreEarnings: 60,
+    dailyEarnings: [
+      { date: "2026-01-20", dayName: "Mon", points: 15 },
+      { date: "2026-01-21", dayName: "Tue", points: 10 },
+      { date: "2026-01-22", dayName: "Wed", points: 20 },
+      { date: "2026-01-23", dayName: "Thu", points: 15 },
+      { date: "2026-01-24", dayName: "Fri", points: 25 },
+    ],
   },
   {
     profileId: "kid-2",
@@ -28,7 +34,12 @@ const mockBalances: BalanceInfo[] = [
     currentPoints: 183,
     dollarValue: 183.0,
     weeklyEarnings: 45,
-    choreEarnings: 45,
+    dailyEarnings: [
+      { date: "2026-01-20", dayName: "Mon", points: 10 },
+      { date: "2026-01-21", dayName: "Tue", points: 15 },
+      { date: "2026-01-22", dayName: "Wed", points: 10 },
+      { date: "2026-01-23", dayName: "Thu", points: 10 },
+    ],
   },
 ];
 
@@ -47,13 +58,17 @@ describe("BalanceService", () => {
         currentPoints: 100,
         dollarValue: 100.0,
         weeklyEarnings: 50,
-        choreEarnings: 40,
+        dailyEarnings: [
+          { date: "2026-01-22", dayName: "Wed", points: 30 },
+          { date: "2026-01-23", dayName: "Thu", points: 20 },
+        ],
       };
 
       assertExists(balance.profileId);
       assertExists(balance.profileName);
       assertEquals(typeof balance.currentPoints, "number");
       assertEquals(typeof balance.dollarValue, "number");
+      assertEquals(Array.isArray(balance.dailyEarnings), true);
     });
 
     it("FinanceSettings has defaults", () => {
@@ -96,15 +111,18 @@ describe("BalanceService", () => {
       assertEquals(balance.weeklyEarnings, 85);
     });
 
-    it("separates chore earnings from total", () => {
+    it("daily earnings sum to weekly total or less", () => {
       const balance = mockBalances[0];
-      assertEquals(balance.choreEarnings <= balance.weeklyEarnings, true);
+      const dailySum = balance.dailyEarnings.reduce((sum, d) => sum + d.points, 0);
+      assertEquals(dailySum <= balance.weeklyEarnings, true);
     });
 
-    it("non-chore earnings = weekly - chore", () => {
+    it("tracks earnings per day", () => {
       const balance = mockBalances[0];
-      const bonusEarnings = balance.weeklyEarnings - balance.choreEarnings;
-      assertEquals(bonusEarnings, 25);
+      assertEquals(balance.dailyEarnings.length > 0, true);
+      assertEquals(typeof balance.dailyEarnings[0].date, "string");
+      assertEquals(typeof balance.dailyEarnings[0].dayName, "string");
+      assertEquals(typeof balance.dailyEarnings[0].points, "number");
     });
   });
 
