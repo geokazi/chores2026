@@ -720,6 +720,7 @@ choretracker.family_events (
 
 ### ❌ **FORBIDDEN OPERATIONS**
 
+- **Deploying to production without explicit user permission** (always ask before running `fly deploy` or similar)
 - **Creating new database tables or schemas**
 - **Modifying existing table structures**
 - **Creating new authentication systems**
