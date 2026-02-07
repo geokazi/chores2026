@@ -350,18 +350,18 @@ User clicks [ Select ] on "Full Year" plan
 
 ### Device Fingerprint Index (Fraud Prevention)
 
+**Status**: ✅ **Implemented** - See `sql/20260206_trial_device_hash.sql`
+
 ```sql
--- Option A: Dedicated column for O(1) lookup
+-- Dedicated column for O(1) lookup (CHOSEN APPROACH)
 ALTER TABLE families ADD COLUMN IF NOT EXISTS trial_device_hash TEXT;
 CREATE UNIQUE INDEX idx_families_trial_device_hash
   ON families(trial_device_hash)
   WHERE trial_device_hash IS NOT NULL;
 
--- Option B: GIN on JSONB (slightly slower but no schema change)
-CREATE INDEX IF NOT EXISTS idx_families_device_hash
-  ON families USING GIN (
-    (settings->'apps'->'choregami'->'trial'->'device_hash')
-  );
+-- Helper functions also created:
+-- - check_device_hash_exists(p_device_hash) → boolean
+-- - init_family_trial(p_family_id, p_device_hash, p_trial_days) → text
 ```
 
 ---
@@ -692,7 +692,7 @@ STRIPE_PREMIUM_ANNUAL_PRICE_ID=price_xxx # $79.99 (full_year, 12 months)
 - [ ] Stripe checkout creates session with correct metadata
 - [ ] Webhook updates family plan correctly
 - [ ] Gift code redemption still works alongside Stripe
-- [ ] Trial blocks repeat signups from same device
+- [x] Trial blocks repeat signups from same device (SQL functions ready)
 
 ### Manual QA
 - [ ] Full signup → trial → upgrade flow
@@ -700,10 +700,17 @@ STRIPE_PREMIUM_ANNUAL_PRICE_ID=price_xxx # $79.99 (full_year, 12 months)
 - [ ] Referral bonus displayed at checkout
 - [ ] Stripe test card payments
 
+### Database
+- [x] `trial_device_hash` column added to families table
+- [x] Unique index created for O(1) lookup
+- [x] `check_device_hash_exists()` function created
+- [x] `init_family_trial()` function created
+
 ---
 
 ## Related Documents
 
+- [Trial Device Hash Migration](../../sql/20260206_trial_device_hash.sql) ✅
 - [Referral Functions SQL](../../sql/20260131_referral_functions.sql)
 - [Gift Codes Schema](../../sql/20260118_gift_codes.sql)
 - [Plan Gate Utility](../../lib/plan-gate.ts)
