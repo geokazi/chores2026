@@ -100,6 +100,7 @@ import * as $terms from "./routes/terms.tsx";
 import * as $AddChoreModal from "./islands/AddChoreModal.tsx";
 import * as $AddEventModal from "./islands/AddEventModal.tsx";
 import * as $AddPrepTasksModal from "./islands/AddPrepTasksModal.tsx";
+import * as $AdminIdleTimeout from "./islands/AdminIdleTimeout.tsx";
 import * as $AppHeader from "./islands/AppHeader.tsx";
 import * as $BalanceCards from "./islands/BalanceCards.tsx";
 import * as $ChoreDetail from "./islands/ChoreDetail.tsx";
@@ -263,6 +264,7 @@ const manifest = {
     "./islands/AddChoreModal.tsx": $AddChoreModal,
     "./islands/AddEventModal.tsx": $AddEventModal,
     "./islands/AddPrepTasksModal.tsx": $AddPrepTasksModal,
+    "./islands/AdminIdleTimeout.tsx": $AdminIdleTimeout,
     "./islands/AppHeader.tsx": $AppHeader,
     "./islands/BalanceCards.tsx": $BalanceCards,
     "./islands/ChoreDetail.tsx": $ChoreDetail,

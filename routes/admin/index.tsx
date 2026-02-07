@@ -7,6 +7,7 @@
 import { Handlers, PageProps } from "$fresh/server.ts";
 import { getAuthenticatedSession } from "../../lib/auth/session.ts";
 import { isStaffEmail, getAccessDeniedHtml } from "../../lib/auth/staff.ts";
+import AdminIdleTimeout from "../../islands/AdminIdleTimeout.tsx";
 
 interface AdminPageData {
   userEmail: string;
@@ -49,6 +50,7 @@ export default function AdminIndexPage({ data }: PageProps<AdminPageData>) {
         <div class="admin-user">
           <span>{data.userEmail}</span>
           <a href="/" class="back-link">← Back to App</a>
+          <a href="/logout" class="logout-btn">Log out</a>
         </div>
       </header>
 
@@ -102,6 +104,8 @@ export default function AdminIndexPage({ data }: PageProps<AdminPageData>) {
         </section>
       </main>
 
+      <AdminIdleTimeout timeoutMinutes={2} />
+
       <style>{`
         .admin-page {
           min-height: 100vh;
@@ -146,6 +150,22 @@ export default function AdminIndexPage({ data }: PageProps<AdminPageData>) {
 
         .back-link:hover {
           text-decoration: underline;
+        }
+
+        .logout-btn {
+          color: #6b7280;
+          text-decoration: none;
+          font-size: 0.875rem;
+          padding: 0.375rem 0.75rem;
+          border: 1px solid #e5e7eb;
+          border-radius: 6px;
+          transition: all 0.15s;
+        }
+
+        .logout-btn:hover {
+          color: #ef4444;
+          border-color: #ef4444;
+          background: #fef2f2;
         }
 
         .admin-main {

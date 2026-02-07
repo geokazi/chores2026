@@ -9,6 +9,7 @@ import { Handlers, PageProps } from "$fresh/server.ts";
 import { getAuthenticatedSession } from "../../lib/auth/session.ts";
 import { isStaffEmail, getAccessDeniedHtml } from "../../lib/auth/staff.ts";
 import GiftCodeAdmin from "../../islands/GiftCodeAdmin.tsx";
+import AdminIdleTimeout from "../../islands/AdminIdleTimeout.tsx";
 
 interface AdminPageData {
   staffEmail: string;
@@ -49,6 +50,7 @@ export default function GiftCodeAdminPage({ data }: PageProps<AdminPageData>) {
           <div class="header-right">
             <span class="staff-badge">Staff</span>
             <span class="staff-email">{data.staffEmail}</span>
+            <a href="/logout" class="logout-btn">Log out</a>
           </div>
         </div>
       </header>
@@ -56,6 +58,8 @@ export default function GiftCodeAdminPage({ data }: PageProps<AdminPageData>) {
       <main class="admin-main">
         <GiftCodeAdmin staffEmail={data.staffEmail} />
       </main>
+
+      <AdminIdleTimeout timeoutMinutes={2} />
 
       <style>{`
         .admin-page {
@@ -102,6 +106,20 @@ export default function GiftCodeAdminPage({ data }: PageProps<AdminPageData>) {
           max-width: 1200px;
           margin: 0 auto;
           padding: 1.5rem;
+        }
+        .logout-btn {
+          color: #6b7280;
+          text-decoration: none;
+          font-size: 0.875rem;
+          padding: 0.375rem 0.75rem;
+          border: 1px solid #e5e7eb;
+          border-radius: 6px;
+          transition: all 0.15s;
+        }
+        .logout-btn:hover {
+          color: #ef4444;
+          border-color: #ef4444;
+          background: #fef2f2;
         }
         @media (max-width: 768px) {
           .admin-main { padding: 1rem; }
