@@ -112,6 +112,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 
 | Date | Decision | Status | Summary |
 |------|----------|--------|---------|
+| 2026-02-06 | [Admin Page Access Control](./decisions/20260206_admin_page_access_control.md) | ✅ Implemented | Staff email-based access control for admin pages; pattern documentation |
 | 2026-01-28 | [SMS Invite Demand Tracking](./decisions/20260128_sms_invite_demand_tracking.md) | ✅ Decided | Disable SMS (A2P 10DLC), keep UI button to capture demand signal |
 | 2026-01-28 | [OAuth Invite Token Preservation](./decisions/20260128_oauth_invite_token_preservation.md) | ✅ Decided | localStorage bridge preserves invite tokens through OAuth flow |
 | 2026-01-25 | [Large Family Smart Rotation](./decisions/20260125_large_family_smart_rotation.md) | 📋 Proposed | Future paid template for 5-12 kids using dynamic distribution |

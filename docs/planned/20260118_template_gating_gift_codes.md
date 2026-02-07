@@ -502,6 +502,7 @@ Character set excludes confusing characters: `ABCDEFGHJKMNPQRSTUVWXYZ23456789` (
 
 ## References
 
+- [Admin Page Access Control](../decisions/20260206_admin_page_access_control.md) - Staff-only admin panel pattern
 - [JSONB Settings Architecture](../20260114_JSONB_settings_architecture.md)
 - [Chore Templates Design](../chore-templates-design.md)
 - [Seasonal Templates](../milestones/20260116_seasonal-templates-implementation.md)
