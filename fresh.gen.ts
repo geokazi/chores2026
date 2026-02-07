@@ -39,6 +39,7 @@ import * as $api_family_pin_setting from "./routes/api/family/pin-setting.ts";
 import * as $api_family_set_kid_pin from "./routes/api/family/set-kid-pin.ts";
 import * as $api_familyscore_live_family_id_ from "./routes/api/familyscore/live/[family_id].ts";
 import * as $api_familyscore_sync from "./routes/api/familyscore/sync.ts";
+import * as $api_gift_purchase from "./routes/api/gift/purchase.ts";
 import * as $api_gift_redeem from "./routes/api/gift/redeem.ts";
 import * as $api_gift_validate from "./routes/api/gift/validate.ts";
 import * as $api_goals_index from "./routes/api/goals/index.ts";
@@ -201,6 +202,7 @@ const manifest = {
     "./routes/api/familyscore/live/[family_id].ts":
       $api_familyscore_live_family_id_,
     "./routes/api/familyscore/sync.ts": $api_familyscore_sync,
+    "./routes/api/gift/purchase.ts": $api_gift_purchase,
     "./routes/api/gift/redeem.ts": $api_gift_redeem,
     "./routes/api/gift/validate.ts": $api_gift_validate,
     "./routes/api/goals/index.ts": $api_goals_index,

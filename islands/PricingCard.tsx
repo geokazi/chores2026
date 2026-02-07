@@ -48,6 +48,15 @@ export default function PricingCard({ isAuthenticated, referralBonus }: PricingC
   const giftCodeLoading = useSignal(false);
   const giftCodeSuccess = useSignal(false);
 
+  // Buy as Gift state
+  const buyAsGift = useSignal(false);
+  const giftRecipientEmail = useSignal("");
+  const giftRecipientName = useSignal("");
+  const giftSenderName = useSignal("");
+  const giftMessage = useSignal("");
+  const giftPurchaseResult = useSignal<{ success: boolean; code?: string; error?: string } | null>(null);
+  const giftPurchaseLoading = useSignal(false);
+
   // Check for pending plan selection after signup (auto-checkout)
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -151,48 +160,194 @@ export default function PricingCard({ isAuthenticated, referralBonus }: PricingC
     }
   };
 
+  const handleBuyAsGift = async (planId: string) => {
+    if (!isAuthenticated) {
+      localStorage.setItem(PENDING_PLAN_KEY, JSON.stringify({
+        planId,
+        billingMode: billingMode.value,
+        isGift: true,
+      }));
+      window.location.href = "/register";
+      return;
+    }
+
+    // Validate email
+    const email = giftRecipientEmail.value.trim();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      giftPurchaseResult.value = { success: false, error: "Please enter a valid email address" };
+      return;
+    }
+
+    giftPurchaseLoading.value = true;
+    giftPurchaseResult.value = null;
+
+    try {
+      const response = await fetch("/api/gift/purchase", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          planType: planId,
+          recipientEmail: email,
+          recipientName: giftRecipientName.value.trim() || undefined,
+          senderName: giftSenderName.value.trim() || undefined,
+          personalMessage: giftMessage.value.trim() || undefined,
+          sendEmail: true,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        giftPurchaseResult.value = { success: true, code: data.giftCode };
+      } else {
+        giftPurchaseResult.value = { success: false, error: data.error || "Failed to purchase gift" };
+      }
+    } catch (error) {
+      console.error("Gift purchase error:", error);
+      giftPurchaseResult.value = { success: false, error: "Failed to purchase gift. Please try again." };
+    } finally {
+      giftPurchaseLoading.value = false;
+    }
+  };
+
+  const copyGiftCode = () => {
+    if (giftPurchaseResult.value?.code) {
+      navigator.clipboard.writeText(giftPurchaseResult.value.code);
+    }
+  };
+
   return (
     <div class="pricing-card-container">
-      {/* Billing Mode Toggle */}
-      <div class="billing-toggle">
-        <button
-          type="button"
-          class={`billing-option ${billingMode.value === "onetime" ? "active" : ""}`}
-          onClick={() => { billingMode.value = "onetime"; }}
-        >
-          <span class="billing-label">One-time</span>
-          <span class="billing-desc">Pay once, use for the term</span>
-        </button>
-        <button
-          type="button"
-          class={`billing-option ${billingMode.value === "subscription" ? "active" : ""}`}
-          onClick={() => { billingMode.value = "subscription"; }}
-        >
-          <span class="billing-label">Subscribe</span>
-          <span class="billing-desc">Auto-renews, cancel anytime</span>
-        </button>
+      {/* Buy as Gift Toggle */}
+      <div class="gift-toggle">
+        <label class="gift-toggle-label">
+          <input
+            type="checkbox"
+            checked={buyAsGift.value}
+            onChange={(e) => {
+              buyAsGift.value = (e.target as HTMLInputElement).checked;
+              giftPurchaseResult.value = null;
+            }}
+          />
+          <span class="gift-toggle-text">🎁 Buy as a gift for someone else</span>
+        </label>
       </div>
 
-      {/* Plan Options */}
-      <div class={`plan-grid ${billingMode.value === "subscription" ? "plan-grid-2" : ""}`}>
-        {(billingMode.value === "onetime" ? ONETIME_PLANS : SUBSCRIPTION_PLANS).map((plan) => (
-          <div key={plan.id} class={`plan-option ${plan.badge ? "featured" : ""}`}>
-            {plan.badge && <div class="plan-badge">{plan.badge}</div>}
-            <h3 class="plan-name">{plan.name}</h3>
-            <p class="plan-duration">{plan.duration}</p>
-            <p class="plan-price">{plan.price}</p>
-            <p class="plan-per-month">{plan.perMonth}</p>
-            <button
-              type="button"
-              class="plan-button"
-              onClick={() => handleSelectPlan(plan.id)}
-              disabled={loading.value !== null}
-            >
-              {loading.value === plan.id ? "Loading..." : "Select"}
-            </button>
+      {/* Billing Mode Toggle - Hidden when buying as gift */}
+      {!buyAsGift.value && (
+        <div class="billing-toggle">
+          <button
+            type="button"
+            class={`billing-option ${billingMode.value === "onetime" ? "active" : ""}`}
+            onClick={() => { billingMode.value = "onetime"; }}
+          >
+            <span class="billing-label">One-time</span>
+            <span class="billing-desc">Pay once, use for the term</span>
+          </button>
+          <button
+            type="button"
+            class={`billing-option ${billingMode.value === "subscription" ? "active" : ""}`}
+            onClick={() => { billingMode.value = "subscription"; }}
+          >
+            <span class="billing-label">Subscribe</span>
+            <span class="billing-desc">Auto-renews, cancel anytime</span>
+          </button>
+        </div>
+      )}
+
+      {/* Gift Purchase Success */}
+      {giftPurchaseResult.value?.success && (
+        <div class="gift-success-card">
+          <div class="gift-success-icon">🎉</div>
+          <h3>Gift Purchased!</h3>
+          <p>We've emailed the gift code to <strong>{giftRecipientEmail.value}</strong></p>
+          <div class="gift-code-display">
+            <code>{giftPurchaseResult.value.code}</code>
+            <button type="button" onClick={copyGiftCode} class="copy-btn">Copy</button>
           </div>
-        ))}
-      </div>
+          <p class="gift-success-note">You can also share this code directly with your recipient.</p>
+          <button type="button" class="btn-new-gift" onClick={() => {
+            giftPurchaseResult.value = null;
+            giftRecipientEmail.value = "";
+            giftRecipientName.value = "";
+            giftMessage.value = "";
+          }}>
+            Buy Another Gift
+          </button>
+        </div>
+      )}
+
+      {/* Gift Form - Show when buying as gift and no success yet */}
+      {buyAsGift.value && !giftPurchaseResult.value?.success && (
+        <div class="gift-form">
+          <h4>Gift Details</h4>
+          <div class="gift-form-field">
+            <label>Recipient's Email *</label>
+            <input
+              type="email"
+              placeholder="friend@example.com"
+              value={giftRecipientEmail.value}
+              onInput={(e) => { giftRecipientEmail.value = (e.target as HTMLInputElement).value; }}
+            />
+          </div>
+          <div class="gift-form-field">
+            <label>Recipient's Name (optional)</label>
+            <input
+              type="text"
+              placeholder="Their first name"
+              value={giftRecipientName.value}
+              onInput={(e) => { giftRecipientName.value = (e.target as HTMLInputElement).value; }}
+            />
+          </div>
+          <div class="gift-form-field">
+            <label>Your Name (optional)</label>
+            <input
+              type="text"
+              placeholder="Your name"
+              value={giftSenderName.value}
+              onInput={(e) => { giftSenderName.value = (e.target as HTMLInputElement).value; }}
+            />
+          </div>
+          <div class="gift-form-field">
+            <label>Personal Message (optional)</label>
+            <textarea
+              placeholder="Add a personal note..."
+              value={giftMessage.value}
+              onInput={(e) => { giftMessage.value = (e.target as HTMLTextAreaElement).value; }}
+              rows={2}
+            />
+          </div>
+          {giftPurchaseResult.value?.error && (
+            <p class="gift-error">{giftPurchaseResult.value.error}</p>
+          )}
+        </div>
+      )}
+
+      {/* Plan Options - Show one-time plans only when buying as gift, hide if gift success */}
+      {!giftPurchaseResult.value?.success && (
+        <div class={`plan-grid ${!buyAsGift.value && billingMode.value === "subscription" ? "plan-grid-2" : ""}`}>
+          {(buyAsGift.value ? ONETIME_PLANS : (billingMode.value === "onetime" ? ONETIME_PLANS : SUBSCRIPTION_PLANS)).map((plan) => (
+            <div key={plan.id} class={`plan-option ${plan.badge ? "featured" : ""}`}>
+              {plan.badge && <div class="plan-badge">{plan.badge}</div>}
+              <h3 class="plan-name">{plan.name}</h3>
+              <p class="plan-duration">{plan.duration}</p>
+              <p class="plan-price">{plan.price}</p>
+              <p class="plan-per-month">{plan.perMonth}</p>
+              <button
+                type="button"
+                class="plan-button"
+                onClick={() => buyAsGift.value ? handleBuyAsGift(plan.id) : handleSelectPlan(plan.id)}
+                disabled={loading.value !== null || giftPurchaseLoading.value}
+              >
+                {(loading.value === plan.id || (giftPurchaseLoading.value && buyAsGift.value))
+                  ? "Loading..."
+                  : (buyAsGift.value ? "Send Gift" : "Select")}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Tax notice */}
       <p class="tax-notice">+ applicable taxes</p>
@@ -478,6 +633,137 @@ export default function PricingCard({ isAuthenticated, referralBonus }: PricingC
           margin: 0;
           color: #92400e;
           font-size: 0.875rem;
+        }
+        .gift-toggle {
+          margin-bottom: 16px;
+          text-align: center;
+        }
+        .gift-toggle-label {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          cursor: pointer;
+          padding: 8px 16px;
+          background: #fef3c7;
+          border-radius: 8px;
+          transition: all 0.2s;
+        }
+        .gift-toggle-label:hover {
+          background: #fde68a;
+        }
+        .gift-toggle-label input {
+          width: 18px;
+          height: 18px;
+          accent-color: #10b981;
+        }
+        .gift-toggle-text {
+          font-size: 0.9rem;
+          color: #92400e;
+          font-weight: 500;
+        }
+        .gift-form {
+          background: #fffbeb;
+          border: 1px solid #fde68a;
+          border-radius: 12px;
+          padding: 20px;
+          margin-bottom: 20px;
+        }
+        .gift-form h4 {
+          margin: 0 0 16px 0;
+          color: #92400e;
+          font-size: 1rem;
+        }
+        .gift-form-field {
+          margin-bottom: 12px;
+        }
+        .gift-form-field label {
+          display: block;
+          font-size: 0.85rem;
+          color: #666;
+          margin-bottom: 4px;
+        }
+        .gift-form-field input,
+        .gift-form-field textarea {
+          width: 100%;
+          padding: 10px 12px;
+          border: 1px solid #e5e5e5;
+          border-radius: 8px;
+          font-size: 0.95rem;
+          box-sizing: border-box;
+        }
+        .gift-form-field input:focus,
+        .gift-form-field textarea:focus {
+          outline: none;
+          border-color: #10b981;
+        }
+        .gift-form-field textarea {
+          resize: vertical;
+          min-height: 60px;
+        }
+        .gift-success-card {
+          background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+          border: 2px solid #10b981;
+          border-radius: 16px;
+          padding: 24px;
+          text-align: center;
+          margin-bottom: 20px;
+        }
+        .gift-success-icon {
+          font-size: 3rem;
+          margin-bottom: 8px;
+        }
+        .gift-success-card h3 {
+          color: #10b981;
+          margin: 0 0 8px 0;
+        }
+        .gift-success-card p {
+          color: #064e3b;
+          margin: 0 0 16px 0;
+        }
+        .gift-code-display {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          margin: 16px 0;
+        }
+        .gift-code-display code {
+          background: white;
+          padding: 12px 20px;
+          border-radius: 8px;
+          font-size: 1.1rem;
+          font-weight: 600;
+          letter-spacing: 1px;
+          border: 1px solid #10b981;
+        }
+        .copy-btn {
+          padding: 12px 16px;
+          background: #10b981;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          font-weight: 500;
+        }
+        .copy-btn:hover {
+          background: #059669;
+        }
+        .gift-success-note {
+          font-size: 0.85rem;
+          color: #666;
+        }
+        .btn-new-gift {
+          margin-top: 16px;
+          padding: 10px 20px;
+          background: white;
+          color: #10b981;
+          border: 2px solid #10b981;
+          border-radius: 8px;
+          cursor: pointer;
+          font-weight: 600;
+        }
+        .btn-new-gift:hover {
+          background: #f0fdf4;
         }
       `}</style>
     </div>
