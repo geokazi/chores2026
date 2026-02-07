@@ -1,8 +1,8 @@
 # ChoreGami 2026 Documentation
 
-**Version**: 1.41
+**Version**: 1.42
 **Status**: ✅ Production Ready
-**Last Updated**: February 5, 2026 (Share page improvements)
+**Last Updated**: February 6, 2026 (Stripe Checkout + Plan Badge implementation)
 
 **Project Overview**: A simplified, real-time chore completion system built with Deno Fresh, transforming routine family chores into an engaging, competitive experience with sub-second real-time updates across all family devices.
 
@@ -89,6 +89,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | TBD | [**Account Types & Personal Hubs**](./planned/20260131_account_types_personal_hubs.md) | 📋 Planned | Support families, roommates, couples, solo users; age-based gamification; fairness tracking |
 | TBD | [↳ 2026 UX Trends Assessment](./planned/20260131_ux_trends_assessment.md) | 📋 Planned | Progress indicators (P1), transparency banner (P1), demo mode (P2), passkey auth (P3) |
 | 2026-01-31 | [**Points Consistency (Single Source of Truth)**](./troubleshooting/20260131_points_consistency_single_source_of_truth.md) | ✅ Complete | All pages show identical point totals; timezone-aware week calculations; troubleshooting guide |
+| 2026-02-06 | [**OAuth Plan Preservation Fix**](./troubleshooting/20260206_oauth_plan_preservation_fix.md) | ✅ Complete | Fix for plan selection lost during OAuth; server-side vs client-side redirect pattern |
 | 2026-02-01 | [**Landing Page & Demand Capture**](./milestones/20260201_landing_page_demand_capture.md) | ✅ Complete | Value-first landing page, teaser cards, 3-question assessment quiz, theme toggle, rich analytics |
 | — | [↳ Planning Doc](./planned/20260201_landing_page_teaser_cards.md) | ✅ Complete | Original design spec with teaser card strategy |
 | 2026-02-03 | **Landing Page Conversion Optimization** | ✅ Complete | CTA "Start Organizing", trust signal, demo microcopy, single-action focus, updated footer |
@@ -96,6 +97,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-02-04 | [**Events UX Improvements**](./milestones/20260204_events_ux_improvements.md) | ✅ Complete | Timezone fix (localDate param), event edit/delete from dashboard, consistent left-border UI |
 | 2026-02-05 | [**Events Progressive Disclosure**](./milestones/20260205_events_progressive_disclosure_implementation.md) | ✅ Complete | Shared EventCard component, collapsed/expanded states, swipe gestures, item-level overflow menus for prep tasks and chores |
 | 2026-02-05 | [**Share Page Improvements**](./milestones/20260205_share_page_improvements.md) | ✅ Complete | Empathy-first copy, real family stats (chores/streak/events), data consistency with Reports page, RLS fix documented in CLAUDE.md |
+| 2026-02-06 | [**Stripe Checkout + Plan Badges**](./milestones/20260206_stripe_checkout_implementation.md) | ✅ Complete | Stripe Checkout flow, trial system (15-day), plan badges in header (trial/expired/paid), OAuth plan preservation fix |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 
@@ -296,6 +298,8 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 - ✅ **Landing Page & Demand Capture**: Value-first landing at `/landing` with inline demo, teaser cards (Families/Roommates/Just Me), 3-question assessment quiz with 8 persona types, theme toggle (light/dark), rich analytics (navigator API, anonymized IP, timezone), glassmorphism styling, Ocean Depth dark mode theme
 - ✅ **Events Progressive Disclosure UI**: Shared EventCard component across all dashboards; collapsed/expanded states with CSS transitions; swipe gestures for mobile; item-level overflow menus (⋮) for prep task edit/delete and chore unlink; auto-expand today's events
 - ✅ **Share Page Improvements**: Empathy-first peer-to-peer copy ("Help another family feel more organized"), real family stats (chores/streak/events), data consistency with Reports page (Sunday-first weeks, max individual streak), RLS fix with `getServiceSupabaseClient()`
+- ✅ **Stripe Checkout Integration**: Hosted checkout flow with plan selection, trial system (15-day free trial with device fingerprinting), plan badges in AppHeader (orange for trial countdown, red "Upgrade" for expired, green plan name for paid), referral/gift code support, webhook-based plan activation
+- ✅ **OAuth Plan Preservation**: Plan selection preserved through OAuth signup for both new and returning users; server→client redirect pattern for localStorage access
 
 ### Known Limitations
 - **Testing**: Comprehensive test suite not yet implemented
@@ -337,6 +341,7 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 - **Domain Migration**: [choregami.app DNS Migration](./domains/20260203_flyio_migration_guide.md) - Cloud Run to Fly.io domain migration (complete)
 - **Financial Features**: [Balance, Rewards & Goals](./milestones/20260125_balance_rewards_goals_implementation.md) - P2-P4 implementation
 - **Market Strategy**: [Rewards Market Strategy](./planned/20260125_rewards_market_strategy.md) - Competitive analysis and feature prioritization
+- **Payment Integration**: [Stripe Checkout Implementation](./milestones/20260206_stripe_checkout_implementation.md) - Hosted checkout, trial system, plan badges
 
 ### External Dependencies
 - **[Deno Fresh](https://fresh.deno.dev/)**: SSR framework with Islands architecture
@@ -345,5 +350,5 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 
 ---
 
-*Last updated: February 5, 2026 (v1.41)*
+*Last updated: February 6, 2026 (v1.42)*
 *Maintained by: Claude Code AI Assistant*

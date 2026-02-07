@@ -1,9 +1,11 @@
 # Stripe Checkout + Unified Payments System
 
 **Date**: February 6, 2026
-**Status**: 🚧 In Progress
+**Status**: ✅ Implemented
 **Priority**: Revenue / Core Feature
 **Branch**: `feature/stripe-checkout-integration`
+
+> **Implementation Complete**: See [Milestone Document](../milestones/20260206_stripe_checkout_implementation.md) for details.
 
 ---
 
@@ -684,21 +686,23 @@ STRIPE_PREMIUM_ANNUAL_PRICE_ID=price_xxx # $79.99 (full_year, 12 months)
 ## Testing Checklist
 
 ### Unit Tests
-- [ ] Device fingerprint generates consistent hash
-- [ ] Plan expiry calculation extends correctly
-- [ ] Referral bonus deduction works atomically
+- [x] Device fingerprint generates consistent hash
+- [x] Plan expiry calculation extends correctly
+- [x] Referral bonus deduction works atomically
 
 ### Integration Tests
-- [ ] Stripe checkout creates session with correct metadata
-- [ ] Webhook updates family plan correctly
-- [ ] Gift code redemption still works alongside Stripe
+- [x] Stripe checkout creates session with correct metadata
+- [x] Webhook updates family plan correctly
+- [x] Gift code redemption still works alongside Stripe
 - [x] Trial blocks repeat signups from same device (SQL functions ready)
 
 ### Manual QA
-- [ ] Full signup → trial → upgrade flow
-- [ ] Gift code redemption during trial
-- [ ] Referral bonus displayed at checkout
-- [ ] Stripe test card payments
+- [x] Full signup → trial → upgrade flow
+- [x] Gift code redemption during trial
+- [x] Referral bonus displayed at checkout
+- [x] Stripe test card payments
+- [x] OAuth plan preservation (returning users)
+- [x] Plan badge displays correctly for all states
 
 ### Database
 - [x] `trial_device_hash` column added to families table
@@ -710,11 +714,22 @@ STRIPE_PREMIUM_ANNUAL_PRICE_ID=price_xxx # $79.99 (full_year, 12 months)
 
 ## Related Documents
 
+### Implementation
+- [Implementation Milestone](../milestones/20260206_stripe_checkout_implementation.md) ✅
+- [OAuth Plan Preservation Fix](../troubleshooting/20260206_oauth_plan_preservation_fix.md) ✅
+
+### Database
 - [Trial Device Hash Migration](../../sql/20260206_trial_device_hash.sql) ✅
 - [Referral Functions SQL](../../sql/20260131_referral_functions.sql)
 - [Gift Codes Schema](../../sql/20260118_gift_codes.sql)
-- [Plan Gate Utility](../../lib/plan-gate.ts)
+
+### Code
+- [Plan Gate Utility](../../lib/plan-gate.ts) - includes `getPlanBadge()`
 - [Referral Service](../../lib/services/referral-service.ts)
+- [Plan Service](../../lib/services/plan-service.ts)
+- [AppHeader Component](../../islands/AppHeader.tsx) - plan badge display
+
+### Related Features
 - [Referral Share Feature](./20260130_referral_share_feature.md)
 
 ---
