@@ -41,11 +41,19 @@ export const handler: Handlers<IndexPageData> = {
       return new Response(null, { status: 303, headers: { Location: "/admin" } });
     }
 
-    // Redirect to landing page if not authenticated (value-first UX)
-    if (!session.isAuthenticated || !session.family) {
+    // Not logged in → marketing page (families-focused for 90% parent audience)
+    if (!session.isAuthenticated) {
       return new Response(null, {
         status: 303,
-        headers: { Location: "/landing" },
+        headers: { Location: "/families" },
+      });
+    }
+
+    // Logged in but no family → complete setup
+    if (!session.family) {
+      return new Response(null, {
+        status: 303,
+        headers: { Location: "/setup" },
       });
     }
 

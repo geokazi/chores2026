@@ -30,6 +30,11 @@ export const handler: Handlers<LandingPageData> = {
       return new Response(null, { status: 303, headers: { Location: "/" } });
     }
 
+    // Authenticated but no family → complete setup
+    if (session.isAuthenticated && !session.family) {
+      return new Response(null, { status: 303, headers: { Location: "/setup" } });
+    }
+
     return ctx.render({
       isLoggedIn: session.isAuthenticated,
       userEmail: session.user?.email,
