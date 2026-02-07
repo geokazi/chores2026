@@ -11,9 +11,11 @@ import { getAuthenticatedSession } from "../../lib/auth/session.ts";
 import { ChoreService } from "../../lib/services/chore-service.ts";
 import { getActivityService } from "../../lib/services/activity-service.ts";
 import { InsightsService, ThisWeekActivity, StreakData } from "../../lib/services/insights-service.ts";
+import { getTrialInfo, isTrialPlan } from "../../lib/plan-gate.ts";
 import ParentDashboard from "../../islands/ParentDashboard.tsx";
 import AppHeader from "../../islands/AppHeader.tsx";
 import AppFooter from "../../components/AppFooter.tsx";
+import TrialBanner from "../../islands/TrialBanner.tsx";
 
 interface ParentDashboardData {
   family: any;
@@ -24,6 +26,13 @@ interface ParentDashboardData {
   recentActivity: any[];
   thisWeekActivity: ThisWeekActivity[];
   streaks: StreakData[];
+  trialInfo: {
+    isActive: boolean;
+    daysRemaining: number;
+    isEnding: boolean;
+    isExpired: boolean;
+    choresCompleted?: number;
+  };
   error?: string;
 }
 
@@ -89,6 +98,12 @@ export const handler: Handlers<ParentDashboardData> = {
         streaks = insights.streaks;
       }
 
+      // Get trial info
+      const trialInfo = getTrialInfo(family.settings);
+      const choresCompletedDuringTrial = isTrialPlan(family.settings)
+        ? chores.filter((c: any) => c.status === "completed").length
+        : 0;
+
       console.log("✅ Parent dashboard loaded for family:", family.name);
 
       return ctx.render({
@@ -100,6 +115,10 @@ export const handler: Handlers<ParentDashboardData> = {
         recentActivity,
         thisWeekActivity,
         streaks,
+        trialInfo: {
+          ...trialInfo,
+          choresCompleted: choresCompletedDuringTrial,
+        },
       });
     } catch (error) {
       console.error("❌ Error loading parent dashboard:", error);
@@ -112,6 +131,7 @@ export const handler: Handlers<ParentDashboardData> = {
         recentActivity: [],
         thisWeekActivity: [],
         streaks: [],
+        trialInfo: { isActive: false, daysRemaining: 0, isEnding: false, isExpired: false },
         error: "Failed to load dashboard",
       });
     }
@@ -121,7 +141,7 @@ export const handler: Handlers<ParentDashboardData> = {
 export default function ParentDashboardPage(
   { data }: PageProps<ParentDashboardData>,
 ) {
-  const { family, members, chores, parentChores, parentProfileId, recentActivity, thisWeekActivity, streaks, error } = data;
+  const { family, members, chores, parentChores, parentProfileId, recentActivity, thisWeekActivity, streaks, trialInfo, error } = data;
 
   // Script to detect browser timezone and reload with it if needed
   const timezoneScript = `
@@ -173,7 +193,20 @@ export default function ParentDashboardPage(
         familyMembers={members}
         currentUser={currentUser}
         userRole="parent"
+        trialDaysRemaining={trialInfo.isActive ? trialInfo.daysRemaining : undefined}
       />
+
+      {/* Trial Banner - shows when trial is ending or expired */}
+      {(trialInfo.isEnding || trialInfo.isExpired) && (
+        <div style={{ padding: "0 1rem" }}>
+          <TrialBanner
+            daysRemaining={trialInfo.daysRemaining}
+            isEnding={trialInfo.isEnding}
+            isExpired={trialInfo.isExpired}
+            familyStats={trialInfo.choresCompleted ? { choresCompleted: trialInfo.choresCompleted } : undefined}
+          />
+        </div>
+      )}
 
       <ParentDashboard
         family={family}

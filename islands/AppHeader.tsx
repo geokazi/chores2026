@@ -25,6 +25,7 @@ interface Props {
   userRole: "parent" | "child";
   currentTheme?: string;
   onThemeChange?: (theme: string) => void;
+  trialDaysRemaining?: number; // Shows trial badge if present
 }
 
 const THEMES = [
@@ -41,6 +42,7 @@ export default function AppHeader({
   userRole,
   currentTheme = "meadow",
   onThemeChange,
+  trialDaysRemaining,
 }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -115,8 +117,15 @@ export default function AppHeader({
         )}
       </button>
 
-      {/* Page Title */}
-      <h1 class="header-title">{pageTitle}</h1>
+      {/* Page Title + Trial Badge */}
+      <div class="header-title-area">
+        <h1 class="header-title">{pageTitle}</h1>
+        {trialDaysRemaining !== undefined && trialDaysRemaining > 0 && (
+          <a href="/pricing" class="trial-badge" title="Trial period">
+            {trialDaysRemaining}d left
+          </a>
+        )}
+      </div>
 
       {/* User Avatar Button */}
       <button
@@ -322,6 +331,24 @@ export default function AppHeader({
           margin: 0;
           font-size: 1.25rem;
           font-weight: 600;
+        }
+        .header-title-area {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .trial-badge {
+          font-size: 0.65rem;
+          font-weight: 600;
+          background: rgba(245, 158, 11, 0.9);
+          color: white;
+          padding: 2px 6px;
+          border-radius: 6px;
+          text-decoration: none;
+          white-space: nowrap;
+        }
+        .trial-badge:hover {
+          background: rgba(217, 119, 6, 1);
         }
         .menu-overlay {
           position: fixed;

@@ -48,9 +48,9 @@ export default function LandingPage() {
         <h1 class="hero-title">Household tasks. Sorted.</h1>
         <p class="hero-subtitle">For families, roommates, and you.</p>
         <div class="hero-cta">
-          <a href="/register" class="btn btn-hero-primary">Start Organizing</a>
+          <a href="/register" class="btn btn-hero-primary">Start Free Trial</a>
         </div>
-        <p class="hero-pwa">No app to download. Works on any device.</p>
+        <p class="hero-pwa">15 days free · No credit card required</p>
         <p class="hero-trust">Built by parents, for families.</p>
       </section>
 
@@ -101,8 +101,8 @@ export default function LandingPage() {
       {/* Final CTA */}
       <section class="cta-section">
         <h2 class="cta-title">Ready to get organized?</h2>
-        <p class="cta-subtitle">Setup takes 2 minutes. No credit card required.</p>
-        <a href="/register" class="btn btn-cta-primary">Start Organizing</a>
+        <p class="cta-subtitle">15-day free trial · No credit card required</p>
+        <a href="/register" class="btn btn-cta-primary">Start Free Trial</a>
         <p class="cta-secondary-link"><a href="#demo">See how it works ↑</a></p>
       </section>
 
