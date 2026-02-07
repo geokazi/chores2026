@@ -81,6 +81,7 @@ Store validated gift code in localStorage before auth redirect, then apply after
 | `routes/api/gift/redeem.ts` | Accept explicit `familyId` for setup flow |
 | `routes/setup.tsx` | Read pendingGiftCode, show banner, apply after family creation |
 | `routes/logout.ts` | Clear all pending tokens including gift codes |
+| `routes/index.tsx` | Show success banner when redirected with `?gift=activated` |
 
 ---
 
@@ -165,6 +166,29 @@ interface Props {
 }
 ```
 
+### 6. Dashboard Success Banner
+
+**routes/index.tsx** - Show success banner after gift activation:
+
+```typescript
+// In GET handler:
+const showGiftSuccess = url.searchParams.get("gift") === "activated";
+return ctx.render({ ..., showGiftSuccess });
+
+// In template:
+{showGiftSuccess && (
+  <div style={{
+    background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+    color: "white",
+    padding: "1rem",
+    borderRadius: "0.5rem",
+    textAlign: "center",
+  }}>
+    🎁 Your gift subscription is now active! Enjoy your Family Plan.
+  </div>
+)}
+```
+
 ---
 
 ## User Experience
@@ -177,7 +201,7 @@ interface Props {
 4. Complete registration
 5. See "🎁 Your gift is ready!" banner on setup page
 6. Fill family details, click "Get Started"
-7. Redirect to dashboard with gift plan active
+7. Redirect to dashboard with "🎁 Your gift subscription is now active!" banner
 
 ### Existing User with Gift Code
 
@@ -219,6 +243,7 @@ Both stored in `localStorage` AND `sessionStorage` for OAuth redirect resilience
 - [ ] OAuth signup: /redeem → validate → Google OAuth → /setup → dashboard
 - [ ] Logout clears pendingGiftCode from localStorage
 - [ ] Gift code banner shows on /setup when pending code exists
+- [ ] Dashboard shows success banner when redirected with ?gift=activated
 - [ ] Code cleared from localStorage after successful redemption
 - [ ] returnTo param works in /login (not just redirect)
 
