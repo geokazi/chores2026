@@ -4,6 +4,10 @@
 
 import * as $_app from "./routes/_app.tsx";
 import * as $_middleware from "./routes/_middleware.ts";
+import * as $admin_gift_codes from "./routes/admin/gift-codes.tsx";
+import * as $api_admin_gift_codes_generate from "./routes/api/admin/gift-codes/generate.ts";
+import * as $api_admin_gift_codes_list from "./routes/api/admin/gift-codes/list.ts";
+import * as $api_admin_gift_codes_stats from "./routes/api/admin/gift-codes/stats.ts";
 import * as $api_analytics_event from "./routes/api/analytics/event.ts";
 import * as $api_analytics_feature_demand from "./routes/api/analytics/feature-demand.ts";
 import * as $api_auth_validate_oauth from "./routes/api/auth/validate-oauth.ts";
@@ -109,6 +113,7 @@ import * as $EventMissionGroup from "./islands/EventMissionGroup.tsx";
 import * as $EventsList from "./islands/EventsList.tsx";
 import * as $FamilyReports from "./islands/FamilyReports.tsx";
 import * as $FamilySettings from "./islands/FamilySettings.tsx";
+import * as $GiftCodeAdmin from "./islands/GiftCodeAdmin.tsx";
 import * as $HabitInsights from "./islands/HabitInsights.tsx";
 import * as $KidDashboard from "./islands/KidDashboard.tsx";
 import * as $KidSelector from "./islands/KidSelector.tsx";
@@ -156,6 +161,10 @@ const manifest = {
   routes: {
     "./routes/_app.tsx": $_app,
     "./routes/_middleware.ts": $_middleware,
+    "./routes/admin/gift-codes.tsx": $admin_gift_codes,
+    "./routes/api/admin/gift-codes/generate.ts": $api_admin_gift_codes_generate,
+    "./routes/api/admin/gift-codes/list.ts": $api_admin_gift_codes_list,
+    "./routes/api/admin/gift-codes/stats.ts": $api_admin_gift_codes_stats,
     "./routes/api/analytics/event.ts": $api_analytics_event,
     "./routes/api/analytics/feature-demand.ts": $api_analytics_feature_demand,
     "./routes/api/auth/validate-oauth.ts": $api_auth_validate_oauth,
@@ -266,6 +275,7 @@ const manifest = {
     "./islands/EventsList.tsx": $EventsList,
     "./islands/FamilyReports.tsx": $FamilyReports,
     "./islands/FamilySettings.tsx": $FamilySettings,
+    "./islands/GiftCodeAdmin.tsx": $GiftCodeAdmin,
     "./islands/HabitInsights.tsx": $HabitInsights,
     "./islands/KidDashboard.tsx": $KidDashboard,
     "./islands/KidSelector.tsx": $KidSelector,

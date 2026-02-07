@@ -52,8 +52,14 @@ This implementation follows the product strategy of:
 | `routes/redeem.tsx` | MODIFY | - | Removed login requirement for code-first flow |
 | `islands/RedeemForm.tsx` | MODIFY | ~342 | 3-state flow: form → validated → success |
 | `lib/plan-gate.ts` | MODIFY | - | Updated school_year to 180 days (Half Year) |
+| `lib/auth/staff.ts` | CREATE | ~80 | Staff email validation for admin access |
+| `routes/admin/gift-codes.tsx` | CREATE | ~100 | Admin panel page |
+| `islands/GiftCodeAdmin.tsx` | CREATE | ~450 | Interactive admin UI component |
+| `routes/api/admin/gift-codes/generate.ts` | CREATE | ~85 | Batch code generation API |
+| `routes/api/admin/gift-codes/list.ts` | CREATE | ~100 | Code listing API with filters |
+| `routes/api/admin/gift-codes/stats.ts` | CREATE | ~120 | Financial statistics API |
 
-**Total: ~1,265 lines original + ~400 lines Feb 6 updates**
+**Total: ~1,265 lines original + ~1,335 lines Feb 6 updates**
 
 ---
 
@@ -352,11 +358,36 @@ For users arriving from external sources (Amazon gift cards, marketing links):
 
 ---
 
-## Manual Operations (Phase 1)
+## Gift Code Administration
 
-### Creating Gift Codes
+### Admin Panel (Recommended)
 
-Until Stripe integration (Phase 2), create codes via Supabase SQL Editor:
+Staff members can generate and manage gift codes via the admin panel:
+
+**URL**: `/admin/gift-codes`
+
+**Features:**
+- **Generate Codes**: Batch generation (1-100 codes at a time)
+- **View Pending Codes**: Unused codes ready for distribution
+- **View Redeemed Codes**: Codes that have been used
+- **Financial Dashboard**: Revenue tracking by plan type
+
+**Access Control:**
+- Requires authenticated staff email
+- Authorized domains: `@choregami.com`, `@choregami.app`, `@probuild365.com`
+- Specific emails: `support@choregami.com`, `admin@choregami.com`, `gk@probuild365.com`
+
+**Files:**
+- `routes/admin/gift-codes.tsx` - Admin page
+- `islands/GiftCodeAdmin.tsx` - Interactive UI component
+- `routes/api/admin/gift-codes/generate.ts` - Batch generation API
+- `routes/api/admin/gift-codes/list.ts` - Code listing API
+- `routes/api/admin/gift-codes/stats.ts` - Statistics API
+- `lib/auth/staff.ts` - Staff email validation
+
+### Manual SQL Operations (Alternative)
+
+For direct database access, create codes via Supabase SQL Editor:
 
 ```sql
 -- Get your admin user UUID first
@@ -487,7 +518,11 @@ Character set excludes confusing characters: `ABCDEFGHJKMNPQRSTUVWXYZ23456789` (
 - [x] Phase 3: Redeem UI (`routes/redeem.tsx`, `islands/RedeemForm.tsx`)
 - [x] Phase 4: Template Gating (`islands/TemplateSelector.tsx`)
 - [x] Phase 5: Plan Status Display (in TemplateSelector)
+- [x] Phase 6: Code-First Validation (`routes/api/gift/validate.ts`)
+- [x] Phase 7: Family Landing Page (`routes/families.tsx`)
+- [x] Phase 8: Admin Panel (`routes/admin/gift-codes.tsx`, `islands/GiftCodeAdmin.tsx`)
 - [x] Unit Tests (29 tests passing)
 - [x] Git commit
 
-**Implementation Complete: January 19, 2026**
+**Core Implementation Complete: January 19, 2026**
+**Admin Panel Added: February 6, 2026**

@@ -16,7 +16,7 @@ export const PLAN_DURATIONS_DAYS: Record<Exclude<PlanType, 'free'>, number> = {
 
 // Stripe price IDs (set in environment) - aligned with fresh-auth naming
 // Lazy-loaded to avoid Deno.env.get() on client-side (browser)
-type PaidPlanType = Exclude<PlanType, 'free' | 'trial'>;
+export type PaidPlanType = Exclude<PlanType, 'free' | 'trial'>;
 
 // Subscription (recurring) price IDs - monthly and annual only
 export type SubscriptionPlanType = 'monthly' | 'annual';
