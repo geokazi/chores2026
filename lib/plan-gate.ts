@@ -9,38 +9,59 @@ export type PlanSource = 'trial' | 'stripe' | 'gift' | 'referral_bonus';
 
 export const PLAN_DURATIONS_DAYS: Record<Exclude<PlanType, 'free'>, number> = {
   trial: 15,         // 15-day free trial
-  school_year: 300,  // ~10 months
+  school_year: 180,  // 6 months
   summer: 90,        // 3 months
   full_year: 365,    // 12 months
 };
 
 // Stripe price IDs (set in environment) - aligned with fresh-auth naming
 // Lazy-loaded to avoid Deno.env.get() on client-side (browser)
-let _stripePriceIds: Record<Exclude<PlanType, 'free' | 'trial'>, string> | null = null;
+type PaidPlanType = Exclude<PlanType, 'free' | 'trial'>;
 
-export function getStripePriceIds(): Record<Exclude<PlanType, 'free' | 'trial'>, string> {
-  if (_stripePriceIds === null) {
-    // Only called server-side where Deno is available
-    _stripePriceIds = {
-      summer: (typeof Deno !== 'undefined' ? Deno.env.get('STRIPE_PRICE_TOKEN_3M') : '') || 'price_token_3m_placeholder',
-      school_year: (typeof Deno !== 'undefined' ? Deno.env.get('STRIPE_PRICE_TOKEN_10M') : '') || 'price_token_10m_placeholder',
-      full_year: (typeof Deno !== 'undefined' ? Deno.env.get('STRIPE_PREMIUM_ANNUAL_PRICE_ID') : '') || 'price_annual_placeholder',
+// Subscription (recurring) price IDs - monthly and annual only
+export type SubscriptionPlanType = 'monthly' | 'annual';
+let _subscriptionPriceIds: Record<SubscriptionPlanType, string> | null = null;
+
+export function getSubscriptionPriceIds(): Record<SubscriptionPlanType, string> {
+  if (_subscriptionPriceIds === null) {
+    _subscriptionPriceIds = {
+      monthly: (typeof Deno !== 'undefined' ? Deno.env.get('STRIPE_SUBSCRIPTION_MONTHLY') : '') || 'price_monthly_placeholder',
+      annual: (typeof Deno !== 'undefined' ? Deno.env.get('STRIPE_SUBSCRIPTION_ANNUAL') : '') || 'price_annual_placeholder',
     };
   }
-  return _stripePriceIds;
+  return _subscriptionPriceIds;
+}
+
+// One-time (payment) price IDs
+let _onetimePriceIds: Record<PaidPlanType, string> | null = null;
+
+export function getOnetimePriceIds(): Record<PaidPlanType, string> {
+  if (_onetimePriceIds === null) {
+    _onetimePriceIds = {
+      summer: (typeof Deno !== 'undefined' ? Deno.env.get('STRIPE_ONETIME_PRICE_3M') : '') || 'price_onetime_3m_placeholder',
+      school_year: (typeof Deno !== 'undefined' ? Deno.env.get('STRIPE_ONETIME_PRICE_10M') : '') || 'price_onetime_10m_placeholder',
+      full_year: (typeof Deno !== 'undefined' ? Deno.env.get('STRIPE_ONETIME_PRICE_12M') : '') || 'price_onetime_12m_placeholder',
+    };
+  }
+  return _onetimePriceIds;
+}
+
+// Legacy compatibility - defaults to one-time prices
+export function getStripePriceIds(): Record<PaidPlanType, string> {
+  return getOnetimePriceIds();
 }
 
 // Keep backward compatibility export (but won't work on client - only use getStripePriceIds())
 export const STRIPE_PRICE_IDS = {
-  get summer() { return getStripePriceIds().summer; },
-  get school_year() { return getStripePriceIds().school_year; },
-  get full_year() { return getStripePriceIds().full_year; },
+  get summer() { return getOnetimePriceIds().summer; },
+  get school_year() { return getOnetimePriceIds().school_year; },
+  get full_year() { return getOnetimePriceIds().full_year; },
 };
 
 // Price display values
 export const PLAN_PRICES: Record<Exclude<PlanType, 'free' | 'trial'>, { amount: number; perMonth: string }> = {
   summer: { amount: 2999, perMonth: '$10/month' },
-  school_year: { amount: 4999, perMonth: '$5/month' },
+  school_year: { amount: 4999, perMonth: '$8.33/month' },
   full_year: { amount: 7999, perMonth: '$6.67/month' },
 };
 
@@ -132,7 +153,7 @@ export function getTrialInfo(settings: any): TrialInfo {
 /** Display names for plan types */
 export const PLAN_DISPLAY_NAMES: Record<Exclude<PlanType, 'free' | 'trial'>, string> = {
   summer: 'Summer',
-  school_year: 'School Year',
+  school_year: 'Half Year',
   full_year: 'Full Year',
 };
 

@@ -1,8 +1,9 @@
 /**
  * PricingCard - Plan selection with Stripe checkout and gift code redemption
  * Island component for interactive pricing UI
+ * Supports both subscription (auto-renew) and one-time payment modes
  * Supports plan preservation through signup flow via localStorage
- * ~250 lines
+ * ~350 lines
  */
 
 import { useSignal } from "@preact/signals";
@@ -15,8 +16,10 @@ interface PricingCardProps {
   referralBonus: number;
 }
 
+type BillingMode = "subscription" | "onetime";
+
 interface PlanOption {
-  id: "summer" | "school_year" | "full_year";
+  id: string;
   name: string;
   duration: string;
   price: string;
@@ -24,14 +27,22 @@ interface PlanOption {
   badge?: string;
 }
 
-const PLANS: PlanOption[] = [
+// One-time purchase plans (fixed term)
+const ONETIME_PLANS: PlanOption[] = [
   { id: "summer", name: "Summer", duration: "3 months", price: "$29.99", perMonth: "$10/month" },
-  { id: "school_year", name: "School Year", duration: "10 months", price: "$49.99", perMonth: "$5/month" },
+  { id: "school_year", name: "Half Year", duration: "6 months", price: "$49.99", perMonth: "$8.33/month" },
   { id: "full_year", name: "Full Year", duration: "12 months", price: "$79.99", perMonth: "$6.67/month", badge: "Best Value" },
+];
+
+// Subscription plans (auto-renewing)
+const SUBSCRIPTION_PLANS: PlanOption[] = [
+  { id: "monthly", name: "Monthly", duration: "Billed monthly", price: "$12.99", perMonth: "/month" },
+  { id: "annual", name: "Annual", duration: "Billed yearly", price: "$119.99", perMonth: "$10/month", badge: "Save 23%" },
 ];
 
 export default function PricingCard({ isAuthenticated, referralBonus }: PricingCardProps) {
   const loading = useSignal<string | null>(null);
+  const billingMode = useSignal<BillingMode>("onetime");
   const giftCode = useSignal("");
   const giftCodeError = useSignal("");
   const giftCodeLoading = useSignal(false);
@@ -44,6 +55,7 @@ export default function PricingCard({ isAuthenticated, referralBonus }: PricingC
     // Check URL param first (from setup redirect)
     const params = new URLSearchParams(window.location.search);
     const checkoutPlan = params.get("checkout");
+    const checkoutMode = params.get("mode") as BillingMode | null;
 
     if (checkoutPlan && ["summer", "school_year", "full_year"].includes(checkoutPlan)) {
       // Clear the URL param to prevent re-triggering
@@ -53,6 +65,11 @@ export default function PricingCard({ isAuthenticated, referralBonus }: PricingC
       // Clear localStorage too
       localStorage.removeItem(PENDING_PLAN_KEY);
 
+      // Set billing mode if provided
+      if (checkoutMode && (checkoutMode === "subscription" || checkoutMode === "onetime")) {
+        billingMode.value = checkoutMode;
+      }
+
       // Trigger checkout
       handleSelectPlan(checkoutPlan);
     }
@@ -60,8 +77,11 @@ export default function PricingCard({ isAuthenticated, referralBonus }: PricingC
 
   const handleSelectPlan = async (planId: string) => {
     if (!isAuthenticated) {
-      // Store selected plan for after signup
-      localStorage.setItem(PENDING_PLAN_KEY, planId);
+      // Store selected plan and billing mode for after signup
+      localStorage.setItem(PENDING_PLAN_KEY, JSON.stringify({
+        planId,
+        billingMode: billingMode.value,
+      }));
       window.location.href = "/register";
       return;
     }
@@ -73,7 +93,10 @@ export default function PricingCard({ isAuthenticated, referralBonus }: PricingC
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ planType: planId }),
+        body: JSON.stringify({
+          planType: planId,
+          billingMode: billingMode.value,
+        }),
       });
 
       const data = await response.json();
@@ -130,9 +153,29 @@ export default function PricingCard({ isAuthenticated, referralBonus }: PricingC
 
   return (
     <div class="pricing-card-container">
+      {/* Billing Mode Toggle */}
+      <div class="billing-toggle">
+        <button
+          type="button"
+          class={`billing-option ${billingMode.value === "onetime" ? "active" : ""}`}
+          onClick={() => { billingMode.value = "onetime"; }}
+        >
+          <span class="billing-label">One-time</span>
+          <span class="billing-desc">Pay once, use for the term</span>
+        </button>
+        <button
+          type="button"
+          class={`billing-option ${billingMode.value === "subscription" ? "active" : ""}`}
+          onClick={() => { billingMode.value = "subscription"; }}
+        >
+          <span class="billing-label">Subscribe</span>
+          <span class="billing-desc">Auto-renews, cancel anytime</span>
+        </button>
+      </div>
+
       {/* Plan Options */}
-      <div class="plan-grid">
-        {PLANS.map((plan) => (
+      <div class={`plan-grid ${billingMode.value === "subscription" ? "plan-grid-2" : ""}`}>
+        {(billingMode.value === "onetime" ? ONETIME_PLANS : SUBSCRIPTION_PLANS).map((plan) => (
           <div key={plan.id} class={`plan-option ${plan.badge ? "featured" : ""}`}>
             {plan.badge && <div class="plan-badge">{plan.badge}</div>}
             <h3 class="plan-name">{plan.name}</h3>
@@ -198,13 +241,59 @@ export default function PricingCard({ isAuthenticated, referralBonus }: PricingC
           padding: 24px;
           box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
         }
+        .billing-toggle {
+          display: flex;
+          gap: 12px;
+          margin-bottom: 24px;
+          padding: 4px;
+          background: #f5f5f5;
+          border-radius: 12px;
+        }
+        .billing-option {
+          flex: 1;
+          padding: 12px 16px;
+          background: transparent;
+          border: none;
+          border-radius: 10px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          text-align: center;
+        }
+        .billing-option:hover:not(.active) {
+          background: rgba(255, 255, 255, 0.5);
+        }
+        .billing-option.active {
+          background: white;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        .billing-label {
+          display: block;
+          font-weight: 600;
+          color: #064e3b;
+          font-size: 0.95rem;
+        }
+        .billing-desc {
+          display: block;
+          font-size: 0.75rem;
+          color: #666;
+          margin-top: 2px;
+        }
+        .billing-option.active .billing-label {
+          color: #10b981;
+        }
         .plan-grid {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
           gap: 16px;
         }
+        .plan-grid-2 {
+          grid-template-columns: repeat(2, 1fr);
+          max-width: 500px;
+          margin: 0 auto;
+        }
         @media (max-width: 640px) {
-          .plan-grid {
+          .plan-grid,
+          .plan-grid-2 {
             grid-template-columns: 1fr;
           }
         }

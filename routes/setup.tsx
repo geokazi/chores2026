@@ -57,10 +57,18 @@ export const handler: Handlers<SetupPageData> = {
           `<!DOCTYPE html><html><head><title>Redirecting...</title></head>
           <body>
             <script>
-              var pendingPlan = localStorage.getItem('pendingPlanSelection');
-              if (pendingPlan) {
+              var raw = localStorage.getItem('pendingPlanSelection');
+              if (raw) {
                 localStorage.removeItem('pendingPlanSelection');
-                window.location.href = '/pricing?checkout=' + pendingPlan;
+                try {
+                  var data = JSON.parse(raw);
+                  var url = '/pricing?checkout=' + data.planId;
+                  if (data.billingMode) url += '&mode=' + data.billingMode;
+                  window.location.href = url;
+                } catch (e) {
+                  // Legacy format: just the plan ID string
+                  window.location.href = '/pricing?checkout=' + raw;
+                }
               } else {
                 window.location.href = '/';
               }
@@ -142,10 +150,17 @@ export const handler: Handlers<SetupPageData> = {
           `<!DOCTYPE html><html><head><title>Redirecting...</title></head>
           <body>
             <script>
-              var pendingPlan = localStorage.getItem('pendingPlanSelection');
-              if (pendingPlan) {
+              var raw = localStorage.getItem('pendingPlanSelection');
+              if (raw) {
                 localStorage.removeItem('pendingPlanSelection');
-                window.location.href = '/pricing?checkout=' + pendingPlan;
+                try {
+                  var data = JSON.parse(raw);
+                  var url = '/pricing?checkout=' + data.planId;
+                  if (data.billingMode) url += '&mode=' + data.billingMode;
+                  window.location.href = url;
+                } catch (e) {
+                  window.location.href = '/pricing?checkout=' + raw;
+                }
               } else {
                 window.location.href = '/';
               }
@@ -300,10 +315,17 @@ export const handler: Handlers<SetupPageData> = {
           <script>
             localStorage.removeItem('pendingInviteToken');
             // Check for pending plan selection from /pricing
-            var pendingPlan = localStorage.getItem('pendingPlanSelection');
-            if (pendingPlan) {
+            var raw = localStorage.getItem('pendingPlanSelection');
+            if (raw) {
               localStorage.removeItem('pendingPlanSelection');
-              window.location.href = '/pricing?checkout=' + pendingPlan;
+              try {
+                var data = JSON.parse(raw);
+                var url = '/pricing?checkout=' + data.planId;
+                if (data.billingMode) url += '&mode=' + data.billingMode;
+                window.location.href = url;
+              } catch (e) {
+                window.location.href = '/pricing?checkout=' + raw;
+              }
             } else {
               window.location.href = '/';
             }
