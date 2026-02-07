@@ -59,7 +59,17 @@ This implementation follows the product strategy of:
 | `routes/api/admin/gift-codes/list.ts` | CREATE | ~100 | Code listing API with filters |
 | `routes/api/admin/gift-codes/stats.ts` | CREATE | ~120 | Financial statistics API |
 
-**Total: ~1,265 lines original + ~1,335 lines Feb 6 updates**
+**Feb 7, 2026 Updates:**
+
+| File | Action | Lines | Description |
+|------|--------|-------|-------------|
+| `islands/AdminIdleTimeout.tsx` | CREATE | ~145 | 2-minute idle timeout component |
+| `routes/admin/index.tsx` | MODIFY | - | Added logout button + idle timeout |
+| `routes/admin/gift-codes.tsx` | MODIFY | - | Added logout button + idle timeout |
+| `routes/api/admin/gift-codes/list.ts` | MODIFY | +60 | Added redeemer email + expiry lookup |
+| `islands/GiftCodeAdmin.tsx` | MODIFY | +15 | Added Assigned To + Expires columns |
+
+**Total: ~1,265 lines original + ~1,335 lines Feb 6 + ~220 lines Feb 7 updates**
 
 ---
 
@@ -369,8 +379,9 @@ Staff members can generate and manage gift codes via the admin panel:
 **Features:**
 - **Generate Codes**: Batch generation (1-100 codes at a time)
 - **View Pending Codes**: Unused codes ready for distribution
-- **View Redeemed Codes**: Codes that have been used
+- **View Redeemed Codes**: Codes with **assigned email** and **subscription expiry date**
 - **Financial Dashboard**: Revenue tracking by plan type
+- **Security**: 2-minute idle auto-logout with 30-second warning, logout button
 
 **Access Control:**
 - Requires authenticated staff email
@@ -378,10 +389,12 @@ Staff members can generate and manage gift codes via the admin panel:
 - Specific emails: `support@choregami.com`, `admin@choregami.com`, `gk@probuild365.com`
 
 **Files:**
-- `routes/admin/gift-codes.tsx` - Admin page
+- `routes/admin/index.tsx` - Admin dashboard landing
+- `routes/admin/gift-codes.tsx` - Gift code management page
 - `islands/GiftCodeAdmin.tsx` - Interactive UI component
+- `islands/AdminIdleTimeout.tsx` - 2-min idle timeout with warning modal
 - `routes/api/admin/gift-codes/generate.ts` - Batch generation API
-- `routes/api/admin/gift-codes/list.ts` - Code listing API
+- `routes/api/admin/gift-codes/list.ts` - Code listing API (with redeemer email + expiry)
 - `routes/api/admin/gift-codes/stats.ts` - Statistics API
 - `lib/auth/staff.ts` - Staff email validation
 
@@ -522,8 +535,11 @@ Character set excludes confusing characters: `ABCDEFGHJKMNPQRSTUVWXYZ23456789` (
 - [x] Phase 6: Code-First Validation (`routes/api/gift/validate.ts`)
 - [x] Phase 7: Family Landing Page (`routes/families.tsx`)
 - [x] Phase 8: Admin Panel (`routes/admin/gift-codes.tsx`, `islands/GiftCodeAdmin.tsx`)
+- [x] Phase 9: Admin Security (idle timeout, logout button)
+- [x] Phase 10: Redeemer Details (email + expiry in list view)
 - [x] Unit Tests (29 tests passing)
 - [x] Git commit
 
 **Core Implementation Complete: January 19, 2026**
 **Admin Panel Added: February 6, 2026**
+**Admin Security + Redeemer Details: February 7, 2026**

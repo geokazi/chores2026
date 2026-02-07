@@ -153,8 +153,10 @@ routes/
 **Features**:
 - Generate batch codes (1-100 at a time)
 - View pending (unused) codes
-- View redeemed codes
+- View redeemed codes with **assigned email** and **subscription expiry date**
 - Financial dashboard (revenue by plan type)
+- 2-minute idle auto-logout with warning modal
+- Logout button in header
 
 **API Endpoints**:
 
@@ -165,10 +167,12 @@ routes/
 | `/api/admin/gift-codes/stats` | GET | Financial statistics |
 
 **Files**:
-- `routes/admin/gift-codes.tsx` - Page route
+- `routes/admin/index.tsx` - Admin dashboard landing
+- `routes/admin/gift-codes.tsx` - Gift code management page
 - `islands/GiftCodeAdmin.tsx` - Interactive UI
+- `islands/AdminIdleTimeout.tsx` - 2-min idle timeout component
 - `routes/api/admin/gift-codes/generate.ts` - Generation API
-- `routes/api/admin/gift-codes/list.ts` - List API
+- `routes/api/admin/gift-codes/list.ts` - List API (includes redeemer email + expiry)
 - `routes/api/admin/gift-codes/stats.ts` - Stats API
 
 ---
@@ -280,6 +284,7 @@ Update this document with the new admin page details.
 2. **Email Validation**: Email must match staff patterns
 3. **Logging**: All access attempts logged with email addresses
 4. **Consistent UX**: Same access denied page across all admin tools
+5. **Idle Timeout**: Auto-logout after 2 minutes of inactivity (security for shared devices)
 
 ### Access Denied Response
 
@@ -389,15 +394,20 @@ curl -X POST http://localhost:8000/api/admin/gift-codes/generate \
 | Feature Flags | Toggle features | Low |
 | Support Tools | Customer support utilities | Low |
 
-### Potential Enhancements
+### Implemented Security Enhancements (Feb 7, 2026)
+
+- ✅ **Session Timeouts**: 2-minute idle auto-logout with 30-second warning modal
+- ✅ **Logout Button**: Visible logout button on all admin pages
+- ✅ **Detailed Code Tracking**: Redeemer email and subscription expiry shown in gift code list
+
+### Potential Future Enhancements
 
 - **Role-Based Access**: Different admin roles (support, developer, owner)
 - **Two-Factor Authentication**: Enhanced security for admin access
 - **Activity Logging**: Detailed audit trail of admin actions
-- **Session Timeouts**: Auto-logout for admin sessions
 
 ---
 
 **Author**: Development Team
 **Created**: February 6, 2026
-**Last Updated**: February 6, 2026
+**Last Updated**: February 7, 2026

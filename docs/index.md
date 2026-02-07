@@ -1,8 +1,8 @@
 # ChoreGami 2026 Documentation
 
-**Version**: 1.43
+**Version**: 1.44
 **Status**: ✅ Production Ready
-**Last Updated**: February 6, 2026 (Marketing landing pages + code-first redemption)
+**Last Updated**: February 7, 2026 (Admin panel security + gift code details)
 
 **Project Overview**: A simplified, real-time chore completion system built with Deno Fresh, transforming routine family chores into an engaging, competitive experience with sub-second real-time updates across all family devices.
 
@@ -99,6 +99,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-02-05 | [**Share Page Improvements**](./milestones/20260205_share_page_improvements.md) | ✅ Complete | Empathy-first copy, real family stats (chores/streak/events), data consistency with Reports page, RLS fix documented in CLAUDE.md |
 | 2026-02-06 | [**Stripe Checkout + Plan Badges**](./milestones/20260206_stripe_checkout_implementation.md) | ✅ Complete | Dual billing modes (one-time + subscription), plan badges, trust badges, OAuth plan preservation fix |
 | 2026-02-06 | [**Marketing Landing Pages**](./marketing/20260206_amazon_whatsapp_distribution_strategy.md) | ✅ Complete | `/families` landing page for Amazon traffic, code-first `/redeem` flow (validate before login), Half Year pricing alignment |
+| 2026-02-07 | [**Admin Panel Security**](./decisions/20260206_admin_page_access_control.md) | ✅ Complete | 2-minute idle timeout with warning modal, logout button, redeemer email + expiry columns in gift code list |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 
@@ -302,6 +303,7 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 - ✅ **Share Page Improvements**: Empathy-first peer-to-peer copy ("Help another family feel more organized"), real family stats (chores/streak/events), data consistency with Reports page (Sunday-first weeks, max individual streak), RLS fix with `getServiceSupabaseClient()`
 - ✅ **Stripe Checkout Integration**: Dual billing modes (one-time purchases: Summer/Half Year/Full Year; subscriptions: Monthly/Annual), trial system (15-day), plan badges in AppHeader, trust badges (Secure Checkout, Tax Compliant, 30-Day Guarantee, Cancel Anytime, Family-First Support), referral/gift code support
 - ✅ **OAuth Plan Preservation**: Plan selection preserved through OAuth signup for both new and returning users; server→client redirect pattern for localStorage access
+- ✅ **Admin Panel Security**: Staff-only `/admin` with 2-minute idle auto-logout + 30-second warning modal, logout button, gift code list shows redeemer email and subscription expiry date
 
 ### Known Limitations
 - **Testing**: Comprehensive test suite not yet implemented
@@ -352,5 +354,5 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 
 ---
 
-*Last updated: February 6, 2026 (v1.43)*
+*Last updated: February 7, 2026 (v1.44)*
 *Maintained by: Claude Code AI Assistant*
