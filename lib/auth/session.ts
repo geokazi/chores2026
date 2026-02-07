@@ -80,8 +80,19 @@ export async function getAuthenticatedSession(
       .single();
 
     if (profileError || !profileData) {
-      console.log("❌ No family profile found for user:", user.id, profileError?.message);
-      return createAnonymousSession();
+      console.log("⚠️ No family profile found for user:", user.id, profileError?.message);
+      // Return authenticated session without family (for staff/admin access)
+      return {
+        user: {
+          id: user.id,
+          email: user.email || "",
+          role: undefined,
+          profileId: undefined,
+          profileName: undefined,
+        },
+        family: null,
+        isAuthenticated: true,  // User IS authenticated, just no family
+      };
     }
 
     // Batch fetch: family info + all family members in parallel

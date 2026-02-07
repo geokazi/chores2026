@@ -8,6 +8,7 @@ import { Handlers, PageProps } from "$fresh/server.ts";
 import { getCookies } from "@std/http/cookie";
 import { getServiceSupabaseClient } from "../lib/supabase.ts";
 import { PlanService } from "../lib/services/plan-service.ts";
+import { isStaffEmail } from "../lib/auth/staff.ts";
 import AppFooter from "../components/AppFooter.tsx";
 import DeviceFingerprintCollector from "../islands/DeviceFingerprintCollector.tsx";
 
@@ -42,6 +43,12 @@ export const handler: Handlers<SetupPageData> = {
     }
 
     if (user) {
+      // Staff users don't need family setup - redirect to admin
+      if (user.email && isStaffEmail(user.email)) {
+        console.log("👤 Staff user detected, redirecting to admin:", user.email);
+        return new Response(null, { status: 303, headers: { Location: "/admin" } });
+      }
+
       // Already has profile -> check for pending plan selection first
       const { data: existingProfile } = await supabase
         .from("family_profiles")
