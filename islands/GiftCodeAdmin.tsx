@@ -48,6 +48,8 @@ interface GiftCode {
   purchased_at: string;
   redeemed_by: string | null;
   redeemed_at: string | null;
+  redeemer_email?: string | null;
+  expires_at?: string | null;
 }
 
 interface ListResponse {
@@ -349,13 +351,15 @@ export default function GiftCodeAdmin({ staffEmail }: Props) {
                 <th>Plan</th>
                 <th>Created</th>
                 {activeTab.value === "redeemed" && <th>Redeemed</th>}
+                {activeTab.value === "redeemed" && <th>Assigned To</th>}
+                {activeTab.value === "redeemed" && <th>Expires</th>}
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {codes.value.length === 0 ? (
                 <tr>
-                  <td colSpan={activeTab.value === "redeemed" ? 5 : 4} class="no-data">
+                  <td colSpan={activeTab.value === "redeemed" ? 7 : 4} class="no-data">
                     No {activeTab.value} codes found
                   </td>
                 </tr>
@@ -369,6 +373,12 @@ export default function GiftCodeAdmin({ staffEmail }: Props) {
                     <td>{formatDate(code.purchased_at)}</td>
                     {activeTab.value === "redeemed" && (
                       <td>{code.redeemed_at ? formatDate(code.redeemed_at) : "-"}</td>
+                    )}
+                    {activeTab.value === "redeemed" && (
+                      <td class="email-cell">{code.redeemer_email || "-"}</td>
+                    )}
+                    {activeTab.value === "redeemed" && (
+                      <td>{code.expires_at ? formatDate(code.expires_at) : "-"}</td>
                     )}
                     <td>
                       <button type="button" class="btn-small" onClick={() => copyToClipboard(code.code)}>
@@ -509,6 +519,7 @@ export default function GiftCodeAdmin({ staffEmail }: Props) {
         .no-data { text-align: center; color: #9ca3af; padding: 2rem !important; }
         .btn-small { padding: 0.375rem 0.75rem; background: #e5e7eb; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem; }
         .btn-small:hover { background: #d1d5db; }
+        .email-cell { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.8rem; }
 
         @media (max-width: 768px) {
           .stats-grid { grid-template-columns: repeat(2, 1fr); }

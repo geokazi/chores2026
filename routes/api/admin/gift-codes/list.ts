@@ -17,6 +17,8 @@ interface GiftCodeRecord {
   purchased_at: string;
   redeemed_by: string | null;
   redeemed_at: string | null;
+  redeemer_email?: string | null;
+  expires_at?: string | null;
 }
 
 export const handler: Handlers = {
@@ -71,6 +73,68 @@ export const handler: Handlers = {
       return Response.json({ error: "Failed to fetch codes" }, { status: 500 });
     }
 
+    // 5b. Enrich redeemed codes with family info (email + expiry)
+    const enrichedCodes: GiftCodeRecord[] = codes || [];
+    const redeemedFamilyIds = enrichedCodes
+      .filter(c => c.redeemed_by)
+      .map(c => c.redeemed_by!);
+
+    if (redeemedFamilyIds.length > 0) {
+      // Get family settings (for expiry) and parent emails
+      const [familiesResult, profilesResult] = await Promise.all([
+        supabase
+          .from("families")
+          .select("id, settings")
+          .in("id", redeemedFamilyIds),
+        supabase
+          .from("family_profiles")
+          .select("family_id, user_id")
+          .in("family_id", redeemedFamilyIds)
+          .not("user_id", "is", null),
+      ]);
+
+      // Build lookup maps
+      const familySettings = new Map<string, Record<string, unknown>>();
+      (familiesResult.data || []).forEach((f: { id: string; settings: Record<string, unknown> }) => {
+        familySettings.set(f.id, f.settings);
+      });
+
+      const familyUserIds = new Map<string, string>();
+      (profilesResult.data || []).forEach((p: { family_id: string; user_id: string | null }) => {
+        if (p.user_id) familyUserIds.set(p.family_id, p.user_id);
+      });
+
+      // Get emails from auth.users (requires service role)
+      const userIds = [...new Set(familyUserIds.values())];
+      const userEmails = new Map<string, string>();
+      if (userIds.length > 0) {
+        const { data: { users } } = await supabase.auth.admin.listUsers({
+          perPage: 1000,
+        });
+        if (users) {
+          users.forEach((u: { id: string; email?: string }) => {
+            if (u.email) userEmails.set(u.id, u.email);
+          });
+        }
+      }
+
+      // Enrich codes with email and expiry
+      enrichedCodes.forEach(code => {
+        if (code.redeemed_by) {
+          // Get expiry from family settings
+          const settings = familySettings.get(code.redeemed_by) as Record<string, unknown> | undefined;
+          const apps = settings?.apps as Record<string, unknown> | undefined;
+          const choregami = apps?.choregami as Record<string, unknown> | undefined;
+          const plan = choregami?.plan as Record<string, unknown> | undefined;
+          code.expires_at = (plan?.expires_at as string) || null;
+
+          // Get email via user_id
+          const userId = familyUserIds.get(code.redeemed_by);
+          code.redeemer_email = userId ? userEmails.get(userId) || null : null;
+        }
+      });
+    }
+
     // 6. Get total counts for each status
     const [pendingResult, redeemedResult] = await Promise.all([
       supabase
@@ -84,7 +148,7 @@ export const handler: Handlers = {
     ]);
 
     return Response.json({
-      codes: codes || [],
+      codes: enrichedCodes,
       pagination: {
         limit,
         offset,
