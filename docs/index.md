@@ -97,7 +97,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-02-04 | [**Events UX Improvements**](./milestones/20260204_events_ux_improvements.md) | ✅ Complete | Timezone fix (localDate param), event edit/delete from dashboard, consistent left-border UI |
 | 2026-02-05 | [**Events Progressive Disclosure**](./milestones/20260205_events_progressive_disclosure_implementation.md) | ✅ Complete | Shared EventCard component, collapsed/expanded states, swipe gestures, item-level overflow menus for prep tasks and chores |
 | 2026-02-05 | [**Share Page Improvements**](./milestones/20260205_share_page_improvements.md) | ✅ Complete | Empathy-first copy, real family stats (chores/streak/events), data consistency with Reports page, RLS fix documented in CLAUDE.md |
-| 2026-02-06 | [**Stripe Checkout + Plan Badges**](./milestones/20260206_stripe_checkout_implementation.md) | ✅ Complete | Stripe Checkout flow, trial system (15-day), plan badges in header (trial/expired/paid), OAuth plan preservation fix |
+| 2026-02-06 | [**Stripe Checkout + Plan Badges**](./milestones/20260206_stripe_checkout_implementation.md) | ✅ Complete | Dual billing modes (one-time + subscription), plan badges, trust badges, OAuth plan preservation fix |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 
@@ -298,7 +298,7 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 - ✅ **Landing Page & Demand Capture**: Value-first landing at `/landing` with inline demo, teaser cards (Families/Roommates/Just Me), 3-question assessment quiz with 8 persona types, theme toggle (light/dark), rich analytics (navigator API, anonymized IP, timezone), glassmorphism styling, Ocean Depth dark mode theme
 - ✅ **Events Progressive Disclosure UI**: Shared EventCard component across all dashboards; collapsed/expanded states with CSS transitions; swipe gestures for mobile; item-level overflow menus (⋮) for prep task edit/delete and chore unlink; auto-expand today's events
 - ✅ **Share Page Improvements**: Empathy-first peer-to-peer copy ("Help another family feel more organized"), real family stats (chores/streak/events), data consistency with Reports page (Sunday-first weeks, max individual streak), RLS fix with `getServiceSupabaseClient()`
-- ✅ **Stripe Checkout Integration**: Hosted checkout flow with plan selection, trial system (15-day free trial with device fingerprinting), plan badges in AppHeader (orange for trial countdown, red "Upgrade" for expired, green plan name for paid), referral/gift code support, webhook-based plan activation
+- ✅ **Stripe Checkout Integration**: Dual billing modes (one-time purchases: Summer/Half Year/Full Year; subscriptions: Monthly/Annual), trial system (15-day), plan badges in AppHeader, trust badges (Secure Checkout, Tax Compliant, 30-Day Guarantee, Cancel Anytime, Family-First Support), referral/gift code support
 - ✅ **OAuth Plan Preservation**: Plan selection preserved through OAuth signup for both new and returning users; server→client redirect pattern for localStorage access
 
 ### Known Limitations
@@ -341,7 +341,7 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 - **Domain Migration**: [choregami.app DNS Migration](./domains/20260203_flyio_migration_guide.md) - Cloud Run to Fly.io domain migration (complete)
 - **Financial Features**: [Balance, Rewards & Goals](./milestones/20260125_balance_rewards_goals_implementation.md) - P2-P4 implementation
 - **Market Strategy**: [Rewards Market Strategy](./planned/20260125_rewards_market_strategy.md) - Competitive analysis and feature prioritization
-- **Payment Integration**: [Stripe Checkout Implementation](./milestones/20260206_stripe_checkout_implementation.md) - Hosted checkout, trial system, plan badges
+- **Payment Integration**: [Stripe Checkout Implementation](./milestones/20260206_stripe_checkout_implementation.md) - Dual billing (one-time + subscription), trial system, plan badges, trust badges
 
 ### External Dependencies
 - **[Deno Fresh](https://fresh.deno.dev/)**: SSR framework with Islands architecture

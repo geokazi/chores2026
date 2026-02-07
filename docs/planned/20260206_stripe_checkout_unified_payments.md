@@ -15,7 +15,7 @@ Implement Stripe Checkout for paid subscriptions while integrating with existing
 
 ### Business Goals
 
-1. Enable paid subscriptions via Stripe (3mo, 10mo, 12mo)
+1. Enable dual billing: one-time purchases (3mo, 6mo, 12mo) + subscriptions (monthly, annual)
 2. Prevent trial abuse with device fingerprinting
 3. Respect and integrate all existing code systems
 4. Provide seamless upgrade path from trial → paid
@@ -32,12 +32,19 @@ Implement Stripe Checkout for paid subscriptions while integrating with existing
 
 ### Plan Types Alignment
 
-| Current Plan | Duration | Stripe Price | Gift Code |
-|--------------|----------|--------------|-----------|
+**One-time Purchases:**
+| Plan | Duration | Price | Gift Code |
+|------|----------|-------|-----------|
 | summer | 90 days | $29.99 (3mo) | ✅ Exists |
-| school_year | 300 days | $49.99 (10mo) | ✅ Exists |
-| full_year | 365 days | $79.99 (annual) | ✅ Exists |
-| **NEW: trial** | 15 days | Free | N/A |
+| school_year | 180 days | $49.99 (6mo) | ✅ Exists |
+| full_year | 365 days | $79.99 (12mo) | ✅ Exists |
+| trial | 15 days | Free | N/A |
+
+**Subscriptions (auto-renewing):**
+| Plan | Billing | Price |
+|------|---------|-------|
+| monthly | Per month | $12.99/mo |
+| annual | Per year | $119.99/yr (~$10/mo) |
 
 ---
 
@@ -61,14 +68,24 @@ Implement Stripe Checkout for paid subscriptions while integrating with existing
 │                    Choose Your Plan                             │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                 │
+│  ┌─────────────────────────┐  ┌─────────────────────────┐      │
+│  │  [ One-time ] (active)  │  │  [ Subscribe ]          │      │
+│  └─────────────────────────┘  └─────────────────────────┘      │
+│                                                                 │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐      │
-│  │   Summer     │  │  School Year │  │  Full Year ⭐    │      │
-│  │   3 months   │  │   10 months  │  │   12 months      │      │
+│  │   Summer     │  │  Half Year   │  │  Full Year ⭐    │      │
+│  │   3 months   │  │   6 months   │  │   12 months      │      │
 │  │    $29.99    │  │    $49.99    │  │    $79.99        │      │
-│  │  $10/month   │  │  $5/month    │  │   $6.67/month    │      │
+│  │  $10/month   │  │  $8.33/month │  │   $6.67/month    │      │
 │  │              │  │              │  │   Best Value     │      │
 │  │  [ Select ]  │  │  [ Select ]  │  │   [ Select ]     │      │
 │  └──────────────┘  └──────────────┘  └──────────────────┘      │
+│                                                                 │
+│                     + applicable taxes                          │
+│                                                                 │
+│  ┌───────────────────────────────────────────────────────┐     │
+│  │ 🔒 Secure  📋 Tax Compliant  ↩️ 30-Day  👨‍👩‍👧‍👦 Support │     │
+│  └───────────────────────────────────────────────────────┘     │
 │                                                                 │
 │  ─────────────────────── or ───────────────────────────────    │
 │                                                                 │

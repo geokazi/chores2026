@@ -8,7 +8,7 @@
 
 ## Summary
 
-Completed implementation of Stripe Checkout for paid subscriptions with plan preservation through OAuth flows, trial/expired/paid plan badges in the header, and integration with existing referral/gift code systems.
+Completed implementation of Stripe Checkout with dual billing modes (one-time purchases and subscriptions), plan preservation through OAuth flows, trial/expired/paid plan badges in the header, trust badges, and integration with existing referral/gift code systems.
 
 ---
 
@@ -23,6 +23,35 @@ Completed implementation of Stripe Checkout for paid subscriptions with plan pre
 | Checkout API | `routes/api/stripe/checkout.ts` | ✅ |
 | Webhook handler | `routes/api/stripe/webhook.ts` | ✅ |
 | Success page | `routes/stripe/success.tsx` | ✅ |
+
+### 1b. Dual Billing Modes
+
+Users can toggle between two billing options:
+
+| Mode | Plans | Stripe Mode | Auto-Renew |
+|------|-------|-------------|------------|
+| **One-time** | Summer (3mo), Half Year (6mo), Full Year (12mo) | `payment` | No |
+| **Subscribe** | Monthly ($12.99), Annual ($119.99) | `subscription` | Yes |
+
+**One-time Plans:**
+- Summer: $29.99 (3 months)
+- Half Year: $49.99 (6 months)
+- Full Year: $79.99 (12 months) - "Best Value" badge
+
+**Subscription Plans:**
+- Monthly: $12.99/month
+- Annual: $119.99/year - "Save 23%" badge
+
+### 1c. Trust Badges & Tax Notice
+
+Added pricing footer with trust signals:
+- 🔒 Secure Checkout
+- 📋 Tax Compliant
+- ↩️ 30-Day Guarantee
+- 🚫 Cancel Anytime (subscription only)
+- 👨‍👩‍👧‍👦 Family-First Support
+
+Plus "+ applicable taxes" notice below plan cards.
 
 ### 2. Plan Badge in AppHeader
 
@@ -137,7 +166,7 @@ export function getPlanBadge(settings: any): PlanBadgeInfo | undefined {
 ```typescript
 export const PLAN_DISPLAY_NAMES: Record<...> = {
   summer: 'Summer',
-  school_year: 'School Year',
+  school_year: 'Half Year',
   full_year: 'Full Year',
 };
 ```
@@ -244,6 +273,9 @@ if (existingProfile) {
 1. `c413914` - Initial Stripe checkout implementation
 2. `ba2e74e` - Fix plan preservation for returning OAuth users
 3. `64a2140` - Add plan badge to AppHeader across all parent pages
+4. `797b49d` - Add subscription + one-time pricing options
+5. `48574c4` - Add tax notice and trust badges to pricing
+6. `6ee0e53` - Update tests and success page for pricing changes
 
 ---
 
