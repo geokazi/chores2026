@@ -12,13 +12,19 @@ import { calculateNewExpiry, PlanType } from "../../../lib/plan-gate.ts";
 export const handler: Handlers = {
   async POST(req) {
     const session = await getAuthenticatedSession(req);
-    if (!session.isAuthenticated || !session.family) {
+    if (!session.isAuthenticated) {
       return Response.json({ error: "Please log in to redeem a gift code" }, { status: 401 });
     }
 
-    const { code } = await req.json();
+    const { code, familyId: explicitFamilyId } = await req.json();
     if (!code || typeof code !== "string") {
       return Response.json({ error: "Gift code is required" }, { status: 400 });
+    }
+
+    // Use explicit familyId if provided (from /setup flow), otherwise from session
+    const targetFamilyId = explicitFamilyId || session.family?.id;
+    if (!targetFamilyId) {
+      return Response.json({ error: "No family to apply code to. Complete setup first." }, { status: 400 });
     }
 
     // Normalize code: uppercase, trim
@@ -43,18 +49,32 @@ export const handler: Handlers = {
     }
 
     // Calculate new expiry (extends if existing plan)
-    const familyId = session.family.id;
+    const familyId = targetFamilyId;
     const planType = giftCode.plan_type as Exclude<PlanType, 'free'>;
-    const newExpiry = calculateNewExpiry(session.family.settings || {}, planType);
+
+    // If explicit familyId provided (setup flow), fetch current family settings
+    let currentFamilySettings = session.family?.settings || {};
+    if (explicitFamilyId && explicitFamilyId !== session.family?.id) {
+      const { data: familyData } = await supabase
+        .from("families")
+        .select("settings")
+        .eq("id", explicitFamilyId)
+        .single();
+      currentFamilySettings = familyData?.settings || {};
+    }
+
+    const newExpiry = calculateNewExpiry(currentFamilySettings, planType);
 
     // Update family settings with new plan
-    const currentSettings = session.family.settings || {};
+    const currentSettings = currentFamilySettings as Record<string, unknown>;
+    const currentApps = (currentSettings.apps || {}) as Record<string, unknown>;
+    const currentChoregami = (currentApps.choregami || {}) as Record<string, unknown>;
     const updatedSettings = {
       ...currentSettings,
       apps: {
-        ...currentSettings.apps,
+        ...currentApps,
         choregami: {
-          ...currentSettings.apps?.choregami,
+          ...currentChoregami,
           plan: {
             type: planType,
             expires_at: newExpiry.toISOString().split('T')[0], // YYYY-MM-DD

@@ -935,6 +935,15 @@ const loadTest = async () => {
 - **Unit Tests**: 29 tests (15 plan-gate + 14 redemption)
 - **See**: [Template Gating Implementation](./planned/20260118_template_gating_gift_codes.md)
 
+#### Gift Code Auth Flow Preservation ✅ **Implemented Feb 7, 2026**
+- **Problem Solved**: Gift codes entered at `/redeem` were lost when users needed to authenticate
+- **localStorage Preservation**: Validated codes stored in localStorage/sessionStorage before auth redirect
+- **Parameter Fix**: Login now accepts both `redirect` and `returnTo` query params
+- **Explicit FamilyId**: `/api/gift/redeem` accepts explicit familyId for setup flow (family doesn't exist until after `/setup`)
+- **Setup Integration**: Gift code banner on setup page, auto-applied after family creation
+- **OAuth Support**: Both localStorage AND sessionStorage used for OAuth redirect resilience
+- **See**: [Gift Code Auth Flow Preservation](./milestones/20260207_gift_code_auth_flow_preservation.md)
+
 #### Events Calendar Integration ✅ **Implemented Jan 19, 2026**
 - **Event-Chore Linking**: Chores can be linked to family events via `family_event_id`
 - **Mission Grouping**: Kid dashboard shows event-linked chores as grouped "missions"

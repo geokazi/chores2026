@@ -9,6 +9,7 @@ import { useState } from "preact/hooks";
 interface Props {
   prefillCode?: string;
   isLoggedIn: boolean;
+  hasFamily: boolean;
 }
 
 interface ValidationResult {
@@ -41,7 +42,7 @@ const trackFeature = (feature: string) => {
   }).catch(() => {}); // Non-blocking
 };
 
-export default function RedeemForm({ prefillCode, isLoggedIn }: Props) {
+export default function RedeemForm({ prefillCode, isLoggedIn, hasFamily }: Props) {
   const [code, setCode] = useState(prefillCode || "");
   const [loading, setLoading] = useState(false);
   const [validation, setValidation] = useState<ValidationResult | null>(null);
@@ -69,8 +70,16 @@ export default function RedeemForm({ prefillCode, isLoggedIn }: Props) {
         trackFeature("redeem_validate_success");
         setValidation(data);
 
-        // If logged in, auto-redeem
-        if (isLoggedIn) {
+        // Store in localStorage for preservation through auth flow
+        localStorage.setItem('pendingGiftCode', code.trim());
+        sessionStorage.setItem('pendingGiftCode', code.trim()); // Backup for OAuth
+        if (data.plan_type) {
+          localStorage.setItem('pendingGiftPlan', data.plan_type);
+          sessionStorage.setItem('pendingGiftPlan', data.plan_type);
+        }
+
+        // If logged in AND has family, auto-redeem
+        if (isLoggedIn && hasFamily) {
           await handleRedeem();
         }
       } else {
@@ -102,6 +111,11 @@ export default function RedeemForm({ prefillCode, isLoggedIn }: Props) {
 
       if (data.success) {
         trackFeature("redeem_success");
+        // Clear localStorage on successful redemption
+        localStorage.removeItem('pendingGiftCode');
+        localStorage.removeItem('pendingGiftPlan');
+        sessionStorage.removeItem('pendingGiftCode');
+        sessionStorage.removeItem('pendingGiftPlan');
         setRedeemResult(data);
       } else {
         trackFeature("redeem_failure");
@@ -140,8 +154,8 @@ export default function RedeemForm({ prefillCode, isLoggedIn }: Props) {
     );
   }
 
-  // Code validated but not logged in - prompt to sign in
-  if (validation?.valid && !isLoggedIn) {
+  // Code validated but not logged in OR logged in without family - prompt accordingly
+  if (validation?.valid && (!isLoggedIn || !hasFamily)) {
     const returnUrl = encodeURIComponent(`/redeem?code=${encodeURIComponent(code)}`);
 
     return (
@@ -151,16 +165,28 @@ export default function RedeemForm({ prefillCode, isLoggedIn }: Props) {
         <p class="plan-name">{PLAN_NAMES[validation.plan_type || ""] || validation.plan_type}</p>
         {validation.message && <p class="gift-message">"{validation.message}"</p>}
 
-        <p class="signin-prompt">Sign in or create an account to activate your gift.</p>
-
-        <div class="auth-buttons">
-          <a href={`/login?returnTo=${returnUrl}`} class="btn-primary">
-            Sign In
-          </a>
-          <a href={`/register?returnTo=${returnUrl}`} class="btn-secondary">
-            Create Account
-          </a>
-        </div>
+        {!isLoggedIn ? (
+          <>
+            <p class="signin-prompt">Sign in or create an account to activate your gift.</p>
+            <div class="auth-buttons">
+              <a href={`/login?returnTo=${returnUrl}`} class="btn-primary">
+                Sign In
+              </a>
+              <a href={`/register?returnTo=${returnUrl}`} class="btn-secondary">
+                Create Account
+              </a>
+            </div>
+          </>
+        ) : (
+          <>
+            <p class="signin-prompt">Complete your family setup to activate your gift.</p>
+            <div class="auth-buttons">
+              <a href="/setup" class="btn-primary">
+                Complete Setup
+              </a>
+            </div>
+          </>
+        )}
 
         <style>{validatedStyles}</style>
       </div>

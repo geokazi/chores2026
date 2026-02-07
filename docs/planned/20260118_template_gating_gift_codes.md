@@ -69,7 +69,18 @@ This implementation follows the product strategy of:
 | `routes/api/admin/gift-codes/list.ts` | MODIFY | +60 | Added redeemer email + expiry lookup |
 | `islands/GiftCodeAdmin.tsx` | MODIFY | +15 | Added Assigned To + Expires columns |
 
-**Total: ~1,265 lines original + ~1,335 lines Feb 6 + ~220 lines Feb 7 updates**
+**Total: ~1,265 lines original + ~1,335 lines Feb 6 + ~220 lines Feb 7 (admin) + ~150 lines Feb 7 (auth flow) updates**
+
+**Feb 7, 2026 Auth Flow Updates:**
+
+| File | Action | Lines | Description |
+|------|--------|-------|-------------|
+| `routes/login.tsx` | MODIFY | +3 | Added `returnTo` param support alongside `redirect` |
+| `routes/redeem.tsx` | MODIFY | +5 | Added `hasFamily` prop to distinguish auth states |
+| `islands/RedeemForm.tsx` | MODIFY | +40 | Store code in localStorage, clear on success, handle no-family state |
+| `routes/api/gift/redeem.ts` | MODIFY | +30 | Accept explicit `familyId` for setup flow |
+| `routes/setup.tsx` | MODIFY | +60 | Read pendingGiftCode, show banner, apply after family creation |
+| `routes/logout.ts` | MODIFY | +8 | Clear pending gift code tokens |
 
 ---
 
@@ -516,6 +527,7 @@ Character set excludes confusing characters: `ABCDEFGHJKMNPQRSTUVWXYZ23456789` (
 ## References
 
 - [Admin Page Access Control](../decisions/20260206_admin_page_access_control.md) - Staff-only admin panel pattern
+- [Gift Code Auth Flow Preservation](../milestones/20260207_gift_code_auth_flow_preservation.md) - localStorage preservation through auth flows
 - [JSONB Settings Architecture](../20260114_JSONB_settings_architecture.md)
 - [Chore Templates Design](../chore-templates-design.md)
 - [Seasonal Templates](../milestones/20260116_seasonal-templates-implementation.md)
@@ -537,9 +549,11 @@ Character set excludes confusing characters: `ABCDEFGHJKMNPQRSTUVWXYZ23456789` (
 - [x] Phase 8: Admin Panel (`routes/admin/gift-codes.tsx`, `islands/GiftCodeAdmin.tsx`)
 - [x] Phase 9: Admin Security (idle timeout, logout button)
 - [x] Phase 10: Redeemer Details (email + expiry in list view)
+- [x] Phase 11: Auth Flow Preservation (localStorage through login/signup/OAuth)
 - [x] Unit Tests (29 tests passing)
 - [x] Git commit
 
 **Core Implementation Complete: January 19, 2026**
 **Admin Panel Added: February 6, 2026**
 **Admin Security + Redeemer Details: February 7, 2026**
+**Auth Flow Preservation: February 7, 2026**

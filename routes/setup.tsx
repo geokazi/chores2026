@@ -315,26 +315,76 @@ export const handler: Handlers<SetupPageData> = {
         }
       }
 
-      // Success -> check for pending plan selection, clear stale tokens, redirect
+      // Apply pending gift code if present (from /redeem flow)
+      const pendingGiftCode = formData.get("pendingGiftCode") as string;
+      let giftCodeApplied = false;
+      if (pendingGiftCode && pendingGiftCode.trim()) {
+        try {
+          const redeemUrl = new URL("/api/gift/redeem", req.url);
+          const redeemResponse = await fetch(redeemUrl.toString(), {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Cookie": req.headers.get("cookie") || "",
+            },
+            body: JSON.stringify({
+              code: pendingGiftCode.trim(),
+              familyId: family.id,
+            }),
+          });
+
+          const redeemResult = await redeemResponse.json();
+
+          if (redeemResult.success) {
+            giftCodeApplied = true;
+            console.log("🎁 Gift code applied to new family:", {
+              code: pendingGiftCode.slice(0, 8) + "...",
+              familyId: family.id,
+              plan: redeemResult.plan_type,
+              expires: redeemResult.expires_at,
+            });
+          } else {
+            console.warn("⚠️ Gift code redemption failed (non-blocking):", redeemResult.error);
+          }
+        } catch (e) {
+          console.warn("⚠️ Gift code redemption error (non-blocking):", e);
+        }
+      }
+
+      // Success -> clear stale tokens, check for gift code applied, redirect
+      const giftAppliedFlag = giftCodeApplied ? "true" : "";
       return new Response(
         `<!DOCTYPE html><html><head><title>Setup Complete</title></head>
         <body>
           <script>
+            // Clear all pending tokens
             localStorage.removeItem('pendingInviteToken');
-            // Check for pending plan selection from /pricing
-            var raw = localStorage.getItem('pendingPlanSelection');
-            if (raw) {
-              localStorage.removeItem('pendingPlanSelection');
-              try {
-                var data = JSON.parse(raw);
-                var url = '/pricing?checkout=' + data.planId;
-                if (data.billingMode) url += '&mode=' + data.billingMode;
-                window.location.href = url;
-              } catch (e) {
-                window.location.href = '/pricing?checkout=' + raw;
-              }
+            localStorage.removeItem('pendingGiftCode');
+            localStorage.removeItem('pendingGiftPlan');
+            sessionStorage.removeItem('pendingGiftCode');
+            sessionStorage.removeItem('pendingGiftPlan');
+
+            // If gift code was applied, skip pricing redirect
+            var giftApplied = "${giftAppliedFlag}";
+            if (giftApplied) {
+              console.log('[setup] Gift code applied, going to dashboard');
+              window.location.href = '/?gift=activated';
             } else {
-              window.location.href = '/';
+              // Check for pending plan selection from /pricing
+              var raw = localStorage.getItem('pendingPlanSelection');
+              if (raw) {
+                localStorage.removeItem('pendingPlanSelection');
+                try {
+                  var data = JSON.parse(raw);
+                  var url = '/pricing?checkout=' + data.planId;
+                  if (data.billingMode) url += '&mode=' + data.billingMode;
+                  window.location.href = url;
+                } catch (e) {
+                  window.location.href = '/pricing?checkout=' + raw;
+                }
+              } else {
+                window.location.href = '/';
+              }
             }
           </script>
         </body></html>`,
@@ -361,6 +411,15 @@ export default function SetupPage({ data }: PageProps<SetupPageData>) {
               console.log('[setup] Found pending invite token, redirecting to /join');
               // Don't remove token yet - /join will clear it after successful acceptance
               window.location.href = '/join?token=' + token;
+              return;
+            }
+
+            // Check for pending gift code and populate hidden field
+            var giftCode = localStorage.getItem('pendingGiftCode') || sessionStorage.getItem('pendingGiftCode');
+            if (giftCode) {
+              console.log('[setup] Found pending gift code:', giftCode.slice(0, 8) + '...');
+              var input = document.getElementById('pendingGiftCodeInput');
+              if (input) input.value = giftCode;
             }
           })();
         `
@@ -385,6 +444,26 @@ export default function SetupPage({ data }: PageProps<SetupPageData>) {
           </div>
         )}
 
+        {/* Pending gift code banner - shown via JS when gift code in localStorage */}
+        <div id="giftCodeBanner" class="gift-code-banner" style={{ display: 'none' }}>
+          <div class="gift-emoji">🎁</div>
+          <div class="gift-content">
+            <strong>Your gift is ready!</strong>
+            <p>Complete setup to activate your prepaid plan.</p>
+          </div>
+        </div>
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            (function() {
+              var giftCode = localStorage.getItem('pendingGiftCode') || sessionStorage.getItem('pendingGiftCode');
+              if (giftCode) {
+                var banner = document.getElementById('giftCodeBanner');
+                if (banner) banner.style.display = 'flex';
+              }
+            })();
+          `
+        }} />
+
         <div class="welcome-message">
           {pendingInvite ? (
             <>Or create your own family below</>
@@ -396,7 +475,7 @@ export default function SetupPage({ data }: PageProps<SetupPageData>) {
               <span class="email-hint">({email})</span>
               <button
                 type="button"
-                onClick="startOver()"
+                id="startOverBtn"
                 class="start-over-link"
               >
                 Not you? Start over
@@ -410,6 +489,8 @@ export default function SetupPage({ data }: PageProps<SetupPageData>) {
         <form method="POST" class="setup-form">
           {/* Preserve referral code through form submission */}
           {refCode && <input type="hidden" name="ref" value={refCode} />}
+          {/* Hidden field for pending gift code (populated by JS from localStorage) */}
+          <input type="hidden" id="pendingGiftCodeInput" name="pendingGiftCode" value="" />
           {/* Collect device fingerprint for trial fraud prevention */}
           <DeviceFingerprintCollector />
 
@@ -492,8 +573,17 @@ export default function SetupPage({ data }: PageProps<SetupPageData>) {
           __html: `
             function startOver() {
               localStorage.removeItem('pendingInviteToken');
+              localStorage.removeItem('pendingGiftCode');
+              localStorage.removeItem('pendingGiftPlan');
+              sessionStorage.removeItem('pendingGiftCode');
+              sessionStorage.removeItem('pendingGiftPlan');
               window.location.href = '/logout?reason=restart';
             }
+            // Attach click handler after DOM loads
+            document.addEventListener('DOMContentLoaded', function() {
+              var btn = document.getElementById('startOverBtn');
+              if (btn) btn.addEventListener('click', startOver);
+            });
           `
         }} />
 
@@ -599,6 +689,33 @@ export default function SetupPage({ data }: PageProps<SetupPageData>) {
         }
         .join-button:hover {
           background: #059669;
+        }
+        .gift-code-banner {
+          background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+          border: 2px solid #f59e0b;
+          border-radius: 12px;
+          padding: 1rem;
+          margin-bottom: 1rem;
+          display: flex;
+          gap: 0.75rem;
+          align-items: center;
+        }
+        .gift-emoji {
+          font-size: 1.5rem;
+          line-height: 1;
+        }
+        .gift-content {
+          flex: 1;
+        }
+        .gift-content strong {
+          color: #92400e;
+          display: block;
+          margin-bottom: 0.125rem;
+        }
+        .gift-content p {
+          color: #b45309;
+          font-size: 0.8rem;
+          margin: 0;
         }
         .error-message {
           background: #fee;

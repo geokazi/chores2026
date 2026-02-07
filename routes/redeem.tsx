@@ -12,6 +12,7 @@ import AppFooter from "../components/AppFooter.tsx";
 interface RedeemPageData {
   prefillCode?: string;
   isLoggedIn: boolean;
+  hasFamily: boolean;
 }
 
 export const handler: Handlers<RedeemPageData> = {
@@ -24,6 +25,7 @@ export const handler: Handlers<RedeemPageData> = {
     return ctx.render({
       prefillCode,
       isLoggedIn: session.isAuthenticated,
+      hasFamily: !!session.family,
     });
   },
 };
@@ -32,7 +34,7 @@ export default function RedeemPage({ data }: PageProps<RedeemPageData>) {
   return (
     <div class="redeem-container">
       <div class="redeem-card">
-        <RedeemForm prefillCode={data.prefillCode} isLoggedIn={data.isLoggedIn} />
+        <RedeemForm prefillCode={data.prefillCode} isLoggedIn={data.isLoggedIn} hasFamily={data.hasFamily} />
         <AppFooter />
       </div>
 

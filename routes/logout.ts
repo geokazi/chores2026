@@ -67,6 +67,11 @@ export const handler: Handlers = {
     console.log('🔐 Logout: Clearing localStorage');
     try {
       localStorage.removeItem('chores2026_user_data');
+      // Clear pending gift code and plan
+      localStorage.removeItem('pendingGiftCode');
+      localStorage.removeItem('pendingGiftPlan');
+      localStorage.removeItem('pendingInviteToken');
+      localStorage.removeItem('pendingPlanSelection');
       sessionStorage.clear();
       Object.keys(localStorage).forEach(key => {
         if (key.startsWith('chores2026_') || key.startsWith('sb-') || key.startsWith('choregami_')) {
@@ -118,6 +123,11 @@ export const handler: Handlers = {
     console.log('🔐 Logout GET: Pre-clearing localStorage');
     try {
       localStorage.removeItem('chores2026_user_data');
+      // Clear pending gift code and plan
+      localStorage.removeItem('pendingGiftCode');
+      localStorage.removeItem('pendingGiftPlan');
+      localStorage.removeItem('pendingInviteToken');
+      localStorage.removeItem('pendingPlanSelection');
       sessionStorage.clear();
       Object.keys(localStorage).forEach(key => {
         if (key.startsWith('chores2026_') || key.startsWith('sb-') || key.startsWith('choregami_')) {

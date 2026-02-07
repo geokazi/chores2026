@@ -110,9 +110,9 @@ export const handler: Handlers<LoginPageData> = {
 
               if (!verifyError && sessionData.session) {
                 console.log("✅ Session created, redirecting...");
-                // Build redirect URL - check for invite_token or existing redirect param
+                // Build redirect URL - check for invite_token or existing redirect/returnTo param
                 const inviteToken = url.searchParams.get("invite_token");
-                const existingRedirect = url.searchParams.get("redirect");
+                const existingRedirect = url.searchParams.get("redirect") || url.searchParams.get("returnTo");
                 let redirectTo = "/";
                 if (inviteToken) {
                   redirectTo = `/join?token=${encodeURIComponent(inviteToken)}`;
@@ -181,9 +181,9 @@ export const handler: Handlers<LoginPageData> = {
         return ctx.render({ mode: "email", error: "Invalid email or password" });
       }
 
-      // Build redirect URL - check for invite_token or existing redirect param
+      // Build redirect URL - check for invite_token or existing redirect/returnTo param
       const inviteToken = url.searchParams.get("invite_token");
-      const existingRedirect = url.searchParams.get("redirect");
+      const existingRedirect = url.searchParams.get("redirect") || url.searchParams.get("returnTo");
       let redirectTo = "/";
       if (inviteToken) {
         redirectTo = `/join?token=${encodeURIComponent(inviteToken)}`;
@@ -277,7 +277,7 @@ export const handler: Handlers<LoginPageData> = {
       }
     }
 
-    return ctx.render({ mode, error, inviteContext, inviteToken });
+    return ctx.render({ mode, error, inviteContext, inviteToken: inviteToken || undefined });
   },
 };
 
