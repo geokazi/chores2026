@@ -163,8 +163,8 @@ export function getPlanBadge(settings: any): PlanBadgeInfo | undefined {
     return undefined;
   }
 
-  // Paid plan
-  if (plan.type !== 'free' && plan.type !== 'trial') {
+  // Paid plan (free already handled above)
+  if (plan.type !== 'trial') {
     const displayName = PLAN_DISPLAY_NAMES[plan.type as Exclude<PlanType, 'free' | 'trial'>];
     return { type: 'paid', label: displayName };
   }
