@@ -75,7 +75,10 @@ export const handler: Handlers = {
           familyId,
           planType,
           "stripe",
-          { stripe_payment_id: session.payment_intent as string }
+          {
+            stripe_subscription_id: session.subscription as string,
+            stripe_payment_id: session.payment_intent as string || undefined
+          }
         );
 
         if (!result.success) {

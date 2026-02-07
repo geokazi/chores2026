@@ -60,7 +60,7 @@ export const handler: Handlers = {
 
     try {
       const checkoutSession = await stripe.checkout.sessions.create({
-        mode: "payment",
+        mode: "subscription",
         payment_method_types: ["card"],
         line_items: [{
           price: priceId,
