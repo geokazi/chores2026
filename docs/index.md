@@ -1,8 +1,8 @@
 # ChoreGami 2026 Documentation
 
-**Version**: 1.45
+**Version**: 1.46
 **Status**: ✅ Production Ready
-**Last Updated**: February 7, 2026 (Gift code auth flow preservation)
+**Last Updated**: February 7, 2026 (Auth-aware routing for landing pages)
 
 **Project Overview**: A simplified, real-time chore completion system built with Deno Fresh, transforming routine family chores into an engaging, competitive experience with sub-second real-time updates across all family devices.
 
@@ -101,6 +101,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-02-06 | [**Marketing Landing Pages**](./marketing/20260206_amazon_whatsapp_distribution_strategy.md) | ✅ Complete | `/families` landing page for Amazon traffic, code-first `/redeem` flow (validate before login), Half Year pricing alignment |
 | 2026-02-07 | [**Admin Panel Security**](./decisions/20260206_admin_page_access_control.md) | ✅ Complete | 2-minute idle timeout with warning modal, logout button, redeemer email + expiry columns in gift code list |
 | 2026-02-07 | [**Gift Code Auth Flow Preservation**](./milestones/20260207_gift_code_auth_flow_preservation.md) | ✅ Complete | Gift codes preserved through login/signup/OAuth flows via localStorage; auto-apply after family setup |
+| 2026-02-07 | **Auth-Aware Landing Page Routing** | ✅ Complete | Default landing → `/families` (parent-focused); authenticated users redirect to `/setup` or `/` based on family status |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 
@@ -299,13 +300,14 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 - ✅ **Rewards Marketplace (P3)**: Parent-defined JSONB catalog, **parent-approval flow** (kid claims → pending request, parent "Mark Done" → points deducted + transaction created), positive framing ("Claim" not "Buy"), family-friendly language ("Rewards to Give"), starter templates for empty catalog, encouraging "Earn X more pts 💪" for unaffordable rewards, purchase history in `reward_purchases` table; routes: `/kid/rewards`, `/parent/rewards`, `/api/rewards/*`
 - ✅ **Savings Goals (P4)**: Kid-created goals in profile preferences JSONB, progress bars with auto-update, parent "boost" contributions (no balance deduction), celebration on achievement, custom delete confirmation modal, **fun empty state** with bouncing icon + goal ideas (🍦10/🎮50/🎧60/🎢80 pts) + parent-assist CTA; routes: `/kid/goals`, `/api/goals`
 - ✅ **Confetti Celebrations**: Multi-sensory reward system - animated confetti (green/gold/multi-color), Web Audio tones (cheerful/cha-ching/fanfare), haptic feedback (Android vibration + iOS 18+ switch hack), weekly finale (5s confetti rain), CSS element animations (success pulse, milestone glow, screen shake); user preference toggle; canvas-confetti library via CDN
-- ✅ **Landing Page & Demand Capture**: Value-first landing at `/landing` with inline demo, teaser cards (Families/Roommates/Just Me), 3-question assessment quiz with 8 persona types, theme toggle (light/dark), rich analytics (navigator API, anonymized IP, timezone), glassmorphism styling, Ocean Depth dark mode theme
+- ✅ **Landing Page & Demand Capture**: Value-first landing with inline demo, teaser cards, 3-question assessment quiz with 8 persona types, theme toggle (light/dark), rich analytics; `/families` (parent-focused, default) and `/landing` (generic) variants; auth-aware routing redirects logged-in users appropriately
 - ✅ **Events Progressive Disclosure UI**: Shared EventCard component across all dashboards; collapsed/expanded states with CSS transitions; swipe gestures for mobile; item-level overflow menus (⋮) for prep task edit/delete and chore unlink; auto-expand today's events
 - ✅ **Share Page Improvements**: Empathy-first peer-to-peer copy ("Help another family feel more organized"), real family stats (chores/streak/events), data consistency with Reports page (Sunday-first weeks, max individual streak), RLS fix with `getServiceSupabaseClient()`
 - ✅ **Stripe Checkout Integration**: Dual billing modes (one-time purchases: Summer/Half Year/Full Year; subscriptions: Monthly/Annual), trial system (15-day), plan badges in AppHeader, trust badges (Secure Checkout, Tax Compliant, 30-Day Guarantee, Cancel Anytime, Family-First Support), referral/gift code support
 - ✅ **OAuth Plan Preservation**: Plan selection preserved through OAuth signup for both new and returning users; server→client redirect pattern for localStorage access
 - ✅ **Admin Panel Security**: Staff-only `/admin` with 2-minute idle auto-logout + 30-second warning modal, logout button, gift code list shows redeemer email and subscription expiry date
 - ✅ **Gift Code Auth Flow**: Gift codes preserved through all auth flows (login/signup/OAuth) via localStorage; auto-applied after family setup completion
+- ✅ **Auth-Aware Routing**: Unauthenticated → `/families`; authenticated without family → `/setup`; authenticated with family → `/` (dashboard); prevents logged-in users seeing login/signup on marketing pages
 
 ### Known Limitations
 - **Testing**: Comprehensive test suite not yet implemented

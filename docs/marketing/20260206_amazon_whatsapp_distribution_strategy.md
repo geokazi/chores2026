@@ -647,7 +647,7 @@ You can find it on Amazon or try it free: choregami.fly.dev/r/[CODE]
 
 ### Must Do (Launch Blockers)
 - [ ] Add points explanation to landing page demo section
-- [ ] Create `/families` landing variant for Amazon traffic
+- [x] Create `/families` landing variant for Amazon traffic ✅ (now default landing page)
 - [ ] Test redemption flow end-to-end with real codes
 - [ ] Verify Amazon allows prepaid access model (get written confirmation)
 
@@ -670,7 +670,7 @@ You can find it on Amazon or try it free: choregami.fly.dev/r/[CODE]
 Given infrastructure already built, recommended order:
 
 1. **Option C first**: Map complete Amazon → Redeem → First Chore flow UX
-2. Then: Implement `/families` landing page
+2. ~~Then: Implement `/families` landing page~~ ✅ Done (now default landing)
 3. Then: Design physical gift card
 4. Finally: Write Amazon Seller Central listing
 
