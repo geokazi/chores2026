@@ -6,20 +6,39 @@
 
 import { Handlers, PageProps } from "$fresh/server.ts";
 import { getAuthenticatedSession } from "../lib/auth/session.ts";
+import { isStaffEmail } from "../lib/auth/staff.ts";
 import LandingDemo from "../islands/LandingDemo.tsx";
 import ThemeToggle from "../islands/ThemeToggle.tsx";
 
-export const handler: Handlers = {
+interface FamiliesPageData {
+  isLoggedIn: boolean;
+  userEmail?: string;
+}
+
+export const handler: Handlers<FamiliesPageData> = {
   async GET(req, ctx) {
     const session = await getAuthenticatedSession(req);
+
+    // Staff users go to admin dashboard
+    if (session.isAuthenticated && session.user?.email && isStaffEmail(session.user.email)) {
+      return new Response(null, { status: 303, headers: { Location: "/admin" } });
+    }
+
+    // Authenticated users with family go to main app
     if (session.isAuthenticated && session.family) {
       return new Response(null, { status: 303, headers: { Location: "/" } });
     }
-    return ctx.render({});
+
+    return ctx.render({
+      isLoggedIn: session.isAuthenticated,
+      userEmail: session.user?.email,
+    });
   },
 };
 
-export default function FamiliesLandingPage() {
+export default function FamiliesLandingPage({ data }: PageProps<FamiliesPageData>) {
+  const { isLoggedIn, userEmail } = data;
+
   return (
     <div class="landing-page">
       <script src="/oauth-fragment-handler.js"></script>
@@ -34,8 +53,17 @@ export default function FamiliesLandingPage() {
         </div>
         <nav class="landing-nav">
           <ThemeToggle />
-          <a href="/login" class="nav-link">Log in</a>
-          <a href="/register" class="nav-link nav-link-primary">Start Free</a>
+          {isLoggedIn ? (
+            <>
+              <span class="nav-user">{userEmail}</span>
+              <a href="/logout" class="nav-link">Log out</a>
+            </>
+          ) : (
+            <>
+              <a href="/login" class="nav-link">Log in</a>
+              <a href="/register" class="nav-link nav-link-primary">Start Free</a>
+            </>
+          )}
         </nav>
       </header>
 
@@ -201,6 +229,14 @@ export default function FamiliesLandingPage() {
         }
         .nav-link:hover {
           background: rgba(16, 185, 129, 0.1);
+        }
+        .nav-user {
+          font-size: 0.875rem;
+          color: #6b7280;
+          max-width: 150px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
         .nav-link-primary {
           background: var(--color-primary, #10b981);

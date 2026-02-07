@@ -8,6 +8,7 @@
 
 import { Handlers, PageProps } from "$fresh/server.ts";
 import { getAuthenticatedSession } from "../lib/auth/session.ts";
+import { isStaffEmail } from "../lib/auth/staff.ts";
 import KidSelector from "../islands/KidSelector.tsx";
 import AppHeader from "../islands/AppHeader.tsx";
 import AppFooter from "../components/AppFooter.tsx";
@@ -31,6 +32,11 @@ interface IndexPageData {
 export const handler: Handlers<IndexPageData> = {
   async GET(req, ctx) {
     const session = await getAuthenticatedSession(req);
+
+    // Staff users go to admin dashboard
+    if (session.isAuthenticated && session.user?.email && isStaffEmail(session.user.email)) {
+      return new Response(null, { status: 303, headers: { Location: "/admin" } });
+    }
 
     // Redirect to landing page if not authenticated (value-first UX)
     if (!session.isAuthenticated || !session.family) {
