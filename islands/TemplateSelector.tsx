@@ -3,11 +3,32 @@
  * Extracted from FamilySettings for modularity (~450 lines)
  */
 
-import { useState, useEffect } from "preact/hooks";
-import { ROTATION_PRESETS, getPresetByKey, getPresetSlots, getPresetsByCategory } from "../lib/data/rotation-presets.ts";
-import { getRotationConfig, getChoresWithCustomizations, getSchedulePreview, findChoreByKey } from "../lib/services/rotation-service.ts";
-import { canAccessTemplate, hasPaidPlan, getPlan, FREE_TEMPLATES } from "../lib/plan-gate.ts";
-import type { RotationPreset, ChildSlotMapping, RotationCustomizations, CustomChore, RotationConfig } from "../lib/types/rotation.ts";
+import { useEffect, useState } from "preact/hooks";
+import {
+  getPresetByKey,
+  getPresetsByCategory,
+  getPresetSlots,
+  ROTATION_PRESETS,
+} from "../lib/data/rotation-presets.ts";
+import {
+  findChoreByKey,
+  getChoresWithCustomizations,
+  getRotationConfig,
+  getSchedulePreview,
+} from "../lib/services/rotation-service.ts";
+import {
+  canAccessTemplate,
+  FREE_TEMPLATES,
+  getPlan,
+  hasPaidPlan,
+} from "../lib/plan-gate.ts";
+import type {
+  ChildSlotMapping,
+  CustomChore,
+  RotationConfig,
+  RotationCustomizations,
+  RotationPreset,
+} from "../lib/types/rotation.ts";
 import ModalHeader from "../components/ModalHeader.tsx";
 import SchedulePreviewTable from "../components/SchedulePreviewTable.tsx";
 
@@ -17,7 +38,9 @@ interface Props {
   onRemoveRotation: () => Promise<void>;
 }
 
-export default function TemplateSelector({ settings, children, onRemoveRotation }: Props) {
+export default function TemplateSelector(
+  { settings, children, onRemoveRotation }: Props,
+) {
   const activeRotation = getRotationConfig(settings || {});
   const plan = getPlan(settings);
   const isPaid = hasPaidPlan(settings);
@@ -30,20 +53,30 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
 
   // Upgrade modal state
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [lockedTemplate, setLockedTemplate] = useState<RotationPreset | null>(null);
+  const [lockedTemplate, setLockedTemplate] = useState<RotationPreset | null>(
+    null,
+  );
 
   // Customization state
   const [showCustomize, setShowCustomize] = useState(false);
-  const [choreOverrides, setChoreOverrides] = useState<Record<string, { points?: number; enabled?: boolean }>>({});
+  const [choreOverrides, setChoreOverrides] = useState<
+    Record<string, { points?: number; enabled?: boolean }>
+  >({});
   const [customChores, setCustomChores] = useState<CustomChore[]>([]);
   const [newChoreName, setNewChoreName] = useState("");
   const [newChorePoints, setNewChorePoints] = useState("1");
   const [isSavingCustomizations, setIsSavingCustomizations] = useState(false);
-  const [inlineChildSlots, setInlineChildSlots] = useState<Record<string, string>>({});
+  const [inlineChildSlots, setInlineChildSlots] = useState<
+    Record<string, string>
+  >({});
 
   // Assignment mode state (NEW)
-  const [assignmentMode, setAssignmentMode] = useState<'rotation' | 'custom'>('rotation');
-  const [customAssignments, setCustomAssignments] = useState<Record<string, string[]>>({});
+  const [assignmentMode, setAssignmentMode] = useState<"rotation" | "custom">(
+    "rotation",
+  );
+  const [customAssignments, setCustomAssignments] = useState<
+    Record<string, string[]>
+  >({});
   const [showHiddenChores, setShowHiddenChores] = useState(false);
 
   // Daily chores, rest days, rotation frequency, and schedule preview state
@@ -56,33 +89,46 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
   const [showAddChoreForm, setShowAddChoreForm] = useState(false);
   const [addChoreName, setAddChoreName] = useState("");
   const [addChorePoints, setAddChorePoints] = useState("1");
-  const [addChoreFrequency, setAddChoreFrequency] = useState<'once' | 'daily' | 'custom'>('once');
-  const [addChoreRecurringDays, setAddChoreRecurringDays] = useState<string[]>([]);
+  const [addChoreFrequency, setAddChoreFrequency] = useState<
+    "once" | "daily" | "custom"
+  >("once");
+  const [addChoreRecurringDays, setAddChoreRecurringDays] = useState<string[]>(
+    [],
+  );
   const [addChoreAssignedTo, setAddChoreAssignedTo] = useState("");
   const [isAddingChore, setIsAddingChore] = useState(false);
 
   // Edit mode state
   const [editingChoreId, setEditingChoreId] = useState<string | null>(null);
-  const [editingChoreType, setEditingChoreType] = useState<'recurring' | 'one_time' | null>(null);
+  const [editingChoreType, setEditingChoreType] = useState<
+    "recurring" | "one_time" | null
+  >(null);
+  const [originalFrequency, setOriginalFrequency] = useState<
+    "once" | "daily" | "custom" | null
+  >(null);
   const [addChoreDueDate, setAddChoreDueDate] = useState("");
 
   // Existing chores (for Manual mode)
-  const [recurringChores, setRecurringChores] = useState<Array<{
-    id: string;
-    name: string;
-    points: number;
-    recurring_days: string[];
-    assigned_to_profile_id?: string;
-    assigned_to_name?: string;
-  }>>([]);
-  const [oneTimeChores, setOneTimeChores] = useState<Array<{
-    id: string;
-    name: string;
-    points: number;
-    due_date: string;
-    assigned_to_profile_id?: string;
-    assigned_to_name?: string;
-  }>>([]);
+  const [recurringChores, setRecurringChores] = useState<
+    Array<{
+      id: string;
+      name: string;
+      points: number;
+      recurring_days: string[];
+      assigned_to_profile_id?: string;
+      assigned_to_name?: string;
+    }>
+  >([]);
+  const [oneTimeChores, setOneTimeChores] = useState<
+    Array<{
+      id: string;
+      name: string;
+      points: number;
+      due_date: string;
+      assigned_to_profile_id?: string;
+      assigned_to_name?: string;
+    }>
+  >([]);
   const [loadingChores, setLoadingChores] = useState(false);
 
   // Initialize custom chores from family-level settings (available for ALL templates)
@@ -96,16 +142,20 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
     setLoadingChores(true);
     // Pass client's local date to avoid server timezone issues (Fly.io runs in UTC)
     const now = new Date();
-    const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    fetch(`/api/chores/recurring?localDate=${localDate}`, { credentials: 'include' })
-      .then(res => res.json())
-      .then(data => {
+    const localDate = `${now.getFullYear()}-${
+      String(now.getMonth() + 1).padStart(2, "0")
+    }-${String(now.getDate()).padStart(2, "0")}`;
+    fetch(`/api/chores/recurring?localDate=${localDate}`, {
+      credentials: "include",
+    })
+      .then((res) => res.json())
+      .then((data) => {
         if (data.success) {
           setRecurringChores(data.recurring || data.templates || []);
           setOneTimeChores(data.oneTime || []);
         }
       })
-      .catch(err => console.warn('Failed to load chores:', err))
+      .catch((err) => console.warn("Failed to load chores:", err))
       .finally(() => setLoadingChores(false));
   };
 
@@ -114,7 +164,7 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
     if (!activeRotation) {
       fetchManualChores();
     }
-  }, []);  // Only on mount - page reloads when switching modes
+  }, []); // Only on mount - page reloads when switching modes
 
   // Initialize template-specific state from active rotation
   useEffect(() => {
@@ -123,16 +173,20 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
 
       // Build inlineChildSlots from activeRotation.child_slots
       const existing: Record<string, string> = {};
-      activeRotation.child_slots?.forEach((s: { slot: string; profile_id: string }) => {
-        if (s.profile_id) {
-          existing[s.slot] = s.profile_id;
-        }
-      });
+      activeRotation.child_slots?.forEach(
+        (s: { slot: string; profile_id: string }) => {
+          if (s.profile_id) {
+            existing[s.slot] = s.profile_id;
+          }
+        },
+      );
       setInlineChildSlots(existing);
 
       // Load assignment mode and custom assignments
-      setAssignmentMode(activeRotation.assignment_mode || 'rotation');
-      setCustomAssignments(activeRotation.customizations?.custom_assignments || {});
+      setAssignmentMode(activeRotation.assignment_mode || "rotation");
+      setCustomAssignments(
+        activeRotation.customizations?.custom_assignments || {},
+      );
 
       // Load daily chores
       setDailyChores(activeRotation.customizations?.daily_chores || []);
@@ -141,7 +195,9 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
       setRestDays(activeRotation.customizations?.rest_days || []);
 
       // Load rotation period
-      setRotationPeriod(activeRotation.customizations?.rotation_period_weeks || 1);
+      setRotationPeriod(
+        activeRotation.customizations?.rotation_period_weeks || 1,
+      );
     }
   }, [activeRotation?.active_preset, activeRotation?.assignment_mode]);
 
@@ -163,11 +219,13 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
         setChildSlots({ ...inlineChildSlots });
       } else if (activeRotation.child_slots?.length > 0) {
         const existing: Record<string, string> = {};
-        activeRotation.child_slots.forEach((s: { slot: string; profile_id: string }) => {
-          if (s.profile_id) {
-            existing[s.slot] = s.profile_id;
-          }
-        });
+        activeRotation.child_slots.forEach(
+          (s: { slot: string; profile_id: string }) => {
+            if (s.profile_id) {
+              existing[s.slot] = s.profile_id;
+            }
+          },
+        );
         setChildSlots(existing);
       }
     } else {
@@ -208,13 +266,13 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
     } else {
       const slots = getPresetSlots(preset);
       mappings = slots
-        .filter(slot => childSlots[slot])
-        .map(slot => ({ slot, profile_id: childSlots[slot] }));
+        .filter((slot) => childSlots[slot])
+        .map((slot) => ({ slot, profile_id: childSlots[slot] }));
       if (mappings.length === 0) {
         alert("Please assign at least one child to a slot");
         return;
       }
-      const profileIds = mappings.map(m => m.profile_id);
+      const profileIds = mappings.map((m) => m.profile_id);
       if (new Set(profileIds).size !== profileIds.length) {
         alert("Each slot must have a different child assigned");
         return;
@@ -223,11 +281,14 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
 
     setIsApplyingRotation(true);
     try {
-      const response = await fetch('/api/rotation/apply', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ preset_key: selectedPreset, child_slots: mappings }),
+      const response = await fetch("/api/rotation/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          preset_key: selectedPreset,
+          child_slots: mappings,
+        }),
       });
       if (response.ok) {
         alert(`✅ ${preset.name} template activated!`);
@@ -247,7 +308,11 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
     if (!newChoreName.trim()) return;
     const key = `custom_${Date.now()}`;
     const parsedPoints = parseInt(newChorePoints);
-    const newChore = { key, name: newChoreName.trim(), points: isNaN(parsedPoints) ? 1 : parsedPoints };
+    const newChore = {
+      key,
+      name: newChoreName.trim(),
+      points: isNaN(parsedPoints) ? 1 : parsedPoints,
+    };
     setCustomChores([...customChores, newChore]);
     setNewChoreName("");
     setNewChorePoints("1");
@@ -257,15 +322,15 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
   const handleSaveCustomChoresOnly = async () => {
     setIsSavingCustomizations(true);
     try {
-      const response = await fetch('/api/family/custom-chores', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+      const response = await fetch("/api/family/custom-chores", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ custom_chores: customChores }),
       });
 
       if (response.ok) {
-        alert('✅ Custom chores saved!');
+        alert("✅ Custom chores saved!");
         globalThis.location.reload();
       } else {
         const result = await response.json();
@@ -281,10 +346,15 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
     if (!activeRotation) return;
 
     // Validate custom mode has at least one assignment
-    if (assignmentMode === 'custom') {
-      const totalAssignments = Object.values(customAssignments).reduce((sum, arr) => sum + arr.length, 0);
+    if (assignmentMode === "custom") {
+      const totalAssignments = Object.values(customAssignments).reduce(
+        (sum, arr) => sum + arr.length,
+        0,
+      );
       if (totalAssignments === 0) {
-        alert('Please assign at least one chore to a kid in "I\'ll Choose" mode.');
+        alert(
+          'Please assign at least one chore to a kid in "I\'ll Choose" mode.',
+        );
         return;
       }
     }
@@ -294,7 +364,9 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
     // Template-specific customizations (chore overrides + custom assignments + daily chores + rest days)
     // Always save custom_assignments so they persist when switching modes
     const customizations: RotationCustomizations = {};
-    if (Object.keys(choreOverrides).length > 0) customizations.chore_overrides = choreOverrides;
+    if (Object.keys(choreOverrides).length > 0) {
+      customizations.chore_overrides = choreOverrides;
+    }
     if (Object.keys(customAssignments).length > 0) {
       customizations.custom_assignments = customAssignments;
     }
@@ -302,7 +374,7 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
       customizations.daily_chores = dailyChores;
     }
     if (restDays.length > 0) {
-      customizations.rest_days = restDays as any;  // DayOfWeek[]
+      customizations.rest_days = restDays as any; // DayOfWeek[]
     }
     if (rotationPeriod !== 1) {
       customizations.rotation_period_weeks = rotationPeriod;
@@ -319,15 +391,18 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
     } else {
       // For slot-based templates, map slots to child assignments
       const slots = preset ? getPresetSlots(preset) : [];
-      childSlotsToSave = slots.map(slot => ({ slot, profile_id: inlineChildSlots[slot] || "" }));
+      childSlotsToSave = slots.map((slot) => ({
+        slot,
+        profile_id: inlineChildSlots[slot] || "",
+      }));
     }
 
     try {
       // Save family-level custom chores (available for ALL templates)
-      const customChoresResponse = await fetch('/api/family/custom-chores', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+      const customChoresResponse = await fetch("/api/family/custom-chores", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ custom_chores: customChores }),
       });
 
@@ -339,21 +414,23 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
       }
 
       // Save template-specific customizations (chore overrides, child slots, assignment mode)
-      const response = await fetch('/api/rotation/apply', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+      const response = await fetch("/api/rotation/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           preset_key: activeRotation.active_preset,
           child_slots: childSlotsToSave,
-          customizations: Object.keys(customizations).length > 0 ? customizations : null,
+          customizations: Object.keys(customizations).length > 0
+            ? customizations
+            : null,
           start_date: activeRotation.start_date,
           assignment_mode: assignmentMode,
         }),
       });
 
       if (response.ok) {
-        alert('✅ Customizations saved!');
+        alert("✅ Customizations saved!");
         globalThis.location.reload();
       } else {
         const result = await response.json();
@@ -366,14 +443,18 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
   };
 
   // Handle deleting a chore (Manual mode)
-  const handleDeleteChore = async (choreId: string, type: 'recurring' | 'one_time', name: string) => {
+  const handleDeleteChore = async (
+    choreId: string,
+    type: "recurring" | "one_time",
+    name: string,
+  ) => {
     if (!confirm(`Delete "${name}"?`)) return;
 
     try {
       const response = await fetch(`/api/chores/${choreId}/delete`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ type }),
       });
 
@@ -393,35 +474,41 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
   const resetChoreForm = () => {
     setAddChoreName("");
     setAddChorePoints("1");
-    setAddChoreFrequency('once');
+    setAddChoreFrequency("once");
     setAddChoreRecurringDays([]);
     setAddChoreAssignedTo("");
     setAddChoreDueDate("");
     setEditingChoreId(null);
     setEditingChoreType(null);
+    setOriginalFrequency(null);
     setShowAddChoreForm(false);
   };
 
   // Start editing a chore - populate form with existing data
-  const handleStartEdit = (chore: any, type: 'recurring' | 'one_time') => {
+  const handleStartEdit = (chore: any, type: "recurring" | "one_time") => {
     setEditingChoreId(chore.id);
     setEditingChoreType(type);
     setAddChoreName(chore.name);
     setAddChorePoints(String(chore.points));
 
-    if (type === 'recurring') {
+    if (type === "recurring") {
       const days = chore.recurring_days || [];
       setAddChoreRecurringDays(days);
       // Detect if it's daily (all 7 days) or custom
-      setAddChoreFrequency(days.length === 7 ? 'daily' : 'custom');
+      const freq = days.length === 7 ? "daily" : "custom";
+      setAddChoreFrequency(freq);
+      setOriginalFrequency(freq);
       setAddChoreDueDate("");
     } else {
-      setAddChoreFrequency('once');
+      setAddChoreFrequency("once");
+      setOriginalFrequency("once");
       setAddChoreRecurringDays([]);
       // Convert due_date to YYYY-MM-DD format for date input
       if (chore.due_date) {
         const date = new Date(chore.due_date);
-        const localDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        const localDate = `${date.getFullYear()}-${
+          String(date.getMonth() + 1).padStart(2, "0")
+        }-${String(date.getDate()).padStart(2, "0")}`;
         setAddChoreDueDate(localDate);
       }
     }
@@ -438,7 +525,7 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
       return;
     }
 
-    if (addChoreFrequency === 'custom' && addChoreRecurringDays.length === 0) {
+    if (addChoreFrequency === "custom" && addChoreRecurringDays.length === 0) {
       alert("Please select at least one day for custom recurring chores");
       return;
     }
@@ -447,51 +534,112 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
     try {
       // EDIT MODE: Update existing chore
       if (editingChoreId && editingChoreType) {
-        const response = await fetch(`/api/chores/${editingChoreId}/edit`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            type: editingChoreType,
-            name: addChoreName.trim(),
-            points: parseInt(addChorePoints) || 1,
-            assignedTo: addChoreAssignedTo,
-            ...(editingChoreType === 'recurring'
-              ? { recurringDays: addChoreRecurringDays }
-              : { dueDate: addChoreDueDate ? addChoreDueDate + "T12:00:00" : undefined }),
-          }),
-        });
+        // Check if frequency changed (any change requires delete + create)
+        const frequencyChanged = originalFrequency !== null &&
+          originalFrequency !== addChoreFrequency;
 
-        const result = await response.json();
-        if (result.success) {
-          alert(`✅ ${result.message}`);
-          resetChoreForm();
-          fetchManualChores();
+        if (frequencyChanged) {
+          // Frequency changed: delete old chore and create new one
+          const deleteRes = await fetch(
+            `/api/chores/${editingChoreId}/delete`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({ type: editingChoreType }),
+            },
+          );
+          if (!deleteRes.ok) {
+            const err = await deleteRes.json();
+            alert(`❌ Failed to update frequency: ${err.error}`);
+            setIsAddingChore(false);
+            return;
+          }
+          // Create new chore with new frequency
+          const now = new Date();
+          const localDate = `${now.getFullYear()}-${
+            String(now.getMonth() + 1).padStart(2, "0")
+          }-${String(now.getDate()).padStart(2, "0")}`;
+          const createRes = await fetch("/api/chores/create", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+              name: addChoreName.trim(),
+              points: parseInt(addChorePoints) || 1,
+              assignedTo: addChoreAssignedTo,
+              dueDate: (addChoreFrequency === "once" && addChoreDueDate)
+                ? addChoreDueDate + "T12:00:00"
+                : localDate + "T12:00:00",
+              isRecurring: addChoreFrequency !== "once",
+              recurringDays: addChoreFrequency === "daily"
+                ? ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+                : addChoreFrequency === "custom"
+                ? addChoreRecurringDays
+                : undefined,
+            }),
+          });
+          const result = await createRes.json();
+          if (result.success) {
+            alert(`✅ Chore frequency updated!`);
+            resetChoreForm();
+            fetchManualChores();
+          } else {
+            alert(`❌ ${result.error}`);
+          }
         } else {
-          alert(`❌ ${result.error}`);
+          // Frequency unchanged: just update existing chore
+          const response = await fetch(`/api/chores/${editingChoreId}/edit`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+              type: editingChoreType,
+              name: addChoreName.trim(),
+              points: parseInt(addChorePoints) || 1,
+              assignedTo: addChoreAssignedTo,
+              ...(editingChoreType === "recurring"
+                ? { recurringDays: addChoreRecurringDays }
+                : {
+                  dueDate: addChoreDueDate
+                    ? addChoreDueDate + "T12:00:00"
+                    : undefined,
+                }),
+            }),
+          });
+
+          const result = await response.json();
+          if (result.success) {
+            alert(`✅ ${result.message}`);
+            resetChoreForm();
+            fetchManualChores();
+          } else {
+            alert(`❌ ${result.error}`);
+          }
         }
-      }
-      // ADD MODE: Create new chore
+      } // ADD MODE: Create new chore
       else {
         // Use local date components to avoid UTC conversion issues
         // e.g., 8:53 PM Sunday in Pacific should stay Sunday, not become Monday UTC
         const now = new Date();
-        const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-        const response = await fetch('/api/chores/create', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
+        const localDate = `${now.getFullYear()}-${
+          String(now.getMonth() + 1).padStart(2, "0")
+        }-${String(now.getDate()).padStart(2, "0")}`;
+        const response = await fetch("/api/chores/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
           body: JSON.stringify({
             name: addChoreName.trim(),
             points: parseInt(addChorePoints) || 1,
             assignedTo: addChoreAssignedTo,
-            dueDate: localDate + "T12:00:00",  // Noon local, no Z suffix = treated as local time
-            isRecurring: addChoreFrequency !== 'once',
-            recurringDays: addChoreFrequency === 'daily'
-              ? ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
-              : addChoreFrequency === 'custom'
-                ? addChoreRecurringDays
-                : undefined,
+            dueDate: localDate + "T12:00:00", // Noon local, no Z suffix = treated as local time
+            isRecurring: addChoreFrequency !== "once",
+            recurringDays: addChoreFrequency === "daily"
+              ? ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
+              : addChoreFrequency === "custom"
+              ? addChoreRecurringDays
+              : undefined,
           }),
         });
 
@@ -514,41 +662,51 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
 
   // Group templates by free vs paid
   const allTemplates = [...everyday, ...seasonal];
-  const freeTemplates = allTemplates.filter(p => FREE_TEMPLATES.includes(p.key));
-  const paidTemplates = allTemplates.filter(p => !FREE_TEMPLATES.includes(p.key));
+  const freeTemplates = allTemplates.filter((p) =>
+    FREE_TEMPLATES.includes(p.key)
+  );
+  const paidTemplates = allTemplates.filter((p) =>
+    !FREE_TEMPLATES.includes(p.key)
+  );
 
   return (
     <div class="template-selector">
       {/* Plan Status Banner */}
-      <div class={`plan-banner ${isPaid ? 'paid' : 'free'}`}>
-        {isPaid ? (
-          <>
-            <span class="plan-icon">📚</span>
-            <span>Family Plan</span>
-            <span class="plan-expiry">ends in {plan.daysRemaining} days</span>
-          </>
-        ) : (
-          <div class="free-plan-info">
-            <div class="free-plan-main">
-              <span class="plan-icon">🎁</span>
-              <div class="free-plan-text">
-                <span class="free-plan-title">Free Plan</span>
-                <span class="free-plan-desc">3 templates included · Unlock 5 more with Family Plan</span>
+      <div class={`plan-banner ${isPaid ? "paid" : "free"}`}>
+        {isPaid
+          ? (
+            <>
+              <span class="plan-icon">📚</span>
+              <span>Family Plan</span>
+              <span class="plan-expiry">ends in {plan.daysRemaining} days</span>
+            </>
+          )
+          : (
+            <div class="free-plan-info">
+              <div class="free-plan-main">
+                <span class="plan-icon">🎁</span>
+                <div class="free-plan-text">
+                  <span class="free-plan-title">Free Plan</span>
+                  <span class="free-plan-desc">
+                    3 templates included · Unlock 5 more with Family Plan
+                  </span>
+                </div>
               </div>
+              <a
+                href="/redeem"
+                class="redeem-link"
+                onClick={() => {
+                  fetch("/api/analytics/feature-demand", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ feature: "redeem_click" }),
+                  }).catch(() => {});
+                }}
+              >
+                Redeem gift code →
+              </a>
             </div>
-            <a
-              href="/redeem"
-              class="redeem-link"
-              onClick={() => {
-                fetch("/api/analytics/feature-demand", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ feature: "redeem_click" }),
-                }).catch(() => {});
-              }}
-            >Redeem gift code →</a>
-          </div>
-        )}
+          )}
       </div>
 
       <h2>📋 Chore Assignment Mode</h2>
@@ -556,14 +714,31 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
 
       <div class="rotation-presets">
         {/* Manual Option */}
-        <div class={`rotation-preset-option manual-mode-card ${!activeRotation ? 'selected' : ''}`} style={{ borderLeft: '4px solid #6b7280' }}>
+        <div
+          class={`rotation-preset-option manual-mode-card ${
+            !activeRotation ? "selected" : ""
+          }`}
+          style={{ borderLeft: "4px solid #6b7280" }}
+        >
           <label class="manual-header">
-            <input type="radio" name="assignment-mode" value="manual" checked={!activeRotation} onChange={onRemoveRotation} />
+            <input
+              type="radio"
+              name="assignment-mode"
+              value="manual"
+              checked={!activeRotation}
+              onChange={onRemoveRotation}
+            />
             <span class="preset-icon">📝</span>
             <div class="preset-info">
               <strong>Manual (Default)</strong>
               <p>You create and assign chores yourself</p>
-              <a href="/parent/dashboard" class="manage-link" onClick={(e) => e.stopPropagation()}>View Dashboard →</a>
+              <a
+                href="/parent/dashboard"
+                class="manage-link"
+                onClick={(e) => e.stopPropagation()}
+              >
+                View Dashboard →
+              </a>
             </div>
           </label>
 
@@ -571,84 +746,130 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
           {!activeRotation && (
             <div class="manual-add-chore-section">
               {/* Existing Chores */}
-              {loadingChores ? (
-                <p class="loading-hint">Loading chores...</p>
-              ) : (recurringChores.length > 0 || oneTimeChores.length > 0) && (
-                <div class="existing-chores-section">
-                  {/* Recurring Chores */}
-                  {recurringChores.length > 0 && (
-                    <>
-                      <h4>🔁 Recurring Chores</h4>
-                      <div class="chores-list">
-                        {recurringChores.map(chore => {
-                          const dayLabels: Record<string, string> = {
-                            mon: 'M', tue: 'T', wed: 'W', thu: 'Th', fri: 'F', sat: 'Sa', sun: 'Su'
-                          };
-                          const daysDisplay = (chore.recurring_days || []).map(d => dayLabels[d] || d).join(' ');
-                          return (
-                            <div key={chore.id} class="chore-item">
-                              <div class="chore-info">
-                                <span class="chore-name">{chore.name}</span>
-                                <span class="chore-meta">
-                                  {chore.points}pt · {chore.assigned_to_name || 'Unassigned'} · {daysDisplay}
-                                </span>
+              {loadingChores
+                ? <p class="loading-hint">Loading chores...</p>
+                : (recurringChores.length > 0 || oneTimeChores.length > 0) && (
+                  <div class="existing-chores-section">
+                    {/* Recurring Chores */}
+                    {recurringChores.length > 0 && (
+                      <>
+                        <h4>🔁 Recurring Chores</h4>
+                        <div class="chores-list">
+                          {recurringChores.map((chore) => {
+                            const dayLabels: Record<string, string> = {
+                              mon: "M",
+                              tue: "T",
+                              wed: "W",
+                              thu: "Th",
+                              fri: "F",
+                              sat: "Sa",
+                              sun: "Su",
+                            };
+                            const daysDisplay = (chore.recurring_days || [])
+                              .map((d) => dayLabels[d] || d).join(" ");
+                            return (
+                              <div key={chore.id} class="chore-item">
+                                <div class="chore-info">
+                                  <span class="chore-name">{chore.name}</span>
+                                  <span class="chore-meta">
+                                    {chore.points}pt ·{" "}
+                                    {chore.assigned_to_name || "Unassigned"} ·
+                                    {" "}
+                                    {daysDisplay}
+                                  </span>
+                                </div>
+                                <div class="chore-actions">
+                                  <button
+                                    class="btn-edit"
+                                    onClick={() =>
+                                      handleStartEdit(chore, "recurring")}
+                                    title="Edit"
+                                  >
+                                    ✏️
+                                  </button>
+                                  <button
+                                    class="btn-delete"
+                                    onClick={() =>
+                                      handleDeleteChore(
+                                        chore.id,
+                                        "recurring",
+                                        chore.name,
+                                      )}
+                                    title="Delete"
+                                  >
+                                    ×
+                                  </button>
+                                </div>
                               </div>
-                              <div class="chore-actions">
-                                <button
-                                  class="btn-edit"
-                                  onClick={() => handleStartEdit(chore, 'recurring')}
-                                  title="Edit"
-                                >✏️</button>
-                                <button
-                                  class="btn-delete"
-                                  onClick={() => handleDeleteChore(chore.id, 'recurring', chore.name)}
-                                  title="Delete"
-                                >×</button>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </>
-                  )}
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
 
-                  {/* One-Time Chores */}
-                  {oneTimeChores.length > 0 && (
-                    <>
-                      <h4 style={{ marginTop: recurringChores.length > 0 ? '1rem' : 0 }}>📋 Pending One-Time Chores</h4>
-                      <div class="chores-list">
-                        {oneTimeChores.map(chore => {
-                          const dueDate = new Date(chore.due_date);
-                          const isToday = dueDate.toDateString() === new Date().toDateString();
-                          const dateDisplay = isToday ? 'Today' : dueDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-                          return (
-                            <div key={chore.id} class="chore-item">
-                              <div class="chore-info">
-                                <span class="chore-name">{chore.name}</span>
-                                <span class="chore-meta">
-                                  {chore.points}pt · {chore.assigned_to_name || 'Unassigned'} · {dateDisplay}
-                                </span>
+                    {/* One-Time Chores */}
+                    {oneTimeChores.length > 0 && (
+                      <>
+                        <h4
+                          style={{
+                            marginTop: recurringChores.length > 0 ? "1rem" : 0,
+                          }}
+                        >
+                          📋 Pending One-Time Chores
+                        </h4>
+                        <div class="chores-list">
+                          {oneTimeChores.map((chore) => {
+                            const dueDate = new Date(chore.due_date);
+                            const isToday = dueDate.toDateString() ===
+                              new Date().toDateString();
+                            const dateDisplay = isToday
+                              ? "Today"
+                              : dueDate.toLocaleDateString("en-US", {
+                                weekday: "short",
+                                month: "short",
+                                day: "numeric",
+                              });
+                            return (
+                              <div key={chore.id} class="chore-item">
+                                <div class="chore-info">
+                                  <span class="chore-name">{chore.name}</span>
+                                  <span class="chore-meta">
+                                    {chore.points}pt ·{" "}
+                                    {chore.assigned_to_name || "Unassigned"} ·
+                                    {" "}
+                                    {dateDisplay}
+                                  </span>
+                                </div>
+                                <div class="chore-actions">
+                                  <button
+                                    class="btn-edit"
+                                    onClick={() =>
+                                      handleStartEdit(chore, "one_time")}
+                                    title="Edit"
+                                  >
+                                    ✏️
+                                  </button>
+                                  <button
+                                    class="btn-delete"
+                                    onClick={() =>
+                                      handleDeleteChore(
+                                        chore.id,
+                                        "one_time",
+                                        chore.name,
+                                      )}
+                                    title="Delete"
+                                  >
+                                    ×
+                                  </button>
+                                </div>
                               </div>
-                              <div class="chore-actions">
-                                <button
-                                  class="btn-edit"
-                                  onClick={() => handleStartEdit(chore, 'one_time')}
-                                  title="Edit"
-                                >✏️</button>
-                                <button
-                                  class="btn-delete"
-                                  onClick={() => handleDeleteChore(chore.id, 'one_time', chore.name)}
-                                  title="Delete"
-                                >×</button>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
 
               <button
                 class="btn btn-outline add-chore-toggle"
@@ -667,15 +888,15 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
                 }}
               >
                 {showAddChoreForm
-                  ? (editingChoreId ? '✕ Cancel Edit' : '▼ Hide Add Chore')
-                  : '+ Add Chore'}
+                  ? (editingChoreId ? "✕ Cancel Edit" : "▼ Hide Add Chore")
+                  : "+ Add Chore"}
               </button>
 
               {showAddChoreForm && (
                 <div class="add-chore-form">
                   {/* Form Header */}
                   <h4 class="form-header">
-                    {editingChoreId ? '✏️ Edit Chore' : '➕ New Chore'}
+                    {editingChoreId ? "✏️ Edit Chore" : "➕ New Chore"}
                   </h4>
 
                   {/* Chore Name */}
@@ -684,7 +905,8 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
                     <input
                       type="text"
                       value={addChoreName}
-                      onInput={(e) => setAddChoreName((e.target as HTMLInputElement).value)}
+                      onInput={(e) =>
+                        setAddChoreName((e.target as HTMLInputElement).value)}
                       placeholder="e.g., Feed the dog"
                       class="form-input"
                     />
@@ -698,8 +920,10 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
                       onChange={(e) => setAddChorePoints(e.currentTarget.value)}
                       class="form-select"
                     >
-                      {[0,1,2,3,4,5,6,7,8,9,10].map(p => (
-                        <option key={p} value={p}>{p} pt{p !== 1 ? 's' : ''}</option>
+                      {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((p) => (
+                        <option key={p} value={p}>
+                          {p} pt{p !== 1 ? "s" : ""}
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -709,12 +933,15 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
                     <label>Assign To</label>
                     <select
                       value={addChoreAssignedTo}
-                      onChange={(e) => setAddChoreAssignedTo(e.currentTarget.value)}
+                      onChange={(e) =>
+                        setAddChoreAssignedTo(e.currentTarget.value)}
                       class="form-select"
                     >
                       <option value="">Select kid...</option>
-                      {children.map(child => (
-                        <option key={child.id} value={child.id}>{child.name}</option>
+                      {children.map((child) => (
+                        <option key={child.id} value={child.id}>
+                          {child.name}
+                        </option>
                       ))}
                     </select>
                   </div>
@@ -722,55 +949,80 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
                   {/* Frequency Selector (segmented control) */}
                   <div class="form-row">
                     <label>Repeats</label>
-                    <div class={`frequency-segmented ${editingChoreId ? 'disabled' : ''}`}>
+                    <div class="frequency-segmented">
                       <button
                         type="button"
-                        class={`frequency-btn ${addChoreFrequency === 'once' ? 'active' : ''}`}
-                        onClick={() => !editingChoreId && setAddChoreFrequency('once')}
-                        disabled={!!editingChoreId}
+                        class={`frequency-btn ${
+                          addChoreFrequency === "once" ? "active" : ""
+                        }`}
+                        onClick={() => setAddChoreFrequency("once")}
                       >
                         Once
                       </button>
                       <button
                         type="button"
-                        class={`frequency-btn ${addChoreFrequency === 'daily' ? 'active' : ''}`}
-                        onClick={() => !editingChoreId && setAddChoreFrequency('daily')}
-                        disabled={!!editingChoreId}
+                        class={`frequency-btn ${
+                          addChoreFrequency === "daily" ? "active" : ""
+                        }`}
+                        onClick={() => setAddChoreFrequency("daily")}
                       >
                         Daily
                       </button>
                       <button
                         type="button"
-                        class={`frequency-btn ${addChoreFrequency === 'custom' ? 'active' : ''}`}
-                        onClick={() => !editingChoreId && setAddChoreFrequency('custom')}
-                        disabled={!!editingChoreId}
+                        class={`frequency-btn ${
+                          addChoreFrequency === "custom" ? "active" : ""
+                        }`}
+                        onClick={() => setAddChoreFrequency("custom")}
                       >
                         Custom
                       </button>
                     </div>
-                    {editingChoreId && <span class="edit-hint">Frequency cannot be changed</span>}
                   </div>
 
                   {/* Day Selector (only for Custom frequency) */}
-                  {addChoreFrequency === 'custom' && (
+                  {addChoreFrequency === "custom" && (
                     <div class="form-row">
                       <label>Select days</label>
                       <div class="day-pills">
-                        {(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const).map(day => {
+                        {([
+                          "mon",
+                          "tue",
+                          "wed",
+                          "thu",
+                          "fri",
+                          "sat",
+                          "sun",
+                        ] as const).map((day) => {
                           const dayLabels: Record<string, string> = {
-                            mon: 'M', tue: 'T', wed: 'W', thu: 'T', fri: 'F', sat: 'S', sun: 'S'
+                            mon: "M",
+                            tue: "T",
+                            wed: "W",
+                            thu: "T",
+                            fri: "F",
+                            sat: "S",
+                            sun: "S",
                           };
-                          const isSelected = addChoreRecurringDays.includes(day);
+                          const isSelected = addChoreRecurringDays.includes(
+                            day,
+                          );
                           return (
                             <button
                               key={day}
                               type="button"
-                              class={`day-pill ${isSelected ? 'active' : ''}`}
+                              class={`day-pill ${isSelected ? "active" : ""}`}
                               onClick={() => {
                                 if (isSelected) {
-                                  setAddChoreRecurringDays(addChoreRecurringDays.filter(d => d !== day));
+                                  setAddChoreRecurringDays(
+                                    addChoreRecurringDays.filter((d) =>
+                                      d !== day
+                                    ),
+                                  );
                                 } else {
-                                  setAddChoreRecurringDays([...addChoreRecurringDays, day]);
+                                  setAddChoreRecurringDays([
+                                    ...addChoreRecurringDays,
+                                    day,
+                                  ]);
                                 }
                               }}
                               title={day.charAt(0).toUpperCase() + day.slice(1)}
@@ -784,13 +1036,15 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
                   )}
 
                   {/* Due Date (show only for one-time chores when editing) */}
-                  {addChoreFrequency === 'once' && editingChoreType === 'one_time' && (
+                  {addChoreFrequency === "once" &&
+                    editingChoreType === "one_time" && (
                     <div class="form-row">
                       <label>Due Date</label>
                       <input
                         type="date"
                         value={addChoreDueDate}
-                        onChange={(e) => setAddChoreDueDate(e.currentTarget.value)}
+                        onChange={(e) =>
+                          setAddChoreDueDate(e.currentTarget.value)}
                         class="form-input"
                       />
                     </div>
@@ -800,32 +1054,40 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
                   <button
                     class="btn btn-primary add-chore-submit"
                     onClick={handleAddChore}
-                    disabled={isAddingChore || !addChoreName.trim() || !addChoreAssignedTo}
+                    disabled={isAddingChore || !addChoreName.trim() ||
+                      !addChoreAssignedTo}
                   >
                     {isAddingChore
-                      ? (editingChoreId ? 'Saving...' : 'Creating...')
+                      ? (editingChoreId ? "Saving..." : "Creating...")
                       : editingChoreId
-                        ? 'Save Changes'
-                        : addChoreFrequency === 'once'
-                          ? 'Create Chore'
-                          : addChoreFrequency === 'daily'
-                            ? 'Create Daily Chore'
-                            : 'Create Custom Chore'}
+                      ? "Save Changes"
+                      : addChoreFrequency === "once"
+                      ? "Create Chore"
+                      : addChoreFrequency === "daily"
+                      ? "Create Daily Chore"
+                      : "Create Custom Chore"}
                   </button>
 
-                  {addChoreFrequency !== 'once' && (
+                  {addChoreFrequency !== "once" && (
                     <p class="recurring-hint">
-                      {addChoreFrequency === 'daily'
-                        ? '✓ Appears every day'
+                      {addChoreFrequency === "daily"
+                        ? "✓ Appears every day"
                         : addChoreRecurringDays.length > 0
-                          ? `✓ ${addChoreRecurringDays.map(d => {
-                              const labels: Record<string, string> = {
-                                mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu',
-                                fri: 'Fri', sat: 'Sat', sun: 'Sun'
-                              };
-                              return labels[d];
-                            }).join(', ')}`
-                          : '← Select days'}
+                        ? `✓ ${
+                          addChoreRecurringDays.map((d) => {
+                            const labels: Record<string, string> = {
+                              mon: "Mon",
+                              tue: "Tue",
+                              wed: "Wed",
+                              thu: "Thu",
+                              fri: "Fri",
+                              sat: "Sat",
+                              sun: "Sun",
+                            };
+                            return labels[d];
+                          }).join(", ")
+                        }`
+                        : "← Select days"}
                     </p>
                   )}
                 </div>
@@ -835,12 +1097,30 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
         </div>
 
         {/* Free Templates */}
-        {freeTemplates.length > 0 && <div class="preset-category-header free-header">Free Templates</div>}
-        {freeTemplates.map(preset => renderPresetOption(preset, activeRotation, settings, handleTemplateClick))}
+        {freeTemplates.length > 0 && (
+          <div class="preset-category-header free-header">Free Templates</div>
+        )}
+        {freeTemplates.map((preset) =>
+          renderPresetOption(
+            preset,
+            activeRotation,
+            settings,
+            handleTemplateClick,
+          )
+        )}
 
         {/* Family Plan Templates */}
-        {paidTemplates.length > 0 && <div class="preset-category-header paid-header">Family Plan</div>}
-        {paidTemplates.map(preset => renderPresetOption(preset, activeRotation, settings, handleTemplateClick))}
+        {paidTemplates.length > 0 && (
+          <div class="preset-category-header paid-header">Family Plan</div>
+        )}
+        {paidTemplates.map((preset) =>
+          renderPresetOption(
+            preset,
+            activeRotation,
+            settings,
+            handleTemplateClick,
+          )
+        )}
       </div>
 
       {activeRotation && (() => {
@@ -848,8 +1128,8 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
         return (
           <div class="active-template-banner">
             <div class="active-template-name">
-              <span class="active-icon">{activePreset?.icon || '📋'}</span>
-              <strong>{activePreset?.name || 'Custom Template'}</strong>
+              <span class="active-icon">{activePreset?.icon || "📋"}</span>
+              <strong>{activePreset?.name || "Custom Template"}</strong>
             </div>
             <p class="rotation-start">Started {activeRotation.start_date}</p>
           </div>
@@ -861,22 +1141,41 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
         const activePreset = getPresetByKey(activeRotation.active_preset);
         return (
           <div class="customize-section">
-            <button class="btn btn-outline" onClick={() => setShowCustomize(!showCustomize)} style={{ marginTop: "1rem", width: "100%" }}>
-              {showCustomize ? `▼ Hide ${activePreset?.name || 'Template'} Customization` : `▶ Customize ${activePreset?.name || 'Template'}`}
+            <button
+              class="btn btn-outline"
+              onClick={() => setShowCustomize(!showCustomize)}
+              style={{ marginTop: "1rem", width: "100%" }}
+            >
+              {showCustomize
+                ? `▼ Hide ${activePreset?.name || "Template"} Customization`
+                : `▶ Customize ${activePreset?.name || "Template"}`}
             </button>
 
-          {showCustomize && renderTemplateCustomizePanel(
-            activeRotation, children, inlineChildSlots, setInlineChildSlots,
-            choreOverrides, setChoreOverrides,
-            handleSaveCustomizations, isSavingCustomizations,
-            assignmentMode, setAssignmentMode,
-            customAssignments, setCustomAssignments,
-            customChores, showHiddenChores, setShowHiddenChores,
-            dailyChores, setDailyChores,
-            restDays, setRestDays,
-            rotationPeriod, setRotationPeriod,
-            showSchedulePreview, setShowSchedulePreview
-          )}
+            {showCustomize && renderTemplateCustomizePanel(
+              activeRotation,
+              children,
+              inlineChildSlots,
+              setInlineChildSlots,
+              choreOverrides,
+              setChoreOverrides,
+              handleSaveCustomizations,
+              isSavingCustomizations,
+              assignmentMode,
+              setAssignmentMode,
+              customAssignments,
+              setCustomAssignments,
+              customChores,
+              showHiddenChores,
+              setShowHiddenChores,
+              dailyChores,
+              setDailyChores,
+              restDays,
+              setRestDays,
+              rotationPeriod,
+              setRotationPeriod,
+              showSchedulePreview,
+              setShowSchedulePreview,
+            )}
           </div>
         );
       })()}
@@ -884,38 +1183,75 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
       {/* Family Custom Chores - Always visible, applies to ALL templates */}
       <div class="custom-chores-section">
         <h3>✨ Family Custom Chores</h3>
-        <p class="section-desc">These chores appear in all templates and manual mode</p>
+        <p class="section-desc">
+          These chores appear in all templates and manual mode
+        </p>
 
         <div class="custom-chores-list">
-          {customChores.map(chore => (
+          {customChores.map((chore) => (
             <div key={chore.key} class="chore-customize-row">
-              <span class="chore-icon">{chore.icon || '✨'}</span>
+              <span class="chore-icon">{chore.icon || "✨"}</span>
               <span class="chore-name">{chore.name}</span>
-              <span class="chore-points">{chore.points} pt{chore.points !== 1 ? 's' : ''}</span>
-              <button class="btn-remove" onClick={() => setCustomChores(customChores.filter(c => c.key !== chore.key))}>×</button>
+              <span class="chore-points">
+                {chore.points} pt{chore.points !== 1 ? "s" : ""}
+              </span>
+              <button
+                class="btn-remove"
+                onClick={() =>
+                  setCustomChores(
+                    customChores.filter((c) =>
+                      c.key !== chore.key
+                    ),
+                  )}
+              >
+                ×
+              </button>
             </div>
           ))}
 
-          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid #e5e7eb', alignItems: 'center' }}>
+          <div
+            style={{
+              display: "flex",
+              gap: "0.5rem",
+              marginTop: "0.75rem",
+              paddingTop: "0.75rem",
+              borderTop: "1px solid #e5e7eb",
+              alignItems: "center",
+            }}
+          >
             <input
               type="text"
               value={newChoreName}
-              onInput={(e) => setNewChoreName((e.target as HTMLInputElement).value)}
+              onInput={(e) =>
+                setNewChoreName((e.target as HTMLInputElement).value)}
               placeholder="New chore name"
-              style={{ flex: 1, padding: '0.5rem', border: '1px solid #e5e7eb', borderRadius: '6px', minWidth: '80px' }}
+              style={{
+                flex: 1,
+                padding: "0.5rem",
+                border: "1px solid #e5e7eb",
+                borderRadius: "6px",
+                minWidth: "80px",
+              }}
             />
             <select
               value={newChorePoints}
               onChange={(e) => setNewChorePoints(e.currentTarget.value)}
-              style={{ padding: '0.25rem 0.5rem', border: '1px solid #e5e7eb', borderRadius: '4px', fontSize: '0.85rem' }}
+              style={{
+                padding: "0.25rem 0.5rem",
+                border: "1px solid #e5e7eb",
+                borderRadius: "4px",
+                fontSize: "0.85rem",
+              }}
             >
-              {[0,1,2,3,4,5,6,7,8,9,10].map(p => <option key={p} value={p}>{p} pt{p !== 1 ? 's' : ''}</option>)}
+              {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((p) => (
+                <option key={p} value={p}>{p} pt{p !== 1 ? "s" : ""}</option>
+              ))}
             </select>
             <button
               class="btn btn-outline"
               onClick={handleAddCustomChore}
               disabled={!newChoreName.trim()}
-              style={{ whiteSpace: 'nowrap', padding: '0.5rem 0.75rem' }}
+              style={{ whiteSpace: "nowrap", padding: "0.5rem 0.75rem" }}
             >
               + Add
             </button>
@@ -928,7 +1264,7 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
           disabled={isSavingCustomizations}
           style={{ marginTop: "1rem" }}
         >
-          {isSavingCustomizations ? 'Saving...' : 'Save Custom Chores'}
+          {isSavingCustomizations ? "Saving..." : "Save Custom Chores"}
         </button>
       </div>
 
@@ -937,13 +1273,22 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
         <div class="modal-overlay">
           <div class="modal">
             <ModalHeader
-              title={`Set Up ${getPresetByKey(selectedPreset)?.name || 'Template'}`}
+              title={`Set Up ${
+                getPresetByKey(selectedPreset)?.name || "Template"
+              }`}
               onBack={() => setShowRotationModal(false)}
               onSubmit={handleApplyRotation}
-              submitLabel={isApplyingRotation ? 'Applying...' : 'Activate Template'}
+              submitLabel={isApplyingRotation
+                ? "Applying..."
+                : "Activate Template"}
               isSubmitting={isApplyingRotation}
             />
-            {renderSlotMapping(selectedPreset, children, childSlots, setChildSlots)}
+            {renderSlotMapping(
+              selectedPreset,
+              children,
+              childSlots,
+              setChildSlots,
+            )}
           </div>
         </div>
       )}
@@ -960,7 +1305,9 @@ export default function TemplateSelector({ settings, children, onRemoveRotation 
               backLabel="Not Now"
             />
             <p class="template-desc">{lockedTemplate.description}</p>
-            <p class="gated-notice">This template is part of <strong>Family Plan</strong>.</p>
+            <p class="gated-notice">
+              This template is part of <strong>Family Plan</strong>.
+            </p>
           </div>
         </div>
       )}
@@ -974,7 +1321,7 @@ function renderPresetOption(
   preset: RotationPreset,
   activeRotation: any,
   settings: any,
-  onClick: (p: RotationPreset) => void
+  onClick: (p: RotationPreset) => void,
 ) {
   const isActive = activeRotation?.active_preset === preset.key;
   const isLocked = !canAccessTemplate(settings, preset.key);
@@ -983,14 +1330,27 @@ function renderPresetOption(
   return (
     <label
       key={preset.key}
-      class={`rotation-preset-option ${isActive ? 'selected' : ''} ${isLocked ? 'locked' : ''}`}
-      style={{ borderLeft: `4px solid ${preset.color || '#ccc'}` }}
-      onClick={(e) => { e.preventDefault(); onClick(preset); }}
+      class={`rotation-preset-option ${isActive ? "selected" : ""} ${
+        isLocked ? "locked" : ""
+      }`}
+      style={{ borderLeft: `4px solid ${preset.color || "#ccc"}` }}
+      onClick={(e) => {
+        e.preventDefault();
+        onClick(preset);
+      }}
     >
-      <input type="radio" name="assignment-mode" value={preset.key} checked={isActive} readOnly />
+      <input
+        type="radio"
+        name="assignment-mode"
+        value={preset.key}
+        checked={isActive}
+        readOnly
+      />
       <span class="preset-icon">{preset.icon}</span>
       <div class="preset-info">
-        <strong>{preset.name} {isLocked && <span class="lock-icon">🔒</span>}</strong>
+        <strong>
+          {preset.name} {isLocked && <span class="lock-icon">🔒</span>}
+        </strong>
         <p>{preset.description}</p>
         <div class="preset-badges">
           {isActive && <span class="active-badge">ACTIVE</span>}
@@ -1005,19 +1365,22 @@ function renderSlotMapping(
   presetKey: string,
   children: { id: string; name: string }[],
   childSlots: Record<string, string>,
-  setChildSlots: (s: Record<string, string>) => void
+  setChildSlots: (s: Record<string, string>) => void,
 ) {
   const preset = getPresetByKey(presetKey);
   if (!preset) return null;
 
   if (preset.is_dynamic) {
-    const selectedKidIds = Object.values(childSlots).filter(id => id);
+    const selectedKidIds = Object.values(childSlots).filter((id) => id);
     return (
       <div class="slot-mapping">
         <h4>Select Kids to Include</h4>
-        <p class="slot-hint">All selected kids get personal chores daily. Shared chores rotate automatically.</p>
+        <p class="slot-hint">
+          All selected kids get personal chores daily. Shared chores rotate
+          automatically.
+        </p>
         <div class="dynamic-kid-list">
-          {children.map(child => {
+          {children.map((child) => {
             const isSelected = selectedKidIds.includes(child.id);
             return (
               <label key={child.id} class="dynamic-kid-checkbox">
@@ -1027,11 +1390,18 @@ function renderSlotMapping(
                   onChange={(e) => {
                     if (e.currentTarget.checked) {
                       const nextIndex = Object.keys(childSlots).length;
-                      setChildSlots({ ...childSlots, [`participant_${nextIndex}`]: child.id });
+                      setChildSlots({
+                        ...childSlots,
+                        [`participant_${nextIndex}`]: child.id,
+                      });
                     } else {
-                      const remaining = Object.values(childSlots).filter(id => id !== child.id);
+                      const remaining = Object.values(childSlots).filter((id) =>
+                        id !== child.id
+                      );
                       const newSlots: Record<string, string> = {};
-                      remaining.forEach((id, i) => { newSlots[`participant_${i}`] = id; });
+                      remaining.forEach((id, i) => {
+                        newSlots[`participant_${i}`] = id;
+                      });
                       setChildSlots(newSlots);
                     }
                   }}
@@ -1042,7 +1412,11 @@ function renderSlotMapping(
           })}
         </div>
         {selectedKidIds.length > 0 && (
-          <p class="dynamic-summary">✓ {selectedKidIds.length} kid{selectedKidIds.length > 1 ? 's' : ''} will participate</p>
+          <p class="dynamic-summary">
+            ✓ {selectedKidIds.length} kid{selectedKidIds.length > 1 ? "s" : ""}
+            {" "}
+            will participate
+          </p>
         )}
       </div>
     );
@@ -1050,22 +1424,33 @@ function renderSlotMapping(
 
   const slots = getPresetSlots(preset);
   const selectedInOtherSlots = (currentSlot: string) =>
-    Object.entries(childSlots).filter(([slot]) => slot !== currentSlot).map(([_, id]) => id);
+    Object.entries(childSlots).filter(([slot]) => slot !== currentSlot).map((
+      [_, id],
+    ) => id);
 
   return (
     <div class="slot-mapping">
       <h4>Assign Kids to Slots</h4>
       <p class="slot-hint">This template has {slots.length} slots.</p>
-      {slots.map(slot => {
+      {slots.map((slot) => {
         const usedIds = selectedInOtherSlots(slot);
         return (
           <div key={slot} class="slot-row">
             <span>{slot}</span>
-            <select value={childSlots[slot] || ""} onChange={(e) => setChildSlots({ ...childSlots, [slot]: e.currentTarget.value })}>
+            <select
+              value={childSlots[slot] || ""}
+              onChange={(e) =>
+                setChildSlots({ ...childSlots, [slot]: e.currentTarget.value })}
+            >
               <option value="">(Not assigned)</option>
-              {children.map(child => (
-                <option key={child.id} value={child.id} disabled={usedIds.includes(child.id)}>
-                  {child.name}{usedIds.includes(child.id) ? ' (assigned)' : ''}
+              {children.map((child) => (
+                <option
+                  key={child.id}
+                  value={child.id}
+                  disabled={usedIds.includes(child.id)}
+                >
+                  {child.name}
+                  {usedIds.includes(child.id) ? " (assigned)" : ""}
                 </option>
               ))}
             </select>
@@ -1079,13 +1464,16 @@ function renderSlotMapping(
 // Template-specific customization panel with assignment mode toggle
 // Custom chores are now family-level and shown separately
 function renderTemplateCustomizePanel(
-  activeRotation: RotationConfig, children: any[], inlineChildSlots: Record<string, string>,
+  activeRotation: RotationConfig,
+  children: any[],
+  inlineChildSlots: Record<string, string>,
   setInlineChildSlots: (s: Record<string, string>) => void,
-  choreOverrides: Record<string, any>, setChoreOverrides: (o: Record<string, any>) => void,
+  choreOverrides: Record<string, any>,
+  setChoreOverrides: (o: Record<string, any>) => void,
   handleSaveCustomizations: () => Promise<void>,
   isSaving: boolean,
-  assignmentMode: 'rotation' | 'custom',
-  setAssignmentMode: (mode: 'rotation' | 'custom') => void,
+  assignmentMode: "rotation" | "custom",
+  setAssignmentMode: (mode: "rotation" | "custom") => void,
   customAssignments: Record<string, string[]>,
   setCustomAssignments: (a: Record<string, string[]>) => void,
   customChores: CustomChore[],
@@ -1098,7 +1486,7 @@ function renderTemplateCustomizePanel(
   rotationPeriod: 1 | 2,
   setRotationPeriod: (period: 1 | 2) => void,
   showSchedulePreview: boolean,
-  setShowSchedulePreview: (show: boolean) => void
+  setShowSchedulePreview: (show: boolean) => void,
 ) {
   const preset = getPresetByKey(activeRotation.active_preset);
   if (!preset) return null;
@@ -1107,13 +1495,22 @@ function renderTemplateCustomizePanel(
   const isDynamic = preset.is_dynamic;
 
   // Get all enabled chores (preset + family custom)
-  const enabledChores = preset.chores.filter(c => choreOverrides[c.key]?.enabled !== false);
-  const hiddenChores = preset.chores.filter(c => choreOverrides[c.key]?.enabled === false);
+  const enabledChores = preset.chores.filter((c) =>
+    choreOverrides[c.key]?.enabled !== false
+  );
+  const hiddenChores = preset.chores.filter((c) =>
+    choreOverrides[c.key]?.enabled === false
+  );
 
   // Combine preset chores with family custom chores for assignment grid
   const allChoresForAssignment = [
     ...enabledChores,
-    ...customChores.map(c => ({ ...c, icon: c.icon || '✨', minutes: 5, category: 'custom' }))
+    ...customChores.map((c) => ({
+      ...c,
+      icon: c.icon || "✨",
+      minutes: 5,
+      category: "custom",
+    })),
   ];
 
   // For slot-based templates, track which kids are already assigned to other slots
@@ -1127,7 +1524,7 @@ function renderTemplateCustomizePanel(
   const toggleChoreAssignment = (kidId: string, choreKey: string) => {
     const current = customAssignments[kidId] || [];
     const newAssignments = current.includes(choreKey)
-      ? current.filter(k => k !== choreKey)
+      ? current.filter((k) => k !== choreKey)
       : [...current, choreKey];
     setCustomAssignments({ ...customAssignments, [kidId]: newAssignments });
   };
@@ -1136,7 +1533,7 @@ function renderTemplateCustomizePanel(
   const getKidPoints = (kidId: string) => {
     const assignments = customAssignments[kidId] || [];
     return assignments.reduce((total, choreKey) => {
-      const chore = allChoresForAssignment.find(c => c.key === choreKey);
+      const chore = allChoresForAssignment.find((c) => c.key === choreKey);
       const override = choreOverrides[choreKey];
       return total + (override?.points ?? chore?.points ?? 0);
     }, 0);
@@ -1147,24 +1544,30 @@ function renderTemplateCustomizePanel(
       {/* Assignment Mode Toggle */}
       <h4>How should chores be assigned?</h4>
       <div class="assignment-mode-toggle">
-        <label class={`mode-option ${assignmentMode === 'rotation' ? 'selected' : ''}`}>
+        <label
+          class={`mode-option ${
+            assignmentMode === "rotation" ? "selected" : ""
+          }`}
+        >
           <input
             type="radio"
             name="assignment-mode-choice"
-            checked={assignmentMode === 'rotation'}
-            onChange={() => setAssignmentMode('rotation')}
+            checked={assignmentMode === "rotation"}
+            onChange={() => setAssignmentMode("rotation")}
           />
           <div class="mode-info">
             <strong>🔄 Smart Rotation</strong>
             <span>Kids rotate through chores each week automatically</span>
           </div>
         </label>
-        <label class={`mode-option ${assignmentMode === 'custom' ? 'selected' : ''}`}>
+        <label
+          class={`mode-option ${assignmentMode === "custom" ? "selected" : ""}`}
+        >
           <input
             type="radio"
             name="assignment-mode-choice"
-            checked={assignmentMode === 'custom'}
-            onChange={() => setAssignmentMode('custom')}
+            checked={assignmentMode === "custom"}
+            onChange={() => setAssignmentMode("custom")}
           />
           <div class="mode-info">
             <strong>✋ I'll Choose</strong>
@@ -1174,105 +1577,152 @@ function renderTemplateCustomizePanel(
       </div>
 
       {/* Kid Slot Assignment (only show for rotation mode) */}
-      {assignmentMode === 'rotation' && (
+      {assignmentMode === "rotation" && (
         <>
           <h4 style={{ marginTop: "1.5rem" }}>Kid Assignment</h4>
-          {isDynamic ? (
-            <div class="dynamic-kid-customize">
-              <p class="slot-hint">Select which kids participate in this template:</p>
-              <div class="dynamic-kid-list">
-                {children.map(child => {
-                  const isSelected = Object.values(inlineChildSlots).includes(child.id);
+          {isDynamic
+            ? (
+              <div class="dynamic-kid-customize">
+                <p class="slot-hint">
+                  Select which kids participate in this template:
+                </p>
+                <div class="dynamic-kid-list">
+                  {children.map((child) => {
+                    const isSelected = Object.values(inlineChildSlots).includes(
+                      child.id,
+                    );
+                    return (
+                      <label
+                        key={child.id}
+                        class={`dynamic-kid-checkbox ${
+                          isSelected ? "selected" : ""
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={(e) => {
+                            if (e.currentTarget.checked) {
+                              const nextIndex =
+                                Object.keys(inlineChildSlots).length;
+                              setInlineChildSlots({
+                                ...inlineChildSlots,
+                                [`participant_${nextIndex}`]: child.id,
+                              });
+                            } else {
+                              const remaining = Object.entries(inlineChildSlots)
+                                .filter(([_, id]) => id !== child.id)
+                                .map(([_, id]) => id);
+                              const newSlots: Record<string, string> = {};
+                              remaining.forEach((id, i) => {
+                                newSlots[`participant_${i}`] = id;
+                              });
+                              setInlineChildSlots(newSlots);
+                            }
+                          }}
+                        />
+                        <span>{child.name}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                {Object.keys(inlineChildSlots).length > 0 && (
+                  <p class="dynamic-summary">
+                    ✓ {Object.keys(inlineChildSlots).length}{" "}
+                    kid{Object.keys(inlineChildSlots).length > 1 ? "s" : ""}
+                    {" "}
+                    participating
+                  </p>
+                )}
+              </div>
+            )
+            : (
+              <div class="inline-slot-mapping">
+                {slots.map((slot) => {
+                  const usedIds = getUsedIdsExcludingSlot(slot);
                   return (
-                    <label key={child.id} class={`dynamic-kid-checkbox ${isSelected ? 'selected' : ''}`}>
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={(e) => {
-                          if (e.currentTarget.checked) {
-                            const nextIndex = Object.keys(inlineChildSlots).length;
-                            setInlineChildSlots({ ...inlineChildSlots, [`participant_${nextIndex}`]: child.id });
-                          } else {
-                            const remaining = Object.entries(inlineChildSlots)
-                              .filter(([_, id]) => id !== child.id)
-                              .map(([_, id]) => id);
-                            const newSlots: Record<string, string> = {};
-                            remaining.forEach((id, i) => { newSlots[`participant_${i}`] = id; });
-                            setInlineChildSlots(newSlots);
-                          }
-                        }}
-                      />
-                      <span>{child.name}</span>
-                    </label>
+                    <div key={slot} class="inline-slot-row">
+                      <span class="slot-label">{slot}:</span>
+                      <select
+                        value={inlineChildSlots[slot] || ""}
+                        onChange={(e) =>
+                          setInlineChildSlots({
+                            ...inlineChildSlots,
+                            [slot]: e.currentTarget.value,
+                          })}
+                        class="slot-select"
+                      >
+                        <option value="">Select child...</option>
+                        {children.map((child) => (
+                          <option
+                            key={child.id}
+                            value={child.id}
+                            disabled={usedIds.includes(child.id)}
+                          >
+                            {child.name}
+                            {usedIds.includes(child.id) ? " (assigned)" : ""}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   );
                 })}
               </div>
-              {Object.keys(inlineChildSlots).length > 0 && (
-                <p class="dynamic-summary">✓ {Object.keys(inlineChildSlots).length} kid{Object.keys(inlineChildSlots).length > 1 ? 's' : ''} participating</p>
-              )}
-            </div>
-          ) : (
-            <div class="inline-slot-mapping">
-              {slots.map(slot => {
-                const usedIds = getUsedIdsExcludingSlot(slot);
-                return (
-                  <div key={slot} class="inline-slot-row">
-                    <span class="slot-label">{slot}:</span>
-                    <select
-                      value={inlineChildSlots[slot] || ""}
-                      onChange={(e) => setInlineChildSlots({ ...inlineChildSlots, [slot]: e.currentTarget.value })}
-                      class="slot-select"
-                    >
-                      <option value="">Select child...</option>
-                      {children.map(child => (
-                        <option key={child.id} value={child.id} disabled={usedIds.includes(child.id)}>
-                          {child.name}{usedIds.includes(child.id) ? ' (assigned)' : ''}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+            )}
         </>
       )}
 
       {/* Custom Assignment Grid (only show for custom mode) */}
-      {assignmentMode === 'custom' && (
+      {assignmentMode === "custom" && (
         <>
           <h4 style={{ marginTop: "1.5rem" }}>Assign Chores to Kids</h4>
           <p class="slot-hint">Check which chores each kid should do daily</p>
 
           {/* Assignment Grid */}
-          <div class="assignment-grid" style={{ '--kid-count': children.length } as any}>
+          <div
+            class="assignment-grid"
+            style={{ "--kid-count": children.length } as any}
+          >
             {/* Header row with kid names */}
-            <div class="grid-header" style={{ gridTemplateColumns: `1fr repeat(${children.length}, 60px)` }}>
+            <div
+              class="grid-header"
+              style={{
+                gridTemplateColumns: `1fr repeat(${children.length}, 60px)`,
+              }}
+            >
               <span class="grid-chore-name">Chore</span>
-              {children.map(child => (
+              {children.map((child) => (
                 <span key={child.id} class="grid-kid-name">{child.name}</span>
               ))}
             </div>
 
             {/* Chore rows */}
-            {allChoresForAssignment.map(chore => {
+            {allChoresForAssignment.map((chore) => {
               const override = choreOverrides[chore.key] || {};
               const points = override.points ?? chore.points;
               return (
-                <div key={chore.key} class="grid-row" style={{ gridTemplateColumns: `1fr repeat(${children.length}, 60px)` }}>
+                <div
+                  key={chore.key}
+                  class="grid-row"
+                  style={{
+                    gridTemplateColumns: `1fr repeat(${children.length}, 60px)`,
+                  }}
+                >
                   <span class="grid-chore-info">
                     <span class="chore-icon">{chore.icon}</span>
                     <span class="chore-name">{chore.name}</span>
                     <span class="chore-points-badge">{points}pt</span>
                   </span>
-                  {children.map(child => {
-                    const isAssigned = (customAssignments[child.id] || []).includes(chore.key);
+                  {children.map((child) => {
+                    const isAssigned = (customAssignments[child.id] || [])
+                      .includes(chore.key);
                     return (
                       <label key={child.id} class="grid-checkbox">
                         <input
                           type="checkbox"
                           checked={isAssigned}
-                          onChange={() => toggleChoreAssignment(child.id, chore.key)}
+                          onChange={() =>
+                            toggleChoreAssignment(child.id, chore.key)}
                         />
                       </label>
                     );
@@ -1282,10 +1732,19 @@ function renderTemplateCustomizePanel(
             })}
 
             {/* Points summary row */}
-            <div class="grid-footer" style={{ gridTemplateColumns: `1fr repeat(${children.length}, 60px)` }}>
-              <span class="grid-chore-name" style={{ fontWeight: 600 }}>Daily Points</span>
-              {children.map(child => (
-                <span key={child.id} class="grid-kid-points">{getKidPoints(child.id)} pts</span>
+            <div
+              class="grid-footer"
+              style={{
+                gridTemplateColumns: `1fr repeat(${children.length}, 60px)`,
+              }}
+            >
+              <span class="grid-chore-name" style={{ fontWeight: 600 }}>
+                Daily Points
+              </span>
+              {children.map((child) => (
+                <span key={child.id} class="grid-kid-points">
+                  {getKidPoints(child.id)} pts
+                </span>
               ))}
             </div>
           </div>
@@ -1294,9 +1753,11 @@ function renderTemplateCustomizePanel(
 
       {/* Template Chores (enable/disable and point overrides) */}
       <h4 style={{ marginTop: "1.5rem" }}>Active Chores</h4>
-      <p class="slot-hint">Enable/disable or adjust point values for this template's chores</p>
+      <p class="slot-hint">
+        Enable/disable or adjust point values for this template's chores
+      </p>
       <div class="chore-customize-list">
-        {enabledChores.map(chore => {
+        {enabledChores.map((chore) => {
           const override = choreOverrides[chore.key] || {};
           const points = override.points ?? chore.points;
           return (
@@ -1305,17 +1766,33 @@ function renderTemplateCustomizePanel(
                 <input
                   type="checkbox"
                   checked={true}
-                  onChange={(e) => setChoreOverrides({ ...choreOverrides, [chore.key]: { ...override, enabled: e.currentTarget.checked } })}
+                  onChange={(e) =>
+                    setChoreOverrides({
+                      ...choreOverrides,
+                      [chore.key]: {
+                        ...override,
+                        enabled: e.currentTarget.checked,
+                      },
+                    })}
                 />
                 <span class="chore-icon">{chore.icon}</span>
                 <span class="chore-name">{chore.name}</span>
               </label>
               <select
                 value={points}
-                onChange={(e) => setChoreOverrides({ ...choreOverrides, [chore.key]: { ...override, points: parseInt(e.currentTarget.value) } })}
+                onChange={(e) =>
+                  setChoreOverrides({
+                    ...choreOverrides,
+                    [chore.key]: {
+                      ...override,
+                      points: parseInt(e.currentTarget.value),
+                    },
+                  })}
                 class="chore-points-select"
               >
-                {[0,1,2,3,4,5,6,7,8,9,10].map(p => <option key={p} value={p}>{p} pt{p !== 1 ? 's' : ''}</option>)}
+                {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((p) => (
+                  <option key={p} value={p}>{p} pt{p !== 1 ? "s" : ""}</option>
+                ))}
               </select>
             </div>
           );
@@ -1329,13 +1806,14 @@ function renderTemplateCustomizePanel(
             class="btn-toggle-hidden"
             onClick={() => setShowHiddenChores(!showHiddenChores)}
           >
-            {showHiddenChores ? '▼' : '▶'} {hiddenChores.length} hidden chore{hiddenChores.length !== 1 ? 's' : ''}
+            {showHiddenChores ? "▼" : "▶"} {hiddenChores.length}{" "}
+            hidden chore{hiddenChores.length !== 1 ? "s" : ""}
           </button>
 
           {showHiddenChores && (
             <div class="hidden-chores-list">
               <p class="slot-hint">Check to re-enable a chore</p>
-              {hiddenChores.map(chore => {
+              {hiddenChores.map((chore) => {
                 const override = choreOverrides[chore.key] || {};
                 const points = override.points ?? chore.points;
                 return (
@@ -1344,12 +1822,21 @@ function renderTemplateCustomizePanel(
                       <input
                         type="checkbox"
                         checked={false}
-                        onChange={(e) => setChoreOverrides({ ...choreOverrides, [chore.key]: { ...override, enabled: e.currentTarget.checked } })}
+                        onChange={(e) =>
+                          setChoreOverrides({
+                            ...choreOverrides,
+                            [chore.key]: {
+                              ...override,
+                              enabled: e.currentTarget.checked,
+                            },
+                          })}
                       />
                       <span class="chore-icon">{chore.icon}</span>
                       <span class="chore-name">{chore.name}</span>
                     </label>
-                    <span class="chore-points">{points} pt{points !== 1 ? 's' : ''}</span>
+                    <span class="chore-points">
+                      {points} pt{points !== 1 ? "s" : ""}
+                    </span>
                   </div>
                 );
               })}
@@ -1359,19 +1846,25 @@ function renderTemplateCustomizePanel(
       )}
 
       {/* Daily Chores Section - Only show for rotation mode */}
-      {assignmentMode === 'rotation' && (
+      {assignmentMode === "rotation" && (
         <div class="daily-chores-toggle-section">
           <h4 style={{ marginTop: "1.5rem" }}>📅 Daily Chores (Every Day)</h4>
-          <p class="slot-hint">Check chores that should appear every day for all kids, regardless of the rotation schedule</p>
+          <p class="slot-hint">
+            Check chores that should appear every day for all kids, regardless
+            of the rotation schedule
+          </p>
 
           <div class="daily-chores-list">
             {/* Enabled preset chores */}
-            {enabledChores.map(chore => {
+            {enabledChores.map((chore) => {
               const override = choreOverrides[chore.key] || {};
               const points = override.points ?? chore.points;
               const isDaily = dailyChores.includes(chore.key);
               return (
-                <label key={chore.key} class={`daily-chore-row ${isDaily ? 'selected' : ''}`}>
+                <label
+                  key={chore.key}
+                  class={`daily-chore-row ${isDaily ? "selected" : ""}`}
+                >
                   <input
                     type="checkbox"
                     checked={isDaily}
@@ -1379,7 +1872,9 @@ function renderTemplateCustomizePanel(
                       if (e.currentTarget.checked) {
                         setDailyChores([...dailyChores, chore.key]);
                       } else {
-                        setDailyChores(dailyChores.filter(k => k !== chore.key));
+                        setDailyChores(
+                          dailyChores.filter((k) => k !== chore.key),
+                        );
                       }
                     }}
                   />
@@ -1391,10 +1886,13 @@ function renderTemplateCustomizePanel(
             })}
 
             {/* Family custom chores */}
-            {customChores.map(chore => {
+            {customChores.map((chore) => {
               const isDaily = dailyChores.includes(chore.key);
               return (
-                <label key={chore.key} class={`daily-chore-row ${isDaily ? 'selected' : ''}`}>
+                <label
+                  key={chore.key}
+                  class={`daily-chore-row ${isDaily ? "selected" : ""}`}
+                >
                   <input
                     type="checkbox"
                     checked={isDaily}
@@ -1402,11 +1900,13 @@ function renderTemplateCustomizePanel(
                       if (e.currentTarget.checked) {
                         setDailyChores([...dailyChores, chore.key]);
                       } else {
-                        setDailyChores(dailyChores.filter(k => k !== chore.key));
+                        setDailyChores(
+                          dailyChores.filter((k) => k !== chore.key),
+                        );
                       }
                     }}
                   />
-                  <span class="chore-icon">{chore.icon || '✨'}</span>
+                  <span class="chore-icon">{chore.icon || "✨"}</span>
                   <span class="chore-name">{chore.name}</span>
                   <span class="chore-points-badge">{chore.points}pt</span>
                 </label>
@@ -1416,20 +1916,26 @@ function renderTemplateCustomizePanel(
 
           {dailyChores.length > 0 && (
             <p class="daily-chores-summary">
-              ✓ {dailyChores.length} chore{dailyChores.length !== 1 ? 's' : ''} will appear every day for all kids
+              ✓ {dailyChores.length} chore{dailyChores.length !== 1 ? "s" : ""}
+              {" "}
+              will appear every day for all kids
             </p>
           )}
         </div>
       )}
 
       {/* Rotation Frequency Section - Only show for templates with multiple week types */}
-      {assignmentMode === 'rotation' && preset.week_types.length > 1 && (
+      {assignmentMode === "rotation" && preset.week_types.length > 1 && (
         <div class="rotation-frequency-section">
           <h4 style={{ marginTop: "1.5rem" }}>🔄 Rotation Frequency</h4>
           <p class="slot-hint">How often should kids swap chores?</p>
 
           <div class="rotation-frequency-options">
-            <label class={`frequency-option ${rotationPeriod === 1 ? 'selected' : ''}`}>
+            <label
+              class={`frequency-option ${
+                rotationPeriod === 1 ? "selected" : ""
+              }`}
+            >
               <input
                 type="radio"
                 name="rotation-frequency"
@@ -1439,7 +1945,11 @@ function renderTemplateCustomizePanel(
               <span class="frequency-label">Weekly</span>
               <span class="frequency-desc">Swap chores each week</span>
             </label>
-            <label class={`frequency-option ${rotationPeriod === 2 ? 'selected' : ''}`}>
+            <label
+              class={`frequency-option ${
+                rotationPeriod === 2 ? "selected" : ""
+              }`}
+            >
               <input
                 type="radio"
                 name="rotation-frequency"
@@ -1454,52 +1964,71 @@ function renderTemplateCustomizePanel(
       )}
 
       {/* Rest Days Section - Only show for rotation mode */}
-      {assignmentMode === 'rotation' && (
+      {assignmentMode === "rotation" && (
         <div class="rest-days-section">
           <h4 style={{ marginTop: "1.5rem" }}>🛋️ Rest Days (No Chores)</h4>
           <p class="slot-hint">Select days when kids get a break from chores</p>
 
           <div class="rest-days-grid">
-            {(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const).map(day => {
-              const dayLabels: Record<string, string> = {
-                mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun'
-              };
-              const isRest = restDays.includes(day);
-              return (
-                <label key={day} class={`rest-day-checkbox ${isRest ? 'selected' : ''}`}>
-                  <input
-                    type="checkbox"
-                    checked={isRest}
-                    onChange={(e) => {
-                      if (e.currentTarget.checked) {
-                        setRestDays([...restDays, day]);
-                      } else {
-                        setRestDays(restDays.filter(d => d !== day));
-                      }
-                    }}
-                  />
-                  <span>{dayLabels[day]}</span>
-                </label>
-              );
-            })}
+            {(["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const).map(
+              (day) => {
+                const dayLabels: Record<string, string> = {
+                  mon: "Mon",
+                  tue: "Tue",
+                  wed: "Wed",
+                  thu: "Thu",
+                  fri: "Fri",
+                  sat: "Sat",
+                  sun: "Sun",
+                };
+                const isRest = restDays.includes(day);
+                return (
+                  <label
+                    key={day}
+                    class={`rest-day-checkbox ${isRest ? "selected" : ""}`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isRest}
+                      onChange={(e) => {
+                        if (e.currentTarget.checked) {
+                          setRestDays([...restDays, day]);
+                        } else {
+                          setRestDays(restDays.filter((d) => d !== day));
+                        }
+                      }}
+                    />
+                    <span>{dayLabels[day]}</span>
+                  </label>
+                );
+              },
+            )}
           </div>
 
           {restDays.length > 0 && (
             <p class="rest-days-summary">
-              🛋️ No chores on {restDays.map(d => {
-                const labels: Record<string, string> = { mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday', fri: 'Friday', sat: 'Saturday', sun: 'Sunday' };
+              🛋️ No chores on {restDays.map((d) => {
+                const labels: Record<string, string> = {
+                  mon: "Monday",
+                  tue: "Tuesday",
+                  wed: "Wednesday",
+                  thu: "Thursday",
+                  fri: "Friday",
+                  sat: "Saturday",
+                  sun: "Sunday",
+                };
                 return labels[d];
-              }).join(', ')}
+              }).join(", ")}
             </p>
           )}
         </div>
       )}
 
       {/* Schedule Preview - Only show for rotation mode */}
-      {assignmentMode === 'rotation' && (() => {
+      {assignmentMode === "rotation" && (() => {
         // Build child names map for preview
         const childNames: Record<string, string> = {};
-        children.forEach(child => {
+        children.forEach((child) => {
           childNames[child.id] = child.name;
         });
 
@@ -1518,13 +2047,17 @@ function renderTemplateCustomizePanel(
           },
         };
 
-        const previews = getSchedulePreview(previewConfig, childNames, customChores);
-        const hasEmptyDays = previews.some(p => p.hasEmptyDays);
+        const previews = getSchedulePreview(
+          previewConfig,
+          childNames,
+          customChores,
+        );
+        const hasEmptyDays = previews.some((p) => p.hasEmptyDays);
 
         // Get child names in order of slots
         const assignedChildNames = Object.values(inlineChildSlots)
-          .filter(id => id)
-          .map(id => children.find(c => c.id === id)?.name || 'Unknown');
+          .filter((id) => id)
+          .map((id) => children.find((c) => c.id === id)?.name || "Unknown");
 
         return (
           <>
@@ -1532,15 +2065,19 @@ function renderTemplateCustomizePanel(
               previews={previews}
               childNames={assignedChildNames}
               collapsed={!showSchedulePreview}
-              onToggleCollapse={() => setShowSchedulePreview(!showSchedulePreview)}
+              onToggleCollapse={() =>
+                setShowSchedulePreview(!showSchedulePreview)}
             />
 
             {hasEmptyDays && showSchedulePreview && (
               <div class="empty-days-notice">
-                <p><strong>Some days have no scheduled chores.</strong></p>
+                <p>
+                  <strong>Some days have no scheduled chores.</strong>
+                </p>
                 <p class="notice-hint">
                   This is okay if intentional (e.g., "We take Sundays off").
-                  Consider adding Daily Chores above if you want chores every day.
+                  Consider adding Daily Chores above if you want chores every
+                  day.
                 </p>
               </div>
             )}
@@ -1549,8 +2086,12 @@ function renderTemplateCustomizePanel(
       })()}
 
       <div class="customize-actions">
-        <button class="btn btn-primary" onClick={handleSaveCustomizations} disabled={isSaving}>
-          {isSaving ? 'Saving...' : 'Save Template Settings'}
+        <button
+          class="btn btn-primary"
+          onClick={handleSaveCustomizations}
+          disabled={isSaving}
+        >
+          {isSaving ? "Saving..." : "Save Template Settings"}
         </button>
       </div>
     </div>

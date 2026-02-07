@@ -1,21 +1,53 @@
 /**
- * Simple Add Chore Modal - Under 200 lines
- * Focused on essential functionality: name, assign, due date, points
- * Uses existing modal patterns from project
+ * Add Chore Modal with recurrence options
+ * Features: name, assign, due date, points, and Once/Daily/Custom repeats
  */
 
-import { useState, useEffect } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import { formatEventDate } from "../lib/utils/household.ts";
 import ModalHeader from "../components/ModalHeader.tsx";
 
 // Helper to get local date as YYYY-MM-DD (avoids UTC timezone issues)
 const getLocalDateString = () => {
   const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${
+    String(now.getDate()).padStart(2, "0")
+  }`;
 };
+
+// Shared styles to reduce repetition
+const labelStyle = {
+  display: "block",
+  fontSize: "0.875rem",
+  fontWeight: "500",
+  marginBottom: "0.5rem",
+} as const;
+const inputStyle = {
+  width: "100%",
+  padding: "0.75rem",
+  border: "1px solid var(--color-border)",
+  borderRadius: "0.5rem",
+  fontSize: "1rem",
+} as const;
+const DAY_LABELS: Record<string, string> = {
+  mon: "M",
+  tue: "T",
+  wed: "W",
+  thu: "T",
+  fri: "F",
+  sat: "S",
+  sun: "S",
+};
+const DAY_FULL: Record<string, string> = {
+  mon: "Monday",
+  tue: "Tuesday",
+  wed: "Wednesday",
+  thu: "Thursday",
+  fri: "Friday",
+  sat: "Saturday",
+  sun: "Sunday",
+};
+const ALL_DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
 
 interface FamilyMember {
   id: string;
@@ -45,7 +77,16 @@ interface Props {
   preSelectedAssignee?: string; // Pre-select assignee (first participant from event)
 }
 
-export default function AddChoreModal({ isOpen, onClose, familyMembers, onSuccess, preSelectedEventId, preSelectedAssignee }: Props) {
+export default function AddChoreModal(
+  {
+    isOpen,
+    onClose,
+    familyMembers,
+    onSuccess,
+    preSelectedEventId,
+    preSelectedAssignee,
+  }: Props,
+) {
   // Default points: 0 for event-linked chores (missions), 5 for regular chores
   const defaultPoints = preSelectedEventId ? 0 : 5;
 
@@ -62,6 +103,12 @@ export default function AddChoreModal({ isOpen, onClose, familyMembers, onSucces
   const [events, setEvents] = useState<FamilyEvent[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
 
+  // Recurrence state
+  const [frequency, setFrequency] = useState<"once" | "daily" | "custom">(
+    "once",
+  );
+  const [recurringDays, setRecurringDays] = useState<string[]>([]);
+
   // Fetch events when modal opens and set pre-selected values
   useEffect(() => {
     if (isOpen) {
@@ -72,8 +119,8 @@ export default function AddChoreModal({ isOpen, onClose, familyMembers, onSucces
   // When events are loaded and we have a preSelectedEventId, set form defaults
   useEffect(() => {
     if (isOpen && preSelectedEventId && events.length > 0) {
-      const selectedEvent = events.find(e => e.id === preSelectedEventId);
-      setFormData(prev => ({
+      const selectedEvent = events.find((e) => e.id === preSelectedEventId);
+      setFormData((prev) => ({
         ...prev,
         familyEventId: preSelectedEventId,
         assignedTo: preSelectedAssignee || prev.assignedTo,
@@ -103,8 +150,8 @@ export default function AddChoreModal({ isOpen, onClose, familyMembers, onSucces
 
   // Handle event selection - update due date to match event date
   const handleEventChange = (eventId: string) => {
-    const selectedEvent = events.find(e => e.id === eventId);
-    setFormData(prev => ({
+    const selectedEvent = events.find((e) => e.id === eventId);
+    setFormData((prev) => ({
       ...prev,
       familyEventId: eventId,
       // Update due date to event date, default to 0 points for event-linked chores
@@ -126,8 +173,21 @@ export default function AddChoreModal({ isOpen, onClose, familyMembers, onSucces
       setError("Please assign the chore to someone");
       return;
     }
+    if (frequency === "custom" && recurringDays.length === 0) {
+      setError("Please select at least one day for custom recurring chores");
+      return;
+    }
 
     setIsSubmitting(true);
+
+    // Determine if recurring and which days
+    const isRecurring = frequency !== "once";
+    const allDays = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
+    const daysToSend = frequency === "daily"
+      ? allDays
+      : frequency === "custom"
+      ? recurringDays
+      : undefined;
 
     try {
       const response = await fetch("/api/chores/create", {
@@ -141,6 +201,8 @@ export default function AddChoreModal({ isOpen, onClose, familyMembers, onSucces
           dueDate: formData.dueDate + "T12:00:00", // Noon local, no Z = treated as local time
           category: "household",
           familyEventId: formData.familyEventId || null,
+          isRecurring,
+          recurringDays: daysToSend,
         }),
       });
 
@@ -156,10 +218,12 @@ export default function AddChoreModal({ isOpen, onClose, familyMembers, onSucces
           dueDate: getLocalDateString(),
           familyEventId: "",
         });
-        
+        setFrequency("once");
+        setRecurringDays([]);
+
         onSuccess?.();
         onClose();
-        
+
         // Trigger page refresh to show new chore
         setTimeout(() => {
           window.location.reload();
@@ -178,7 +242,7 @@ export default function AddChoreModal({ isOpen, onClose, familyMembers, onSucces
   if (!isOpen) return null;
 
   return (
-    <div 
+    <div
       className="modal-overlay"
       onClick={() => onClose()}
       style={{
@@ -194,7 +258,7 @@ export default function AddChoreModal({ isOpen, onClose, familyMembers, onSucces
         zIndex: 1000,
       }}
     >
-      <div 
+      <div
         className="modal"
         onClick={(e) => e.stopPropagation()}
         style={{
@@ -210,64 +274,62 @@ export default function AddChoreModal({ isOpen, onClose, familyMembers, onSucces
         <ModalHeader
           title="Add New Chore"
           onBack={onClose}
-          submitLabel={isSubmitting ? "Creating..." : "Create Chore"}
+          submitLabel={isSubmitting
+            ? "Creating..."
+            : frequency === "once"
+            ? "Create Chore"
+            : frequency === "daily"
+            ? "Create Daily Chore"
+            : "Create Recurring Chore"}
           isSubmitting={isSubmitting}
           formId="chore-form"
         />
 
-        <form id="chore-form" onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+        <form
+          id="chore-form"
+          onSubmit={handleSubmit}
+          style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
+        >
           {error && (
-            <div style={{ 
-              color: "var(--color-warning)", 
-              fontSize: "0.875rem",
-              padding: "0.5rem",
-              backgroundColor: "#fef2f2",
-              borderRadius: "0.5rem"
-            }}>
+            <div
+              style={{
+                color: "var(--color-warning)",
+                fontSize: "0.875rem",
+                padding: "0.5rem",
+                backgroundColor: "#fef2f2",
+                borderRadius: "0.5rem",
+              }}
+            >
               {error}
             </div>
           )}
 
           <div>
-            <label style={{ display: "block", fontSize: "0.875rem", fontWeight: "500", marginBottom: "0.5rem" }}>
-              Chore Name *
-            </label>
+            <label style={labelStyle}>Chore Name *</label>
             <input
               type="text"
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.currentTarget.value })}
               placeholder="e.g., Take out trash"
-              style={{
-                width: "100%",
-                padding: "0.75rem",
-                border: "1px solid var(--color-border)",
-                borderRadius: "0.5rem",
-                fontSize: "1rem",
-              }}
               required
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.currentTarget.value })}
+              style={inputStyle}
             />
           </div>
 
           <div>
-            <label style={{ display: "block", fontSize: "0.875rem", fontWeight: "500", marginBottom: "0.5rem" }}>
-              Assign To *
-            </label>
+            <label style={labelStyle}>Assign To *</label>
             <select
               value={formData.assignedTo}
-              onChange={(e) => setFormData({ ...formData, assignedTo: e.currentTarget.value })}
-              style={{
-                width: "100%",
-                padding: "0.75rem",
-                border: "1px solid var(--color-border)",
-                borderRadius: "0.5rem",
-                fontSize: "1rem",
-              }}
               required
+              style={inputStyle}
+              onChange={(e) =>
+                setFormData({ ...formData, assignedTo: e.currentTarget.value })}
             >
               <option value="">Select family member</option>
-              {assignableMembers.map((member) => (
-                <option key={member.id} value={member.id}>
-                  {member.name} {member.role === "parent" ? "(Parent)" : ""}
+              {assignableMembers.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name} {m.role === "parent" ? "(Parent)" : ""}
                 </option>
               ))}
             </select>
@@ -275,95 +337,135 @@ export default function AddChoreModal({ isOpen, onClose, familyMembers, onSucces
 
           <div style={{ display: "flex", gap: "1rem" }}>
             <div style={{ flex: 1 }}>
-              <label style={{ display: "block", fontSize: "0.875rem", fontWeight: "500", marginBottom: "0.5rem" }}>
-                Points
-              </label>
+              <label style={labelStyle}>Points</label>
               <input
                 type="number"
                 min="0"
                 max="50"
                 value={formData.points}
-                onChange={(e) => setFormData({ ...formData, points: parseInt(e.currentTarget.value) || 0 })}
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  border: "1px solid var(--color-border)",
-                  borderRadius: "0.5rem",
-                  fontSize: "1rem",
-                }}
+                style={inputStyle}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    points: parseInt(e.currentTarget.value) || 0,
+                  })}
               />
             </div>
-
             <div style={{ flex: 1 }}>
-              <label style={{ display: "block", fontSize: "0.875rem", fontWeight: "500", marginBottom: "0.5rem" }}>
-                Due Date
+              <label style={labelStyle}>
+                {frequency === "once" ? "Due Date" : "Start Date"}
               </label>
               <input
                 type="date"
                 value={formData.dueDate}
-                onChange={(e) => setFormData({ ...formData, dueDate: e.currentTarget.value })}
                 min={getLocalDateString()}
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  border: "1px solid var(--color-border)",
-                  borderRadius: "0.5rem",
-                  fontSize: "1rem",
-                }}
+                style={inputStyle}
+                onChange={(e) =>
+                  setFormData({ ...formData, dueDate: e.currentTarget.value })}
               />
             </div>
           </div>
 
+          {/* Repeats Selector */}
+          <div>
+            <label style={labelStyle}>Repeats</label>
+            <div className="frequency-segmented">
+              {(["once", "daily", "custom"] as const).map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  className={`frequency-btn ${frequency === f ? "active" : ""}`}
+                  onClick={() => setFrequency(f)}
+                >
+                  {f.charAt(0).toUpperCase() + f.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Day Pills (only for Custom frequency) */}
+          {frequency === "custom" && (
+            <div>
+              <label style={labelStyle}>Select Days</label>
+              <div className="day-pills">
+                {ALL_DAYS.map((day) => (
+                  <button
+                    key={day}
+                    type="button"
+                    title={DAY_FULL[day]}
+                    className={`day-pill ${
+                      recurringDays.includes(day) ? "active" : ""
+                    }`}
+                    onClick={() =>
+                      setRecurringDays(
+                        recurringDays.includes(day)
+                          ? recurringDays.filter((d) => d !== day)
+                          : [...recurringDays, day],
+                      )}
+                  >
+                    {DAY_LABELS[day]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Recurring hint */}
+          {frequency !== "once" && (
+            <div className="recurring-hint">
+              {frequency === "daily"
+                ? "✓ Appears every day"
+                : recurringDays.length > 0
+                ? `✓ ${
+                  recurringDays.map((d) => DAY_FULL[d].slice(0, 3)).join(", ")
+                }`
+                : "← Select days above"}
+            </div>
+          )}
+
           {/* Link to Event (optional) */}
           {events.length > 0 && (
             <div>
-              <label style={{ display: "block", fontSize: "0.875rem", fontWeight: "500", marginBottom: "0.5rem" }}>
-                📅 Link to Event (optional)
-              </label>
+              <label style={labelStyle}>📅 Link to Event (optional)</label>
               <select
                 value={formData.familyEventId}
+                style={inputStyle}
                 onChange={(e) => handleEventChange(e.currentTarget.value)}
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  border: "1px solid var(--color-border)",
-                  borderRadius: "0.5rem",
-                  fontSize: "1rem",
-                }}
               >
                 <option value="">(none)</option>
-                {events.map((event) => (
-                  <option key={event.id} value={event.id}>
-                    {event.metadata?.emoji || "📅"} {event.title} ({formatEventDate(event)})
+                {events.map((ev) => (
+                  <option key={ev.id} value={ev.id}>
+                    {ev.metadata?.emoji || "📅"} {ev.title}{" "}
+                    ({formatEventDate(ev)})
                   </option>
                 ))}
               </select>
-              <div style={{ fontSize: "0.75rem", color: "var(--color-text-light)", marginTop: "0.25rem" }}>
+              <div
+                style={{
+                  fontSize: "0.75rem",
+                  color: "var(--color-text-light)",
+                  marginTop: "0.25rem",
+                }}
+              >
                 Linked chores show as "missions" for the event
               </div>
             </div>
           )}
 
           <div>
-            <label style={{ display: "block", fontSize: "0.875rem", fontWeight: "500", marginBottom: "0.5rem" }}>
-              Description (Optional)
-            </label>
+            <label style={labelStyle}>Description (Optional)</label>
             <textarea
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.currentTarget.value })}
               placeholder="Any special instructions..."
               rows={2}
-              style={{
-                width: "100%",
-                padding: "0.75rem",
-                border: "1px solid var(--color-border)",
-                borderRadius: "0.5rem",
-                fontSize: "1rem",
-                resize: "vertical",
-              }}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  description: e.currentTarget.value,
+                })}
+              style={{ ...inputStyle, resize: "vertical" }}
             />
           </div>
-
         </form>
       </div>
     </div>

@@ -41,6 +41,20 @@ export const handler: Handlers = {
           return Response.json({ success: false, error: "Failed to delete" }, { status: 500 });
         }
 
+        // Also soft-delete any pending assignments generated from this template
+        const { error: assignmentError } = await supabase
+          .schema("choretracker")
+          .from("chore_assignments")
+          .update({ is_deleted: true })
+          .eq("chore_template_id", choreId)
+          .eq("family_id", familyId)
+          .in("status", ["pending", "assigned"]);
+
+        if (assignmentError) {
+          console.warn("Note: Could not clean up pending assignments:", assignmentError);
+          // Non-fatal - template is already deleted
+        }
+
         return Response.json({ success: true, message: "Recurring chore deleted" });
 
       } else if (body.type === 'one_time') {

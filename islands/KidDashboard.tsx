@@ -482,7 +482,7 @@ export default function KidDashboard({
                 }}
                 style={{
                   padding: "0.375rem 0.75rem",
-                  backgroundColor: "var(--color-secondary)",
+                  backgroundColor: "var(--color-secondary-button)",
                   color: "white",
                   border: "none",
                   borderRadius: "0.375rem",
@@ -743,7 +743,7 @@ export default function KidDashboard({
           style={{
             display: "inline-block",
             padding: "0.75rem 1.5rem",
-            backgroundColor: "var(--color-secondary)",
+            backgroundColor: "var(--color-secondary-button)",
             color: "white",
             borderRadius: "8px",
             textDecoration: "none",

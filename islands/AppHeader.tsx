@@ -28,9 +28,9 @@ interface Props {
 }
 
 const THEMES = [
-  { key: "meadow", name: "Fresh Meadow", emoji: "🌿" },
-  { key: "citrus", name: "Sunset Citrus", emoji: "🍊" },
-  { key: "ocean", name: "Ocean Depth", emoji: "🌊" },
+  { key: "meadow", name: "Fresh Meadow", emoji: "🌿", color: "#10b981" },
+  { key: "citrus", name: "Sunset Citrus", emoji: "🍊", color: "#f97316" },
+  { key: "ocean", name: "Ocean Depth", emoji: "🌊", color: "#3b82f6" },
 ];
 
 export default function AppHeader({
@@ -220,8 +220,13 @@ export default function AppHeader({
                       class={`nav-theme-btn ${currentTheme === theme.key ? "active" : ""}`}
                       onClick={() => handleThemeChange(theme.key)}
                       title={theme.name}
+                      style={{
+                        borderColor: theme.color,
+                        borderWidth: currentTheme === theme.key ? "3px" : "2px",
+                      }}
                     >
-                      {theme.emoji}
+                      <span class="theme-emoji">{theme.emoji}</span>
+                      {currentTheme === theme.key && <span class="theme-check">✓</span>}
                     </button>
                   ))}
                 </div>
@@ -479,24 +484,43 @@ export default function AppHeader({
           padding: 0.25rem 0.5rem 0.5rem;
         }
         .nav-theme-btn {
-          width: 44px;
+          width: 52px;
           height: 44px;
-          border: 2px solid transparent;
           border-radius: 12px;
           font-size: 1.25rem;
           cursor: pointer;
-          background: var(--color-bg);
-          transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+          background: var(--color-card);
+          transition: transform 0.15s, box-shadow 0.15s;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
         }
         .nav-theme-btn:hover {
-          transform: scale(1.08);
-          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+          transform: scale(1.05);
+          box-shadow: 0 2px 8px rgba(0,0,0,0.15);
         }
         .nav-theme-btn:active { transform: scale(0.95); }
         .nav-theme-btn.active {
-          border-color: var(--color-primary);
-          box-shadow: 0 0 0 2px var(--color-bg), 0 2px 8px rgba(0,0,0,0.15);
-          background: var(--color-card);
+          box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .nav-theme-btn .theme-emoji {
+          font-size: 1.25rem;
+        }
+        .nav-theme-btn .theme-check {
+          position: absolute;
+          bottom: 2px;
+          right: 2px;
+          font-size: 0.65rem;
+          background: var(--color-success, #22c55e);
+          color: white;
+          width: 14px;
+          height: 14px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: bold;
         }
 
         /* Right user menu - modern card design */

@@ -258,8 +258,8 @@ chores2026/
 │   ├── ParentActivityTab.tsx        # Adjustment interface
 │   ├── PointAdjustmentModal.tsx     # Point correction UI
 │   ├── BonusAwardModal.tsx          # Bonus point awards
-│   ├── TemplateSelector.tsx         # Chore template/rotation config
-│   ├── AddChoreModal.tsx            # Manual chore creation
+│   ├── TemplateSelector.tsx         # Chore template/rotation config (supports frequency changes)
+│   ├── AddChoreModal.tsx            # Chore creation with recurrence (Once/Daily/Custom)
 │   ├── FamilySettings.tsx           # Family configuration
 │   ├── ThemePicker.tsx              # Color theme selection
 │   ├── PinEntryModal.tsx            # 4-digit PIN input
@@ -649,7 +649,9 @@ curl -H "x-api-key: your_familyscore_api_key" \
 - One-time chores with due date assignment
 - Recurring chores with day-of-week selection (Mon-Sun)
 - Edit functionality for existing manual chores (name, points, assigned kid, due date)
-- Soft-delete for both recurring and one-time chores
+- Frequency change support in edit mode (deletes old, creates new)
+- Soft-delete for both recurring and one-time chores (also cleans up pending assignments)
+- AddChoreModal with full recurrence support (Once/Daily/Custom)
 
 ✅ **Confetti Celebrations**
 

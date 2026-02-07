@@ -254,7 +254,7 @@ export default function EventCard({
               onClick={onEdit}
               style={{
                 padding: "0.5rem",
-                backgroundColor: "var(--color-secondary)",
+                backgroundColor: "var(--color-secondary-button)",
                 color: "white",
                 border: "none",
                 borderRadius: "0.25rem",
@@ -1015,7 +1015,7 @@ export default function EventCard({
                           }}
                           style={{
                             padding: "0.5rem 0.75rem",
-                            backgroundColor: "var(--color-secondary)",
+                            backgroundColor: "var(--color-secondary-button)",
                             border: "none",
                             borderRadius: "0.375rem",
                             color: "white",

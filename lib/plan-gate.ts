@@ -15,10 +15,26 @@ export const PLAN_DURATIONS_DAYS: Record<Exclude<PlanType, 'free'>, number> = {
 };
 
 // Stripe price IDs (set in environment) - aligned with fresh-auth naming
-export const STRIPE_PRICE_IDS: Record<Exclude<PlanType, 'free' | 'trial'>, string> = {
-  summer: Deno.env.get('STRIPE_PRICE_TOKEN_3M') || 'price_token_3m_placeholder',
-  school_year: Deno.env.get('STRIPE_PRICE_TOKEN_10M') || 'price_token_10m_placeholder',
-  full_year: Deno.env.get('STRIPE_PREMIUM_ANNUAL_PRICE_ID') || 'price_annual_placeholder',
+// Lazy-loaded to avoid Deno.env.get() on client-side (browser)
+let _stripePriceIds: Record<Exclude<PlanType, 'free' | 'trial'>, string> | null = null;
+
+export function getStripePriceIds(): Record<Exclude<PlanType, 'free' | 'trial'>, string> {
+  if (_stripePriceIds === null) {
+    // Only called server-side where Deno is available
+    _stripePriceIds = {
+      summer: (typeof Deno !== 'undefined' ? Deno.env.get('STRIPE_PRICE_TOKEN_3M') : '') || 'price_token_3m_placeholder',
+      school_year: (typeof Deno !== 'undefined' ? Deno.env.get('STRIPE_PRICE_TOKEN_10M') : '') || 'price_token_10m_placeholder',
+      full_year: (typeof Deno !== 'undefined' ? Deno.env.get('STRIPE_PREMIUM_ANNUAL_PRICE_ID') : '') || 'price_annual_placeholder',
+    };
+  }
+  return _stripePriceIds;
+}
+
+// Keep backward compatibility export (but won't work on client - only use getStripePriceIds())
+export const STRIPE_PRICE_IDS = {
+  get summer() { return getStripePriceIds().summer; },
+  get school_year() { return getStripePriceIds().school_year; },
+  get full_year() { return getStripePriceIds().full_year; },
 };
 
 // Price display values

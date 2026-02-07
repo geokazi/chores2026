@@ -98,7 +98,7 @@ graph TB
 │   ├── 📄 LiveActivityFeed.tsx  # Recent activity stream
 │   ├── 📄 ConfettiTrigger.tsx   # Global confetti animation system
 │   ├── 📄 ParentDashboard.tsx   # Parent management interface
-│   ├── 📄 AddChoreModal.tsx     # Chore creation with event linking
+│   ├── 📄 AddChoreModal.tsx     # Chore creation with event linking and recurrence (Once/Daily/Custom)
 │   └── 📁 auth/                 # Authentication components
 ├── 📁 lib/                      # Core business logic
 │   ├── 📁 services/             # Data access and business services
@@ -262,10 +262,16 @@ DELETE /api/events/[id]
 Response: { success: boolean }
 
 // Create chore with event link (supports one-time and recurring)
+// Both AddChoreModal (/parent/dashboard) and TemplateSelector (/parent/settings) support this
 POST /api/chores/create
 Body: { name: string, points: number, assignedTo: string, dueDate: string,
         familyEventId?: string, isRecurring?: boolean, recurringDays?: string[] }
 Response: { success: boolean, choreId?: string, templateId?: string, isRecurring: boolean }
+
+// Frequency options (AddChoreModal and TemplateSelector):
+// - Once: isRecurring=false, dueDate required
+// - Daily: isRecurring=true, recurringDays=['mon','tue','wed','thu','fri','sat','sun']
+// - Custom: isRecurring=true, recurringDays=[selected days]
 ```
 
 #### Manual Mode Chore Management
@@ -285,6 +291,7 @@ Body: { type: 'recurring' | 'one_time', name?, points?, assignedTo?, recurringDa
 Response: { success: boolean, message: string }
 
 // Soft-delete a chore (recurring template or one-time assignment)
+// For recurring: also soft-deletes pending assignments generated from the template
 POST /api/chores/[chore_id]/delete
 Body: { type: 'recurring' | 'one_time' }
 Response: { success: boolean, message: string }

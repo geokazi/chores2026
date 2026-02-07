@@ -644,7 +644,7 @@ Soft-delete a chore (recurring template or one-time assignment).
 ```
 
 **Delete Logic:**
-- `type: "recurring"` → Updates `chore_templates` setting `is_deleted=true`, `is_active=false`
+- `type: "recurring"` → Updates `chore_templates` setting `is_deleted=true`, `is_active=false`, **AND** soft-deletes any pending/assigned `chore_assignments` generated from that template
 - `type: "one_time"` → Updates `chore_assignments` setting `is_deleted=true`
 
 #### POST /api/chores/[chore_id]/edit
@@ -716,7 +716,9 @@ Edit a chore (recurring template or one-time assignment).
    - Edit button (✏️) on each chore in the list
    - Pre-fills form with existing chore data
    - Can change: name, points, assigned kid, due date (one-time), recurring days (recurring)
-   - Cannot change chore type (recurring ↔ one-time)
+   - **Can change frequency** (Once ↔ Daily ↔ Custom) - implemented Feb 6, 2026
+     - When frequency changes, old chore is soft-deleted and new one created
+     - Pending assignments from deleted recurring templates are also soft-deleted
    - Uses service client for database permissions
 
 ### UTC Timezone Fix

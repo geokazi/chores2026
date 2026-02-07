@@ -410,7 +410,7 @@ export default function FamilyReports({ analytics, goalsAchieved, pointsPerDolla
         <div style={{
           textAlign: "center",
           padding: "1rem",
-          background: "linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%)",
+          background: "linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary-button) 100%)",
           borderRadius: "12px",
           color: "white",
         }}>
