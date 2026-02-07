@@ -194,6 +194,18 @@ export default function PricingCard({ isAuthenticated, referralBonus }: PricingC
         ))}
       </div>
 
+      {/* Tax notice */}
+      <p class="tax-notice">+ applicable taxes</p>
+
+      {/* Trust badges */}
+      <div class="trust-badges">
+        <span class="trust-badge">🔒 Secure Checkout</span>
+        <span class="trust-badge">📋 Tax Compliant</span>
+        <span class="trust-badge">↩️ 30-Day Guarantee</span>
+        {billingMode.value === "subscription" && <span class="trust-badge">🚫 Cancel Anytime</span>}
+        <span class="trust-badge">👨‍👩‍👧‍👦 Family-First Support</span>
+      </div>
+
       {/* Divider */}
       <div class="or-divider">
         <span>or</span>
@@ -296,6 +308,27 @@ export default function PricingCard({ isAuthenticated, referralBonus }: PricingC
           .plan-grid-2 {
             grid-template-columns: 1fr;
           }
+        }
+        .tax-notice {
+          text-align: center;
+          color: #888;
+          font-size: 0.8rem;
+          margin: 12px 0 0 0;
+        }
+        .trust-badges {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 12px 20px;
+          margin: 16px 0 8px 0;
+          padding: 12px;
+          background: #f9fafb;
+          border-radius: 10px;
+        }
+        .trust-badge {
+          font-size: 0.75rem;
+          color: #4b5563;
+          white-space: nowrap;
         }
         .plan-option {
           border: 2px solid #e5e5e5;
