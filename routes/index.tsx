@@ -27,10 +27,13 @@ interface IndexPageData {
     current_points: number;
   }>;
   error?: string;
+  showGiftSuccess?: boolean;
 }
 
 export const handler: Handlers<IndexPageData> = {
   async GET(req, ctx) {
+    const url = new URL(req.url);
+    const showGiftSuccess = url.searchParams.get("gift") === "activated";
     const session = await getAuthenticatedSession(req);
 
     // Staff users go to admin dashboard
@@ -64,12 +67,13 @@ export const handler: Handlers<IndexPageData> = {
         theme: family.theme,
       },
       familyMembers: family.members,
+      showGiftSuccess,
     });
   },
 };
 
 export default function IndexPage({ data }: PageProps<IndexPageData>) {
-  const { family, familyMembers, error } = data;
+  const { family, familyMembers, error, showGiftSuccess } = data;
 
   if (error) {
     return (
@@ -114,6 +118,20 @@ export default function IndexPage({ data }: PageProps<IndexPageData>) {
         currentUser={null}
         userRole="parent"
       />
+
+      {showGiftSuccess && (
+        <div style={{
+          background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+          color: "white",
+          padding: "1rem",
+          borderRadius: "0.5rem",
+          marginTop: "1rem",
+          textAlign: "center",
+          fontWeight: "500",
+        }}>
+          🎁 Your gift subscription is now active! Enjoy your Family Plan.
+        </div>
+      )}
 
       <div style={{ marginBottom: "1rem", marginTop: "1rem" }}>
         <h2
