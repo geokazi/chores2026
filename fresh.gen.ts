@@ -35,6 +35,7 @@ import * as $api_family_set_kid_pin from "./routes/api/family/set-kid-pin.ts";
 import * as $api_familyscore_live_family_id_ from "./routes/api/familyscore/live/[family_id].ts";
 import * as $api_familyscore_sync from "./routes/api/familyscore/sync.ts";
 import * as $api_gift_redeem from "./routes/api/gift/redeem.ts";
+import * as $api_gift_validate from "./routes/api/gift/validate.ts";
 import * as $api_goals_index from "./routes/api/goals/index.ts";
 import * as $api_kids_kid_id_pin from "./routes/api/kids/[kid_id]/pin.ts";
 import * as $api_kids_chores from "./routes/api/kids/chores.ts";
@@ -63,6 +64,7 @@ import * as $api_share_email from "./routes/api/share/email.ts";
 import * as $api_stripe_checkout from "./routes/api/stripe/checkout.ts";
 import * as $api_stripe_webhook from "./routes/api/stripe/webhook.ts";
 import * as $demo from "./routes/demo.tsx";
+import * as $families from "./routes/families.tsx";
 import * as $health from "./routes/health.ts";
 import * as $index from "./routes/index.tsx";
 import * as $join from "./routes/join.tsx";
@@ -188,6 +190,7 @@ const manifest = {
       $api_familyscore_live_family_id_,
     "./routes/api/familyscore/sync.ts": $api_familyscore_sync,
     "./routes/api/gift/redeem.ts": $api_gift_redeem,
+    "./routes/api/gift/validate.ts": $api_gift_validate,
     "./routes/api/goals/index.ts": $api_goals_index,
     "./routes/api/kids/[kid_id]/pin.ts": $api_kids_kid_id_pin,
     "./routes/api/kids/chores.ts": $api_kids_chores,
@@ -216,6 +219,7 @@ const manifest = {
     "./routes/api/stripe/checkout.ts": $api_stripe_checkout,
     "./routes/api/stripe/webhook.ts": $api_stripe_webhook,
     "./routes/demo.tsx": $demo,
+    "./routes/families.tsx": $families,
     "./routes/health.ts": $health,
     "./routes/index.tsx": $index,
     "./routes/join.tsx": $join,

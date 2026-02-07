@@ -43,7 +43,17 @@ This implementation follows the product strategy of:
 | `islands/FamilySettings.tsx` | MODIFY | -600 | Refactored to use TemplateSelector |
 | `sql/20260118_gift_codes.sql` | CREATE | ~100 | Database schema and generation functions |
 
-**Total: ~1,265 lines of new code (including tests)**
+**Feb 6, 2026 Updates:**
+
+| File | Action | Lines | Description |
+|------|--------|-------|-------------|
+| `routes/api/gift/validate.ts` | CREATE | ~42 | Code validation API (no auth required) |
+| `routes/families.tsx` | CREATE | ~350 | Family-focused landing page for Amazon traffic |
+| `routes/redeem.tsx` | MODIFY | - | Removed login requirement for code-first flow |
+| `islands/RedeemForm.tsx` | MODIFY | ~342 | 3-state flow: form → validated → success |
+| `lib/plan-gate.ts` | MODIFY | - | Updated school_year to 180 days (Half Year) |
+
+**Total: ~1,265 lines original + ~400 lines Feb 6 updates**
 
 ---
 
@@ -66,9 +76,11 @@ This implementation follows the product strategy of:
 
 | Plan | Duration | Price | Use Case |
 |------|----------|-------|----------|
-| School Year | ~10 months (300 days) | $49 | Primary offering |
-| Summer | 3 months (90 days) | $19 | Seasonal add-on |
-| Full Year | 12 months (365 days) | $59 | Best value |
+| Half Year | 6 months (180 days) | $49.99 | Primary offering |
+| Summer | 3 months (90 days) | $29.99 | Seasonal add-on |
+| Full Year | 12 months (365 days) | $79.99 | Best value |
+
+> **Updated Feb 6, 2026**: School Year renamed to Half Year, durations aligned with Stripe products.
 
 ---
 
@@ -80,7 +92,7 @@ This implementation follows the product strategy of:
 export type PlanType = 'free' | 'school_year' | 'summer' | 'full_year';
 
 export const PLAN_DURATIONS_DAYS: Record<Exclude<PlanType, 'free'>, number> = {
-  school_year: 300,  // ~10 months
+  school_year: 180,  // 6 months (Half Year)
   summer: 90,        // 3 months
   full_year: 365,    // 12 months
 };
@@ -150,6 +162,38 @@ CREATE TABLE IF NOT EXISTS public.gift_codes (
 CREATE OR REPLACE FUNCTION generate_gift_code() RETURNS TEXT;
 CREATE OR REPLACE FUNCTION create_gift_code(p_plan_type TEXT, p_purchased_by UUID, p_message TEXT DEFAULT NULL) RETURNS TEXT;
 ```
+
+### Validation API (`routes/api/gift/validate.ts`) - NEW Feb 6, 2026
+
+**Endpoint:** `POST /api/gift/validate`
+
+**Purpose:** Validate gift codes **without requiring login** - enables code-first flow.
+
+**Request:**
+```json
+{ "code": "GIFT-XXXX-XXXX-XXXX" }
+```
+
+**Response (Valid):**
+```json
+{
+  "valid": true,
+  "plan_type": "school_year",
+  "message": "Happy Birthday!"
+}
+```
+
+**Response (Invalid):**
+```json
+{ "valid": false, "error": "Invalid or already used code" }
+```
+
+**Logic:**
+1. Normalize code (uppercase, trim)
+2. Query `gift_codes` table for unused code
+3. Return plan info without redeeming
+
+---
 
 ### Redemption API (`routes/api/gift/redeem.ts`)
 
@@ -257,6 +301,55 @@ interface Props {
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+### Code-First Redemption Flow (NEW Feb 6, 2026)
+
+For users arriving from external sources (Amazon gift cards, marketing links):
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│              CODE-FIRST REDEMPTION FLOW                          │
+│         (No login required to validate code)                     │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  1. User arrives at /families or /redeem?code=GIFT-XXXX         │
+│     (from Amazon gift card, marketing email, etc.)              │
+│                    │                                            │
+│                    ▼                                            │
+│  2. Enters gift code (or code is pre-filled from URL)           │
+│     [GIFT-XXXX-XXXX-XXXX]                                       │
+│                    │                                            │
+│                    ▼                                            │
+│  3. Clicks "Check Code" → POST /api/gift/validate               │
+│     (No login required!)                                        │
+│                    │                                            │
+│         ┌─────────┴─────────┐                                   │
+│         ▼                   ▼                                   │
+│     [Invalid]           [Valid]                                 │
+│     Show error          Show plan info                          │
+│                    │                                            │
+│         ┌─────────┴─────────┐                                   │
+│         ▼                   ▼                                   │
+│   [Not Logged In]    [Logged In]                                │
+│   Show login prompt  Auto-redeem                                │
+│   with returnTo URL  via /api/gift/redeem                       │
+│         │                   │                                   │
+│         ▼                   ▼                                   │
+│   /login?returnTo=    Success!                                  │
+│   /redeem?code=XXX    Plan activated                            │
+│         │                                                       │
+│         ▼                                                       │
+│   After login, returns to /redeem?code=XXX                      │
+│   Code pre-filled, click "Check Code" → auto-redeems            │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Key benefits:**
+- Reduces friction for gift recipients
+- Validates code before requiring account creation
+- Preserves code through login/signup flow via `returnTo` URL
+- Supports `/families` landing page for Amazon traffic
+
 ---
 
 ## Manual Operations (Phase 1)
@@ -269,7 +362,7 @@ Until Stripe integration (Phase 2), create codes via Supabase SQL Editor:
 -- Get your admin user UUID first
 SELECT id, email FROM auth.users WHERE email = 'your-email@example.com';
 
--- Create a School Year gift code
+-- Create a Half Year gift code (formerly School Year)
 SELECT create_gift_code('school_year', 'YOUR-ADMIN-USER-UUID', 'Welcome to ChoreGami!');
 
 -- Create a Summer gift code

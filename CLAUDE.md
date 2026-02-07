@@ -220,6 +220,12 @@ Parent Experience:
 System Features:
 ├── Theme Selection (Fresh Meadow/Sunset Citrus/Ocean Depth)
 └── PIN Setup/Entry Modals
+
+Marketing & Monetization:
+├── /families           # Family-focused landing page (Amazon traffic)
+├── /landing            # Multi-persona landing page
+├── /pricing            # Plan selection + Stripe checkout
+└── /redeem             # Gift code redemption (code-first, no login required)
 ```
 
 ### File Structure

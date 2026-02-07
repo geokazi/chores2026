@@ -265,6 +265,8 @@ if (existingProfile) {
 - [OAuth Plan Preservation Fix](../troubleshooting/20260206_oauth_plan_preservation_fix.md)
 - [Plan Gate Utility](../../lib/plan-gate.ts)
 - [Trial Device Hash Migration](../../sql/20260206_trial_device_hash.sql)
+- [Template Gating & Gift Codes](../planned/20260118_template_gating_gift_codes.md) - Code-first redemption flow
+- [Amazon Distribution Strategy](../marketing/20260206_amazon_whatsapp_distribution_strategy.md) - `/families` landing page
 
 ---
 

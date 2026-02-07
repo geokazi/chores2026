@@ -481,23 +481,27 @@ See: [Analytics & Demand Tracking](./analytics/20260130_analytics_tracking.md) f
 
 **Phase 1 (✅ Implemented Jan 19, 2026)**: Prepaid time-pass model via gift codes
 
-| Tier | Access | Price |
-|------|--------|-------|
-| **Free** | Manual chores, Daily Basics, Dynamic Daily templates | $0 |
-| **School Year Pass** | All templates (~10 months) | $49 |
-| **Summer Pass** | All templates (3 months) | $19 |
-| **Full Year Pass** | All templates (12 months) | $59 |
+| Tier | Access | Duration | Price |
+|------|--------|----------|-------|
+| **Free** | Manual chores, Daily Basics, Dynamic Daily templates | Unlimited | $0 |
+| **Summer Pass** | All templates | 3 months | $29.99 |
+| **Half Year Pass** | All templates | 6 months | $49.99 |
+| **Full Year Pass** | All templates | 12 months | $79.99 |
 
 **Key Features:**
-- Gift code redemption (`/redeem` page)
+- Gift code redemption (`/redeem` page) with **code-first validation** (no login required to check code validity)
+- `/families` landing page optimized for Amazon gift card traffic
 - Plan extension (codes add days, don't replace existing plans)
 - JSONB-based plan storage (no database migrations)
 - See: [Template Gating Implementation](./planned/20260118_template_gating_gift_codes.md)
 
-**Phase 2 (Planned)**: Stripe integration for direct purchases
-- In-app purchase flow
-- Gift purchase for others
-- Promo code management
+**Phase 2 (✅ Implemented Feb 6, 2026)**: Stripe Checkout integration
+- Dual billing modes: one-time purchases + subscriptions
+- Trial system (15-day device-fingerprinted trials)
+- Plan badges in header (trial countdown, upgrade prompt, paid status)
+- Trust badges (Secure Checkout, Tax Compliant, 30-Day Guarantee)
+- OAuth plan preservation (localStorage bridge for signup flow)
+- See: [Stripe Checkout Implementation](./milestones/20260206_stripe_checkout_implementation.md)
 
 ### Premium Features (Family Plan)
 - All 7 chore rotation templates (vs 3 free)
@@ -558,6 +562,6 @@ See: [Analytics & Demand Tracking](./analytics/20260130_analytics_tracking.md) f
 
 **Document Owner**: Product Team
 **Review Cycle**: Monthly
-**Last Updated**: January 30, 2026
-**Next Review**: February 26, 2026
+**Last Updated**: February 6, 2026
+**Next Review**: March 6, 2026
 **Stakeholders**: Engineering, Design, Marketing, Customer Success

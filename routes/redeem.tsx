@@ -1,7 +1,7 @@
 /**
  * Gift Code Redemption Page
  * /redeem or /redeem?code=GIFT-XXXX-XXXX-XXXX
- * ~70 lines - Simple page with RedeemForm island
+ * ~60 lines - Code-first flow: validate before requiring login
  */
 
 import { Handlers, PageProps } from "$fresh/server.ts";
@@ -20,16 +20,11 @@ export const handler: Handlers<RedeemPageData> = {
     const url = new URL(req.url);
     const prefillCode = url.searchParams.get("code") || undefined;
 
-    // Redirect to login if not authenticated
-    if (!session.isAuthenticated) {
-      const returnUrl = encodeURIComponent(url.pathname + url.search);
-      return new Response(null, {
-        status: 303,
-        headers: { Location: `/login?returnTo=${returnUrl}` },
-      });
-    }
-
-    return ctx.render({ prefillCode, isLoggedIn: true });
+    // Allow access without login - code-first validation
+    return ctx.render({
+      prefillCode,
+      isLoggedIn: session.isAuthenticated,
+    });
   },
 };
 
@@ -37,7 +32,7 @@ export default function RedeemPage({ data }: PageProps<RedeemPageData>) {
   return (
     <div class="redeem-container">
       <div class="redeem-card">
-        <RedeemForm prefillCode={data.prefillCode} />
+        <RedeemForm prefillCode={data.prefillCode} isLoggedIn={data.isLoggedIn} />
         <AppFooter />
       </div>
 

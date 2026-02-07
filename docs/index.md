@@ -1,8 +1,8 @@
 # ChoreGami 2026 Documentation
 
-**Version**: 1.42
+**Version**: 1.43
 **Status**: ✅ Production Ready
-**Last Updated**: February 6, 2026 (Stripe Checkout + Plan Badge implementation)
+**Last Updated**: February 6, 2026 (Marketing landing pages + code-first redemption)
 
 **Project Overview**: A simplified, real-time chore completion system built with Deno Fresh, transforming routine family chores into an engaging, competitive experience with sub-second real-time updates across all family devices.
 
@@ -48,7 +48,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-17 | [↳ **Dynamic Template Expansion**](./milestones/20260117_dynamic_template_expansion.md) | ✅ Complete | Distribution-based chores scale to any family size (1-8 kids) |
 | 2026-01-18 | [**Legal Pages & Auth Flow Fixes**](./milestones/20260118_legal_pages_auth_flow_fixes.md) | ✅ Complete | Parent-friendly Terms, COPPA-aware Privacy, phone OTP redirect fix |
 | 2026-01-18 | [**Authentication Security Hardening**](./milestones/20260118_authentication_security_hardening.md) | ✅ Complete | Rate limiting, enumeration protection, honeypot bot detection |
-| 2026-01-19 | [**Template Gating & Gift Codes**](./planned/20260118_template_gating_gift_codes.md) | ✅ Complete | Prepaid plan tiers ($19-$59), gift code redemption, template access control, TemplateSelector extraction |
+| 2026-01-19 | [**Template Gating & Gift Codes**](./planned/20260118_template_gating_gift_codes.md) | ✅ Complete | Prepaid plan tiers ($29.99-$79.99), gift code redemption with **code-first validation** (no login required to validate), template access control, TemplateSelector extraction |
 | 2026-01-19 | [**Signup & PIN Detection Fixes**](./milestones/20260119_signup_and_pin_fixes.md) | ✅ Complete | Fixed Supabase schema config, first-time PIN UX, settings order, PIN detection after logout |
 | 2026-01-19/20 | [**Events Calendar & Prep Tasks**](./milestones/20260120_events_prep_tasks_implementation.md) | ✅ Complete | Event-linked chores as "missions", prep tasks (no points), parent events page |
 | 2026-01-19/20 | [↳ Original Planning](./milestones/20260119_events_calendar_original_plan.md) | ✅ Complete | Design decisions and philosophy |
@@ -98,6 +98,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-02-05 | [**Events Progressive Disclosure**](./milestones/20260205_events_progressive_disclosure_implementation.md) | ✅ Complete | Shared EventCard component, collapsed/expanded states, swipe gestures, item-level overflow menus for prep tasks and chores |
 | 2026-02-05 | [**Share Page Improvements**](./milestones/20260205_share_page_improvements.md) | ✅ Complete | Empathy-first copy, real family stats (chores/streak/events), data consistency with Reports page, RLS fix documented in CLAUDE.md |
 | 2026-02-06 | [**Stripe Checkout + Plan Badges**](./milestones/20260206_stripe_checkout_implementation.md) | ✅ Complete | Dual billing modes (one-time + subscription), plan badges, trust badges, OAuth plan preservation fix |
+| 2026-02-06 | [**Marketing Landing Pages**](./marketing/20260206_amazon_whatsapp_distribution_strategy.md) | ✅ Complete | `/families` landing page for Amazon traffic, code-first `/redeem` flow (validate before login), Half Year pricing alignment |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 
@@ -350,5 +351,5 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 
 ---
 
-*Last updated: February 6, 2026 (v1.42)*
+*Last updated: February 6, 2026 (v1.43)*
 *Maintained by: Claude Code AI Assistant*
