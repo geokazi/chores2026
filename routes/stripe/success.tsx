@@ -42,7 +42,7 @@ export default function StripeSuccessPage({ data }: PageProps<SuccessPageData>) 
 
   const planLabels: Record<string, string> = {
     summer: "Summer (3 months)",
-    school_year: "School Year (10 months)",
+    school_year: "Half Year (6 months)",
     full_year: "Full Year (12 months)",
   };
 

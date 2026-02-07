@@ -228,7 +228,7 @@ Deno.test({
     });
 
     await t.step("has correct duration for school_year", () => {
-      assertEquals(PLAN_DURATIONS_DAYS.school_year, 300);
+      assertEquals(PLAN_DURATIONS_DAYS.school_year, 180);
     });
 
     await t.step("has correct duration for full_year", () => {

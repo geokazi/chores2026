@@ -87,13 +87,13 @@ Deno.test("gift/redeem - trims whitespace from code", () => {
 
 // ===== Plan Extension Logic Tests =====
 
-Deno.test("gift/redeem - school_year plan adds 300 days", () => {
+Deno.test("gift/redeem - school_year plan adds 180 days", () => {
   const newExpiry = calculateNewExpiry({}, "school_year");
   const expectedDays = PLAN_DURATIONS_DAYS.school_year;
-  assertEquals(expectedDays, 300);
+  assertEquals(expectedDays, 180);
 
   const today = new Date();
-  today.setDate(today.getDate() + 300);
+  today.setDate(today.getDate() + 180);
   const diffDays = Math.abs(newExpiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
   assertEquals(diffDays < 2, true);
 });
@@ -114,9 +114,9 @@ Deno.test("gift/redeem - extends existing plan", () => {
 
   const newExpiry = calculateNewExpiry(existingSettings, "school_year");
 
-  // Should be 30 days (existing) + 300 days (school_year) = ~330 days from now
+  // Should be 30 days (existing) + 180 days (school_year) = ~210 days from now
   const expectedDate = new Date();
-  expectedDate.setDate(expectedDate.getDate() + 330);
+  expectedDate.setDate(expectedDate.getDate() + 210);
 
   const diffDays = Math.abs(newExpiry.getTime() - expectedDate.getTime()) / (1000 * 60 * 60 * 24);
   assertEquals(diffDays < 2, true);
