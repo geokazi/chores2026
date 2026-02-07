@@ -128,3 +128,46 @@ export function getTrialInfo(settings: any): TrialInfo {
     startedAt,
   };
 }
+
+/** Display names for plan types */
+export const PLAN_DISPLAY_NAMES: Record<Exclude<PlanType, 'free' | 'trial'>, string> = {
+  summer: 'Summer',
+  school_year: 'School Year',
+  full_year: 'Full Year',
+};
+
+/** Plan badge info for AppHeader */
+export interface PlanBadgeInfo {
+  type: 'trial' | 'expired' | 'paid';
+  label: string;
+}
+
+/** Get plan badge info for display in AppHeader */
+export function getPlanBadge(settings: any): PlanBadgeInfo | undefined {
+  const plan = getPlan(settings);
+  const trialInfo = getTrialInfo(settings);
+
+  // Trial active
+  if (plan.type === 'trial' && trialInfo.isActive) {
+    return { type: 'trial', label: `${trialInfo.daysRemaining}d left` };
+  }
+
+  // Trial expired (no paid plan)
+  if (trialInfo.isExpired || plan.type === 'free') {
+    // Check if they ever had a trial
+    const hadTrial = settings?.apps?.choregami?.trial?.started_at;
+    if (hadTrial) {
+      return { type: 'expired', label: 'Upgrade' };
+    }
+    // Never had a plan - no badge
+    return undefined;
+  }
+
+  // Paid plan
+  if (plan.type !== 'free' && plan.type !== 'trial') {
+    const displayName = PLAN_DISPLAY_NAMES[plan.type as Exclude<PlanType, 'free' | 'trial'>];
+    return { type: 'paid', label: displayName };
+  }
+
+  return undefined;
+}

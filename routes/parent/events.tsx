@@ -7,6 +7,7 @@
 import { Handlers, PageProps } from "$fresh/server.ts";
 import { getAuthenticatedSession } from "../../lib/auth/session.ts";
 import { getServiceSupabaseClient } from "../../lib/supabase.ts";
+import { getPlanBadge, type PlanBadgeInfo } from "../../lib/plan-gate.ts";
 import {
   ExpandedEvent,
   expandEventsForDateRange,
@@ -65,6 +66,7 @@ interface EventsPageData {
   upcoming: FamilyEvent[];
   pastEventsCount: number;
   parentProfileId?: string;
+  planBadge?: PlanBadgeInfo;
   error?: string;
 }
 
@@ -224,6 +226,7 @@ export const handler: Handlers<EventsPageData> = {
         upcoming,
         pastEventsCount: pastEventsCount || 0,
         parentProfileId,
+        planBadge: getPlanBadge(family.settings),
       });
     } catch (error) {
       console.error("Error loading events:", error);
@@ -248,6 +251,7 @@ export default function EventsPage({ data }: PageProps<EventsPageData>) {
     upcoming,
     pastEventsCount,
     parentProfileId,
+    planBadge,
     error,
   } = data;
 
@@ -278,6 +282,7 @@ export default function EventsPage({ data }: PageProps<EventsPageData>) {
         familyMembers={members}
         currentUser={currentUser}
         userRole="parent"
+        planBadge={planBadge}
       />
 
       {error

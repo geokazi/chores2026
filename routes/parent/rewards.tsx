@@ -7,6 +7,7 @@ import { Handlers, PageProps } from "$fresh/server.ts";
 import { getAuthenticatedSession } from "../../lib/auth/session.ts";
 import { RewardsService } from "../../lib/services/rewards-service.ts";
 import { GoalsService } from "../../lib/services/goals-service.ts";
+import { getPlanBadge, type PlanBadgeInfo } from "../../lib/plan-gate.ts";
 import type { AvailableReward, RewardPurchase, SavingsGoal } from "../../lib/types/finance.ts";
 import ParentRewards from "../../islands/ParentRewards.tsx";
 import AppHeader from "../../islands/AppHeader.tsx";
@@ -27,6 +28,7 @@ interface PageData {
   familyName: string;
   members: { id: string; name: string; role: string; avatar_emoji?: string }[];
   currentProfileId: string;
+  planBadge?: PlanBadgeInfo;
   error?: string;
 }
 
@@ -75,6 +77,7 @@ export const handler: Handlers<PageData> = {
         familyName: session.family.name,
         members: session.family.members,
         currentProfileId: session.user?.profileId || "",
+        planBadge: getPlanBadge(session.family.settings),
       });
     } catch (error) {
       console.error("Parent rewards error:", error);
@@ -86,6 +89,7 @@ export const handler: Handlers<PageData> = {
         familyName: session.family.name,
         members: session.family.members,
         currentProfileId: session.user?.profileId || "",
+        planBadge: getPlanBadge(session.family.settings),
         error: "Failed to load rewards data",
       });
     }
@@ -103,6 +107,7 @@ export default function ParentRewardsPage({ data }: PageProps<PageData>) {
         familyMembers={data.members as any}
         currentUser={currentUser as any}
         userRole="parent"
+        planBadge={data.planBadge}
       />
 
       <ParentRewards

@@ -17,6 +17,11 @@ interface FamilyMember {
   user_id?: string;  // Only set if member has their own login (parents, teens)
 }
 
+interface PlanBadgeInfo {
+  type: 'trial' | 'expired' | 'paid';
+  label: string;  // e.g., "14d left", "Upgrade", "Full Year"
+}
+
 interface Props {
   currentPage: string;
   pageTitle: string;
@@ -25,7 +30,8 @@ interface Props {
   userRole: "parent" | "child";
   currentTheme?: string;
   onThemeChange?: (theme: string) => void;
-  trialDaysRemaining?: number; // Shows trial badge if present
+  trialDaysRemaining?: number; // Deprecated, use planBadge instead
+  planBadge?: PlanBadgeInfo;   // New: unified plan badge info
 }
 
 const THEMES = [
@@ -43,6 +49,7 @@ export default function AppHeader({
   currentTheme = "meadow",
   onThemeChange,
   trialDaysRemaining,
+  planBadge,
 }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -117,11 +124,22 @@ export default function AppHeader({
         )}
       </button>
 
-      {/* Page Title + Trial Badge */}
+      {/* Page Title + Plan Badge */}
       <div class="header-title-area">
         <h1 class="header-title">{pageTitle}</h1>
-        {trialDaysRemaining !== undefined && trialDaysRemaining > 0 && (
-          <a href="/pricing" class="trial-badge" title="Trial period">
+        {/* New planBadge prop takes precedence */}
+        {planBadge && (
+          <a
+            href={planBadge.type === 'paid' ? undefined : "/pricing"}
+            class={`plan-badge plan-badge-${planBadge.type}`}
+            title={planBadge.type === 'trial' ? "Trial period" : planBadge.type === 'expired' ? "Upgrade your plan" : "Your current plan"}
+          >
+            {planBadge.label}
+          </a>
+        )}
+        {/* Backward compatibility: use trialDaysRemaining if planBadge not provided */}
+        {!planBadge && trialDaysRemaining !== undefined && trialDaysRemaining > 0 && (
+          <a href="/pricing" class="plan-badge plan-badge-trial" title="Trial period">
             {trialDaysRemaining}d left
           </a>
         )}
@@ -337,18 +355,30 @@ export default function AppHeader({
           align-items: center;
           gap: 8px;
         }
-        .trial-badge {
+        .plan-badge {
           font-size: 0.65rem;
           font-weight: 600;
-          background: rgba(245, 158, 11, 0.9);
           color: white;
           padding: 2px 6px;
           border-radius: 6px;
           text-decoration: none;
           white-space: nowrap;
         }
-        .trial-badge:hover {
+        .plan-badge-trial {
+          background: rgba(245, 158, 11, 0.9);
+        }
+        .plan-badge-trial:hover {
           background: rgba(217, 119, 6, 1);
+        }
+        .plan-badge-expired {
+          background: rgba(239, 68, 68, 0.9);
+        }
+        .plan-badge-expired:hover {
+          background: rgba(220, 38, 38, 1);
+        }
+        .plan-badge-paid {
+          background: rgba(16, 185, 129, 0.9);
+          cursor: default;
         }
         .menu-overlay {
           position: fixed;

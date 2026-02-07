@@ -11,7 +11,7 @@ import { getAuthenticatedSession } from "../../lib/auth/session.ts";
 import { ChoreService } from "../../lib/services/chore-service.ts";
 import { getActivityService } from "../../lib/services/activity-service.ts";
 import { InsightsService, ThisWeekActivity, StreakData } from "../../lib/services/insights-service.ts";
-import { getTrialInfo, isTrialPlan } from "../../lib/plan-gate.ts";
+import { getTrialInfo, isTrialPlan, getPlanBadge, type PlanBadgeInfo } from "../../lib/plan-gate.ts";
 import ParentDashboard from "../../islands/ParentDashboard.tsx";
 import AppHeader from "../../islands/AppHeader.tsx";
 import AppFooter from "../../components/AppFooter.tsx";
@@ -33,6 +33,7 @@ interface ParentDashboardData {
     isExpired: boolean;
     choresCompleted?: number;
   };
+  planBadge?: PlanBadgeInfo;
   error?: string;
 }
 
@@ -98,8 +99,9 @@ export const handler: Handlers<ParentDashboardData> = {
         streaks = insights.streaks;
       }
 
-      // Get trial info
+      // Get trial info and plan badge
       const trialInfo = getTrialInfo(family.settings);
+      const planBadge = getPlanBadge(family.settings);
       const choresCompletedDuringTrial = isTrialPlan(family.settings)
         ? chores.filter((c: any) => c.status === "completed").length
         : 0;
@@ -119,6 +121,7 @@ export const handler: Handlers<ParentDashboardData> = {
           ...trialInfo,
           choresCompleted: choresCompletedDuringTrial,
         },
+        planBadge,
       });
     } catch (error) {
       console.error("❌ Error loading parent dashboard:", error);
@@ -141,7 +144,7 @@ export const handler: Handlers<ParentDashboardData> = {
 export default function ParentDashboardPage(
   { data }: PageProps<ParentDashboardData>,
 ) {
-  const { family, members, chores, parentChores, parentProfileId, recentActivity, thisWeekActivity, streaks, trialInfo, error } = data;
+  const { family, members, chores, parentChores, parentProfileId, recentActivity, thisWeekActivity, streaks, trialInfo, planBadge, error } = data;
 
   // Script to detect browser timezone and reload with it if needed
   const timezoneScript = `
@@ -193,7 +196,7 @@ export default function ParentDashboardPage(
         familyMembers={members}
         currentUser={currentUser}
         userRole="parent"
-        trialDaysRemaining={trialInfo.isActive ? trialInfo.daysRemaining : undefined}
+        planBadge={planBadge}
       />
 
       {/* Trial Banner - shows when trial is ending or expired */}

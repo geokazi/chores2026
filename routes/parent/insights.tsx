@@ -6,6 +6,7 @@
 import { Handlers, PageProps } from "$fresh/server.ts";
 import { getAuthenticatedSession } from "../../lib/auth/session.ts";
 import { InsightsService, KidTrend, StreakData, RoutineData, ThisWeekActivity } from "../../lib/services/insights-service.ts";
+import { getPlanBadge, type PlanBadgeInfo } from "../../lib/plan-gate.ts";
 import HabitInsights from "../../islands/HabitInsights.tsx";
 import AppHeader from "../../islands/AppHeader.tsx";
 import AppFooter from "../../components/AppFooter.tsx";
@@ -26,6 +27,7 @@ interface InsightsData {
   familyName: string;
   members: FamilyMember[];
   currentProfileId?: string;
+  planBadge?: PlanBadgeInfo;
   error?: string;
 }
 
@@ -63,6 +65,7 @@ export const handler: Handlers<InsightsData> = {
         familyName: session.family.name,
         members,
         currentProfileId,
+        planBadge: getPlanBadge(familySettings),
         error: "No kids in family yet. Add kids in Settings first.",
       });
     }
@@ -80,6 +83,7 @@ export const handler: Handlers<InsightsData> = {
         familyName: session.family.name,
         members,
         currentProfileId,
+        planBadge: getPlanBadge(familySettings),
       });
     } catch (error) {
       console.error("Insights error:", error);
@@ -89,6 +93,7 @@ export const handler: Handlers<InsightsData> = {
         familyName: session.family.name,
         members,
         currentProfileId,
+        planBadge: getPlanBadge(familySettings),
         error: "Failed to load insights. Please try again.",
       });
     }
@@ -125,6 +130,7 @@ export default function InsightsPage({ data }: PageProps<InsightsData>) {
         familyMembers={data.members}
         currentUser={currentUser}
         userRole="parent"
+        planBadge={data.planBadge}
       />
 
       <div class="insights-page">

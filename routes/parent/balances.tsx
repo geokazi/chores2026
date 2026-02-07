@@ -7,6 +7,7 @@ import { Handlers, PageProps } from "$fresh/server.ts";
 import { getAuthenticatedSession } from "../../lib/auth/session.ts";
 import { BalanceService } from "../../lib/services/balance-service.ts";
 import { RewardsService } from "../../lib/services/rewards-service.ts";
+import { getPlanBadge, type PlanBadgeInfo } from "../../lib/plan-gate.ts";
 import type { BalanceInfo, RewardPurchase } from "../../lib/types/finance.ts";
 import BalanceCards from "../../islands/BalanceCards.tsx";
 import AppHeader from "../../islands/AppHeader.tsx";
@@ -27,6 +28,7 @@ interface BalancesData {
   members: FamilyMember[];
   currentProfileId?: string;
   pointsOnlyMode: boolean;
+  planBadge?: PlanBadgeInfo;
   error?: string;
 }
 
@@ -78,6 +80,7 @@ export const handler: Handlers<BalancesData> = {
         members,
         currentProfileId: session.user?.profileId,
         pointsOnlyMode: session.family.points_only_mode,
+        planBadge: getPlanBadge(session.family.settings),
       });
     } catch (error) {
       console.error("❌ Balances error:", error);
@@ -89,6 +92,7 @@ export const handler: Handlers<BalancesData> = {
         members: [],
         currentProfileId: session.user?.profileId,
         pointsOnlyMode: session.family.points_only_mode,
+        planBadge: getPlanBadge(session.family.settings),
         error: "Failed to load balances",
       });
     }
@@ -121,6 +125,7 @@ export default function BalancesPage({ data }: PageProps<BalancesData>) {
         familyMembers={data.members}
         currentUser={currentUser}
         userRole="parent"
+        planBadge={data.planBadge}
       />
 
       <div class="balances-page">

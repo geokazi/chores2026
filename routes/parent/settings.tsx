@@ -11,6 +11,7 @@ import { Head } from "$fresh/runtime.ts";
 import { getAuthenticatedSession } from "../../lib/auth/session.ts";
 import { createClient } from "@supabase/supabase-js";
 import { hasRealEmail, resolvePhone } from "../../lib/utils/resolve-phone.ts";
+import { getPlanBadge, type PlanBadgeInfo } from "../../lib/plan-gate.ts";
 import FamilySettings from "../../islands/FamilySettings.tsx";
 import ParentPinGate from "../../islands/ParentPinGate.tsx";
 import AppHeader from "../../islands/AppHeader.tsx";
@@ -24,6 +25,7 @@ interface ParentSettingsData {
   digestChannel?: "email" | "sms" | null;
   hasBothChannels?: boolean;
   notificationPrefs?: { weekly_summary?: boolean; daily_digest?: boolean; digest_channel?: string; sms_limit_hit?: boolean };
+  planBadge?: PlanBadgeInfo;
   error?: string;
 }
 
@@ -111,6 +113,7 @@ export const handler: Handlers<ParentSettingsData> = {
       digestChannel,
       hasBothChannels,
       notificationPrefs,
+      planBadge: getPlanBadge(fullSettings),
     });
   },
 };
@@ -118,7 +121,7 @@ export const handler: Handlers<ParentSettingsData> = {
 export default function ParentSettingsPage(
   { data }: PageProps<ParentSettingsData>,
 ) {
-  const { family, members, settings, parentProfileId, digestChannel, hasBothChannels, notificationPrefs, error } = data;
+  const { family, members, settings, parentProfileId, digestChannel, hasBothChannels, notificationPrefs, planBadge, error } = data;
   const currentUser = members.find(m => m.id === parentProfileId) || null;
 
   if (error) {
@@ -157,6 +160,7 @@ export default function ParentSettingsPage(
           familyMembers={members}
           currentUser={currentUser}
           userRole="parent"
+          planBadge={planBadge}
         />
 
       <ParentPinGate

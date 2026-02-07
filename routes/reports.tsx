@@ -6,6 +6,7 @@
 import { Handlers, PageProps } from "$fresh/server.ts";
 import { getAuthenticatedSession } from "../lib/auth/session.ts";
 import { ChoreService } from "../lib/services/chore-service.ts";
+import { getPlanBadge, type PlanBadgeInfo } from "../lib/plan-gate.ts";
 import FamilyReports from "../islands/FamilyReports.tsx";
 import AppHeader from "../islands/AppHeader.tsx";
 import AppFooter from "../components/AppFooter.tsx";
@@ -59,6 +60,7 @@ interface ReportsData {
       heatmap: number[];
     }>;
   } | null;
+  planBadge?: PlanBadgeInfo;
   error?: string;
 }
 
@@ -99,6 +101,7 @@ export const handler: Handlers<ReportsData> = {
         goalsAchieved,
         goalStatus,
         weeklyPatterns,
+        planBadge: getPlanBadge(session.family.settings),
       });
     } catch (error) {
       console.error("❌ Error loading family reports:", error);
@@ -107,6 +110,7 @@ export const handler: Handlers<ReportsData> = {
         analytics: { members: [], totals: { earned_week: 0, earned_month: 0, earned_ytd: 0, earned_all_time: 0 } },
         goalsAchieved: { byPerson: [], familyTotal: { totalPoints: 0, rewardCount: 0 } },
         weeklyPatterns: null,
+        planBadge: getPlanBadge(session.family.settings),
         error: "Failed to load reports",
       });
     }
@@ -114,7 +118,7 @@ export const handler: Handlers<ReportsData> = {
 };
 
 export default function ReportsPage({ data }: PageProps<ReportsData>) {
-  const { family, analytics, goalsAchieved, goalStatus, weeklyPatterns, error } = data;
+  const { family, analytics, goalsAchieved, goalStatus, weeklyPatterns, planBadge, error } = data;
 
   // Script to detect browser timezone and reload with it if needed
   const timezoneScript = `
@@ -139,6 +143,7 @@ export default function ReportsPage({ data }: PageProps<ReportsData>) {
         familyMembers={family.members || []}
         currentUser={null}
         userRole="parent"
+        planBadge={planBadge}
       />
 
       {error ? (
