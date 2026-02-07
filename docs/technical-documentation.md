@@ -933,7 +933,7 @@ const loadTest = async () => {
 - **Plan Extension**: Redeeming codes adds days to existing plans (doesn't replace)
 - **Component Extraction**: TemplateSelector (~450 lines) extracted from FamilySettings
 - **Unit Tests**: 29 tests (15 plan-gate + 14 redemption)
-- **See**: [Template Gating Implementation](./planned/20260118_template_gating_gift_codes.md)
+- **See**: [Template Gating Implementation](./milestones/20260118_template_gating_gift_codes.md)
 
 #### Gift Code Auth Flow Preservation ✅ **Implemented Feb 7, 2026**
 - **Problem Solved**: Gift codes entered at `/redeem` were lost when users needed to authenticate

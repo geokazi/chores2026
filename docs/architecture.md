@@ -626,7 +626,7 @@ sql/20260118_gift_codes.sql   # Gift code table + generation functions
 3. **Component extraction**: TemplateSelector (~450 lines) extracted from FamilySettings (~2400→1800 lines)
 4. **Free templates**: Daily Basics + Dynamic Daily ensure core value is free
 
-**See**: [Template Gating Implementation](./planned/20260118_template_gating_gift_codes.md)
+**See**: [Template Gating Implementation](./milestones/20260118_template_gating_gift_codes.md)
 
 ---
 

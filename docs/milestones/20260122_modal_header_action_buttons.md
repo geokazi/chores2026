@@ -124,7 +124,7 @@ interface ModalHeaderProps {
 
 - **Related**: [Events Multi-day & Repeating](./20260121_events-multiday-repeating-endtime.md) - AddEventModal updated
 - **Related**: [Events Prep Tasks](./20260120_events_prep_tasks_implementation.md) - AddPrepTasksModal updated
-- **Related**: [Template Gating](../planned/20260118_template_gating_gift_codes.md) - TemplateSelector updated
+- **Related**: [Template Gating](./20260118_template_gating_gift_codes.md) - TemplateSelector updated
 
 ---
 

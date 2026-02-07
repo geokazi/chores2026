@@ -494,7 +494,7 @@ See: [Analytics & Demand Tracking](./analytics/20260130_analytics_tracking.md) f
 - `/families` landing page optimized for Amazon gift card traffic
 - Plan extension (codes add days, don't replace existing plans)
 - JSONB-based plan storage (no database migrations)
-- See: [Template Gating Implementation](./planned/20260118_template_gating_gift_codes.md)
+- See: [Template Gating Implementation](./milestones/20260118_template_gating_gift_codes.md)
 - See: [Gift Code Auth Flow Preservation](./milestones/20260207_gift_code_auth_flow_preservation.md)
 
 **Phase 2 (✅ Implemented Feb 6, 2026)**: Stripe Checkout integration

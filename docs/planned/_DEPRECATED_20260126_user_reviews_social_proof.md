@@ -393,7 +393,7 @@ static/content/digest-preview.json
 
 - [Business Requirements](../business-requirements.md) - Product specs
 - [JSONB Settings Architecture](../20260114_JSONB_settings_architecture.md) - Metadata pattern
-- [Template Gating](./20260118_template_gating_gift_codes.md) - Similar JSONB approach
+- [Template Gating](../milestones/20260118_template_gating_gift_codes.md) - Similar JSONB approach
 
 ---
 

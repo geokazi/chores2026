@@ -695,7 +695,7 @@ theme: "fresh_meadow",  // Hardcoded until JSONB migration
 
 ### Planned Extensions
 
-- [Template Gating & Gift Codes](./planned/20260118_template_gating_gift_codes.md) - Uses JSONB `settings.apps.choregami.plan` for Family Plan storage
+- [Template Gating & Gift Codes](./milestones/20260118_template_gating_gift_codes.md) - Uses JSONB `settings.apps.choregami.plan` for Family Plan storage
 - [Gift Codes Table](../sql/20260118_gift_codes.sql) - Companion table for gift code redemption tracking
 - [Notifications: Calendar/Email/Badges](./milestones/20260122_notifications_calendar_email_badges.md) - Uses `preferences.notifications.weekly_summary` + `digest_channel` for weekly digest opt-in
 - [Notifications Usage Queries](../sql/20260122_notifications_usage_queries.sql) - Runtime queries for usage counters, global budget cap, upgrade candidates

@@ -377,7 +377,7 @@ curl -X POST http://localhost:8000/api/admin/gift-codes/generate \
 
 ## Related Documentation
 
-- [Template Gating & Gift Codes](../planned/20260118_template_gating_gift_codes.md) - Gift code system overview
+- [Template Gating & Gift Codes](../milestones/20260118_template_gating_gift_codes.md) - Gift code system overview
 - [Session Management](../session-management.md) - Authentication system
 - [Stripe Checkout Implementation](../milestones/20260206_stripe_checkout_implementation.md) - Payment integration
 

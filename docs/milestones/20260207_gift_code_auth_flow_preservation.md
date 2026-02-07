@@ -235,7 +235,7 @@ Both stored in `localStorage` AND `sessionStorage` for OAuth redirect resilience
 
 ## Related Documentation
 
-- [Template Gating & Gift Codes](../planned/20260118_template_gating_gift_codes.md) - Gift code system overview
+- [Template Gating & Gift Codes](./20260118_template_gating_gift_codes.md) - Gift code system overview
 - [Admin Page Access Control](../decisions/20260206_admin_page_access_control.md) - Admin panel for gift codes
 - [Business Requirements](../business-requirements.md) - Monetization strategy
 
