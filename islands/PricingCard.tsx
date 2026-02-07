@@ -1,10 +1,14 @@
 /**
  * PricingCard - Plan selection with Stripe checkout and gift code redemption
  * Island component for interactive pricing UI
- * ~220 lines
+ * Supports plan preservation through signup flow via localStorage
+ * ~250 lines
  */
 
 import { useSignal } from "@preact/signals";
+import { useEffect } from "preact/hooks";
+
+const PENDING_PLAN_KEY = "pendingPlanSelection";
 
 interface PricingCardProps {
   isAuthenticated: boolean;
@@ -33,8 +37,31 @@ export default function PricingCard({ isAuthenticated, referralBonus }: PricingC
   const giftCodeLoading = useSignal(false);
   const giftCodeSuccess = useSignal(false);
 
+  // Check for pending plan selection after signup (auto-checkout)
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    // Check URL param first (from setup redirect)
+    const params = new URLSearchParams(window.location.search);
+    const checkoutPlan = params.get("checkout");
+
+    if (checkoutPlan && ["summer", "school_year", "full_year"].includes(checkoutPlan)) {
+      // Clear the URL param to prevent re-triggering
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, "", newUrl);
+
+      // Clear localStorage too
+      localStorage.removeItem(PENDING_PLAN_KEY);
+
+      // Trigger checkout
+      handleSelectPlan(checkoutPlan);
+    }
+  }, [isAuthenticated]);
+
   const handleSelectPlan = async (planId: string) => {
     if (!isAuthenticated) {
+      // Store selected plan for after signup
+      localStorage.setItem(PENDING_PLAN_KEY, planId);
       window.location.href = "/register";
       return;
     }

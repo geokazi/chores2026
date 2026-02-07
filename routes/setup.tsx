@@ -262,13 +262,20 @@ export const handler: Handlers<SetupPageData> = {
         }
       }
 
-      // Success -> clear any stale invite token and redirect to home
+      // Success -> check for pending plan selection, clear stale tokens, redirect
       return new Response(
         `<!DOCTYPE html><html><head><title>Setup Complete</title></head>
         <body>
           <script>
             localStorage.removeItem('pendingInviteToken');
-            window.location.href = '/';
+            // Check for pending plan selection from /pricing
+            var pendingPlan = localStorage.getItem('pendingPlanSelection');
+            if (pendingPlan) {
+              localStorage.removeItem('pendingPlanSelection');
+              window.location.href = '/pricing?checkout=' + pendingPlan;
+            } else {
+              window.location.href = '/';
+            }
           </script>
         </body></html>`,
         { status: 200, headers: { "Content-Type": "text/html" } }
