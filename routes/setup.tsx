@@ -42,7 +42,7 @@ export const handler: Handlers<SetupPageData> = {
     }
 
     if (user) {
-      // Already has profile -> redirect to home
+      // Already has profile -> check for pending plan selection first
       const { data: existingProfile } = await supabase
         .from("family_profiles")
         .select("id")
@@ -51,7 +51,23 @@ export const handler: Handlers<SetupPageData> = {
         .single();
 
       if (existingProfile) {
-        return new Response(null, { status: 303, headers: { Location: "/" } });
+        // Check for pending plan selection via client-side script
+        // (localStorage isn't accessible server-side)
+        return new Response(
+          `<!DOCTYPE html><html><head><title>Redirecting...</title></head>
+          <body>
+            <script>
+              var pendingPlan = localStorage.getItem('pendingPlanSelection');
+              if (pendingPlan) {
+                localStorage.removeItem('pendingPlanSelection');
+                window.location.href = '/pricing?checkout=' + pendingPlan;
+              } else {
+                window.location.href = '/';
+              }
+            </script>
+          </body></html>`,
+          { status: 200, headers: { "Content-Type": "text/html" } }
+        );
       }
     }
 
@@ -121,7 +137,22 @@ export const handler: Handlers<SetupPageData> = {
         .single();
 
       if (existingProfile) {
-        return new Response(null, { status: 303, headers: { Location: "/" } });
+        // Check for pending plan selection via client-side script
+        return new Response(
+          `<!DOCTYPE html><html><head><title>Redirecting...</title></head>
+          <body>
+            <script>
+              var pendingPlan = localStorage.getItem('pendingPlanSelection');
+              if (pendingPlan) {
+                localStorage.removeItem('pendingPlanSelection');
+                window.location.href = '/pricing?checkout=' + pendingPlan;
+              } else {
+                window.location.href = '/';
+              }
+            </script>
+          </body></html>`,
+          { status: 200, headers: { "Content-Type": "text/html" } }
+        );
       }
 
       // Create family
