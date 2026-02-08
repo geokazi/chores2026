@@ -1,8 +1,8 @@
 # ChoreGami 2026 Documentation
 
-**Version**: 1.49
+**Version**: 1.50
 **Status**: ✅ Production Ready
-**Last Updated**: February 8, 2026 (Shopify Product Images Spec)
+**Last Updated**: February 8, 2026 (Shopify Store URLs)
 
 **Project Overview**: A simplified, real-time chore completion system built with Deno Fresh, transforming routine family chores into an engaging, competitive experience with sub-second real-time updates across all family devices.
 
@@ -106,6 +106,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-02-07 | **Competitive Pricing Strategy** | ✅ Complete | Updated to $4.99-$39.99 based on market research; 1-month trial tier added |
 | 2026-02-08 | **Shopify Webhook E2E Tested** | ✅ Complete | Full test script, database fix for Shopify purchases, subscription pricing matched to competitors |
 | 2026-02-08 | [**Shopify Product Images Spec**](./marketing/20260208_shopify_product_images_spec.md) | 📋 Ready | Canva design specs for product images; badges, mockups, alt text |
+| 2026-02-08 | [**Shopify Store URLs**](./marketing/20260208_shopify_store_urls.md) | ✅ Active | Live store URLs, SKUs, admin links, fulfillment flow |
 | 2026-02-07 | **Auth-Aware Landing Page Routing** | ✅ Complete | Default landing → `/families` (parent-focused); authenticated users redirect to `/setup` or `/` based on family status |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
@@ -366,5 +367,5 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 
 ---
 
-*Last updated: February 8, 2026 (v1.48)*
+*Last updated: February 8, 2026 (v1.50)*
 *Maintained by: Claude Code AI Assistant*

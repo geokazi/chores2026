@@ -601,6 +601,8 @@ Month 3:   [============ AMAZON LIVE ============]
 ## Related Documents
 
 - [Amazon + WhatsApp Distribution Strategy](./20260206_amazon_whatsapp_distribution_strategy.md) - Channel strategy and messaging
+- [Shopify Store URLs & Product Catalog](./20260208_shopify_store_urls.md) - Live store URLs, SKUs, and admin links
+- [Shopify Webhook Fulfillment](../milestones/20260207_shopify_webhook_gift_fulfillment.md) - Automatic gift code delivery
 - [Social Ad Copy Strategy](./20260202_social_ad_copy_platform_strategy.md) - Ad creative
 - [Referral Share Feature](../planned/20260130_referral_share_feature.md) - Viral mechanics
 

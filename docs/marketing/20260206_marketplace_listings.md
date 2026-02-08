@@ -307,6 +307,7 @@ ChoreGami makes chores feel like a game. Kids earn points, climb leaderboards, a
 
 ## Related Documents
 
+- [Shopify Store URLs & Product Catalog](./20260208_shopify_store_urls.md) - Live store URLs, SKUs, and admin links
 - [Shopify Product Images Spec](./20260208_shopify_product_images_spec.md) - Detailed Canva design specs for Shopify store images
 - [Amazon/WhatsApp Distribution Strategy](./20260206_amazon_whatsapp_distribution_strategy.md) - Overall distribution channel strategy
 - [Shopify Webhook Fulfillment](../milestones/20260207_shopify_webhook_gift_fulfillment.md) - Automatic gift code delivery
