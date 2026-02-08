@@ -486,6 +486,115 @@ This guide covers testing for the complete gift code flow:
 
 ---
 
+## Test Suite 11: Shopify Webhook
+
+### T11.1: Valid Webhook Signature
+**Steps:**
+1. Generate valid HMAC signature using `SHOPIFY_WEBHOOK_SECRET`
+2. Send POST to `/api/webhooks/shopify/order-paid` with signature header
+
+**Expected:**
+- Request accepted (not 401)
+- Processing continues
+
+### T11.2: Invalid Webhook Signature
+**Steps:**
+1. Send POST with incorrect or missing `X-Shopify-Hmac-Sha256` header
+
+**Expected:**
+- 401 Unauthorized response
+- "Invalid Shopify webhook signature" logged
+
+### T11.3: Product Title Mapping
+**Steps:**
+1. Send webhook with `line_items[0].title = "Summer Plan"`
+2. Send webhook with `line_items[0].title = "Half Year Plan"`
+3. Send webhook with `line_items[0].title = "Full Year Plan"`
+
+**Expected:**
+- Each maps to correct plan type (summer, school_year, full_year)
+- Gift code generated with correct plan
+
+### T11.4: SKU Mapping (Priority)
+**Steps:**
+1. Send webhook with `line_items[0].sku = "CHORE-SUMMER"`
+2. Send webhook with conflicting title but correct SKU
+
+**Expected:**
+- SKU takes priority over title
+- Correct plan type assigned
+
+### T11.5: Unknown Product Handling
+**Steps:**
+1. Send webhook with unrecognized product title/SKU
+
+**Expected:**
+- 400 Bad Request
+- "Could not determine plan type" logged
+- No code generated
+
+### T11.6: Email Delivery on Order
+**Steps:**
+1. Send valid webhook with customer email
+2. Check Resend dashboard
+
+**Expected:**
+- Gift code email sent to customer
+- Email contains order-specific message
+- Code is valid and redeemable
+
+### T11.7: Missing Customer Email
+**Steps:**
+1. Send webhook without `email` or `customer.email` field
+
+**Expected:**
+- 400 Bad Request
+- "No customer email" error
+
+### T11.8: Email Failure Non-Blocking
+**Steps:**
+1. Send webhook with invalid email domain
+
+**Expected:**
+- 200 OK returned to Shopify
+- Gift code still generated
+- `emailSent: false` in response
+- Error logged for manual follow-up
+
+### T11.9: End-to-End Shopify Test
+**Steps:**
+1. Create test order in Shopify (or use test mode)
+2. Complete payment
+3. Wait for webhook delivery
+
+**Expected:**
+- Webhook received within seconds
+- Gift code generated
+- Email sent to customer
+- Code redeemable at `/redeem`
+
+### Manual Webhook Testing
+```bash
+# Generate test HMAC
+SECRET="your_webhook_secret"
+BODY='{"id":123,"order_number":1001,"email":"test@example.com","line_items":[{"title":"Summer Plan","sku":"CHORE-SUMMER"}]}'
+HMAC=$(echo -n "$BODY" | openssl dgst -sha256 -hmac "$SECRET" -binary | base64)
+
+# Send test webhook (local)
+curl -X POST http://localhost:8000/api/webhooks/shopify/order-paid \
+  -H "Content-Type: application/json" \
+  -H "X-Shopify-Hmac-Sha256: $HMAC" \
+  -d "$BODY"
+
+# Send test webhook (production)
+curl -X POST https://choregami.app/api/webhooks/shopify/order-paid \
+  -H "Content-Type: application/json" \
+  -H "X-Shopify-Hmac-Sha256: $HMAC" \
+  -d "$BODY"
+```
+
+---
+
 ## Smoke Test Checklist
 
 Quick verification for deployments:
@@ -499,6 +608,8 @@ Quick verification for deployments:
 - [ ] Email received (check Resend)
 - [ ] Code redeemable
 - [ ] Plan activates correctly
+- [ ] Shopify webhook responds to valid signature
+- [ ] Shopify webhook rejects invalid signature
 
 ---
 
@@ -535,6 +646,12 @@ Deno.test("POST /api/gift/purchase requires auth", ...);
 Deno.test("POST /api/gift/purchase validates plan type", ...);
 Deno.test("POST /api/gift/purchase generates valid code", ...);
 Deno.test("GET /api/admin/gift-codes/list requires staff", ...);
+
+// tests/shopify-webhook.test.ts
+Deno.test("POST /api/webhooks/shopify/order-paid rejects invalid HMAC", ...);
+Deno.test("POST /api/webhooks/shopify/order-paid maps product to plan", ...);
+Deno.test("POST /api/webhooks/shopify/order-paid generates code", ...);
+Deno.test("POST /api/webhooks/shopify/order-paid sends email", ...);
 ```
 
 ---

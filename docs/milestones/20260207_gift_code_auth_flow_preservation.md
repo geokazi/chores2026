@@ -261,7 +261,9 @@ Both stored in `localStorage` AND `sessionStorage` for OAuth redirect resilience
 ## Related Documentation
 
 - [Template Gating & Gift Codes](./20260118_template_gating_gift_codes.md) - Gift code system overview
+- [Shopify Webhook Gift Fulfillment](./20260207_shopify_webhook_gift_fulfillment.md) - Automatic fulfillment via Shopify
 - [Admin Page Access Control](../decisions/20260206_admin_page_access_control.md) - Admin panel for gift codes
+- [Gift Code Testing Guide](../testing/20260206_gift_code_testing_guide.md) - Comprehensive test cases
 - [Business Requirements](../business-requirements.md) - Monetization strategy
 
 ---

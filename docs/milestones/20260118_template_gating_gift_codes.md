@@ -527,7 +527,9 @@ Character set excludes confusing characters: `ABCDEFGHJKMNPQRSTUVWXYZ23456789` (
 ## References
 
 - [Admin Page Access Control](../decisions/20260206_admin_page_access_control.md) - Staff-only admin panel pattern
-- [Gift Code Auth Flow Preservation](../milestones/20260207_gift_code_auth_flow_preservation.md) - localStorage preservation through auth flows
+- [Gift Code Auth Flow Preservation](./20260207_gift_code_auth_flow_preservation.md) - localStorage preservation through auth flows
+- [Shopify Webhook Gift Fulfillment](./20260207_shopify_webhook_gift_fulfillment.md) - Automatic fulfillment via Shopify
+- [Gift Code Testing Guide](../testing/20260206_gift_code_testing_guide.md) - Comprehensive test cases
 - [JSONB Settings Architecture](../20260114_JSONB_settings_architecture.md)
 - [Chore Templates Design](../chore-templates-design.md)
 - [Seasonal Templates](../milestones/20260116_seasonal-templates-implementation.md)
@@ -550,6 +552,7 @@ Character set excludes confusing characters: `ABCDEFGHJKMNPQRSTUVWXYZ23456789` (
 - [x] Phase 9: Admin Security (idle timeout, logout button)
 - [x] Phase 10: Redeemer Details (email + expiry in list view)
 - [x] Phase 11: Auth Flow Preservation (localStorage through login/signup/OAuth)
+- [x] Phase 12: Shopify Webhook Fulfillment (auto-generate + email on order)
 - [x] Unit Tests (29 tests passing)
 - [x] Git commit
 
@@ -557,3 +560,4 @@ Character set excludes confusing characters: `ABCDEFGHJKMNPQRSTUVWXYZ23456789` (
 **Admin Panel Added: February 6, 2026**
 **Admin Security + Redeemer Details: February 7, 2026**
 **Auth Flow Preservation: February 7, 2026**
+**Shopify Webhook Fulfillment: February 7, 2026**

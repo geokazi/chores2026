@@ -101,6 +101,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-02-06 | [**Marketing Landing Pages**](./marketing/20260206_amazon_whatsapp_distribution_strategy.md) | ✅ Complete | `/families` landing page for Amazon traffic, code-first `/redeem` flow (validate before login), Half Year pricing alignment |
 | 2026-02-07 | [**Admin Panel Security**](./decisions/20260206_admin_page_access_control.md) | ✅ Complete | 2-minute idle timeout with warning modal, logout button, redeemer email + expiry columns in gift code list |
 | 2026-02-07 | [**Gift Code Auth Flow Preservation**](./milestones/20260207_gift_code_auth_flow_preservation.md) | ✅ Complete | Gift codes preserved through login/signup/OAuth flows via localStorage; auto-apply after family setup |
+| 2026-02-07 | [**Shopify Webhook Gift Fulfillment**](./milestones/20260207_shopify_webhook_gift_fulfillment.md) | ✅ Complete | Automatic gift code generation and email delivery on Shopify order-paid webhook; HMAC verification |
 | 2026-02-07 | **Auth-Aware Landing Page Routing** | ✅ Complete | Default landing → `/families` (parent-focused); authenticated users redirect to `/setup` or `/` based on family status |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
@@ -307,6 +308,7 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 - ✅ **OAuth Plan Preservation**: Plan selection preserved through OAuth signup for both new and returning users; server→client redirect pattern for localStorage access
 - ✅ **Admin Panel Security**: Staff-only `/admin` with 2-minute idle auto-logout + 30-second warning modal, logout button, gift code list shows redeemer email and subscription expiry date
 - ✅ **Gift Code Auth Flow**: Gift codes preserved through all auth flows (login/signup/OAuth) via localStorage; auto-applied after family setup completion
+- ✅ **Shopify Webhook Fulfillment**: Automatic gift code generation and email delivery on Shopify order-paid webhook; HMAC signature verification; product-to-plan mapping
 - ✅ **Auth-Aware Routing**: Unauthenticated → `/families`; authenticated without family → `/setup`; authenticated with family → `/` (dashboard); prevents logged-in users seeing login/signup on marketing pages
 
 ### Known Limitations
@@ -358,5 +360,5 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 
 ---
 
-*Last updated: February 7, 2026 (v1.44)*
+*Last updated: February 7, 2026 (v1.46)*
 *Maintained by: Claude Code AI Assistant*

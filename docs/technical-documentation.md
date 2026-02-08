@@ -315,6 +315,20 @@ Body: { kid_id: string, pin: string, setup_mode?: boolean }
 Response: { success: boolean, verified?: boolean, hash?: string }
 ```
 
+#### Webhooks
+```typescript
+// Shopify order-paid webhook (automatic gift code fulfillment)
+POST /api/webhooks/shopify/order-paid
+Headers: { "X-Shopify-Hmac-Sha256": string }  // HMAC signature for verification
+Body: Shopify order JSON with line_items, customer email
+Response: { success: boolean, code?: string, emailSent: boolean }
+
+// Product to Plan Mapping:
+// - "Summer Plan" / CHORE-SUMMER → summer (3 months)
+// - "Half Year Plan" / CHORE-HALF → school_year (6 months)
+// - "Full Year Plan" / CHORE-FULL → full_year (12 months)
+```
+
 ### WebSocket Integration
 
 #### Real-time Proxy (`/api/familyscore/live/[family_id]`)
