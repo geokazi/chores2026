@@ -131,7 +131,9 @@ export const handler: Handlers = {
 ```
 routes/
 ├── admin/
+│   ├── index.tsx               # Admin dashboard landing
 │   ├── gift-codes.tsx          # Gift code management
+│   ├── shopify-skus.tsx        # SKU-to-plan mapping
 │   └── [future-admin-page].tsx # Future admin pages
 └── api/
     └── admin/
@@ -139,6 +141,11 @@ routes/
         │   ├── generate.ts     # Batch code generation
         │   ├── list.ts         # Code listing
         │   └── stats.ts        # Statistics
+        ├── sku-mappings/
+        │   ├── list.ts         # List SKU mappings (cached)
+        │   ├── add.ts          # Add new mapping
+        │   ├── update.ts       # Toggle active/inactive
+        │   └── delete.ts       # Delete mapping
         └── [future-api]/       # Future admin APIs
 ```
 
@@ -207,9 +214,10 @@ routes/
 **Database Table**: `shopify_sku_mappings`
 
 **Use Cases**:
-- Add "Family Reset Challenge" 30-day $4.99 starter SKU
+- Add new Shopify products without code deployment
 - Add seasonal bundles with digital assets
 - Disable out-of-season products without deleting
+- Update pricing tiers (current: $4.99/$14.99/$24.99/$39.99)
 
 ---
 
@@ -448,4 +456,4 @@ curl -X POST http://localhost:8000/api/admin/gift-codes/generate \
 
 **Author**: Development Team
 **Created**: February 6, 2026
-**Last Updated**: February 7, 2026
+**Last Updated**: February 7, 2026 (Added competitive pricing strategy, updated SKU admin use cases)

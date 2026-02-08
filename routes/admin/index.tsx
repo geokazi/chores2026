@@ -67,6 +67,14 @@ export default function AdminIndexPage({ data }: PageProps<AdminPageData>) {
             </div>
           </a>
 
+          <a href="/admin/shopify-skus" class="admin-card">
+            <span class="card-icon">🏷️</span>
+            <div class="card-content">
+              <strong>Shopify SKUs</strong>
+              <span>Map SKUs to plan types</span>
+            </div>
+          </a>
+
           <div class="admin-card admin-card-disabled">
             <span class="card-icon">📊</span>
             <div class="card-content">
