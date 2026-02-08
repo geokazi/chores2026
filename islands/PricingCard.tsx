@@ -35,10 +35,10 @@ const ONETIME_PLANS: PlanOption[] = [
   { id: "full_year", name: "Full Year", duration: "12 months", price: "$39.99", perMonth: "$3.33/month", badge: "Best Value" },
 ];
 
-// Subscription plans (auto-renewing)
+// Subscription plans (auto-renewing) - Competitive pricing Feb 2026
 const SUBSCRIPTION_PLANS: PlanOption[] = [
-  { id: "monthly", name: "Monthly", duration: "Billed monthly", price: "$12.99", perMonth: "/month" },
-  { id: "annual", name: "Annual", duration: "Billed yearly", price: "$119.99", perMonth: "$10/month", badge: "Save 23%" },
+  { id: "monthly", name: "Monthly", duration: "Billed monthly", price: "$4.99", perMonth: "/month" },
+  { id: "annual", name: "Annual", duration: "Billed yearly", price: "$39.99", perMonth: "$3.33/month", badge: "Save 33%" },
 ];
 
 export default function PricingCard({ isAuthenticated, referralBonus }: PricingCardProps) {
