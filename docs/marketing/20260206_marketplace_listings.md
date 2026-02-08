@@ -1,6 +1,7 @@
 # Marketplace Listings - ChoreGami Gift Codes
 
 **Created**: February 6, 2026
+**Updated**: February 7, 2026 (Competitive pricing)
 **Status**: Ready for Publishing
 **Platforms**: Pinterest, Etsy, Shopify
 
@@ -65,9 +66,10 @@ A digital gift code that unlocks a ChoreGami premium subscription. The recipient
 - Works on any device (phones, tablets, computers)
 
 **Subscription Options:**
-- Summer Plan (3 months) - $29.99
-- Half Year Plan (6 months) - $49.99
-- Full Year Plan (12 months) - $79.99
+- Monthly Trial (1 month) - $4.99 (Less than a latte!)
+- Summer Plan (3 months) - $14.99 (Just $5/month)
+- Half Year Plan (6 months) - $24.99 (MOST POPULAR - Only $4.17/month)
+- Full Year Plan (12 months) - $39.99 (Best value - Only $3.33/month)
 
 **How It Works:**
 1. Purchase your preferred plan
@@ -110,7 +112,37 @@ Gift codes are delivered via email within minutes of purchase. Perfect for last-
 
 ## Shopify Product Descriptions
 
-### Product 1: Summer Plan Gift Code ($29.99)
+### Product 0: Monthly Trial Gift Code ($4.99) - NEW
+
+**Product Title**: ChoreGami Monthly Trial Gift Code - 1 Month
+
+**Short Description**:
+1-month trial to ChoreGami, the family chore app that makes kids want to help out. Less than a latte!
+
+**Full Description**:
+
+**Try ChoreGami for Less Than a Latte**
+
+The perfect low-risk way to see if ChoreGami works for your family! Our Monthly Trial gives you full access to all premium features.
+
+**What's Included:**
+- Unlimited family members
+- Real-time leaderboards showing who's leading
+- Point rewards for every completed task
+- All premium templates
+- Cross-device access
+
+**Perfect For:**
+- Families who want to try before committing
+- Last-minute gifts
+- "Let's see if this works for us"
+
+**Instant Delivery:**
+Gift code arrives via email within minutes!
+
+---
+
+### Product 1: Summer Plan Gift Code ($14.99)
 
 **Product Title**: ChoreGami Summer Plan Gift Code - 3 Months
 
@@ -140,7 +172,7 @@ Visit choregami.app/redeem, enter the code, and start transforming chores into f
 
 ---
 
-### Product 2: Half Year Plan Gift Code ($49.99)
+### Product 2: Half Year Plan Gift Code ($24.99) - MOST POPULAR
 
 **Product Title**: ChoreGami Half Year Plan Gift Code - 6 Months
 
@@ -169,7 +201,7 @@ Email delivery within minutes. Add a personal message for that special touch.
 
 ---
 
-### Product 3: Full Year Plan Gift Code ($79.99)
+### Product 3: Full Year Plan Gift Code ($39.99) - BEST VALUE
 
 **Product Title**: ChoreGami Full Year Plan Gift Code - 12 Months
 
@@ -192,7 +224,7 @@ The gift that keeps giving for 365 days! Our Full Year Plan is the best value an
 - All future feature updates during subscription
 
 **Why Choose Full Year:**
-- Best per-month value ($6.67/month vs $10/month for Summer)
+- Best per-month value (only $3.33/month!)
 - Enough time for habits to become automatic
 - Cover birthdays, holidays, summer break, and school year
 - Set it and forget it - no renewal hassle for 12 months
@@ -212,7 +244,7 @@ For grandparents, godparents, or anyone who wants to give a truly meaningful gif
 
 That's what happens when you gamify housework with ChoreGami. Real-time leaderboards, point rewards, and family competitions turn "I don't wanna" into "Can I do extra?"
 
-Gift a subscription starting at $29.99. Email delivery in minutes.
+Gift a subscription starting at just $4.99. Email delivery in minutes.
 
 **CTA**: Send a Gift
 

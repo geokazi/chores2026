@@ -1,8 +1,8 @@
 # ChoreGami 2026 Documentation
 
-**Version**: 1.46
+**Version**: 1.47
 **Status**: ✅ Production Ready
-**Last Updated**: February 7, 2026 (Auth-aware routing for landing pages)
+**Last Updated**: February 7, 2026 (Shopify SKU Admin + Competitive Pricing)
 
 **Project Overview**: A simplified, real-time chore completion system built with Deno Fresh, transforming routine family chores into an engaging, competitive experience with sub-second real-time updates across all family devices.
 
@@ -48,7 +48,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-01-17 | [↳ **Dynamic Template Expansion**](./milestones/20260117_dynamic_template_expansion.md) | ✅ Complete | Distribution-based chores scale to any family size (1-8 kids) |
 | 2026-01-18 | [**Legal Pages & Auth Flow Fixes**](./milestones/20260118_legal_pages_auth_flow_fixes.md) | ✅ Complete | Parent-friendly Terms, COPPA-aware Privacy, phone OTP redirect fix |
 | 2026-01-18 | [**Authentication Security Hardening**](./milestones/20260118_authentication_security_hardening.md) | ✅ Complete | Rate limiting, enumeration protection, honeypot bot detection |
-| 2026-01-19 | [**Template Gating & Gift Codes**](./milestones/20260118_template_gating_gift_codes.md) | ✅ Complete | Prepaid plan tiers ($29.99-$79.99), gift code redemption with **code-first validation** (no login required to validate), template access control, TemplateSelector extraction |
+| 2026-01-19 | [**Template Gating & Gift Codes**](./milestones/20260118_template_gating_gift_codes.md) | ✅ Complete | Prepaid plan tiers ($4.99-$39.99), gift code redemption with **code-first validation** (no login required to validate), template access control, TemplateSelector extraction |
 | 2026-01-19 | [**Signup & PIN Detection Fixes**](./milestones/20260119_signup_and_pin_fixes.md) | ✅ Complete | Fixed Supabase schema config, first-time PIN UX, settings order, PIN detection after logout |
 | 2026-01-19/20 | [**Events Calendar & Prep Tasks**](./milestones/20260120_events_prep_tasks_implementation.md) | ✅ Complete | Event-linked chores as "missions", prep tasks (no points), parent events page |
 | 2026-01-19/20 | [↳ Original Planning](./milestones/20260119_events_calendar_original_plan.md) | ✅ Complete | Design decisions and philosophy |
@@ -102,6 +102,8 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-02-07 | [**Admin Panel Security**](./decisions/20260206_admin_page_access_control.md) | ✅ Complete | 2-minute idle timeout with warning modal, logout button, redeemer email + expiry columns in gift code list |
 | 2026-02-07 | [**Gift Code Auth Flow Preservation**](./milestones/20260207_gift_code_auth_flow_preservation.md) | ✅ Complete | Gift codes preserved through login/signup/OAuth flows via localStorage; auto-apply after family setup |
 | 2026-02-07 | [**Shopify Webhook Gift Fulfillment**](./milestones/20260207_shopify_webhook_gift_fulfillment.md) | ✅ Complete | Automatic gift code generation and email delivery on Shopify order-paid webhook; HMAC verification |
+| 2026-02-07 | **Shopify SKU Admin** | ✅ Complete | Admin-configurable SKU-to-plan mappings via `/admin/shopify-skus`; add new products without code deployment |
+| 2026-02-07 | **Competitive Pricing Strategy** | ✅ Complete | Updated to $4.99-$39.99 based on market research; 1-month trial tier added |
 | 2026-02-07 | **Auth-Aware Landing Page Routing** | ✅ Complete | Default landing → `/families` (parent-focused); authenticated users redirect to `/setup` or `/` based on family status |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
@@ -309,6 +311,8 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 - ✅ **Admin Panel Security**: Staff-only `/admin` with 2-minute idle auto-logout + 30-second warning modal, logout button, gift code list shows redeemer email and subscription expiry date
 - ✅ **Gift Code Auth Flow**: Gift codes preserved through all auth flows (login/signup/OAuth) via localStorage; auto-applied after family setup completion
 - ✅ **Shopify Webhook Fulfillment**: Automatic gift code generation and email delivery on Shopify order-paid webhook; HMAC signature verification; product-to-plan mapping
+- ✅ **Shopify SKU Admin**: Admin-configurable SKU-to-plan mappings via `/admin/shopify-skus` with in-memory cache; add CG-1M-TRIAL, CG-3M-PASS, CG-6M-PASS, CG-12M-PASS without code deployment
+- ✅ **Competitive Pricing**: Market-based pricing ($4.99/$14.99/$24.99/$39.99) matching Homey/Chap/Chorly; 1-month trial tier for low-barrier entry
 - ✅ **Auth-Aware Routing**: Unauthenticated → `/families`; authenticated without family → `/setup`; authenticated with family → `/` (dashboard); prevents logged-in users seeing login/signup on marketing pages
 
 ### Known Limitations
@@ -360,5 +364,5 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 
 ---
 
-*Last updated: February 7, 2026 (v1.46)*
+*Last updated: February 7, 2026 (v1.47)*
 *Maintained by: Claude Code AI Assistant*

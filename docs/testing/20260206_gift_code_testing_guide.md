@@ -190,12 +190,14 @@ This guide covers testing for the complete gift code flow:
 ### T4.3: Revenue Calculation
 **Steps:**
 1. View stats for each plan type
-2. Verify: Summer=$29.99, HalfYear=$49.99, FullYear=$79.99
+2. Verify: Trial=$4.99, Summer=$14.99, HalfYear=$24.99, FullYear=$39.99
 
 **Expected:**
 - Pending revenue = count × price
 - Redeemed revenue = count × price
 - Total revenue = sum of all
+
+> **Note**: Pricing updated Feb 7, 2026 to competitive rates based on market research (Homey $4.99, Chap $5.99, Chorly $9).
 
 ---
 
@@ -507,14 +509,18 @@ This guide covers testing for the complete gift code flow:
 
 ### T11.3: SKU Mapping (Primary)
 **Steps:**
-1. Send webhook with `line_items[0].sku = "CG-3M-PASS"`
-2. Send webhook with `line_items[0].sku = "CG-6M-PASS"`
-3. Send webhook with `line_items[0].sku = "CG-12M-PASS"`
+1. Send webhook with `line_items[0].sku = "CG-1M-TRIAL"`
+2. Send webhook with `line_items[0].sku = "CG-3M-PASS"`
+3. Send webhook with `line_items[0].sku = "CG-6M-PASS"`
+4. Send webhook with `line_items[0].sku = "CG-12M-PASS"`
 
 **Expected:**
-- CG-3M-PASS → summer (3 months)
-- CG-6M-PASS → school_year (6 months)
-- CG-12M-PASS → full_year (12 months)
+- CG-1M-TRIAL → trial (1 month) - $4.99
+- CG-3M-PASS → summer (3 months) - $14.99
+- CG-6M-PASS → school_year (6 months) - $24.99
+- CG-12M-PASS → full_year (12 months) - $39.99
+
+> **Note**: SKU mappings are admin-configurable via `/admin/shopify-skus`. Add new products without code deployment.
 
 ### T11.4: Title Mapping (Fallback)
 **Steps:**
@@ -672,3 +678,4 @@ Deno.test("POST /api/webhooks/shopify/order-paid sends email", ...);
 | Date | Version | Changes |
 |------|---------|---------|
 | 2026-02-06 | 1.0 | Initial testing guide |
+| 2026-02-07 | 1.1 | Updated pricing to competitive rates ($4.99-$39.99), added CG-1M-TRIAL SKU, noted admin-configurable SKU mappings |

@@ -1,6 +1,7 @@
 # Distribution Launch Execution Plan
 
 **Date**: February 6, 2026
+**Updated**: February 7, 2026 (Competitive pricing)
 **Status**: ✅ Ready to Execute
 **Category**: Launch Execution
 **Related**: [Amazon + WhatsApp Distribution Strategy](./20260206_amazon_whatsapp_distribution_strategy.md)
@@ -54,7 +55,7 @@ All strategy documents align:
 - ✅ Amazon as primary gifting engine
 - ✅ WhatsApp/messaging as viral loop
 - ✅ Prepaid access positioning (not "subscription")
-- ✅ Pricing tiers: $29.99/3mo, $49.99/6mo, $79.99/12mo
+- ✅ Pricing tiers: $4.99/1mo, $14.99/3mo, $24.99/6mo, $39.99/12mo (competitive Feb 2026)
 - ✅ Complete Amazon listing copy (multiple variants)
 
 ### 2. Redemption Infrastructure
@@ -141,10 +142,19 @@ ORDER BY plan_type, created_at;
 
 **Step 2:** Create products (20 min each)
 
+**Product 0: Monthly Trial** (NEW)
+```
+Title: ChoreGami Monthly Trial (1 Month)
+Price: $4.99
+Badge: "Try It - Less Than a Latte"
+Type: Digital product
+Description: Perfect for families who want to try before committing.
+```
+
 **Product 1: Summer Pass**
 ```
 Title: ChoreGami Summer Family Pass (3 Months)
-Price: $29.99
+Price: $14.99
 Type: Digital product
 Description: [Use Version A from Amazon docs]
 
@@ -158,15 +168,16 @@ Product image: [Use your ChoreGami logo or create simple card graphic]
 **Product 2: Half Year Pass**
 ```
 Title: ChoreGami Half Year Family Pass (6 Months)
-Price: $49.99
-Badge: "Best Value"
+Price: $24.99
+Badge: "MOST POPULAR - Only $4.17/mo"
 [Same setup as above]
 ```
 
 **Product 3: Full Year Pass**
 ```
 Title: ChoreGami Full Year Family Pass (12 Months)
-Price: $79.99
+Price: $39.99
+Badge: "BEST VALUE - Only $3.33/mo"
 [Same setup as above]
 ```
 
@@ -321,7 +332,7 @@ These aren't guaranteed, but they're realistic for a product this well-positione
 **Goal**: Sell 10-20 gift codes to validate copy/pricing
 
 **Action items:**
-1. Set up Shopify store with 3 SKUs ($29.99, $49.99, $79.99)
+1. Set up Shopify store with 4 SKUs ($4.99, $14.99, $24.99, $39.99)
 2. Use Version A copy from Amazon strategy doc
 3. Auto-email codes via Shopify webhooks
 4. Test redemption flow end-to-end

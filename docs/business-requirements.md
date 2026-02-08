@@ -481,12 +481,15 @@ See: [Analytics & Demand Tracking](./analytics/20260130_analytics_tracking.md) f
 
 **Phase 1 (✅ Implemented Jan 19, 2026)**: Prepaid time-pass model via gift codes
 
-| Tier | Access | Duration | Price |
-|------|--------|----------|-------|
-| **Free** | Manual chores, Daily Basics, Dynamic Daily templates | Unlimited | $0 |
-| **Summer Pass** | All templates | 3 months | $29.99 |
-| **Half Year Pass** | All templates | 6 months | $49.99 |
-| **Full Year Pass** | All templates | 12 months | $79.99 |
+| Tier | Access | Duration | Price | Effective/mo |
+|------|--------|----------|-------|--------------|
+| **Free** | Manual chores, Daily Basics, Dynamic Daily templates | Unlimited | $0 | - |
+| **Monthly Trial** | All templates | 1 month | $4.99 | $4.99 |
+| **Summer Pass** | All templates | 3 months | $14.99 | $5.00 |
+| **Half Year Pass** | All templates | 6 months | $24.99 | $4.17 |
+| **Full Year Pass** | All templates | 12 months | $39.99 | $3.33 |
+
+> **Pricing Strategy (Feb 2026)**: Competitive rates based on market research (Homey $4.99, Chap $5.99, Chorly $9). Goal: Remove price objection, maximize acquisition, validate product before raising prices.
 
 **Key Features:**
 - Gift code redemption (`/redeem` page) with **code-first validation** (no login required to check code validity)
@@ -566,6 +569,6 @@ See: [Analytics & Demand Tracking](./analytics/20260130_analytics_tracking.md) f
 
 **Document Owner**: Product Team
 **Review Cycle**: Monthly
-**Last Updated**: February 6, 2026
-**Next Review**: March 6, 2026
+**Last Updated**: February 7, 2026
+**Next Review**: March 7, 2026
 **Stakeholders**: Engineering, Design, Marketing, Customer Success

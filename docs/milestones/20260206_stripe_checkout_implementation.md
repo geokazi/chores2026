@@ -1,6 +1,7 @@
 # Stripe Checkout + Plan Badge Implementation
 
 **Date**: February 6, 2026
+**Updated**: February 7, 2026 (Competitive pricing)
 **Status**: ✅ Complete
 **Branch**: `feature/stripe-checkout-integration`
 
@@ -34,9 +35,12 @@ Users can toggle between two billing options:
 | **Subscribe** | Monthly ($12.99), Annual ($119.99) | `subscription` | Yes |
 
 **One-time Plans:**
-- Summer: $29.99 (3 months)
-- Half Year: $49.99 (6 months)
-- Full Year: $79.99 (12 months) - "Best Value" badge
+- Trial: $4.99 (1 month) - "Try It" tier
+- Summer: $14.99 (3 months)
+- Half Year: $24.99 (6 months) - "Most Popular" badge
+- Full Year: $39.99 (12 months) - "Best Value" badge
+
+> **Updated Feb 7, 2026**: Competitive pricing based on market research (Homey $4.99/mo, Chap $5.99/mo, Chorly $9/mo).
 
 **Subscription Plans:**
 - Monthly: $12.99/month

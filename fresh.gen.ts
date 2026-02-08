@@ -6,9 +6,14 @@ import * as $_app from "./routes/_app.tsx";
 import * as $_middleware from "./routes/_middleware.ts";
 import * as $admin_gift_codes from "./routes/admin/gift-codes.tsx";
 import * as $admin_index from "./routes/admin/index.tsx";
+import * as $admin_shopify_skus from "./routes/admin/shopify-skus.tsx";
 import * as $api_admin_gift_codes_generate from "./routes/api/admin/gift-codes/generate.ts";
 import * as $api_admin_gift_codes_list from "./routes/api/admin/gift-codes/list.ts";
 import * as $api_admin_gift_codes_stats from "./routes/api/admin/gift-codes/stats.ts";
+import * as $api_admin_sku_mappings_add from "./routes/api/admin/sku-mappings/add.ts";
+import * as $api_admin_sku_mappings_delete from "./routes/api/admin/sku-mappings/delete.ts";
+import * as $api_admin_sku_mappings_list from "./routes/api/admin/sku-mappings/list.ts";
+import * as $api_admin_sku_mappings_update from "./routes/api/admin/sku-mappings/update.ts";
 import * as $api_analytics_event from "./routes/api/analytics/event.ts";
 import * as $api_analytics_feature_demand from "./routes/api/analytics/feature-demand.ts";
 import * as $api_auth_validate_oauth from "./routes/api/auth/validate-oauth.ts";
@@ -69,6 +74,7 @@ import * as $api_settings_timezone from "./routes/api/settings/timezone.ts";
 import * as $api_share_email from "./routes/api/share/email.ts";
 import * as $api_stripe_checkout from "./routes/api/stripe/checkout.ts";
 import * as $api_stripe_webhook from "./routes/api/stripe/webhook.ts";
+import * as $api_webhooks_shopify_order_paid from "./routes/api/webhooks/shopify/order-paid.ts";
 import * as $demo from "./routes/demo.tsx";
 import * as $families from "./routes/families.tsx";
 import * as $health from "./routes/health.ts";
@@ -137,6 +143,7 @@ import * as $SavingsGoals from "./islands/SavingsGoals.tsx";
 import * as $SecureKidDashboard from "./islands/SecureKidDashboard.tsx";
 import * as $SecureParentDashboard from "./islands/SecureParentDashboard.tsx";
 import * as $ShareReferralCard from "./islands/ShareReferralCard.tsx";
+import * as $ShopifySKUAdmin from "./islands/ShopifySKUAdmin.tsx";
 import * as $SocialAuthButtons from "./islands/SocialAuthButtons.tsx";
 import * as $TeaserCards from "./islands/TeaserCards.tsx";
 import * as $TemplateSelector from "./islands/TemplateSelector.tsx";
@@ -166,9 +173,14 @@ const manifest = {
     "./routes/_middleware.ts": $_middleware,
     "./routes/admin/gift-codes.tsx": $admin_gift_codes,
     "./routes/admin/index.tsx": $admin_index,
+    "./routes/admin/shopify-skus.tsx": $admin_shopify_skus,
     "./routes/api/admin/gift-codes/generate.ts": $api_admin_gift_codes_generate,
     "./routes/api/admin/gift-codes/list.ts": $api_admin_gift_codes_list,
     "./routes/api/admin/gift-codes/stats.ts": $api_admin_gift_codes_stats,
+    "./routes/api/admin/sku-mappings/add.ts": $api_admin_sku_mappings_add,
+    "./routes/api/admin/sku-mappings/delete.ts": $api_admin_sku_mappings_delete,
+    "./routes/api/admin/sku-mappings/list.ts": $api_admin_sku_mappings_list,
+    "./routes/api/admin/sku-mappings/update.ts": $api_admin_sku_mappings_update,
     "./routes/api/analytics/event.ts": $api_analytics_event,
     "./routes/api/analytics/feature-demand.ts": $api_analytics_feature_demand,
     "./routes/api/auth/validate-oauth.ts": $api_auth_validate_oauth,
@@ -232,6 +244,8 @@ const manifest = {
     "./routes/api/share/email.ts": $api_share_email,
     "./routes/api/stripe/checkout.ts": $api_stripe_checkout,
     "./routes/api/stripe/webhook.ts": $api_stripe_webhook,
+    "./routes/api/webhooks/shopify/order-paid.ts":
+      $api_webhooks_shopify_order_paid,
     "./routes/demo.tsx": $demo,
     "./routes/families.tsx": $families,
     "./routes/health.ts": $health,
@@ -302,6 +316,7 @@ const manifest = {
     "./islands/SecureKidDashboard.tsx": $SecureKidDashboard,
     "./islands/SecureParentDashboard.tsx": $SecureParentDashboard,
     "./islands/ShareReferralCard.tsx": $ShareReferralCard,
+    "./islands/ShopifySKUAdmin.tsx": $ShopifySKUAdmin,
     "./islands/SocialAuthButtons.tsx": $SocialAuthButtons,
     "./islands/TeaserCards.tsx": $TeaserCards,
     "./islands/TemplateSelector.tsx": $TemplateSelector,

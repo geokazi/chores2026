@@ -6,6 +6,7 @@
 **Branch**: `feature/stripe-checkout-integration`
 
 > **Implementation Complete**: See [Milestone Document](../milestones/20260206_stripe_checkout_implementation.md) for details.
+> **Pricing Updated (Feb 7, 2026)**: Competitive pricing now $4.99/$14.99/$24.99/$39.99. See milestone doc for current rates.
 
 ---
 

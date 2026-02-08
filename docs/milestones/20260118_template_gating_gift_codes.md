@@ -101,13 +101,14 @@ This implementation follows the product strategy of:
 
 ### Pricing Structure (Prepaid Time Passes)
 
-| Plan | Duration | Price | Use Case |
-|------|----------|-------|----------|
-| Half Year | 6 months (180 days) | $49.99 | Primary offering |
-| Summer | 3 months (90 days) | $29.99 | Seasonal add-on |
-| Full Year | 12 months (365 days) | $79.99 | Best value |
+| Plan | Duration | Price | Effective/mo | Use Case |
+|------|----------|-------|--------------|----------|
+| Trial | 1 month (30 days) | $4.99 | $4.99 | Low-barrier entry ("less than a latte") |
+| Summer | 3 months (90 days) | $14.99 | $5.00 | Summer season pass |
+| Half Year | 6 months (180 days) | $24.99 | $4.17 | **MOST POPULAR** - matches competitor annual |
+| Full Year | 12 months (365 days) | $39.99 | $3.33 | Best value tier |
 
-> **Updated Feb 6, 2026**: School Year renamed to Half Year, durations aligned with Stripe products.
+> **Updated Feb 7, 2026**: Competitive pricing based on market research (Homey $4.99/mo, Chap $5.99/mo, Chorly $9/mo). Goal: Remove price objection, maximize acquisition.
 
 ---
 
@@ -561,3 +562,4 @@ Character set excludes confusing characters: `ABCDEFGHJKMNPQRSTUVWXYZ23456789` (
 **Admin Security + Redeemer Details: February 7, 2026**
 **Auth Flow Preservation: February 7, 2026**
 **Shopify Webhook Fulfillment: February 7, 2026**
+**Shopify SKU Admin + Competitive Pricing: February 7, 2026**

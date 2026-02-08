@@ -83,15 +83,18 @@ CREATE TABLE shopify_orders (
 
 The handler maps Shopify products to ChoreGami plans via SKU (primary) or title (fallback):
 
-| Product | SKU | Plan Type | Duration |
-|---------|-----|-----------|----------|
-| ChoreGami Summer Pass (3 Months) | `CG-3M-PASS` | `summer` | 3 months |
-| ChoreGami Family Pass (6 Months) | `CG-6M-PASS` | `school_year` | 6 months |
-| ChoreGami Full Year Pass (12 Months) | `CG-12M-PASS` | `full_year` | 12 months |
+| Product | SKU | Plan Type | Duration | Price |
+|---------|-----|-----------|----------|-------|
+| ChoreGami Monthly Trial | `CG-1M-TRIAL` | `trial` | 1 month | $4.99 |
+| ChoreGami Summer Pass (3 Months) | `CG-3M-PASS` | `summer` | 3 months | $14.99 |
+| ChoreGami School Year Pass (6 Months) | `CG-6M-PASS` | `school_year` | 6 months | $24.99 |
+| ChoreGami Full Year Pass (12 Months) | `CG-12M-PASS` | `full_year` | 12 months | $39.99 |
 
-SKU matching is O(1) lookup. Title matching is case-insensitive fallback.
+SKU matching is O(1) lookup via in-memory cache. Title matching is case-insensitive fallback.
 
-**Admin-Configurable:** SKU mappings are stored in the database and can be managed via `/admin/shopify-skus` without code deployment. Add new products (e.g., "Family Reset Challenge" $4.99 30-day starter) instantly.
+**Admin-Configurable:** SKU mappings are stored in the database (`shopify_sku_mappings` table) and can be managed via `/admin/shopify-skus` without code deployment. Add new products (e.g., "Family Reset Challenge" bundle) instantly.
+
+> **Pricing Strategy (Feb 2026)**: Competitive rates based on market research. Goal: Remove price objection, maximize acquisition before raising prices.
 
 ---
 
@@ -146,7 +149,7 @@ async function verifyShopifyWebhook(body: string, hmacHeader: string): Promise<b
 Create products in Shopify with:
 - Title containing "Summer", "Half Year", or "Full Year"
 - OR SKU set to `CHORE-SUMMER`, `CHORE-HALF`, or `CHORE-FULL`
-- Price matching your plan pricing ($29.99, $49.99, $79.99)
+- Price matching your plan pricing ($4.99, $14.99, $24.99, $39.99)
 
 ---
 
@@ -209,3 +212,4 @@ curl -X POST https://choregami.app/api/webhooks/shopify/order-paid \
 
 **Author**: Development Team
 **Created**: February 7, 2026
+**Updated**: February 7, 2026 (Added trial SKU, competitive pricing, admin-configurable mappings)

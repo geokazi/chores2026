@@ -350,26 +350,31 @@ In-app message for active users (show during gift-giving seasons):
 
 ### Amazon SKUs
 
-| SKU | Duration | Amazon Price | Direct Price | Notes |
-|-----|----------|--------------|--------------|-------|
-| Basic | 3 months | $29.99 | $29.99 | Entry point |
-| **Popular** | 6 months | $49.99 | $49.99 | Best seller, MVP test |
-| Premium | 12 months | $79.99 | $79.99 | Holiday gift |
+| SKU | Duration | Amazon Price | Direct Price | Effective/mo | Notes |
+|-----|----------|--------------|--------------|--------------|-------|
+| CG-1M-TRIAL | 1 month | $4.99 | $4.99 | $4.99 | Impulse buy ("less than a latte") |
+| CG-3M-PASS | 3 months | $14.99 | $14.99 | $5.00 | Summer season pass |
+| **CG-6M-PASS** | 6 months | $24.99 | $24.99 | $4.17 | **MOST POPULAR** - Best seller, MVP test |
+| CG-12M-PASS | 12 months | $39.99 | $39.99 | $3.33 | Holiday gift, best value |
+
+> **Updated Feb 7, 2026**: Competitive pricing based on market research (Homey $4.99/mo, Chap $5.99/mo, Chorly $9/mo).
 
 ### Realistic Margin Analysis
 
 | Component | 6-Month Amazon Physical | 6-Month Direct |
 |-----------|-------------------------|----------------|
-| Sale price | $49.99 | $49.99 |
-| Amazon referral fee (15%) | -$7.50 | - |
+| Sale price | $24.99 | $24.99 |
+| Amazon referral fee (15%) | -$3.75 | - |
 | Amazon per-item fee | -$0.99 | - |
 | FBA fulfillment (est.) | -$3.50 | - |
 | Card + packaging | -$1.50 | - |
-| Stripe fees (3.5%) | - | -$1.75 |
-| **Net revenue** | **$36.50** | **$48.24** |
-| **Channel cost** | **27%** | **3.5%** |
+| Stripe fees (3.5%) | - | -$0.87 |
+| **Net revenue** | **$15.25** | **$24.12** |
+| **Channel cost** | **39%** | **3.5%** |
 
-**Decision**: Amazon is a customer acquisition channel, not a profit center. Acceptable if it brings users who wouldn't find you otherwise.
+**Decision**: At lower price point, Amazon takes a larger percentage. This is purely a customer acquisition channel. Volume focus over margin.
+
+> **Updated Feb 7, 2026**: Margin recalculated with competitive $24.99 pricing.
 
 ---
 
@@ -417,7 +422,7 @@ In-app message for active users (show during gift-giving seasons):
 ## Minimum Viable Test
 
 ### Scope
-- **1 SKU**: 6-month pass ($49.99)
+- **1 SKU**: 6-month pass ($24.99)
 - **100 cards**: Pre-printed, merchant fulfilled
 - **30-day window**: Measure redemption + reviews
 - **Budget**: ~$200 (cards + Amazon fees)
@@ -689,5 +694,5 @@ Rationale: Nail the end-to-end experience before spending money on cards or Amaz
 
 **Author**: Marketing Strategy
 **Created**: February 6, 2026
-**Updated**: February 6, 2026
+**Updated**: February 7, 2026
 **Status**: Planning → Ready for MVP Test
