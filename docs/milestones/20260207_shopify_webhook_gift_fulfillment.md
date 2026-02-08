@@ -48,21 +48,40 @@ Automatic gift code generation and email delivery when customers purchase ChoreG
 
 | File | Purpose |
 |------|---------|
-| `routes/api/webhooks/shopify/order-paid.ts` | Webhook handler (~130 lines) |
+| `routes/api/webhooks/shopify/order-paid.ts` | Webhook handler (~160 lines) |
+| `sql/20260207_shopify_orders.sql` | Idempotency table migration |
+
+---
+
+## Idempotency Table
+
+Prevents duplicate gift code generation when Shopify retries webhooks:
+
+```sql
+CREATE TABLE shopify_orders (
+  shopify_order_id BIGINT PRIMARY KEY,  -- O(1) duplicate check
+  customer_email TEXT NOT NULL,
+  gift_code TEXT NOT NULL,
+  plan_type TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+**Flow:** On webhook receipt, check if `shopify_order_id` exists. If yes, return cached `gift_code`. If no, generate new code and record.
 
 ---
 
 ## Product to Plan Mapping
 
-The handler maps Shopify products to ChoreGami plans via title or SKU:
+The handler maps Shopify products to ChoreGami plans via SKU (primary) or title (fallback):
 
-| Product Title | SKU | Plan Type | Duration |
-|--------------|-----|-----------|----------|
-| "Summer Plan" | `CHORE-SUMMER` | `summer` | 3 months |
-| "Half Year Plan" | `CHORE-HALF` | `school_year` | 6 months |
-| "Full Year Plan" | `CHORE-FULL` | `full_year` | 12 months |
+| Product | SKU | Plan Type | Duration |
+|---------|-----|-----------|----------|
+| ChoreGami Summer Pass (3 Months) | `CG-3M-PASS` | `summer` | 3 months |
+| ChoreGami Family Pass (6 Months) | `CG-6M-PASS` | `school_year` | 6 months |
+| ChoreGami Full Year Pass (12 Months) | `CG-12M-PASS` | `full_year` | 12 months |
 
-Matching is case-insensitive for titles. SKU takes priority if present.
+SKU matching is O(1) lookup. Title matching is case-insensitive fallback.
 
 ---
 

@@ -505,23 +505,24 @@ This guide covers testing for the complete gift code flow:
 - 401 Unauthorized response
 - "Invalid Shopify webhook signature" logged
 
-### T11.3: Product Title Mapping
+### T11.3: SKU Mapping (Primary)
 **Steps:**
-1. Send webhook with `line_items[0].title = "Summer Plan"`
-2. Send webhook with `line_items[0].title = "Half Year Plan"`
-3. Send webhook with `line_items[0].title = "Full Year Plan"`
+1. Send webhook with `line_items[0].sku = "CG-3M-PASS"`
+2. Send webhook with `line_items[0].sku = "CG-6M-PASS"`
+3. Send webhook with `line_items[0].sku = "CG-12M-PASS"`
 
 **Expected:**
-- Each maps to correct plan type (summer, school_year, full_year)
-- Gift code generated with correct plan
+- CG-3M-PASS → summer (3 months)
+- CG-6M-PASS → school_year (6 months)
+- CG-12M-PASS → full_year (12 months)
 
-### T11.4: SKU Mapping (Priority)
+### T11.4: Title Mapping (Fallback)
 **Steps:**
-1. Send webhook with `line_items[0].sku = "CHORE-SUMMER"`
-2. Send webhook with conflicting title but correct SKU
+1. Send webhook with `line_items[0].title = "ChoreGami Summer Pass"` (no SKU)
+2. Send webhook with `line_items[0].title = "ChoreGami Family Pass"` (no SKU)
 
 **Expected:**
-- SKU takes priority over title
+- Title matching works as fallback when SKU missing
 - Correct plan type assigned
 
 ### T11.5: Unknown Product Handling
@@ -576,8 +577,8 @@ This guide covers testing for the complete gift code flow:
 ### Manual Webhook Testing
 ```bash
 # Generate test HMAC
-SECRET="your_webhook_secret"
-BODY='{"id":123,"order_number":1001,"email":"test@example.com","line_items":[{"title":"Summer Plan","sku":"CHORE-SUMMER"}]}'
+SECRET="810e113afb6679f377fd7f63f7d6beb2fca71b16efac80213d9be40507fe737c"
+BODY='{"id":123,"order_number":1001,"email":"test@example.com","customer":{"first_name":"Test"},"line_items":[{"title":"ChoreGami Summer Pass","sku":"CG-3M-PASS"}]}'
 HMAC=$(echo -n "$BODY" | openssl dgst -sha256 -hmac "$SECRET" -binary | base64)
 
 # Send test webhook (local)
@@ -592,6 +593,16 @@ curl -X POST https://choregami.app/api/webhooks/shopify/order-paid \
   -H "X-Shopify-Hmac-Sha256: $HMAC" \
   -d "$BODY"
 ```
+
+### T11.10: Idempotency Check
+**Steps:**
+1. Send valid webhook for order ID 123
+2. Send same webhook again (same order ID)
+
+**Expected:**
+- First request: New gift code generated
+- Second request: Returns cached code, `duplicate: true` in response
+- Only one record in `shopify_orders` table
 
 ---
 
