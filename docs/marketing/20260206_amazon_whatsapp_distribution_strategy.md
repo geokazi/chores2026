@@ -686,6 +686,7 @@ Rationale: Nail the end-to-end experience before spending money on cards or Amaz
 ## Related Documents
 
 - [Distribution Launch Execution Plan](./20260206_distribution_launch_execution.md) - Phased launch sequence and infrastructure gaps
+- [Shopify Product Images Spec](./20260208_shopify_product_images_spec.md) - Canva design specs for store images
 - [Referral Share Feature](../planned/20260130_referral_share_feature.md)
 - [Gift Codes Implementation](../../sql/20260118_gift_codes.sql)
 - [Social Ad Copy Strategy](./20260202_social_ad_copy_platform_strategy.md)

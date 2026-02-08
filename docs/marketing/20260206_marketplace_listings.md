@@ -302,3 +302,16 @@ ChoreGami makes chores feel like a game. Kids earn points, climb leaderboards, a
    - Feature callouts: Leaderboard screenshot, point celebration, chore list
    - Gift-focused: Gift box/ribbon themed graphics
    - Before/after: Messy room vs clean room with happy kid
+
+---
+
+## Related Documents
+
+- [Shopify Product Images Spec](./20260208_shopify_product_images_spec.md) - Detailed Canva design specs for Shopify store images
+- [Amazon/WhatsApp Distribution Strategy](./20260206_amazon_whatsapp_distribution_strategy.md) - Overall distribution channel strategy
+- [Shopify Webhook Fulfillment](../milestones/20260207_shopify_webhook_gift_fulfillment.md) - Automatic gift code delivery
+
+---
+
+**Author**: Marketing Team
+**Created**: February 6, 2026

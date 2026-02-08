@@ -501,6 +501,7 @@ See: [Analytics & Demand Tracking](./analytics/20260130_analytics_tracking.md) f
 - See: [Template Gating Implementation](./milestones/20260118_template_gating_gift_codes.md)
 - See: [Gift Code Auth Flow Preservation](./milestones/20260207_gift_code_auth_flow_preservation.md)
 - See: [Shopify Webhook Gift Fulfillment](./milestones/20260207_shopify_webhook_gift_fulfillment.md)
+- See: [Shopify Product Images Spec](./marketing/20260208_shopify_product_images_spec.md)
 
 **Phase 2 (✅ Implemented Feb 6, 2026)**: Stripe Checkout integration
 - Dual billing modes: one-time purchases + subscriptions
