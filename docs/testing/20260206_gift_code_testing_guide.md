@@ -580,10 +580,29 @@ This guide covers testing for the complete gift code flow:
 - Email sent to customer
 - Code redeemable at `/redeem`
 
+### Automated Test Script
+A comprehensive test script is available at `scripts/test-shopify-webhook.sh`:
+```bash
+# Run all 7 tests locally
+./scripts/test-shopify-webhook.sh "your_webhook_secret" "your@email.com"
+
+# Or specify base URL for production
+./scripts/test-shopify-webhook.sh "secret" "email" "https://choregami.app"
+```
+
+Tests included:
+1. CG-1M-TRIAL (Monthly $4.99)
+2. CG-3M-PASS (Summer $14.99)
+3. CG-6M-PASS (Half Year $24.99)
+4. CG-12M-PASS (Full Year $39.99)
+5. Idempotency (duplicate order ID returns cached code)
+6. Invalid HMAC (should return 401)
+7. Unknown SKU (should return 400)
+
 ### Manual Webhook Testing
 ```bash
 # Generate test HMAC
-SECRET="810e113afb6679f377fd7f63f7d6beb2fca71b16efac80213d9be40507fe737c"
+SECRET="your_webhook_secret"
 BODY='{"id":123,"order_number":1001,"email":"test@example.com","customer":{"first_name":"Test"},"line_items":[{"title":"ChoreGami Summer Pass","sku":"CG-3M-PASS"}]}'
 HMAC=$(echo -n "$BODY" | openssl dgst -sha256 -hmac "$SECRET" -binary | base64)
 
@@ -679,3 +698,4 @@ Deno.test("POST /api/webhooks/shopify/order-paid sends email", ...);
 |------|---------|---------|
 | 2026-02-06 | 1.0 | Initial testing guide |
 | 2026-02-07 | 1.1 | Updated pricing to competitive rates ($4.99-$39.99), added CG-1M-TRIAL SKU, noted admin-configurable SKU mappings |
+| 2026-02-08 | 1.2 | Added automated test script (`scripts/test-shopify-webhook.sh`), all 7 webhook tests verified passing |

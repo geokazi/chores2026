@@ -1,8 +1,8 @@
 # ChoreGami 2026 Documentation
 
-**Version**: 1.47
+**Version**: 1.48
 **Status**: ✅ Production Ready
-**Last Updated**: February 7, 2026 (Shopify SKU Admin + Competitive Pricing)
+**Last Updated**: February 8, 2026 (Shopify Webhook Tested + Subscription Pricing Match)
 
 **Project Overview**: A simplified, real-time chore completion system built with Deno Fresh, transforming routine family chores into an engaging, competitive experience with sub-second real-time updates across all family devices.
 
@@ -104,6 +104,7 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-02-07 | [**Shopify Webhook Gift Fulfillment**](./milestones/20260207_shopify_webhook_gift_fulfillment.md) | ✅ Complete | Automatic gift code generation and email delivery on Shopify order-paid webhook; HMAC verification |
 | 2026-02-07 | **Shopify SKU Admin** | ✅ Complete | Admin-configurable SKU-to-plan mappings via `/admin/shopify-skus`; add new products without code deployment |
 | 2026-02-07 | **Competitive Pricing Strategy** | ✅ Complete | Updated to $4.99-$39.99 based on market research; 1-month trial tier added |
+| 2026-02-08 | **Shopify Webhook E2E Tested** | ✅ Complete | Full test script, database fix for Shopify purchases, subscription pricing matched to competitors |
 | 2026-02-07 | **Auth-Aware Landing Page Routing** | ✅ Complete | Default landing → `/families` (parent-focused); authenticated users redirect to `/setup` or `/` based on family status |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
@@ -364,5 +365,5 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 
 ---
 
-*Last updated: February 7, 2026 (v1.47)*
+*Last updated: February 8, 2026 (v1.48)*
 *Maintained by: Claude Code AI Assistant*

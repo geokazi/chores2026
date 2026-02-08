@@ -201,15 +201,42 @@ curl -X POST https://choregami.app/api/webhooks/shopify/order-paid \
 
 ---
 
+## Testing
+
+A test script is available at `scripts/test-shopify-webhook.sh`:
+
+```bash
+# Test all SKUs locally
+./scripts/test-shopify-webhook.sh "your_webhook_secret" "your@email.com"
+```
+
+Tests included:
+- All 4 SKUs (CG-1M-TRIAL, CG-3M-PASS, CG-6M-PASS, CG-12M-PASS)
+- Idempotency (same order ID returns cached code)
+- Invalid HMAC signature (401)
+- Unknown SKU (400)
+
+---
+
+## Database Migrations Required
+
+Run these in order in Supabase SQL Editor:
+
+1. `sql/20260118_gift_codes.sql` - Gift codes table and RPC
+2. `sql/20260207_shopify_orders.sql` - Idempotency table
+3. `sql/20260207_shopify_sku_mappings.sql` - SKU mappings with pricing
+4. `sql/20260208_gift_codes_shopify_fix.sql` - Make purchased_by nullable for Shopify
+
+---
+
 ## Future Enhancements
 
 - **Order metadata**: Store Shopify order ID in gift_codes table for reconciliation
 - **Quantity support**: Handle orders with multiple gift code quantities
 - **Variant-based mapping**: Support Shopify variants for different plan durations
-- **Retry webhook**: Implement idempotency key to prevent duplicate codes on retry
 
 ---
 
 **Author**: Development Team
 **Created**: February 7, 2026
-**Updated**: February 7, 2026 (Added trial SKU, competitive pricing, admin-configurable mappings)
+**Updated**: February 8, 2026 (Database fix for nullable purchased_by, full end-to-end testing verified)
