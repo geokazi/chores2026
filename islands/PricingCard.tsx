@@ -27,11 +27,12 @@ interface PlanOption {
   badge?: string;
 }
 
-// One-time purchase plans (fixed term)
+// One-time purchase plans (fixed term) - Competitive pricing Feb 2026
 const ONETIME_PLANS: PlanOption[] = [
-  { id: "summer", name: "Summer", duration: "3 months", price: "$29.99", perMonth: "$10/month" },
-  { id: "school_year", name: "Half Year", duration: "6 months", price: "$49.99", perMonth: "$8.33/month" },
-  { id: "full_year", name: "Full Year", duration: "12 months", price: "$79.99", perMonth: "$6.67/month", badge: "Best Value" },
+  { id: "month_pass", name: "Monthly", duration: "1 month", price: "$4.99", perMonth: "$4.99/month" },
+  { id: "summer", name: "Summer", duration: "3 months", price: "$14.99", perMonth: "$5/month" },
+  { id: "school_year", name: "Half Year", duration: "6 months", price: "$24.99", perMonth: "$4.17/month", badge: "Most Popular" },
+  { id: "full_year", name: "Full Year", duration: "12 months", price: "$39.99", perMonth: "$3.33/month", badge: "Best Value" },
 ];
 
 // Subscription plans (auto-renewing)
@@ -66,7 +67,7 @@ export default function PricingCard({ isAuthenticated, referralBonus }: PricingC
     const checkoutPlan = params.get("checkout");
     const checkoutMode = params.get("mode") as BillingMode | null;
 
-    if (checkoutPlan && ["summer", "school_year", "full_year"].includes(checkoutPlan)) {
+    if (checkoutPlan && ["month_pass", "summer", "school_year", "full_year"].includes(checkoutPlan)) {
       // Clear the URL param to prevent re-triggering
       const newUrl = window.location.pathname;
       window.history.replaceState({}, "", newUrl);
@@ -450,15 +451,20 @@ export default function PricingCard({ isAuthenticated, referralBonus }: PricingC
         }
         .plan-grid {
           display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 16px;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 12px;
         }
         .plan-grid-2 {
           grid-template-columns: repeat(2, 1fr);
           max-width: 500px;
           margin: 0 auto;
         }
-        @media (max-width: 640px) {
+        @media (max-width: 800px) {
+          .plan-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+        @media (max-width: 480px) {
           .plan-grid,
           .plan-grid-2 {
             grid-template-columns: 1fr;

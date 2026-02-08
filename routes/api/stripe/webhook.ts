@@ -10,7 +10,8 @@ import { ReferralService } from "../../../lib/services/referral-service.ts";
 import { PlanType } from "../../../lib/plan-gate.ts";
 import Stripe from "npm:stripe@14";
 
-const PAID_PLAN_TYPES = ["summer", "school_year", "full_year"] as const;
+// Paid plan types - Competitive pricing Feb 2026
+const PAID_PLAN_TYPES = ["month_pass", "summer", "school_year", "full_year"] as const;
 type PaidPlanType = typeof PAID_PLAN_TYPES[number];
 
 function isPaidPlanType(type: string): type is PaidPlanType {

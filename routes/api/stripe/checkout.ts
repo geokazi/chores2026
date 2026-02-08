@@ -11,8 +11,8 @@ import { getSubscriptionPriceIds, getOnetimePriceIds } from "../../../lib/plan-g
 import { ReferralService } from "../../../lib/services/referral-service.ts";
 import Stripe from "npm:stripe@14";
 
-// One-time plan types (fixed term purchases)
-const ONETIME_PLAN_TYPES = ["summer", "school_year", "full_year"] as const;
+// One-time plan types (fixed term purchases) - Competitive pricing Feb 2026
+const ONETIME_PLAN_TYPES = ["month_pass", "summer", "school_year", "full_year"] as const;
 type OnetimePlanType = typeof ONETIME_PLAN_TYPES[number];
 
 // Subscription plan types (auto-renewing)

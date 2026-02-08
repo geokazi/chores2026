@@ -3,12 +3,13 @@
  * Includes trial support and Stripe price mapping
  */
 
-export type PlanType = 'free' | 'trial' | 'school_year' | 'summer' | 'full_year';
+export type PlanType = 'free' | 'trial' | 'month_pass' | 'school_year' | 'summer' | 'full_year';
 
 export type PlanSource = 'trial' | 'stripe' | 'gift' | 'referral_bonus';
 
 export const PLAN_DURATIONS_DAYS: Record<Exclude<PlanType, 'free'>, number> = {
   trial: 15,         // 15-day free trial
+  month_pass: 30,    // 1 month paid ($4.99)
   school_year: 180,  // 6 months
   summer: 90,        // 3 months
   full_year: 365,    // 12 months
@@ -32,12 +33,13 @@ export function getSubscriptionPriceIds(): Record<SubscriptionPlanType, string> 
   return _subscriptionPriceIds;
 }
 
-// One-time (payment) price IDs
+// One-time (payment) price IDs - Competitive pricing Feb 2026
 let _onetimePriceIds: Record<PaidPlanType, string> | null = null;
 
 export function getOnetimePriceIds(): Record<PaidPlanType, string> {
   if (_onetimePriceIds === null) {
     _onetimePriceIds = {
+      month_pass: (typeof Deno !== 'undefined' ? Deno.env.get('STRIPE_ONETIME_PRICE_1M') : '') || 'price_onetime_1m_placeholder',
       summer: (typeof Deno !== 'undefined' ? Deno.env.get('STRIPE_ONETIME_PRICE_3M') : '') || 'price_onetime_3m_placeholder',
       school_year: (typeof Deno !== 'undefined' ? Deno.env.get('STRIPE_ONETIME_PRICE_10M') : '') || 'price_onetime_10m_placeholder',
       full_year: (typeof Deno !== 'undefined' ? Deno.env.get('STRIPE_ONETIME_PRICE_12M') : '') || 'price_onetime_12m_placeholder',
@@ -53,16 +55,18 @@ export function getStripePriceIds(): Record<PaidPlanType, string> {
 
 // Keep backward compatibility export (but won't work on client - only use getStripePriceIds())
 export const STRIPE_PRICE_IDS = {
+  get month_pass() { return getOnetimePriceIds().month_pass; },
   get summer() { return getOnetimePriceIds().summer; },
   get school_year() { return getOnetimePriceIds().school_year; },
   get full_year() { return getOnetimePriceIds().full_year; },
 };
 
-// Price display values
+// Price display values - Competitive pricing Feb 2026
 export const PLAN_PRICES: Record<Exclude<PlanType, 'free' | 'trial'>, { amount: number; perMonth: string }> = {
-  summer: { amount: 2999, perMonth: '$10/month' },
-  school_year: { amount: 4999, perMonth: '$8.33/month' },
-  full_year: { amount: 7999, perMonth: '$6.67/month' },
+  month_pass: { amount: 499, perMonth: '$4.99/month' },
+  summer: { amount: 1499, perMonth: '$5/month' },
+  school_year: { amount: 2499, perMonth: '$4.17/month' },
+  full_year: { amount: 3999, perMonth: '$3.33/month' },
 };
 
 // Templates that are always free (no plan required)
@@ -152,6 +156,7 @@ export function getTrialInfo(settings: any): TrialInfo {
 
 /** Display names for plan types */
 export const PLAN_DISPLAY_NAMES: Record<Exclude<PlanType, 'free' | 'trial'>, string> = {
+  month_pass: 'Monthly',
   summer: 'Summer',
   school_year: 'Half Year',
   full_year: 'Full Year',
