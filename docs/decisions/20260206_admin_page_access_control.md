@@ -177,6 +177,42 @@ routes/
 
 ---
 
+### Shopify SKU Admin (`/admin/shopify-skus`)
+
+**Purpose**: Manage Shopify product SKU to ChoreGami plan mappings without code deployment
+
+**Features**:
+- View all SKU mappings with status
+- Add new SKU mappings for new Shopify products
+- Enable/disable SKUs (soft toggle for seasonal products)
+- Delete SKU mappings
+- In-memory cache for O(1) webhook lookups
+- Cache auto-refreshes on admin updates
+
+**API Endpoints**:
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/admin/sku-mappings/list` | GET | List all SKU mappings |
+| `/api/admin/sku-mappings/add` | POST | Add new mapping |
+| `/api/admin/sku-mappings/update` | POST | Update existing mapping |
+| `/api/admin/sku-mappings/delete` | POST | Delete a mapping |
+
+**Files**:
+- `routes/admin/shopify-skus.tsx` - SKU management page
+- `islands/ShopifySKUAdmin.tsx` - Interactive UI
+- `lib/services/sku-mapping-service.ts` - Cached lookup service
+- `routes/api/admin/sku-mappings/*.ts` - CRUD APIs
+
+**Database Table**: `shopify_sku_mappings`
+
+**Use Cases**:
+- Add "Family Reset Challenge" 30-day $4.99 starter SKU
+- Add seasonal bundles with digital assets
+- Disable out-of-season products without deleting
+
+---
+
 ## Adding New Admin Pages
 
 ### Step 1: Create the Page Route
@@ -399,6 +435,8 @@ curl -X POST http://localhost:8000/api/admin/gift-codes/generate \
 - ✅ **Session Timeouts**: 2-minute idle auto-logout with 30-second warning modal
 - ✅ **Logout Button**: Visible logout button on all admin pages
 - ✅ **Detailed Code Tracking**: Redeemer email and subscription expiry shown in gift code list
+- ✅ **Shopify SKU Admin**: Configurable SKU-to-plan mappings without code deployment
+- ✅ **Admin Navigation**: Tabbed navigation between Gift Codes and Shopify SKUs
 
 ### Potential Future Enhancements
 

@@ -48,8 +48,16 @@ Automatic gift code generation and email delivery when customers purchase ChoreG
 
 | File | Purpose |
 |------|---------|
-| `routes/api/webhooks/shopify/order-paid.ts` | Webhook handler (~160 lines) |
+| `routes/api/webhooks/shopify/order-paid.ts` | Webhook handler (~150 lines) |
 | `sql/20260207_shopify_orders.sql` | Idempotency table migration |
+| `sql/20260207_shopify_sku_mappings.sql` | SKU-to-plan mapping table migration |
+| `lib/services/sku-mapping-service.ts` | Cached SKU lookup service (~170 lines) |
+| `routes/admin/shopify-skus.tsx` | Admin UI page |
+| `islands/ShopifySKUAdmin.tsx` | Admin UI component (~300 lines) |
+| `routes/api/admin/sku-mappings/list.ts` | List SKU mappings API |
+| `routes/api/admin/sku-mappings/add.ts` | Add SKU mapping API |
+| `routes/api/admin/sku-mappings/update.ts` | Update SKU mapping API |
+| `routes/api/admin/sku-mappings/delete.ts` | Delete SKU mapping API |
 
 ---
 
@@ -82,6 +90,8 @@ The handler maps Shopify products to ChoreGami plans via SKU (primary) or title 
 | ChoreGami Full Year Pass (12 Months) | `CG-12M-PASS` | `full_year` | 12 months |
 
 SKU matching is O(1) lookup. Title matching is case-insensitive fallback.
+
+**Admin-Configurable:** SKU mappings are stored in the database and can be managed via `/admin/shopify-skus` without code deployment. Add new products (e.g., "Family Reset Challenge" $4.99 30-day starter) instantly.
 
 ---
 

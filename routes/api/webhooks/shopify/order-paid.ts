@@ -3,36 +3,28 @@
  * POST /api/webhooks/shopify/order-paid
  * Generates gift code and emails customer on successful order
  *
- * Flow: Verify HMAC → Check idempotency → Generate code → Email → Record
- * ~130 lines
+ * Flow: Verify HMAC → Check idempotency → Lookup SKU → Generate code → Email → Record
+ * SKU mappings are loaded from database and cached in memory
+ * ~150 lines
  */
 
 import { Handlers } from "$fresh/server.ts";
 import { getServiceSupabaseClient } from "../../../../lib/supabase.ts";
 import { sendGiftCodeEmail } from "../../../../lib/services/email-service.ts";
+import { getSKUMapping, getDurationForSKU } from "../../../../lib/services/sku-mapping-service.ts";
 import { crypto } from "https://deno.land/std@0.208.0/crypto/mod.ts";
 
-// Map Shopify SKUs to plan types (O(1) lookup)
-const SKU_TO_PLAN: Record<string, string> = {
-  "CG-3M-PASS": "summer",      // 3 months
-  "CG-6M-PASS": "school_year", // 6 months
-  "CG-12M-PASS": "full_year",  // 12 months
-};
-
-// Fallback: Match by product title (case-insensitive)
-const TITLE_TO_PLAN: Record<string, string> = {
-  "summer": "summer",
-  "3 month": "summer",
-  "family pass": "school_year",
-  "6 month": "school_year",
-  "full year": "full_year",
-  "12 month": "full_year",
-};
-
-const PLAN_DURATIONS: Record<string, string> = {
-  summer: "3 months",
-  school_year: "6 months",
-  full_year: "12 months",
+// Fallback title patterns (for products without SKU configured)
+const TITLE_FALLBACKS: Record<string, { plan_type: string; duration_months: number }> = {
+  "summer": { plan_type: "summer", duration_months: 3 },
+  "3 month": { plan_type: "summer", duration_months: 3 },
+  "family pass": { plan_type: "school_year", duration_months: 6 },
+  "6 month": { plan_type: "school_year", duration_months: 6 },
+  "full year": { plan_type: "full_year", duration_months: 12 },
+  "12 month": { plan_type: "full_year", duration_months: 12 },
+  "1 month": { plan_type: "trial", duration_months: 1 },
+  "30 day": { plan_type: "trial", duration_months: 1 },
+  "reset": { plan_type: "trial", duration_months: 1 },
 };
 
 async function verifyShopifyWebhook(body: string, hmacHeader: string): Promise<boolean> {
@@ -56,21 +48,39 @@ async function verifyShopifyWebhook(body: string, hmacHeader: string): Promise<b
   return computedHmac === hmacHeader;
 }
 
-function determinePlanType(lineItems: Array<{ title: string; sku?: string }>): string | null {
+interface PlanInfo {
+  plan_type: string;
+  duration_months: number;
+}
+
+async function determinePlanInfo(lineItems: Array<{ title: string; sku?: string }>): Promise<PlanInfo | null> {
   for (const item of lineItems) {
-    // Check SKU first (preferred, O(1))
-    if (item.sku && SKU_TO_PLAN[item.sku]) {
-      return SKU_TO_PLAN[item.sku];
+    // Check SKU first (database lookup with cache)
+    if (item.sku) {
+      const mapping = await getSKUMapping(item.sku);
+      if (mapping) {
+        return {
+          plan_type: mapping.plan_type,
+          duration_months: mapping.duration_months,
+        };
+      }
     }
-    // Fallback: Check title (case-insensitive)
+
+    // Fallback: Check title patterns (for unconfigured products)
     const titleLower = item.title.toLowerCase();
-    for (const [key, plan] of Object.entries(TITLE_TO_PLAN)) {
+    for (const [key, info] of Object.entries(TITLE_FALLBACKS)) {
       if (titleLower.includes(key)) {
-        return plan;
+        return info;
       }
     }
   }
   return null;
+}
+
+function formatDuration(months: number): string {
+  if (months === 1) return "1 month";
+  if (months === 12) return "1 year";
+  return `${months} months`;
 }
 
 export const handler: Handlers = {
@@ -118,18 +128,18 @@ export const handler: Handlers = {
       });
     }
 
-    // 4. Determine plan type from line items
-    const planType = determinePlanType(order.line_items || []);
-    if (!planType) {
-      console.error("Could not determine plan type from order:", orderId);
-      return new Response("Unknown product", { status: 400 });
+    // 4. Determine plan type from line items (database lookup with cache)
+    const planInfo = await determinePlanInfo(order.line_items || []);
+    if (!planInfo) {
+      console.error("Could not determine plan type from order:", orderId, order.line_items);
+      return new Response("Unknown product - SKU not configured", { status: 400 });
     }
 
-    console.log(`🛒 Shopify order ${orderId}: ${planType} for ${customerEmail}`);
+    console.log(`🛒 Shopify order ${orderId}: ${planInfo.plan_type} (${planInfo.duration_months}mo) for ${customerEmail}`);
 
     // 5. Generate gift code
     const { data: giftCode, error: genError } = await supabase.rpc("create_gift_code", {
-      p_plan_type: planType,
+      p_plan_type: planInfo.plan_type,
       p_purchased_by: null, // Shopify purchase, no user ID
       p_message: `Shopify Order #${order.order_number || orderId}`,
     });
@@ -146,7 +156,7 @@ export const handler: Handlers = {
       shopify_order_id: orderId,
       customer_email: customerEmail,
       gift_code: giftCode,
-      plan_type: planType,
+      plan_type: planInfo.plan_type,
     });
 
     // 7. Send email to customer
@@ -155,8 +165,8 @@ export const handler: Handlers = {
       recipientName: customerName,
       senderName: "ChoreGami",
       giftCode,
-      planType,
-      planDuration: PLAN_DURATIONS[planType],
+      planType: planInfo.plan_type,
+      planDuration: formatDuration(planInfo.duration_months),
       personalMessage: "Thank you for your purchase! Here's your ChoreGami gift code.",
     });
 

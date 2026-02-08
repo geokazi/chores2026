@@ -1,14 +1,14 @@
 /**
- * Gift Code Admin Panel
- * /admin/gift-codes
- * Staff-only: Generate, view, and manage gift codes
- * ~100 lines
+ * Shopify SKU Mappings Admin Panel
+ * /admin/shopify-skus
+ * Staff-only: Manage Shopify product SKU to plan mappings
+ * ~130 lines
  */
 
 import { Handlers, PageProps } from "$fresh/server.ts";
 import { getAuthenticatedSession } from "../../lib/auth/session.ts";
 import { isStaffEmail, getAccessDeniedHtml } from "../../lib/auth/staff.ts";
-import GiftCodeAdmin from "../../islands/GiftCodeAdmin.tsx";
+import ShopifySKUAdmin from "../../islands/ShopifySKUAdmin.tsx";
 import AdminIdleTimeout from "../../islands/AdminIdleTimeout.tsx";
 
 interface AdminPageData {
@@ -41,15 +41,15 @@ export const handler: Handlers<AdminPageData> = {
   },
 };
 
-export default function GiftCodeAdminPage({ data }: PageProps<AdminPageData>) {
+export default function ShopifySKUAdminPage({ data }: PageProps<AdminPageData>) {
   return (
     <div class="admin-page">
       <header class="admin-header">
         <div class="header-content">
           <a href="/" class="logo">ChoreGami</a>
           <nav class="admin-nav">
-            <a href="/admin/gift-codes" class="active">Gift Codes</a>
-            <a href="/admin/shopify-skus">Shopify SKUs</a>
+            <a href="/admin/gift-codes">Gift Codes</a>
+            <a href="/admin/shopify-skus" class="active">Shopify SKUs</a>
           </nav>
           <div class="header-right">
             <span class="staff-badge">Staff</span>
@@ -60,7 +60,7 @@ export default function GiftCodeAdminPage({ data }: PageProps<AdminPageData>) {
       </header>
 
       <main class="admin-main">
-        <GiftCodeAdmin staffEmail={data.staffEmail} />
+        <ShopifySKUAdmin staffEmail={data.staffEmail} />
       </main>
 
       <AdminIdleTimeout timeoutMinutes={2} />
@@ -84,6 +84,12 @@ export default function GiftCodeAdminPage({ data }: PageProps<AdminPageData>) {
           flex-wrap: wrap;
           gap: 1rem;
         }
+        .logo {
+          font-size: 1.25rem;
+          font-weight: 700;
+          color: #10b981;
+          text-decoration: none;
+        }
         .admin-nav {
           display: flex;
           gap: 0.5rem;
@@ -103,12 +109,6 @@ export default function GiftCodeAdminPage({ data }: PageProps<AdminPageData>) {
         .admin-nav a.active {
           background: #10b981;
           color: white;
-        }
-        .logo {
-          font-size: 1.25rem;
-          font-weight: 700;
-          color: #10b981;
-          text-decoration: none;
         }
         .header-right {
           display: flex;
