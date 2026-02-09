@@ -1,8 +1,27 @@
 # Shopify Store URLs & Product Catalog
 
 **Date**: February 8, 2026
-**Status**: Active
+**Status**: Password Protected (Not Yet Public)
 **Store**: choregami.myshopify.com
+
+---
+
+## ⚠️ Store Launch Checklist
+
+The Shopify store is currently **password-protected** and shows "Opening soon" to visitors. Before using these URLs in marketing:
+
+### To Make Store Public:
+1. Go to **Shopify Admin** → **Online Store** → **Preferences**
+2. Scroll to **Password protection** section
+3. **Uncheck** "Enable password"
+4. Click **Save**
+
+### Pre-Launch Verification:
+- [ ] Remove password protection
+- [ ] Test each product URL loads correctly
+- [ ] Verify webhook is receiving test orders
+- [ ] Confirm gift code emails are being sent
+- [ ] Add product images (see [Image Spec](./20260208_shopify_product_images_spec.md))
 
 ---
 
@@ -24,6 +43,8 @@ ChoreGami products are available on our Shopify store for automated gift code fu
 ---
 
 ## Product Catalog
+
+> **Note**: Public URLs require store password protection to be disabled first.
 
 | Product | SKU | Price | Duration | Public URL |
 |---------|-----|-------|----------|------------|
@@ -89,7 +110,9 @@ See [Shopify Webhook Gift Fulfillment](../milestones/20260207_shopify_webhook_gi
 
 ## Marketing Links
 
-### For Social Media & Ads
+> **Important**: These URLs will redirect to "Opening soon" page until password protection is removed. See [Store Launch Checklist](#️-store-launch-checklist) above.
+
+### For Social Media & Ads (Pinterest, Facebook, etc.)
 Use the public storefront URLs in marketing materials:
 - **Low barrier entry**: https://choregami.myshopify.com/products/choregami-trial-pass-1-month ($4.99)
 - **Best value**: https://choregami.myshopify.com/products/choregami-full-year-pass-12-months ($39.99)
