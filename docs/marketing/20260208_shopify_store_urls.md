@@ -1,26 +1,20 @@
 # Shopify Store URLs & Product Catalog
 
 **Date**: February 8, 2026
-**Status**: Password Protected (Not Yet Public)
+**Status**: ✅ Live (Public)
 **Store**: choregami.myshopify.com
 
 ---
 
-## ⚠️ Store Launch Checklist
+## ✅ Store Launch Status
 
-The Shopify store is currently **password-protected** and shows "Opening soon" to visitors. Before using these URLs in marketing:
+The Shopify store is **live and public** as of February 8, 2026.
 
-### To Make Store Public:
-1. Go to **Shopify Admin** → **Online Store** → **Preferences**
-2. Scroll to **Password protection** section
-3. **Uncheck** "Enable password"
-4. Click **Save**
-
-### Pre-Launch Verification:
-- [ ] Remove password protection
-- [ ] Test each product URL loads correctly
-- [ ] Verify webhook is receiving test orders
-- [ ] Confirm gift code emails are being sent
+### Launch Verification:
+- [x] Password protection removed
+- [x] Product URLs publicly accessible
+- [x] Webhook tested and working
+- [x] Gift code emails being sent
 - [ ] Add product images (see [Image Spec](./20260208_shopify_product_images_spec.md))
 
 ---
@@ -43,8 +37,6 @@ ChoreGami products are available on our Shopify store for automated gift code fu
 ---
 
 ## Product Catalog
-
-> **Note**: Public URLs require store password protection to be disabled first.
 
 | Product | SKU | Price | Duration | Public URL |
 |---------|-----|-------|----------|------------|
@@ -109,8 +101,6 @@ See [Shopify Webhook Gift Fulfillment](../milestones/20260207_shopify_webhook_gi
 ---
 
 ## Marketing Links
-
-> **Important**: These URLs will redirect to "Opening soon" page until password protection is removed. See [Store Launch Checklist](#️-store-launch-checklist) above.
 
 ### For Social Media & Ads (Pinterest, Facebook, etc.)
 Use the public storefront URLs in marketing materials:
