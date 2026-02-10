@@ -42,8 +42,8 @@ ChoreGami products are available on our Shopify store for automated gift code fu
 |---------|-----|-------|----------|------------|
 | ChoreGami Trial Pass (1 Month) | `CG-1M-TRIAL` | $4.99 | 1 month | [choregami.myshopify.com/products/choregami-trial-pass-1-month](https://choregami.myshopify.com/products/choregami-trial-pass-1-month) |
 | ChoreGami Summer Pass (3 Months) | `CG-3M-PASS` | $14.99 | 3 months | [choregami.myshopify.com/products/choregami-summer-pass-3-months](https://choregami.myshopify.com/products/choregami-summer-pass-3-months) |
-| ChoreGami School Year Pass (6 Months) | `CG-6M-PASS` | $24.99 | 6 months | [choregami.myshopify.com/products/choregami-school-year-pass-6-months](https://choregami.myshopify.com/products/choregami-school-year-pass-6-months) |
-| ChoreGami Full Year Pass (12 Months) | `CG-12M-PASS` | $39.99 | 12 months | [choregami.myshopify.com/products/choregami-full-year-pass-12-months](https://choregami.myshopify.com/products/choregami-full-year-pass-12-months) |
+| ChoreGami School Year Pass (6 Months) | `CG-6M-PASS` | $29.99 | 6 months | [choregami.myshopify.com/products/choregami-school-year-pass-6-months](https://choregami.myshopify.com/products/choregami-school-year-pass-6-months) |
+| ChoreGami Full Year Pass (12 Months) | `CG-12M-PASS` | $49.99 | 12 months | [choregami.myshopify.com/products/choregami-full-year-pass-12-months](https://choregami.myshopify.com/products/choregami-full-year-pass-12-months) |
 
 ---
 
@@ -105,7 +105,7 @@ See [Shopify Webhook Gift Fulfillment](../milestones/20260207_shopify_webhook_gi
 ### For Social Media & Ads (Pinterest, Facebook, etc.)
 Use the public storefront URLs in marketing materials:
 - **Low barrier entry**: https://choregami.myshopify.com/products/choregami-trial-pass-1-month ($4.99)
-- **Best value**: https://choregami.myshopify.com/products/choregami-full-year-pass-12-months ($39.99)
+- **Best value**: https://choregami.myshopify.com/products/choregami-full-year-pass-12-months ($49.99)
 
 ### For Email Campaigns
 Include direct product links with UTM parameters:
@@ -121,10 +121,10 @@ https://choregami.myshopify.com/products/choregami-summer-pass-3-months?utm_sour
 |------|-------|-----------|-----------------|
 | Trial (1 mo) | $4.99 | $4.99 | Risk-averse, want to try first |
 | Summer (3 mo) | $14.99 | $5.00 | Seasonal users, summer break |
-| School Year (6 mo) | $24.99 | $4.17 | **Most Popular** - academic year |
-| Full Year (12 mo) | $39.99 | $3.33 | **Best Value** - committed families |
+| School Year (6 mo) | $29.99 | $5.00 | **Most Popular** - academic year |
+| Full Year (12 mo) | $49.99 | $4.17 | **Best Value** - committed families |
 
-> **Competitive positioning**: Priced to match Homey ($4.99/mo) and undercut Chap ($5.99/mo), Chorly ($9/mo). Shopify as differentiated acquisition channel.
+> **Strategic positioning**: Gift passes priced to prevent subscription cannibalization. Subscription: $5.99/mo or $49.99/yr. Gift cards serve as acquisition channel, not revenue model.
 
 ---
 

@@ -25,20 +25,75 @@ interface PlanOption {
   price: string;
   perMonth: string;
   badge?: string;
+  tagline?: string;
+  benefits?: string[];
 }
 
-// One-time purchase plans (fixed term) - Competitive pricing Feb 2026
+// One-time purchase plans (fixed term) - Strategic pricing Feb 2026
+// Emotional hooks from blog research - prevents subscription cannibalization
 const ONETIME_PLANS: PlanOption[] = [
-  { id: "month_pass", name: "Monthly", duration: "1 month", price: "$4.99", perMonth: "$4.99/month" },
-  { id: "summer", name: "Summer", duration: "3 months", price: "$14.99", perMonth: "$5/month" },
-  { id: "school_year", name: "Half Year", duration: "6 months", price: "$24.99", perMonth: "$4.17/month", badge: "Most Popular" },
-  { id: "full_year", name: "Full Year", duration: "12 months", price: "$39.99", perMonth: "$3.33/month", badge: "Best Value" },
+  {
+    id: "month_pass",
+    name: "Trial",
+    duration: "1 month",
+    price: "$4.99",
+    perMonth: "ONE-TIME PAYMENT",
+    tagline: "Stop repeating yourself",
+    benefits: ["Your 'I'll try anything' moment", "Test with skeptical kids", "See results in week 1"],
+  },
+  {
+    id: "summer",
+    name: "Summer",
+    duration: "3 months",
+    price: "$14.99",
+    perMonth: "ONE-TIME PAYMENT",
+    tagline: "Survive summer chaos",
+    benefits: ["You get your evenings back", "House stays clean on autopilot", "No 'I'm bored' chore fights"],
+  },
+  {
+    id: "school_year",
+    name: "School Year",
+    duration: "6 months",
+    price: "$29.99",
+    perMonth: "ONE-TIME PAYMENT",
+    badge: "Most Popular",
+    tagline: "Finally relax after dinner",
+    benefits: ["No more 'did you do it yet?'", "Morning routines that work", "Whole school year covered"],
+  },
+  {
+    id: "full_year",
+    name: "Full Year",
+    duration: "12 months",
+    price: "$49.99",
+    perMonth: "ONE-TIME PAYMENT",
+    badge: "Best Value",
+    tagline: "A full year of peace",
+    benefits: ["365 days without nagging", "Less than $1/week", "Kids build real life skills"],
+  },
 ];
 
-// Subscription plans (auto-renewing) - Competitive pricing Feb 2026
+// Subscription plans (auto-renewing) - Strategic pricing Feb 2026
+// Aligned with gift pass pricing to prevent cannibalization
 const SUBSCRIPTION_PLANS: PlanOption[] = [
-  { id: "monthly", name: "Monthly", duration: "Billed monthly", price: "$4.99", perMonth: "/month" },
-  { id: "annual", name: "Annual", duration: "Billed yearly", price: "$39.99", perMonth: "$3.33/month", badge: "Save 33%" },
+  {
+    id: "monthly",
+    name: "Monthly",
+    duration: "Billed monthly",
+    price: "$5.99",
+    perMonth: "/month",
+    tagline: "Stop repeating yourself",
+    benefits: ["Try it risk-free", "Kids help without nagging", "Cancel anytime (no contract)"],
+  },
+  {
+    id: "annual",
+    name: "Annual",
+    duration: "Billed yearly",
+    price: "$49.99",
+    perMonth: "$4.17/month",
+    badge: "Save 30%",
+    tagline: "A full year of peace",
+    benefits: ["They help WITHOUT being asked", "Less than $1/week", "Set it and forget it"],
+  },
 ];
 
 export default function PricingCard({ isAuthenticated, referralBonus }: PricingCardProps) {
@@ -332,9 +387,17 @@ export default function PricingCard({ isAuthenticated, referralBonus }: PricingC
             <div key={plan.id} class={`plan-option ${plan.badge ? "featured" : ""}`}>
               {plan.badge && <div class="plan-badge">{plan.badge}</div>}
               <h3 class="plan-name">{plan.name}</h3>
+              {plan.tagline && <p class="plan-tagline">{plan.tagline}</p>}
               <p class="plan-duration">{plan.duration}</p>
               <p class="plan-price">{plan.price}</p>
-              <p class="plan-per-month">{plan.perMonth}</p>
+              <p class={`plan-per-month ${plan.perMonth.includes("ONE-TIME") ? "one-time" : ""}`}>{plan.perMonth}</p>
+              {plan.benefits && plan.benefits.length > 0 && (
+                <ul class="plan-benefits">
+                  {plan.benefits.map((benefit, i) => (
+                    <li key={i}>{benefit}</li>
+                  ))}
+                </ul>
+              )}
               <button
                 type="button"
                 class="plan-button"
@@ -539,7 +602,40 @@ export default function PricingCard({ isAuthenticated, referralBonus }: PricingC
         .plan-per-month {
           color: #888;
           font-size: 0.8rem;
-          margin: 4px 0 16px 0;
+          margin: 4px 0 12px 0;
+        }
+        .plan-per-month.one-time {
+          color: #059669;
+          font-weight: 600;
+          font-size: 0.7rem;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        .plan-tagline {
+          color: #10b981;
+          font-size: 0.95rem;
+          font-weight: 600;
+          margin: 0 0 8px 0;
+          font-style: italic;
+        }
+        .plan-benefits {
+          list-style: none;
+          padding: 0;
+          margin: 0 0 16px 0;
+          text-align: left;
+        }
+        .plan-benefits li {
+          font-size: 0.8rem;
+          color: #4b5563;
+          padding: 4px 0 4px 20px;
+          position: relative;
+        }
+        .plan-benefits li::before {
+          content: '✓';
+          position: absolute;
+          left: 0;
+          color: #10b981;
+          font-weight: 700;
         }
         .plan-button {
           width: 100%;
