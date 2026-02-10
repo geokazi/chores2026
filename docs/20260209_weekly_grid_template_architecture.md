@@ -385,6 +385,66 @@ export class GridService {
 }
 ```
 
+### TransactionService (Data Source - No Direct Integration)
+
+**Key Insight**: Weekly Grid is **READ-ONLY**. It displays data created by TransactionService but never calls it directly.
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         DATA LINEAGE                                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   WRITE PATH (TransactionService)           READ PATH (Weekly Grid)         │
+│   ═══════════════════════════════           ═════════════════════════       │
+│                                                                             │
+│   Kid completes chore                       Grid API request                │
+│         │                                          │                        │
+│         ▼                                          ▼                        │
+│   TransactionService                        BalanceService                  │
+│   .recordChoreCompletion()                  .getFamilyBalances()            │
+│         │                                          │                        │
+│         ▼                                          ▼                        │
+│   ┌─────────────────────┐                   ┌─────────────────────┐        │
+│   │ choretracker.       │◀──── READS ──────│ Query transactions  │        │
+│   │ chore_transactions  │                   │ + aggregate by day  │        │
+│   └─────────────────────┘                   └─────────────────────┘        │
+│         │                                          │                        │
+│         ▼                                          ▼                        │
+│   ┌─────────────────────┐                   ┌─────────────────────┐        │
+│   │ family_profiles.    │◀──── READS ──────│ Return dailyEarnings│        │
+│   │ current_points      │                   │ weeklyEarnings      │        │
+│   └─────────────────────┘                   └─────────────────────┘        │
+│         │                                          │                        │
+│         ▼                                          ▼                        │
+│   FamilyScore sync                          Weekly Grid display             │
+│   (real-time leaderboard)                   (read-only visualization)       │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**TransactionService Methods (for reference):**
+
+| Method | Transaction Type | Points |
+|--------|------------------|--------|
+| `recordChoreCompletion()` | `chore_completed` | + |
+| `recordChoreReversal()` | `chore_reversed` | - |
+| `recordBonusAward()` | `bonus_awarded` | + |
+| `recordManualAdjustment()` | `adjustment` | ± |
+| `recordRewardRedemption()` | `reward_redemption` | - |
+| `recordCashOut()` | `cash_out` | - |
+| `recordGoalContribution()` | `adjustment` | - |
+
+**Weekly Grid reads the RESULT of these transactions via BalanceService queries.**
+
+### Why No Direct TransactionService Integration
+
+| Concern | Answer |
+|---------|--------|
+| Does Grid create transactions? | **NO** - read-only display |
+| Does Grid modify balances? | **NO** - just visualizes |
+| Does Grid need FamilyScore sync? | **NO** - handled by write path |
+| What does Grid need? | Aggregated daily points (BalanceService provides this) |
+
 ### Rewards Marketplace (No Integration Needed)
 
 Weekly Grid does NOT interact with rewards system:
