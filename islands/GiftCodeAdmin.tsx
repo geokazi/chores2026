@@ -59,9 +59,10 @@ interface ListResponse {
 }
 
 const PLAN_OPTIONS = [
-  { value: "summer", label: "Summer (3mo) - $29.99" },
-  { value: "school_year", label: "Half Year (6mo) - $49.99" },
-  { value: "full_year", label: "Full Year (12mo) - $79.99" },
+  { value: "month_pass", label: "Trial (1mo) - $4.99" },
+  { value: "summer", label: "Summer (3mo) - $14.99" },
+  { value: "school_year", label: "School Year (6mo) - $29.99" },
+  { value: "full_year", label: "Full Year (12mo) - $49.99" },
 ];
 
 export default function GiftCodeAdmin({ staffEmail }: Props) {

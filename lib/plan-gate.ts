@@ -61,12 +61,19 @@ export const STRIPE_PRICE_IDS = {
   get full_year() { return getOnetimePriceIds().full_year; },
 };
 
-// Price display values - Competitive pricing Feb 2026
+// Price display values - Strategic pricing Feb 2026
+// One-time gift passes (prevents subscription cannibalization)
 export const PLAN_PRICES: Record<Exclude<PlanType, 'free' | 'trial'>, { amount: number; perMonth: string }> = {
-  month_pass: { amount: 499, perMonth: '$4.99/month' },
-  summer: { amount: 1499, perMonth: '$5/month' },
-  school_year: { amount: 2499, perMonth: '$4.17/month' },
-  full_year: { amount: 3999, perMonth: '$3.33/month' },
+  month_pass: { amount: 499, perMonth: 'ONE-TIME PAYMENT' },
+  summer: { amount: 1499, perMonth: 'ONE-TIME PAYMENT' },
+  school_year: { amount: 2999, perMonth: 'ONE-TIME PAYMENT' },
+  full_year: { amount: 4999, perMonth: 'ONE-TIME PAYMENT' },
+};
+
+// Subscription prices - $5.99/mo or $49.99/yr (30% savings)
+export const SUBSCRIPTION_PRICES: Record<SubscriptionPlanType, { amount: number; display: string }> = {
+  monthly: { amount: 599, display: '$5.99/month' },
+  annual: { amount: 4999, display: '$49.99/year' },
 };
 
 // Templates that are always free (no plan required)

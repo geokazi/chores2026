@@ -276,9 +276,11 @@ interface GiftEmailData {
 }
 
 const PLAN_DETAILS: Record<string, { name: string; duration: string; value: string }> = {
-  summer: { name: "Summer Plan", duration: "3 months", value: "$29.99" },
-  school_year: { name: "Half Year Plan", duration: "6 months", value: "$49.99" },
-  full_year: { name: "Full Year Plan", duration: "12 months", value: "$79.99" },
+  month_pass: { name: "Trial Pass", duration: "1 month", value: "$4.99" },
+  trial: { name: "Trial Pass", duration: "1 month", value: "$4.99" },
+  summer: { name: "Summer Pass", duration: "3 months", value: "$14.99" },
+  school_year: { name: "School Year Pass", duration: "6 months", value: "$29.99" },
+  full_year: { name: "Full Year Pass", duration: "12 months", value: "$49.99" },
 };
 
 /**
