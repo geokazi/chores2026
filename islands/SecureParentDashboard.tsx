@@ -757,6 +757,17 @@ export default function SecureParentDashboard(
           )}
       </div>
 
+      {/* Quick Link to Family Dashboard */}
+      <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
+        <a
+          href="/parent/dashboard"
+          class="btn btn-secondary"
+          style={{ fontSize: "0.875rem" }}
+        >
+          👨‍👩‍👧‍👦 View Family Dashboard
+        </a>
+      </div>
+
       {/* Recent Activity Feed */}
       {recentActivity.length > 0 && (
         <div style={{ marginBottom: "1.5rem" }}>
@@ -766,17 +777,6 @@ export default function SecureParentDashboard(
           />
         </div>
       )}
-
-      {/* Quick Link to Family Dashboard */}
-      <div style={{ textAlign: "center", marginTop: "2rem" }}>
-        <a
-          href="/parent/dashboard"
-          class="btn btn-secondary"
-          style={{ fontSize: "0.875rem" }}
-        >
-          👨‍👩‍👧‍👦 View Family Dashboard
-        </a>
-      </div>
 
       {/* Edit Event Modal */}
       <AddEventModal
