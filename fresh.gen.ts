@@ -4,9 +4,11 @@
 
 import * as $_app from "./routes/_app.tsx";
 import * as $_middleware from "./routes/_middleware.ts";
+import * as $admin_demand_signals from "./routes/admin/demand-signals.tsx";
 import * as $admin_gift_codes from "./routes/admin/gift-codes.tsx";
 import * as $admin_index from "./routes/admin/index.tsx";
 import * as $admin_shopify_skus from "./routes/admin/shopify-skus.tsx";
+import * as $api_admin_demand_signals from "./routes/api/admin/demand-signals.ts";
 import * as $api_admin_gift_codes_generate from "./routes/api/admin/gift-codes/generate.ts";
 import * as $api_admin_gift_codes_list from "./routes/api/admin/gift-codes/list.ts";
 import * as $api_admin_gift_codes_stats from "./routes/api/admin/gift-codes/stats.ts";
@@ -115,6 +117,7 @@ import * as $BalanceCards from "./islands/BalanceCards.tsx";
 import * as $ChoreDetail from "./islands/ChoreDetail.tsx";
 import * as $ChoreList from "./islands/ChoreList.tsx";
 import * as $ConfettiTrigger from "./islands/ConfettiTrigger.tsx";
+import * as $DemandSignalsAdmin from "./islands/DemandSignalsAdmin.tsx";
 import * as $DemoChoreCard from "./islands/DemoChoreCard.tsx";
 import * as $DemoKidDashboard from "./islands/DemoKidDashboard.tsx";
 import * as $DeviceFingerprintCollector from "./islands/DeviceFingerprintCollector.tsx";
@@ -174,9 +177,11 @@ const manifest = {
   routes: {
     "./routes/_app.tsx": $_app,
     "./routes/_middleware.ts": $_middleware,
+    "./routes/admin/demand-signals.tsx": $admin_demand_signals,
     "./routes/admin/gift-codes.tsx": $admin_gift_codes,
     "./routes/admin/index.tsx": $admin_index,
     "./routes/admin/shopify-skus.tsx": $admin_shopify_skus,
+    "./routes/api/admin/demand-signals.ts": $api_admin_demand_signals,
     "./routes/api/admin/gift-codes/generate.ts": $api_admin_gift_codes_generate,
     "./routes/api/admin/gift-codes/list.ts": $api_admin_gift_codes_list,
     "./routes/api/admin/gift-codes/stats.ts": $api_admin_gift_codes_stats,
@@ -291,6 +296,7 @@ const manifest = {
     "./islands/ChoreDetail.tsx": $ChoreDetail,
     "./islands/ChoreList.tsx": $ChoreList,
     "./islands/ConfettiTrigger.tsx": $ConfettiTrigger,
+    "./islands/DemandSignalsAdmin.tsx": $DemandSignalsAdmin,
     "./islands/DemoChoreCard.tsx": $DemoChoreCard,
     "./islands/DemoKidDashboard.tsx": $DemoKidDashboard,
     "./islands/DeviceFingerprintCollector.tsx": $DeviceFingerprintCollector,

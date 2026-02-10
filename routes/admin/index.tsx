@@ -75,13 +75,13 @@ export default function AdminIndexPage({ data }: PageProps<AdminPageData>) {
             </div>
           </a>
 
-          <div class="admin-card admin-card-disabled">
+          <a href="/admin/demand-signals" class="admin-card">
             <span class="card-icon">📊</span>
             <div class="card-content">
-              <strong>Analytics</strong>
-              <span>Coming soon</span>
+              <strong>Demand Signals</strong>
+              <span>Feature usage & demand tracking</span>
             </div>
-          </div>
+          </a>
 
           <div class="admin-card admin-card-disabled">
             <span class="card-icon">👥</span>
