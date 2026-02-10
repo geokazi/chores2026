@@ -18,6 +18,7 @@ interface PrepTask {
   text: string;
   assignee_id?: string;
   done: boolean;
+  type?: "shop" | "task";  // "shop" = shopping item, "task" = to-do (default)
 }
 
 interface LinkedChore {
@@ -63,6 +64,7 @@ interface EventCardProps {
   onChoreComplete?: (choreId: string) => void;
   onChoreDelete?: (choreId: string) => void;
   onAddToCalendar?: () => void;
+  onExportShopping?: (items: PrepTask[]) => void;
   currentUserId?: string;
   familyMembers?: Array<{ id: string; name: string }>;
   showOverflowMenu?: boolean;
@@ -85,6 +87,7 @@ export default function EventCard({
   onChoreComplete,
   onChoreDelete,
   onAddToCalendar,
+  onExportShopping,
   currentUserId,
   familyMembers = [],
   showOverflowMenu = true,
@@ -188,6 +191,9 @@ export default function EventCard({
     )
     : prepTasks; // Show all tasks when no user context (e.g., EventsList parent view)
   const linkedChores = event.linked_chores || [];
+
+  // Shopping items (type === "shop") for export - only incomplete ones
+  const shoppingItems = prepTasks.filter((t) => t.type === "shop" && !t.done);
 
   // Task progress
   const totalTasks = myPrepTasks.length + linkedChores.length;
@@ -582,6 +588,9 @@ export default function EventCard({
                                   ? "⏳"
                                   : (task.done ? "☑" : "☐")}
                               </span>
+                              {task.type === "shop" && (
+                                <span style={{ fontSize: "0.875rem" }} title="Shopping item">🛒</span>
+                              )}
                               <span
                                 style={{
                                   fontSize: "0.875rem",
@@ -1081,6 +1090,31 @@ export default function EventCard({
                   {calendarAdded
                     ? <>✓ In your calendar</>
                     : <>📅 Add to Calendar</>}
+                </button>
+              )}
+
+              {/* Export Shopping button (only if there are shopping items) */}
+              {onExportShopping && shoppingItems.length > 0 && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onExportShopping(shoppingItems);
+                  }}
+                  style={{
+                    padding: "0.5rem 0.75rem",
+                    backgroundColor: "#fef3c7",
+                    border: "1px solid #f59e0b",
+                    borderRadius: "0.375rem",
+                    color: "#92400e",
+                    fontSize: "0.875rem",
+                    fontWeight: "500",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.375rem",
+                  }}
+                >
+                  🛒 Export Shopping ({shoppingItems.length})
                 </button>
               )}
             </div>

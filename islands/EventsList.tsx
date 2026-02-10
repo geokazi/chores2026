@@ -15,6 +15,7 @@ interface PrepTask {
   text: string;
   assignee_id?: string;
   done: boolean;
+  type?: "shop" | "task";  // "shop" = shopping item, "task" = to-do (default)
 }
 
 interface LinkedChore {
@@ -97,6 +98,9 @@ export default function EventsList(
     }
     return new Set();
   });
+
+  // Toast message for clipboard copy
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Auto-expand "Today" events by default
   const todayStr = useMemo(() => {
@@ -305,6 +309,34 @@ export default function EventsList(
     }
   };
 
+  // Handle export shopping items to clipboard
+  const handleExportShopping = async (event: FamilyEvent, items: PrepTask[]) => {
+    // Format items as a simple list
+    const eventTitle = event.title;
+    const text = `Shopping list for "${eventTitle}":\n${items.map(i => `☐ ${i.text}`).join("\n")}`;
+
+    try {
+      await navigator.clipboard.writeText(text);
+      setToastMessage("Copied! Paste into your Reminders app");
+      setTimeout(() => setToastMessage(null), 3000);
+
+      // Track demand signal (fire-and-forget)
+      fetch("/api/analytics/event", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          metric: "prep_export",
+          meta: { event_id: event.id, item_count: items.length }
+        }),
+      }).catch(() => {});
+    } catch (error) {
+      console.error("Failed to copy to clipboard:", error);
+      // Fallback: show alert with text
+      alert(`Copy this to your shopping list:\n\n${text}`);
+    }
+  };
+
   // Render event using shared EventCard component with progressive disclosure
   const renderEventCard = (originalEvent: FamilyEvent) => {
     // Use local state for optimistic updates, fallback to original
@@ -341,6 +373,7 @@ export default function EventsList(
           onPrepTaskDelete={(taskId) => handlePrepTaskDelete(event, taskId)}
           onChoreDelete={(choreId) => handleChoreDelete(choreId)}
           onAddToCalendar={() => handleAddToCalendar(event)}
+          onExportShopping={(items) => handleExportShopping(event, items)}
           familyMembers={familyMembers}
           showOverflowMenu={true}
           showAddTask={true}
@@ -525,6 +558,31 @@ export default function EventsList(
           />
         );
       })()}
+
+      {/* Toast notification */}
+      {toastMessage && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: "2rem",
+            left: "50%",
+            transform: "translateX(-50%)",
+            backgroundColor: "#065f46",
+            color: "white",
+            padding: "0.75rem 1.5rem",
+            borderRadius: "0.5rem",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+            zIndex: 1000,
+            fontSize: "0.875rem",
+            fontWeight: "500",
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem",
+          }}
+        >
+          ✅ {toastMessage}
+        </div>
+      )}
     </div>
   );
 }

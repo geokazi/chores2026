@@ -29,7 +29,7 @@ export const handler: Handlers = {
       }
 
       // Only allow known metrics
-      const allowedMetrics = ["badges", "ics", "digests"];
+      const allowedMetrics = ["badges", "ics", "digests", "prep_shop", "prep_export"];
       if (!allowedMetrics.includes(metric)) {
         return new Response("Unknown metric", { status: 400 });
       }

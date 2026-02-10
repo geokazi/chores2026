@@ -271,18 +271,19 @@ interface WishlistItem {
 
 ### Build in Order (Incremental Approach)
 
-**Phase 1: Type Flag** (~2 hours)
-- Add `type: "shop" | "task"` to prep task data model
-- Add toggle in AddPrepTasksModal UI
+**Phase 1: Type Flag** ✅ COMPLETE
+- Added `type: "shop" | "task"` to prep task data model
+- Toggle in AddPrepTasksModal UI (🛒 / ✓)
 - Backward compatible - existing tasks default to "task"
 
-**Phase 2: Export Button** (~4 hours)
-- Add "📱 Export Shopping" button on event cards
-- Filter to `type: "shop"` tasks only
-- Copy to clipboard with instructions (cross-platform)
-- Track usage for signal
+**Phase 2: Export Button** ✅ COMPLETE
+- "🛒 Export Shopping (N)" button on event cards
+- Filters to `type: "shop"` tasks only
+- Copies to clipboard with toast notification
+- Tracks usage via `prep_export` metric
 
-**Phase 3: Evaluate Signal** (2-4 weeks usage data)
+**Phase 3: Evaluate Signal** ⏳ IN PROGRESS (2-4 weeks)
+- Monitor `prep_shop` and `prep_export` metrics
 - If export usage > 15% of events with prep tasks → proceed to Phase 4
 - If export usage < 5% → stop here, clipboard export is sufficient
 
@@ -302,8 +303,8 @@ interface WishlistItem {
 | Enhancement | Effort | Value | Status |
 |-------------|--------|-------|--------|
 | Generic lists | High | Low | ❌ Skip |
-| Prep task type flag | Low (2h) | Medium | ✅ Build first |
-| Export to clipboard | Low (4h) | High | ✅ Build second |
+| Prep task type flag | Low (2h) | Medium | ✅ **IMPLEMENTED** |
+| Export to clipboard | Low (4h) | High | ✅ **IMPLEMENTED** |
 | Aggregated shopping view | Medium (1d) | Medium | ⏸️ Wait for signal |
 | Kid wishlist | Medium (2-3d) | Medium | ⏸️ Future |
 | "Before You Go" lists | High | Low | ❌ Skip |
@@ -312,7 +313,7 @@ interface WishlistItem {
 
 ## 80/20 Decision
 
-**Start with**: Type flag + Export button (total ~6 hours)
+**Implemented**: Type flag + Export button ✅
 
 This approach:
 - Builds on existing prep tasks (no new data model)
@@ -320,6 +321,8 @@ This approach:
 - Bridges to native apps (don't compete, integrate)
 - Minimal code change, maximum learning
 - Unlocks Phase 4 only if users actually use export
+
+**Result**: Both features shipped February 10, 2026. Monitoring metrics.
 
 ---
 
@@ -331,6 +334,52 @@ This approach:
 - [Apple Reminders Sharing](https://support.apple.com/guide/iphone/share-and-collaborate-iph2a8f9121e/ios)
 - [Best Chore Apps 2026](https://www.bestapp.com/best-household-chore-apps/)
 - [Best Reminder Apps 2025](https://www.igeeksblog.com/best-reminder-apps-for-iphone/)
+
+---
+
+## Implementation Status (February 10, 2026)
+
+### ✅ Phase 1 & 2 Complete
+
+**Prep Task Type Flag**
+- Added `type?: "shop" | "task"` to PrepTask interface
+- Toggle button in AddPrepTasksModal (🛒 / ✓)
+- Backward compatible - existing tasks default to "task"
+- Files modified:
+  - `islands/AddPrepTasksModal.tsx`
+  - `islands/EventCard.tsx`
+  - `islands/EventsList.tsx`
+
+**Export Shopping Button**
+- "🛒 Export Shopping (N)" button appears when event has shop items
+- Copies formatted list to clipboard with toast confirmation
+- Tracks usage via `prep_export` metric
+
+**Demand Tracking**
+- `prep_shop` metric: tracked when tasks with type="shop" are saved
+- `prep_export` metric: tracked when export button clicked
+- Both added to `/api/analytics/event.ts` allowed metrics
+
+### ⏸️ Next Steps (After Signal Validation)
+
+1. **Monitor metrics** for 2-4 weeks:
+   ```sql
+   -- Query prep_shop usage
+   SELECT COUNT(*) FROM family_profiles
+   WHERE preferences->'notifications'->'usage'->>'total_prep_shop_sent' > '0';
+
+   -- Query prep_export usage
+   SELECT COUNT(*) FROM family_profiles
+   WHERE preferences->'notifications'->'usage'->>'total_prep_export_sent' > '0';
+   ```
+
+2. **If export usage > 15%** of events with prep tasks:
+   - Build `/parent/shopping` aggregated view
+   - Group by event, show all shop items
+
+3. **If export usage < 5%**:
+   - Current implementation sufficient
+   - No need for aggregated view
 
 ---
 
@@ -371,4 +420,4 @@ await incrementUsage("prep_task_export", familyId, {
 
 **Author**: Development Team
 **Created**: February 10, 2026
-**Updated**: February 10, 2026 (codebase review, revised recommendations)
+**Updated**: February 10, 2026 (codebase review, revised recommendations, Phase 1 & 2 implemented)

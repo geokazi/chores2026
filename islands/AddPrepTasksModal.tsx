@@ -12,6 +12,7 @@ interface PrepTask {
   text: string;
   assignee_id?: string;
   done: boolean;
+  type?: "shop" | "task";  // "shop" = shopping item, "task" = to-do (default)
 }
 
 interface FamilyEvent {
@@ -42,6 +43,7 @@ interface TaskRow {
   id: string;
   text: string;
   assignee_id: string;
+  type: "shop" | "task";  // "shop" = shopping item, "task" = to-do
   isExisting?: boolean; // Track if this is an existing task
   done?: boolean; // Preserve done status for existing tasks
 }
@@ -65,22 +67,23 @@ export default function AddPrepTasksModal({ isOpen, onClose, event, familyMember
         id: task.id,
         text: task.text,
         assignee_id: task.assignee_id || defaultAssignee,
+        type: task.type || "task",  // Default existing tasks without type to "task"
         isExisting: true,
         done: task.done,
       }));
 
-      // Add one empty row for new tasks
-      const emptyRow = { id: crypto.randomUUID(), text: "", assignee_id: defaultAssignee };
+      // Add one empty row for new tasks (default to "task" type)
+      const emptyRow = { id: crypto.randomUUID(), text: "", assignee_id: defaultAssignee, type: "task" as const };
       setTasks([...existingTasks, emptyRow]);
       setError(null);
     }
   }, [isOpen, event?.id]);
 
   const addRow = () => {
-    setTasks([...tasks, { id: crypto.randomUUID(), text: "", assignee_id: defaultAssignee }]);
+    setTasks([...tasks, { id: crypto.randomUUID(), text: "", assignee_id: defaultAssignee, type: "task" }]);
   };
 
-  const updateTask = (id: string, field: "text" | "assignee_id", value: string) => {
+  const updateTask = (id: string, field: "text" | "assignee_id" | "type", value: string) => {
     setTasks(tasks.map(t => t.id === id ? { ...t, [field]: value } : t));
   };
 
@@ -89,7 +92,7 @@ export default function AddPrepTasksModal({ isOpen, onClose, event, familyMember
     const remaining = tasks.filter(t => t.id !== id);
     // Ensure at least one empty row exists
     if (remaining.length === 0 || remaining.every(t => t.text.trim())) {
-      remaining.push({ id: crypto.randomUUID(), text: "", assignee_id: defaultAssignee });
+      remaining.push({ id: crypto.randomUUID(), text: "", assignee_id: defaultAssignee, type: "task" });
     }
     setTasks(remaining);
   };
@@ -116,12 +119,14 @@ export default function AddPrepTasksModal({ isOpen, onClose, event, familyMember
         text: t.text.trim(),
         assignee_id: t.assignee_id || undefined,
         done: t.done || false, // Preserve done status for existing tasks
+        type: t.type,
       }));
 
       // Update event metadata
       const response = await fetch(`/api/events/${event.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           metadata: {
             ...event.metadata,
@@ -131,6 +136,16 @@ export default function AddPrepTasksModal({ isOpen, onClose, event, familyMember
       });
 
       if (response.ok) {
+        // Track demand signal for shop items (non-blocking)
+        const shopCount = allTasks.filter(t => t.type === "shop").length;
+        if (shopCount > 0) {
+          fetch("/api/analytics/event", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ metric: "prep_shop", meta: { count: shopCount, event_id: event.id } }),
+          }).catch(() => {}); // Fire-and-forget
+        }
         onSuccess?.();
         onClose();
       } else {
@@ -243,11 +258,29 @@ export default function AddPrepTasksModal({ isOpen, onClose, event, familyMember
                   {task.done && (
                     <span style={{ fontSize: "1rem", marginLeft: "0.25rem" }}>✅</span>
                   )}
+                  {/* Type toggle: Shop (🛒) or Task (✓) */}
+                  <button
+                    type="button"
+                    onClick={() => updateTask(task.id, "type", task.type === "shop" ? "task" : "shop")}
+                    title={task.type === "shop" ? "Shopping item (tap to change to task)" : "Task (tap to change to shopping)"}
+                    style={{
+                      padding: "0.375rem 0.5rem",
+                      border: "1px solid var(--color-border)",
+                      borderRadius: "0.375rem",
+                      backgroundColor: task.type === "shop" ? "#fef3c7" : "white",
+                      cursor: "pointer",
+                      fontSize: "1rem",
+                      minWidth: "36px",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {task.type === "shop" ? "🛒" : "✓"}
+                  </button>
                   <input
                     type="text"
                     value={task.text}
                     onChange={(e) => updateTask(task.id, "text", e.currentTarget.value)}
-                    placeholder={index === 0 ? "e.g., Pack sports bag" : "Another task..."}
+                    placeholder={task.type === "shop" ? "e.g., Buy snacks" : (index === 0 ? "e.g., Pack sports bag" : "Another task...")}
                     style={{
                       flex: 1,
                       padding: "0.5rem",
@@ -317,7 +350,7 @@ export default function AddPrepTasksModal({ isOpen, onClose, event, familyMember
           </div>
 
           <div style={{ fontSize: "0.75rem", color: "var(--color-text-light)", marginBottom: "1rem" }}>
-            Prep tasks are simple to-dos without points. Kids can mark them done.
+            🛒 = shopping items (exportable) • ✓ = tasks. Kids can mark both done.
           </div>
 
         </form>
