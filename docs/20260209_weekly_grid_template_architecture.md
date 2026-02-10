@@ -1,4 +1,4 @@
-# Weekly Grid Template - Architecture Review
+# Weekly Grid - Architecture Review
 
 **Document Created**: February 9, 2026
 **Status**: Design Phase - Awaiting Optimization Guidelines
@@ -8,7 +8,13 @@
 
 ## Executive Summary
 
-Weekly Grid is a visual chore progress template inspired by Amazon/Pinterest marketing patterns. It provides families with a printable/shareable weekly view showing each child's chore completion status in a grid format.
+Weekly Grid is a **reporting and visualization feature** (not a chore assignment template). It provides families with a printable/shareable weekly view showing each child's chore completion status in a grid format, inspired by Amazon/Pinterest marketing patterns.
+
+> **Clarification**: Weekly Grid is fundamentally different from [Chore Templates](./chore-templates-design.md):
+> - **Weekly Grid**: Read-only visualization that displays completed chores and points earned
+> - **Chore Templates**: Assignment system that creates and assigns chores to kids via rotation presets
+>
+> Weekly Grid consumes data created by chore completions; it does not create or assign chores.
 
 ### Key Decisions
 
