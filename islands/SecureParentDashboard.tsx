@@ -173,15 +173,21 @@ export default function SecureParentDashboard(
           return isParticipant;
         });
 
-        // Show all events from today onwards (no upper limit - smart grouping in UI)
+        // Show up to 10 upcoming events from today onwards, sorted earliest first
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
-        const upcomingParentEvents = parentEvents.filter((event: any) => {
-          const eventDate = new Date(event.event_date + "T00:00:00");
-          eventDate.setHours(0, 0, 0, 0);
-          return eventDate >= today;
-        });
+        const upcomingParentEvents = parentEvents
+          .filter((event: any) => {
+            const eventDate = new Date(event.event_date + "T00:00:00");
+            eventDate.setHours(0, 0, 0, 0);
+            return eventDate >= today;
+          })
+          .sort((a: any, b: any) => {
+            // Sort by event_date ascending (earliest first)
+            return a.event_date.localeCompare(b.event_date);
+          })
+          .slice(0, 10); // Limit to 10 events
 
         console.log("📅 Parent events loaded:", {
           total: events.length,
