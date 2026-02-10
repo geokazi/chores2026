@@ -48,6 +48,7 @@ import * as $api_gift_purchase from "./routes/api/gift/purchase.ts";
 import * as $api_gift_redeem from "./routes/api/gift/redeem.ts";
 import * as $api_gift_validate from "./routes/api/gift/validate.ts";
 import * as $api_goals_index from "./routes/api/goals/index.ts";
+import * as $api_grid_weekly from "./routes/api/grid/weekly.ts";
 import * as $api_kids_kid_id_pin from "./routes/api/kids/[kid_id]/pin.ts";
 import * as $api_kids_chores from "./routes/api/kids/chores.ts";
 import * as $api_parent_session from "./routes/api/parent/session.ts";
@@ -90,6 +91,7 @@ import * as $parent_activity from "./routes/parent/activity.tsx";
 import * as $parent_balances from "./routes/parent/balances.tsx";
 import * as $parent_dashboard from "./routes/parent/dashboard.tsx";
 import * as $parent_events from "./routes/parent/events.tsx";
+import * as $parent_grid_weekly from "./routes/parent/grid/weekly.tsx";
 import * as $parent_insights from "./routes/parent/insights.tsx";
 import * as $parent_my_chores from "./routes/parent/my-chores.tsx";
 import * as $parent_rewards from "./routes/parent/rewards.tsx";
@@ -151,6 +153,7 @@ import * as $ThemeInitializer from "./islands/ThemeInitializer.tsx";
 import * as $ThemeToggle from "./islands/ThemeToggle.tsx";
 import * as $TrialBanner from "./islands/TrialBanner.tsx";
 import * as $WebSocketManager from "./islands/WebSocketManager.tsx";
+import * as $WeeklyGrid from "./islands/WeeklyGrid.tsx";
 import * as $WeeklyProgress from "./islands/WeeklyProgress.tsx";
 import * as $auth_AuthModeSelector from "./islands/auth/AuthModeSelector.tsx";
 import * as $auth_AuthPageLayout from "./islands/auth/AuthPageLayout.tsx";
@@ -218,6 +221,7 @@ const manifest = {
     "./routes/api/gift/redeem.ts": $api_gift_redeem,
     "./routes/api/gift/validate.ts": $api_gift_validate,
     "./routes/api/goals/index.ts": $api_goals_index,
+    "./routes/api/grid/weekly.ts": $api_grid_weekly,
     "./routes/api/kids/[kid_id]/pin.ts": $api_kids_kid_id_pin,
     "./routes/api/kids/chores.ts": $api_kids_chores,
     "./routes/api/parent/session.ts": $api_parent_session,
@@ -261,6 +265,7 @@ const manifest = {
     "./routes/parent/balances.tsx": $parent_balances,
     "./routes/parent/dashboard.tsx": $parent_dashboard,
     "./routes/parent/events.tsx": $parent_events,
+    "./routes/parent/grid/weekly.tsx": $parent_grid_weekly,
     "./routes/parent/insights.tsx": $parent_insights,
     "./routes/parent/my-chores.tsx": $parent_my_chores,
     "./routes/parent/rewards.tsx": $parent_rewards,
@@ -324,6 +329,7 @@ const manifest = {
     "./islands/ThemeToggle.tsx": $ThemeToggle,
     "./islands/TrialBanner.tsx": $TrialBanner,
     "./islands/WebSocketManager.tsx": $WebSocketManager,
+    "./islands/WeeklyGrid.tsx": $WeeklyGrid,
     "./islands/WeeklyProgress.tsx": $WeeklyProgress,
     "./islands/auth/AuthModeSelector.tsx": $auth_AuthModeSelector,
     "./islands/auth/AuthPageLayout.tsx": $auth_AuthPageLayout,
