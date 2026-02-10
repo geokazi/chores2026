@@ -306,6 +306,76 @@ export default function WeeklyGrid({ gridData, familyName }: Props) {
           gap: 0.25rem;
         }
 
+        /* ========================================
+           RESPONSIVE BREAKPOINTS
+           ======================================== */
+
+        /* Tablet (768px+): Full grid visible, no scroll */
+        @media (min-width: 768px) {
+          .grid-table-wrapper {
+            overflow-x: visible;
+          }
+
+          .grid-table {
+            min-width: 100%;
+          }
+
+          .grid-cell-name {
+            min-width: 140px;
+          }
+
+          .grid-cell-day {
+            min-width: 60px;
+          }
+
+          .grid-cell-day .day-indicator {
+            font-size: 1.125rem;
+          }
+
+          .grid-cell-day .day-points {
+            font-size: 0.8rem;
+          }
+
+          .grid-table th,
+          .grid-table td {
+            padding: 0.875rem 0.625rem;
+          }
+
+          .grid-legend {
+            gap: 2rem;
+            font-size: 0.8rem;
+          }
+        }
+
+        /* Desktop (1024px+): More breathing room */
+        @media (min-width: 1024px) {
+          .weekly-grid-container {
+            max-width: 900px;
+            margin: 0 auto 1.5rem;
+          }
+
+          .grid-cell-name {
+            min-width: 160px;
+          }
+
+          .grid-cell-day {
+            min-width: 70px;
+          }
+
+          .grid-cell-total {
+            min-width: 70px;
+          }
+
+          .grid-table th,
+          .grid-table td {
+            padding: 1rem 0.75rem;
+          }
+
+          .grid-cell-total .total-points {
+            font-size: 1.25rem;
+          }
+        }
+
         /* Print-only elements hidden on screen */
         .print-only {
           display: none;
