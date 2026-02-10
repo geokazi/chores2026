@@ -98,12 +98,26 @@ const weeklyData = await supabase
 
 ### JSONB Schema (Zero New Tables)
 
+**Follows Existing Pattern**: See [JSONB Settings Architecture](./20260114_JSONB_settings_architecture.md)
+
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                    JSONB STORAGE STRATEGY                                    │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│   LOCATION: families.settings.apps.choregami.weekly_grid                    │
+│   EXISTING INFRASTRUCTURE (sql/20260114_jsonb_settings.sql):                │
+│   ═══════════════════════════════════════════════════════════               │
+│                                                                             │
+│   public.families.settings JSONB NOT NULL DEFAULT '{}'                      │
+│   └── GIN index: idx_families_settings_gin (ALREADY EXISTS)                 │
+│                                                                             │
+│   public.family_profiles.preferences JSONB NOT NULL DEFAULT '{}'            │
+│   └── GIN index: idx_family_profiles_preferences_gin (ALREADY EXISTS)       │
+│                                                                             │
+│   ───────────────────────────────────────────────────────────────────────   │
+│                                                                             │
+│   WEEKLY GRID LOCATION (follows app namespace pattern):                     │
+│   families.settings.apps.choregami.weekly_grid                              │
 │                                                                             │
 │   {                                                                         │
 │     "enabled": true,                                                        │
@@ -116,22 +130,61 @@ const weeklyData = await supabase
 │     "last_generated": "2026-02-09"   // Cache invalidation                  │
 │   }                                                                         │
 │                                                                             │
-│   SIZE: ~150 bytes per family                                               │
-│   INDEX: GIN on families.settings for O(1) lookups                          │
+│   SIZE: ~150 bytes per family (sparse storage - only overrides)             │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### GIN Index Strategy
+### GIN Index (Already Exists - NO Migration Needed)
 
 ```sql
--- O(1) JSONB path lookups (add if not exists)
+-- FROM sql/20260114_jsonb_settings.sql (ALREADY DEPLOYED)
 CREATE INDEX IF NOT EXISTS idx_families_settings_gin
-ON public.families USING GIN (settings jsonb_path_ops);
+ON public.families USING GIN (settings);
 
--- Query pattern (O(1) with GIN):
-SELECT * FROM families
+CREATE INDEX IF NOT EXISTS idx_family_profiles_preferences_gin
+ON public.family_profiles USING GIN (preferences);
+```
+
+**Query Patterns (O(1) with existing GIN index):**
+
+```sql
+-- Find families with Weekly Grid enabled
+SELECT id, name FROM families
 WHERE settings @> '{"apps": {"choregami": {"weekly_grid": {"enabled": true}}}}';
+
+-- Get grid preferences with inheritance (member overrides family)
+SELECT
+  COALESCE(
+    fp.preferences->'apps'->'choregami'->'weekly_grid',
+    f.settings->'apps'->'choregami'->'weekly_grid',
+    '{}'::jsonb
+  ) as grid_settings
+FROM family_profiles fp
+JOIN families f ON f.id = fp.family_id
+WHERE fp.id = $1;
+```
+
+### JSONB Update Pattern (No Migration)
+
+```typescript
+// Set Weekly Grid config (uses existing jsonb_set pattern)
+await supabase
+  .from('families')
+  .update({
+    settings: supabase.sql`
+      jsonb_set(
+        COALESCE(settings, '{}'::jsonb),
+        '{apps,choregami,weekly_grid}',
+        ${JSON.stringify({
+          enabled: true,
+          template: 'classic',
+          preferences: { show_points: true, show_streaks: true }
+        })}::jsonb
+      )
+    `
+  })
+  .eq('id', familyId);
 ```
 
 ### Data Flow
@@ -575,10 +628,16 @@ ON choretracker.chore_transactions (family_id, profile_id, created_at);
 
 ## References
 
+### Core Architecture (MUST READ)
+- [**JSONB Settings Architecture**](./20260114_JSONB_settings_architecture.md) - Storage pattern, GIN indexes, inheritance
+- [**SQL Migration**](../sql/20260114_jsonb_settings.sql) - GIN indexes already deployed
+
+### Related Features
 - [Chore Templates Design](./chore-templates-design.md) - Related template architecture
-- [JSONB Settings Architecture](./20260114_JSONB_settings_architecture.md) - Existing JSONB patterns
+- [Chore Templates JSONB Schema](./milestones/20260115_chore-templates-jsonb-schema.md) - Rotation config pattern
 - [Plan Gating Implementation](./milestones/20260118_template_gating_gift_codes.md) - Pro tier system
 - [Points Consistency](./troubleshooting/20260131_points_consistency_single_source_of_truth.md) - Transaction query patterns
+- [Balance/Rewards Implementation](./milestones/20260125_balance_rewards_goals_implementation.md) - BalanceService patterns
 
 ---
 
