@@ -202,22 +202,39 @@ WHERE settings @> '{"apps": {"choregami": {"weekly_grid": {"enabled": true}}}}';
 │   NEW FILES (Estimated Lines)                                               │
 │   ═══════════════════════════                                               │
 │                                                                             │
-│   routes/api/grid/weekly.ts           ~80 lines    API endpoint             │
-│   lib/services/grid-service.ts        ~120 lines   Query + transform        │
+│   routes/api/grid/weekly.ts           ~60 lines    API endpoint             │
+│   lib/services/grid-service.ts        ~80 lines    Compose existing services│
 │   islands/WeeklyGrid.tsx              ~150 lines   Display component        │
 │   static/grid-print.css               ~50 lines    Print styles             │
 │                                                                             │
-│   TOTAL: ~400 lines (well under 500 per module)                             │
+│   TOTAL: ~340 lines (well under 500 per module)                             │
 │                                                                             │
 │   ───────────────────────────────────────────────────────────────────────   │
 │                                                                             │
-│   REUSED (No New Code)                                                      │
-│   ════════════════════                                                      │
+│   REUSED (Zero New Code - Heavy Lifting Already Done)                       │
+│   ═══════════════════════════════════════════════════                       │
 │                                                                             │
-│   lib/plan-gate.ts                    Pro tier check                        │
-│   lib/services/insights-service.ts    Streak calculation                    │
-│   lib/services/balance-service.ts     Points aggregation                    │
-│   lib/auth/session.ts                 Session validation                    │
+│   lib/services/balance-service.ts     ← getFamilyBalances() returns:        │
+│                                         • currentPoints per kid             │
+│                                         • weeklyEarnings per kid            │
+│                                         • dailyEarnings[] (7-day rolling)   │
+│                                         • Timezone-aware date handling      │
+│                                                                             │
+│   lib/services/insights-service.ts    ← calculateStreak() for 🔥 badge      │
+│   lib/plan-gate.ts                    ← Pro tier access control             │
+│   lib/auth/session.ts                 ← Session validation                  │
+│                                                                             │
+│   ───────────────────────────────────────────────────────────────────────   │
+│                                                                             │
+│   COMPOSITION PATTERN                                                       │
+│   ═══════════════════                                                       │
+│                                                                             │
+│   GridService composes:                                                     │
+│   ├── BalanceService.getFamilyBalances()  ← Daily/weekly points             │
+│   ├── InsightsService.calculateStreak()   ← Streak calculation              │
+│   └── Simple mapping logic                ← Transform to grid format        │
+│                                                                             │
+│   NO duplicate query logic. NO duplicate point aggregation.                 │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -268,19 +285,112 @@ WHERE settings @> '{"apps": {"choregami": {"weekly_grid": {"enabled": true}}}}';
 
 ## Integration Points
 
-### Rewards System (Existing)
+### Rewards/Balance System (Existing - REUSE 100%)
+
+**Key Discovery**: `BalanceService.getFamilyBalances()` already provides EXACTLY what Weekly Grid needs:
 
 ```typescript
-// REUSE: Do NOT build new rewards
-// Existing: lib/services/balance-service.ts
+// lib/services/balance-service.ts (lines 101-168)
+// ALREADY IMPLEMENTED - just call it!
 
-// Weekly Grid shows:
-// - Points from existing chore_transactions
-// - Streak from existing insights-service.ts
-// - Rewards progress from existing balance calculations
+interface BalanceInfo {
+  profileId: string;
+  profileName: string;
+  avatarEmoji: string;
+  currentPoints: number;           // ← Grid "Total" column
+  dollarValue: number;
+  weeklyEarnings: number;          // ← Grid "Week Total"
+  dailyEarnings: DailyEarning[];   // ← Grid day columns!
+}
 
-// NO new rewards logic needed
+interface DailyEarning {
+  date: string;      // "2026-02-09"
+  dayName: string;   // "Sun"
+  points: number;    // Points earned that day
+}
+
+// Usage in Weekly Grid API:
+const balanceService = new BalanceService();
+const balances = await balanceService.getFamilyBalances(familyId, timezone);
+
+// Returns array of BalanceInfo - one per kid
+// Each has dailyEarnings[] for last 7 days (rolling window)
 ```
+
+### What BalanceService Already Does
+
+| Feature | Method | Notes |
+|---------|--------|-------|
+| Per-kid points | `getFamilyBalances()` | Returns `currentPoints` |
+| Weekly earnings | `getFamilyBalances()` | Returns `weeklyEarnings` |
+| Daily breakdown | `getFamilyBalances()` | Returns `dailyEarnings[]` with 7 days |
+| Timezone support | `getRolling7DayDates(tz)` | Uses IANA timezone |
+| Transaction query | Reuses existing pattern | Same as `chore-service` |
+
+### What Weekly Grid Needs to Add
+
+| Feature | Source | New Code? |
+|---------|--------|-----------|
+| Kid names/points | `BalanceService` | **NO** |
+| Daily points | `BalanceService.dailyEarnings` | **NO** |
+| Weekly total | `BalanceService.weeklyEarnings` | **NO** |
+| Completion status | Query `chore_assignments` | ~20 lines |
+| Streak indicator | `InsightsService.calculateStreak()` | **NO** |
+
+### Grid Service Integration (Minimal New Code)
+
+```typescript
+// lib/services/grid-service.ts (~80 lines, NOT 120)
+// Most work already done by BalanceService!
+
+import { BalanceService } from "./balance-service.ts";
+import { InsightsService } from "./insights-service.ts";
+
+export class GridService {
+  private balanceService = new BalanceService();
+  private insightsService = new InsightsService();
+
+  async getWeeklyGrid(familyId: string, timezone: string) {
+    // 1. Get balance data (includes daily earnings)
+    const balances = await this.balanceService.getFamilyBalances(familyId, timezone);
+
+    // 2. Get streak data for each kid
+    const grids = await Promise.all(
+      balances.map(async (balance) => {
+        const streak = await this.insightsService.calculateStreak(balance.profileId);
+
+        return {
+          kid: {
+            id: balance.profileId,
+            name: balance.profileName,
+            avatar: balance.avatarEmoji,
+          },
+          days: balance.dailyEarnings.map(d => ({
+            day: d.dayName,
+            date: d.date,
+            points: d.points,
+            // TODO: Add completion status from chore_assignments if needed
+          })),
+          weeklyTotal: balance.weeklyEarnings,
+          streak: streak,
+        };
+      })
+    );
+
+    return {
+      week: this.getWeekLabel(timezone),
+      kids: grids,
+    };
+  }
+}
+```
+
+### Rewards Marketplace (No Integration Needed)
+
+Weekly Grid does NOT interact with rewards system:
+- Grid shows **points earned** (from chores)
+- Rewards shows **points spent** (on rewards)
+- Separate concerns, no coupling needed
 
 ### Plan Gating (Existing)
 
