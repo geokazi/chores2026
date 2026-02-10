@@ -1,27 +1,47 @@
 # Chore Templates Feature Design
 
 **Document Created**: January 15, 2026
-**Updated**: January 19, 2026
-**Status**: Design Complete - Ready for Implementation
-**Architecture**: JSONB-First, Zero New Tables, Settings-Inline
+**Updated**: February 10, 2026
+**Status**: ✅ Implementation Complete (exceeds original scope)
+**Architecture**: JSONB-First, Zero New Tables, Standalone TemplateSelector Island
 
 ## Executive Summary
 
 Chore Templates allow families to pick and apply pre-built chore schedules that automatically assign age-appropriate chores to their kids each day. This feature leverages the existing JSONB settings architecture and FamilySettings modal pattern.
 
-### MVP Scope: 5 Curated Templates (Static TypeScript)
+### MVP Scope: 7 Curated Templates (Static TypeScript)
 
-| Category | Template | Description | Kids | Cycle |
-|----------|----------|-------------|------|-------|
-| Everyday | 🎯 Smart Family Rotation | Two-week cycle where kids swap chores for fairness | 2-4 | Biweekly |
-| Everyday | ⚡ Weekend Warrior | Light weekdays, intensive weekends | 2-6 | Weekly |
-| Everyday | 🌱 Daily Basics | Same simple routine every day | 2-3 | Daily |
-| Seasonal | ☀️ Summer Break | Outdoor-focused, more chores when kids have time | 2-4 | Weekly |
-| Seasonal | 📚 School Year | Light weekdays respecting homework, more on weekends | 2-4 | Weekly |
+| Category | Template | Description | Kids | Cycle | Plan |
+|----------|----------|-------------|------|-------|------|
+| Everyday | 🎯 Smart Family Rotation | Two-week cycle where kids swap chores for fairness | 2-4 | Biweekly | Paid |
+| Everyday | ⚡ Weekend Warrior | Light weekdays, intensive weekends | 2-6 | Weekly | Paid |
+| Everyday | 🌱 Daily Basics | Same simple routine every day | 2-3 | Daily | Free |
+| Everyday | 🔄 Dynamic Daily | Scales to any family size with fair distribution | 1-8 | Daily | Free |
+| Seasonal | ☀️ Summer Break | Outdoor-focused, more chores when kids have time | 2-4 | Weekly | Paid |
+| Seasonal | 📚 School Year | Light weekdays respecting homework, more on weekends | 2-4 | Weekly | Paid |
+| Large | 👨‍👩‍👧‍👦 Large Family | 4-slot rotation for bigger families with round-robin | 3-8 | Biweekly | Paid |
 
 **All templates use the same data model**: `schedule[weekType][slot][day] = choreKeys[]`
 
 Templates are grouped by `preset_category` field in the UI. See [Seasonal Templates Implementation](./milestones/20260116_seasonal-templates-implementation.md) for details.
+
+### Plan Gating (Freemium Model)
+
+Templates are gated by subscription plan to support sustainable development:
+
+| Plan Type | Duration | Access |
+|-----------|----------|--------|
+| `free` | Unlimited | Daily Basics, Dynamic Daily only |
+| `trial` | 15 days | All templates |
+| `month_pass` | 30 days | All templates |
+| `summer` | 90 days | All templates |
+| `school_year` | 180 days | All templates |
+| `full_year` | 365 days | All templates |
+
+**Free Templates**: `daily_basics`, `dynamic_daily` (no payment required)
+**Paid Templates**: `smart_rotation`, `weekend_warrior`, `summer_break`, `school_year`, `large_family`
+
+Implementation: `lib/plan-gate.ts` (~200 lines) with Stripe integration for upgrades.
 
 ### Scalability Philosophy
 
@@ -30,19 +50,20 @@ Templates are grouped by `preset_category` field in the UI. See [Seasonal Templa
 │                         STAY SMALL - PARETO PRINCIPLE                       │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│   3-5 curated templates cover 80%+ of families.                             │
+│   7 curated templates cover 80%+ of families.                               │
 │   Don't build 100 templates for edge cases.                                 │
 │                                                                             │
-│   TIER 1: Curated Presets (NOW)                                             │
-│   ══════════════════════════════                                            │
-│   • 3-5 static TypeScript templates                                         │
+│   TIER 1: Curated Presets ✅ COMPLETE                                       │
+│   ══════════════════════════════════════                                    │
+│   • 7 static TypeScript templates (2 free, 5 paid)                          │
 │   • Tested, optimized, maintained by us                                     │
 │   • Covers majority of family needs                                         │
 │                                                                             │
-│   TIER 2: Preset + Customize (FUTURE, if data shows need)                   │
-│   ═══════════════════════════════════════════════════════                   │
+│   TIER 2: Preset + Customize ✅ COMPLETE                                    │
+│   ══════════════════════════════════════                                    │
 │   • Family picks preset, then tweaks                                        │
-│   • Uses JSONB customizations field (already in schema)                     │
+│   • Points override, enable/disable chores, rest days                       │
+│   • Uses JSONB customizations field                                         │
 │                                                                             │
 │   TIER 3: Custom Builder (UNLIKELY)                                         │
 │   ══════════════════════════════════                                        │
@@ -854,7 +875,7 @@ Rotation chores appear in the same "Today's Chores" list as manually-assigned ch
 
 ---
 
-## Implementation Structure (Minimal)
+## Implementation Structure (Actual)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -865,50 +886,66 @@ Rotation chores appear in the same "Today's Chores" list as manually-assigned ch
 │   ═════════════════════════════════════════════                             │
 │                                                                             │
 │   lib/data/                                                                 │
-│   ├── rotation-presets.ts              ~80 lines   Registry + helpers       │
+│   ├── rotation-presets.ts              94 lines    Registry + helpers       │
 │   └── presets/                                                              │
-│       ├── smart-rotation.ts            ~100 lines  Everyday template        │
-│       ├── weekend-warrior.ts           ~80 lines   Everyday template        │
-│       ├── daily-basics.ts              ~60 lines   Everyday template        │
-│       ├── summer-break.ts              ~70 lines   Seasonal template        │
-│       └── school-year.ts               ~70 lines   Seasonal template        │
+│       ├── smart-rotation.ts            129 lines   Everyday template        │
+│       ├── weekend-warrior.ts           65 lines    Everyday template        │
+│       ├── daily-basics.ts              62 lines    Everyday template        │
+│       ├── dynamic-daily.ts             51 lines    Everyday template (FREE) │
+│       ├── summer-break.ts              72 lines    Seasonal template        │
+│       ├── school-year.ts               71 lines    Seasonal template        │
+│       └── large-family.ts              94 lines    Large family template    │
 │                                                                             │
 │   lib/types/                                                                │
-│   └── rotation.ts                      ~50 lines   TypeScript interfaces    │
+│   └── rotation.ts                      98 lines    TypeScript interfaces    │
+│                                                                             │
+│   lib/services/                                                             │
+│   └── rotation-service.ts              631 lines   ⚠️ EXCEEDS 500 LIMIT     │
 │                                                                             │
 │   ───────────────────────────────────────────────────────────────────────   │
 │                                                                             │
-│   UI (inline in existing FamilySettings - same pattern as PIN modal)        │
-│   ════════════════════════════════════════════════════════════════════      │
+│   UI                                                                        │
+│   ══                                                                        │
 │                                                                             │
-│   islands/FamilySettings.tsx           +150 lines  Add rotation section     │
-│   (NO new islands. Inline modal.)                  + selection modal        │
+│   islands/TemplateSelector.tsx         2,294 lines ⚠️ EXCEEDS 500 LIMIT     │
+│   islands/FamilySettings.tsx           645 lines   Settings integration     │
 │                                                                             │
 │   ───────────────────────────────────────────────────────────────────────   │
 │                                                                             │
 │   API                                                                       │
 │   ═══                                                                       │
 │                                                                             │
-│   routes/api/rotation/apply.ts         ~100 lines  POST/DELETE endpoints    │
-│   routes/api/rotation/status.ts        ~95 lines   GET current status       │
+│   routes/api/rotation/apply.ts         214 lines   POST/DELETE endpoints    │
+│   routes/api/rotation/status.ts        97 lines    GET current status       │
+│   routes/api/rotation/today.ts         145 lines   GET today's chores       │
+│   routes/api/rotation/complete.ts      180 lines   POST complete chore      │
 │                                                                             │
 │   ───────────────────────────────────────────────────────────────────────   │
 │                                                                             │
-│   TOTAL: ~790 lines across 9 files                                          │
-│   Largest file: ~150 lines (well under 500 limit)                           │
+│   PLAN GATING                                                               │
+│   ═══════════                                                               │
+│                                                                             │
+│   lib/plan-gate.ts                     200 lines   Freemium access control  │
+│   lib/services/plan-service.ts         168 lines   Plan management          │
+│                                                                             │
+│   ───────────────────────────────────────────────────────────────────────   │
+│                                                                             │
+│   TOTAL: ~4,700+ lines across 18+ files                                     │
+│   ⚠️ TECHNICAL DEBT: TemplateSelector.tsx (2,294) and rotation-service.ts   │
+│      (631) exceed 500-line module constraint. Refactoring recommended.      │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### What We're NOT Building
+### What We Built vs. Original Plan
 
 ```
-❌ routes/parent/templates.tsx         - No separate gallery route
-❌ islands/TemplateGallery.tsx         - No new island (inline in Settings)
-❌ islands/TemplateCard.tsx            - No new island (inline in Settings)
-❌ islands/TemplatePreview.tsx         - No complex preview (just description)
-❌ islands/ChildMappingModal.tsx       - No new island (inline in Settings)
-❌ Database table for templates        - Static TypeScript is sufficient
+✅ islands/TemplateSelector.tsx        - Standalone island (not inline in Settings)
+✅ Template customization              - Originally "future tier", now implemented
+✅ Manual assignment mode              - Per-kid chore assignment UI
+✅ Plan gating system                  - Freemium model with Stripe
+❌ routes/parent/templates.tsx         - No separate gallery route (correct)
+❌ Database table for templates        - Static TypeScript is sufficient (correct)
 ```
 
 ---
@@ -1084,21 +1121,25 @@ See [Template Customization: Inline Chores & Assignment Mode](./milestones/20260
 **Status**: ✅ **COMPLETE** (January 19, 2026)
 **Enhanced**: ✅ **COMPLETE** (January 25, 2026) - See [Inline Chores & Assignment Mode](./milestones/20260125_template_customization_inline_chores.md)
 
-Families may want to tweak templates (adjust points, disable chores, add custom chores). The **Override Layer Pattern** enables this with minimal complexity:
+Families can tweak templates using the **Override Layer Pattern**:
 
 - Store only differences from base preset in JSONB `customizations` field
-- Runtime merge function applies overrides (~30 lines)
-- UI for enable/disable chores and adjust points (~150 lines)
-- **Total implementation: ~250 lines**
+- Runtime merge function applies overrides in `rotation-service.ts`
+- Full UI in `TemplateSelector.tsx` for all customization options
 
 **What families CAN customize:**
 - Change points for any template chore
-- Disable chores they don't want
-- Add custom chores (appear daily for all slots)
+- Disable/enable individual chores
+- Add custom rest days
+- Set rotation period (1-week vs 2-week swaps)
+- Add daily chores (appear every day for all kids)
+- Add family-level custom chores (persist across all templates)
 
 **What stays fixed (keep simple):**
 - Schedule/day assignments (pick different template instead)
 - Chore names/icons (add custom chore instead)
+
+**Dynamic Chore Distribution**: When chores are disabled in a slot-based template, the system automatically redistributes remaining chores fairly using round-robin across days and kids. Week B offset ensures fairness over time.
 
 ### Family-Level Custom Chores
 
@@ -1131,22 +1172,76 @@ See **[JSONB Schema Design - Template Customization](./milestones/20260115_chore
 
 ---
 
+## Manual Assignment Mode
+
+**Status**: ✅ **COMPLETE** (January 2026)
+
+Beyond rotation templates, parents can use **Manual Assignment Mode** for direct per-kid chore assignment:
+
+### How It Works
+
+1. Parent selects "Manual" mode in TemplateSelector (no rotation template active)
+2. Parent assigns specific chores to individual kids
+3. Assigned chores appear daily on each kid's dashboard
+4. Chores can be one-time (with due date) or recurring (specific days of week)
+
+### Features
+
+| Feature | Description |
+|---------|-------------|
+| **Per-kid assignment** | Assign chores directly to specific children |
+| **Recurring chores** | Select days (Mon-Sun) for automatic daily generation |
+| **One-time chores** | Single occurrence with due date |
+| **Inline editing** | Edit name, points, assigned kid, due date |
+| **Soft delete** | Remove chores with confirmation |
+
+### API Endpoints
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/chores/recurring` | GET | Fetch manual recurring + one-time chores |
+| `/api/chores/create` | POST | Create with `isRecurring` and `recurringDays[]` |
+| `/api/chores/[id]/edit` | POST | Update chore properties |
+| `/api/chores/[id]/delete` | POST | Soft-delete chore |
+
+### Implementation
+
+- UI in `islands/TemplateSelector.tsx` (inline add/edit forms)
+- Recurring chores: Template created, pg_cron generates daily assignments
+- One-time chores: Template + immediate assignment created together
+
+---
+
 ## Implementation Status
 
 **Status**: ✅ **COMPLETE** (January 15, 2026)
+**Enhanced**: ✅ **COMPLETE** (February 2026) - Plan gating, 7 templates, manual mode
 
 All rotation chore functionality is fully implemented and tested:
 
 | Component | Status | Location |
 |-----------|--------|----------|
-| Preset definitions | ✅ | `lib/data/rotation-presets.ts` |
-| Rotation service | ✅ | `lib/services/rotation-service.ts` |
+| Preset definitions (7 templates) | ✅ | `lib/data/presets/*.ts` |
+| Preset registry | ✅ | `lib/data/rotation-presets.ts` |
+| Rotation service | ✅ | `lib/services/rotation-service.ts` (631 lines) |
 | Apply/Delete preset | ✅ | `routes/api/rotation/apply.ts` |
 | Get status | ✅ | `routes/api/rotation/status.ts` |
 | Complete chore | ✅ | `routes/api/rotation/complete.ts` |
 | Today's chores | ✅ | `routes/api/rotation/today.ts` |
+| Template selector UI | ✅ | `islands/TemplateSelector.tsx` (2,294 lines) |
+| Plan gating | ✅ | `lib/plan-gate.ts`, `lib/services/plan-service.ts` |
+| Manual assignment mode | ✅ | Integrated in TemplateSelector |
 | Kid dashboard integration | ✅ | `routes/api/kids/chores.ts`, `islands/ChoreList.tsx` |
 | TransactionService | ✅ | Backwards-compatible null support |
+
+### Technical Debt
+
+| Issue | File | Current | Limit |
+|-------|------|---------|-------|
+| Module size exceeded | `islands/TemplateSelector.tsx` | 2,294 lines | 500 |
+| Module size exceeded | `lib/services/rotation-service.ts` | 631 lines | 500 |
+
+**Recommended refactoring**: Split TemplateSelector into smaller components (TemplateGallery, TemplateCustomizer, ManualChoreManager, TemplatePlanGate).
 
 See [Implementation Gaps Document](./chore-templates-gaps.md) for detailed implementation notes and backwards compatibility analysis.
 
