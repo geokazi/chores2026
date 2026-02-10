@@ -1249,6 +1249,7 @@ See [Implementation Gaps Document](./chore-templates-gaps.md) for detailed imple
 
 ## References
 
+- [**Weekly Grid Template Architecture**](./20260209_weekly_grid_template_architecture.md) - Visual weekly progress grid (Pro feature, JSONB-first)
 - [Seasonal Templates Implementation](./milestones/20260116_seasonal-templates-implementation.md) - Summer Break + School Year templates
 - [Implementation Gaps & Completion](./milestones/20260115_chore-templates-gaps.md) - Detailed implementation notes
 - [JSONB Schema Design](./milestones/20260115_chore-templates-jsonb-schema.md) - Database schema and customization design
