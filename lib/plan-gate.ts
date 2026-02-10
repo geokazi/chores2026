@@ -70,9 +70,10 @@ export const PLAN_PRICES: Record<Exclude<PlanType, 'free' | 'trial'>, { amount: 
   full_year: { amount: 4999, perMonth: 'ONE-TIME PAYMENT' },
 };
 
-// Subscription prices - $5.99/mo or $49.99/yr (30% savings)
+// Subscription prices - $4.99/mo or $49.99/yr (17% savings)
+// Monthly matches 1-month gift pass for price consistency
 export const SUBSCRIPTION_PRICES: Record<SubscriptionPlanType, { amount: number; display: string }> = {
-  monthly: { amount: 599, display: '$5.99/month' },
+  monthly: { amount: 499, display: '$4.99/month' },
   annual: { amount: 4999, display: '$49.99/year' },
 };
 

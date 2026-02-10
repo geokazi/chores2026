@@ -124,7 +124,7 @@ https://choregami.myshopify.com/products/choregami-summer-pass-3-months?utm_sour
 | School Year (6 mo) | $29.99 | $5.00 | **Most Popular** - academic year |
 | Full Year (12 mo) | $49.99 | $4.17 | **Best Value** - committed families |
 
-> **Strategic positioning**: Gift passes priced to prevent subscription cannibalization. Subscription: $5.99/mo or $49.99/yr. Gift cards serve as acquisition channel, not revenue model.
+> **Strategic positioning**: Gift passes and subscriptions aligned at $4.99/mo. Annual subscription $49.99/yr (17% savings). Gift cards serve as acquisition channel.
 
 ---
 

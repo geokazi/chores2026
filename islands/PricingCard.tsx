@@ -79,7 +79,7 @@ const SUBSCRIPTION_PLANS: PlanOption[] = [
     id: "monthly",
     name: "Monthly",
     duration: "Billed monthly",
-    price: "$5.99",
+    price: "$4.99",
     perMonth: "/month",
     tagline: "Stop repeating yourself",
     benefits: ["Try it risk-free", "Kids help without nagging", "Cancel anytime (no contract)"],
@@ -90,7 +90,7 @@ const SUBSCRIPTION_PLANS: PlanOption[] = [
     duration: "Billed yearly",
     price: "$49.99",
     perMonth: "$4.17/month",
-    badge: "Save 30%",
+    badge: "Save 17%",
     tagline: "A full year of peace",
     benefits: ["They help WITHOUT being asked", "Less than $1/week", "Set it and forget it"],
   },
@@ -337,41 +337,42 @@ export default function PricingCard({ isAuthenticated, referralBonus }: PricingC
       {/* Gift Form - Show when buying as gift and no success yet */}
       {buyAsGift.value && !giftPurchaseResult.value?.success && (
         <div class="gift-form">
-          <h4>Gift Details</h4>
+          <h4>🎁 Send to someone special</h4>
           <div class="gift-form-field">
-            <label>Recipient's Email *</label>
+            <label>Their email *</label>
             <input
               type="email"
-              placeholder="friend@example.com"
+              placeholder="sarah@email.com"
               value={giftRecipientEmail.value}
               onInput={(e) => { giftRecipientEmail.value = (e.target as HTMLInputElement).value; }}
             />
           </div>
           <div class="gift-form-field">
-            <label>Recipient's Name (optional)</label>
+            <label>Their name (optional)</label>
             <input
               type="text"
-              placeholder="Their first name"
+              placeholder="Sarah"
               value={giftRecipientName.value}
               onInput={(e) => { giftRecipientName.value = (e.target as HTMLInputElement).value; }}
             />
           </div>
           <div class="gift-form-field">
-            <label>Your Name (optional)</label>
+            <label>From (optional)</label>
             <input
               type="text"
-              placeholder="Your name"
+              placeholder="Love, Mom"
               value={giftSenderName.value}
               onInput={(e) => { giftSenderName.value = (e.target as HTMLInputElement).value; }}
             />
           </div>
           <div class="gift-form-field">
-            <label>Personal Message (optional)</label>
+            <label>Add a note (they'll love it!)</label>
             <textarea
-              placeholder="Add a personal note..."
+              placeholder="Happy Birthday! Hope this helps with the morning chaos!"
               value={giftMessage.value}
               onInput={(e) => { giftMessage.value = (e.target as HTMLTextAreaElement).value; }}
               rows={2}
+              maxLength={250}
             />
           </div>
           {giftPurchaseResult.value?.error && (
