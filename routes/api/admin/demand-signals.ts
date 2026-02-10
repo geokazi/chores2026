@@ -41,11 +41,12 @@ export const handler: Handlers = {
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
     try {
-      // 3. Get usage tracker metrics from family_profiles
+      // 3. Get usage tracker metrics from family_profiles (exclude deleted)
       const { data: profiles } = await supabase
         .from("family_profiles")
         .select("id, preferences")
-        .not("preferences", "is", null);
+        .not("preferences", "is", null)
+        .or("is_deleted.is.null,is_deleted.eq.false");
 
       // Aggregate usage metrics
       const usageMetrics: Record<string, { users: Set<string>; total: number }> = {};
@@ -129,14 +130,16 @@ export const handler: Handlers = {
         ...stats,
       }));
 
-      // 7. Get total families and profiles for context
+      // 7. Get total families and profiles for context (exclude deleted)
       const { count: totalFamilies } = await supabase
         .from("families")
-        .select("*", { count: "exact", head: true });
+        .select("*", { count: "exact", head: true })
+        .or("is_deleted.is.null,is_deleted.eq.false");
 
       const { count: totalProfiles } = await supabase
         .from("family_profiles")
-        .select("*", { count: "exact", head: true });
+        .select("*", { count: "exact", head: true })
+        .or("is_deleted.is.null,is_deleted.eq.false");
 
       return Response.json({
         overview: {
