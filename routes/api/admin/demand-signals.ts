@@ -44,16 +44,18 @@ export const handler: Handlers = {
       // 3. Get usage tracker metrics from family_profiles (exclude deleted)
       const { data: profiles } = await supabase
         .from("family_profiles")
-        .select("id, preferences")
+        .select("id, family_id, preferences")
         .not("preferences", "is", null)
         .or("is_deleted.is.null,is_deleted.eq.false");
 
-      // Aggregate usage metrics
-      const usageMetrics: Record<string, { users: Set<string>; total: number }> = {};
+      // Aggregate usage metrics + track unique families/profiles with ANY usage
+      const usageMetrics: Record<string, { users: Set<string>; families: Set<string>; total: number }> = {};
       const trackedMetrics = ["ics", "badges", "digests", "prep_shop", "prep_export"];
+      const allProfilesWithUsage = new Set<string>();
+      const allFamiliesWithUsage = new Set<string>();
 
       for (const metric of trackedMetrics) {
-        usageMetrics[metric] = { users: new Set(), total: 0 };
+        usageMetrics[metric] = { users: new Set(), families: new Set(), total: 0 };
       }
 
       for (const profile of profiles || []) {
@@ -63,7 +65,10 @@ export const handler: Handlers = {
           const count = usage[totalKey] || 0;
           if (count > 0) {
             usageMetrics[metric].users.add(profile.id);
+            usageMetrics[metric].families.add(profile.family_id);
             usageMetrics[metric].total += count;
+            allProfilesWithUsage.add(profile.id);
+            allFamiliesWithUsage.add(profile.family_id);
           }
         }
       }
@@ -130,21 +135,11 @@ export const handler: Handlers = {
         ...stats,
       }));
 
-      // 7. Get total families and profiles for context (exclude deleted)
-      const { count: totalFamilies } = await supabase
-        .from("families")
-        .select("*", { count: "exact", head: true })
-        .or("is_deleted.is.null,is_deleted.eq.false");
-
-      const { count: totalProfiles } = await supabase
-        .from("family_profiles")
-        .select("*", { count: "exact", head: true })
-        .or("is_deleted.is.null,is_deleted.eq.false");
-
+      // 7. Return counts of families/profiles WITH usage data (more meaningful than total)
       return Response.json({
         overview: {
-          total_families: totalFamilies || 0,
-          total_profiles: totalProfiles || 0,
+          families_with_usage: allFamiliesWithUsage.size,
+          profiles_with_usage: allProfilesWithUsage.size,
         },
         usage_metrics: usageMetricsFormatted,
         demand_signals: demandSignalsFormatted,

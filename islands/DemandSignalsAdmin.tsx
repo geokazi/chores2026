@@ -23,8 +23,8 @@ interface SignalData {
 
 interface DemandData {
   overview: {
-    total_families: number;
-    total_profiles: number;
+    families_with_usage: number;
+    profiles_with_usage: number;
   };
   usage_metrics: UsageMetric[];
   demand_signals: SignalData[];
@@ -97,15 +97,15 @@ export default function DemandSignalsAdmin() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "1rem" }}>
         <div style={cardStyle}>
           <div style={{ fontSize: "2rem", fontWeight: "700", color: "#10b981" }}>
-            {data.overview.total_families}
+            {data.overview.families_with_usage}
           </div>
-          <div style={{ fontSize: "0.875rem", color: "#64748b" }}>Total Families</div>
+          <div style={{ fontSize: "0.875rem", color: "#64748b" }}>Families with Usage</div>
         </div>
         <div style={cardStyle}>
           <div style={{ fontSize: "2rem", fontWeight: "700", color: "#3b82f6" }}>
-            {data.overview.total_profiles}
+            {data.overview.profiles_with_usage}
           </div>
-          <div style={{ fontSize: "0.875rem", color: "#64748b" }}>Total Profiles</div>
+          <div style={{ fontSize: "0.875rem", color: "#64748b" }}>Profiles with Usage</div>
         </div>
       </div>
 
