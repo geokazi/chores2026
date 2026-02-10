@@ -1,14 +1,70 @@
 # Parent Lists Feature Analysis
 
 **Date**: February 10, 2026
+**Updated**: February 10, 2026 (with codebase review)
 **Status**: Research Complete
-**Recommendation**: Do Not Build (Generic Lists) / Test Demand First
+**Recommendation**: Do Not Build (Generic Lists) / Enhance Existing Prep Tasks
 
 ---
 
 ## Executive Summary
 
-Analysis of adding personal list management (todo items, grocery lists) for parents in ChoreGami. After researching competitors and native device capabilities, **generic list features are not recommended** - native apps already solve this well. However, **event-integrated lists** may have unique value worth validating.
+Analysis of adding personal list management (todo items, grocery lists) for parents in ChoreGami. After researching competitors, native device capabilities, **and reviewing existing ChoreGami features**, generic list features are not recommended - native apps already solve this well.
+
+**Key Finding**: ChoreGami already has a robust prep tasks system tied to events. The opportunity is enhancing this existing feature, not building new list infrastructure.
+
+---
+
+## What ChoreGami Already Has
+
+### Prep Tasks System (Existing)
+
+**Location**: Event cards → "Prep checklist" button
+
+```typescript
+// Data model (in event.metadata.prep_tasks)
+interface PrepTask {
+  id: string;           // UUID
+  text: string;         // "Buy cake mix", "Get balloons"
+  assignee_id?: string; // Optional - any family member
+  done: boolean;        // Completion checkbox
+}
+```
+
+**Current capabilities**:
+- ✅ Create/edit/delete prep tasks per event
+- ✅ Assign to any family member (parents OR kids)
+- ✅ Check off as complete
+- ✅ Activity logging when tasks completed
+- ✅ Progress badge on event card (e.g., "3/5")
+
+**What's missing**:
+- ❌ No "shopping" vs "task" categorization
+- ❌ No export to native Reminders/Keep
+- ❌ No filtering by assignee across events
+
+### Event-Linked Chores (Existing)
+
+**Location**: Event cards → "Chore earns pts" button
+
+```typescript
+// Links via foreign key
+chore_assignments.family_event_id → family_events.id
+```
+
+**Current capabilities**:
+- ✅ Create point-earning chores tied to events
+- ✅ Assign to kids with due date = event date
+- ✅ Shows as "missions" on kid dashboard
+- ✅ Completion triggers points + confetti
+
+### Calendar Export (Existing)
+
+**Location**: Event cards → "📅 Add to Calendar" button
+
+- ✅ Downloads .ics file for any event
+- ✅ Tracks usage in localStorage
+- ✅ Shows "✓ In your calendar" after download
 
 ---
 
@@ -91,65 +147,116 @@ Apple Reminders now includes:
 
 ---
 
-## Analysis: Potential Unique Value Propositions
+## Analysis: Potential Enhancements (Given Existing Features)
 
-### 1. Event-Linked Shopping Lists (High Value)
+### 1. Prep Task Type Flag (Low Effort, Medium Value)
 
-```
-User creates: "Soccer Tournament Saturday"
-System auto-generates: "Tournament Supplies" list
-  - Snacks for team (from prep tasks)
-  - Water bottles
-  - Folding chairs
-```
+**What exists**: Prep tasks with `{ text, assignee_id, done }`
 
-**Value**: Context-aware, saves mental load
-**Native can't do**: Auto-generation from events
-**Effort**: Medium
-**ChoreGami fit**: Extends existing Events feature
+**Enhancement**: Add `type: "shop" | "task"` field
 
-### 2. Chore-Reward Wishlist (Medium Value)
-
-```
-Kids earn points → Add "wants" to family shopping list
-Parent approves/rejects during shopping
+```typescript
+// Updated data model
+interface PrepTask {
+  id: string;
+  text: string;
+  assignee_id?: string;
+  done: boolean;
+  type?: "shop" | "task";  // NEW: enables filtering
+}
 ```
 
-**Value**: Teaches delayed gratification, reduces "can I have" nagging
-**Native can't do**: Points-gated requests
-**Effort**: Medium
-**ChoreGami fit**: Extends existing Points economy
+**UI change**: Toggle in AddPrepTasksModal (🛒 Shop / ✓ Task)
 
-### 3. Prep Task → Shopping Pipeline (High Value)
+**Value**: Filter "things to buy" vs "things to do" for an event
+**Effort**: Low (~2 hours)
+**Risk**: Low - backward compatible
+
+### 2. Export Prep Tasks to Reminders (Low Effort, High Value)
+
+**What exists**: Calendar export button on events
+
+**Enhancement**: Add "📱 Send to Reminders" button
 
 ```
 Event: "Birthday Party Feb 15"
 Prep tasks:
+  🛒 Buy cake mix
+  🛒 Get balloons
+  ✓ Order pizza (task, not shopping)
+
+Tap "📱 Send to Reminders" → exports shopping items only
+```
+
+**Technical approach**:
+- Generate text list of `type: "shop"` tasks
+- iOS: Use `x-apple-reminderkit://` URL scheme OR clipboard + instructions
+- Android: Share intent with text list for Google Keep/Tasks
+- Fallback: Copy to clipboard with "Paste into your Reminders app"
+
+**Value**: Bridge to native apps (don't compete, integrate)
+**Effort**: Low (~4 hours)
+**Validates**: User demand for shopping list integration
+
+### 3. "My Shopping List" View (Medium Effort, Medium Value)
+
+**What exists**: Prep tasks scattered across multiple events
+
+**Enhancement**: Aggregated view of all `type: "shop"` prep tasks
+
+```
+📱 My Shopping List (across all upcoming events)
+
+Birthday Party (Feb 15):
   ☐ Buy cake mix
   ☐ Get balloons
-  ☐ Order pizza
 
-One tap: "Add all to shopping list"
+Soccer Tournament (Feb 22):
+  ☐ Team snacks (24 kids)
+  ☐ Water bottles
 ```
 
-**Value**: Prep tasks become actionable shopping items
-**Native can't do**: Event → task → shopping workflow
-**Effort**: Low-Medium
-**ChoreGami fit**: Natural extension of Events + Prep Tasks
+**Value**: One-stop shopping view before going to store
+**Effort**: Medium (~1 day)
+**Dependency**: Requires type flag (Enhancement #1)
 
-### 4. "Before You Go" Context Lists (Medium Value)
+### 4. Points-Gated Kid Wishlist (Medium Effort, Medium Value)
 
+**What exists**: Kids earn points from chores
+
+**Enhancement**: New data model for kid requests
+
+```typescript
+// New table or metadata structure
+interface WishlistItem {
+  id: string;
+  profile_id: string;      // Kid who wants it
+  text: string;            // "New video game"
+  points_required?: number; // Optional minimum balance
+  status: "requested" | "approved" | "purchased" | "denied";
+  created_at: string;
+}
 ```
-Leaving for soccer? Here's what you need:
-  ☐ Shin guards (from equipment list)
-  ☐ Water bottle
-  ☐ Snacks (from grocery list)
-```
 
-**Value**: Departure checklists linked to calendar events
-**Native can't do**: Cross-list aggregation by event
-**Effort**: High
-**ChoreGami fit**: Requires new data model
+**Flow**:
+1. Kid adds item to wishlist (from kid dashboard)
+2. Parent sees requests, approves/denies
+3. Approved items appear on parent's "Shopping List"
+4. Parent marks purchased when bought
+
+**Value**: Teaches delayed gratification, reduces store nagging
+**Effort**: Medium (~2-3 days) - new data model + UI
+**ChoreGami fit**: Extends existing points economy
+
+### 5. ~~"Before You Go" Context Lists~~ (Skip)
+
+**Original idea**: Aggregate equipment lists per event type
+
+**Why skip**:
+- Requires new "equipment list" data model
+- High effort for unclear demand
+- Prep tasks already serve this purpose adequately
+- Parents can just add "bring shin guards" as prep task
 
 ---
 
@@ -157,49 +264,62 @@ Leaving for soccer? Here's what you need:
 
 ### Do Not Build
 
-- Generic grocery lists
-- Generic todo lists
-- Standalone meal planning
+- ❌ Generic grocery lists (Cozi, Apple Reminders own this)
+- ❌ Generic todo lists (Todoist, native apps dominate)
+- ❌ Standalone meal planning (out of scope)
+- ❌ "Before You Go" lists (over-engineered, low demand signal)
 
-### Test Demand First (MVP Approach)
+### Build in Order (Incremental Approach)
 
-**Phase 1: Native Integration**
-- Add "Export prep tasks to Apple Reminders" button on events
-- Track usage metrics
-- Collect user feedback
+**Phase 1: Type Flag** (~2 hours)
+- Add `type: "shop" | "task"` to prep task data model
+- Add toggle in AddPrepTasksModal UI
+- Backward compatible - existing tasks default to "task"
 
-**Phase 2: Evaluate Signal**
-- If export usage > 20% of event creators → consider native lists
-- If export usage < 5% → native integration is sufficient
+**Phase 2: Export Button** (~4 hours)
+- Add "📱 Export Shopping" button on event cards
+- Filter to `type: "shop"` tasks only
+- Copy to clipboard with instructions (cross-platform)
+- Track usage for signal
 
-**Phase 3: Build If Validated**
-- Event-linked shopping lists
-- Prep task → shopping pipeline
-- Kid wishlist from points (future)
+**Phase 3: Evaluate Signal** (2-4 weeks usage data)
+- If export usage > 15% of events with prep tasks → proceed to Phase 4
+- If export usage < 5% → stop here, clipboard export is sufficient
+
+**Phase 4: Aggregated View** (if validated, ~1 day)
+- "/parent/shopping" route
+- All `type: "shop"` prep tasks across upcoming events
+- Grouped by event, checkable
+
+**Future: Kid Wishlist** (separate initiative)
+- Only if parents explicitly request this feature
+- Requires new data model, more complex UX
 
 ---
 
-## Effort vs Value Matrix
+## Effort vs Value Matrix (Updated)
 
-| Approach | Effort | Value | Recommendation |
-|----------|--------|-------|----------------|
+| Enhancement | Effort | Value | Status |
+|-------------|--------|-------|--------|
 | Generic lists | High | Low | ❌ Skip |
-| Native export (Apple Reminders) | Low | Medium | ✅ Test demand |
-| Event-linked shopping | Medium | High | ⏸️ Wait for signal |
-| Kid wishlist from points | Medium | Medium | ⏸️ Future consideration |
+| Prep task type flag | Low (2h) | Medium | ✅ Build first |
+| Export to clipboard | Low (4h) | High | ✅ Build second |
+| Aggregated shopping view | Medium (1d) | Medium | ⏸️ Wait for signal |
+| Kid wishlist | Medium (2-3d) | Medium | ⏸️ Future |
+| "Before You Go" lists | High | Low | ❌ Skip |
 
 ---
 
 ## 80/20 Decision
 
-**Start with**: "Export to Reminders" button on event prep tasks
+**Start with**: Type flag + Export button (total ~6 hours)
 
 This approach:
-- Low development effort (~1 day)
-- Validates real user demand
-- Doesn't compete with native apps
-- Leverages existing Events feature
-- Provides data for future decisions
+- Builds on existing prep tasks (no new data model)
+- Validates demand before building aggregated view
+- Bridges to native apps (don't compete, integrate)
+- Minimal code change, maximum learning
+- Unlocks Phase 4 only if users actually use export
 
 ---
 
@@ -214,5 +334,41 @@ This approach:
 
 ---
 
+## Technical Notes
+
+### Prep Task Data Migration
+
+No migration needed - existing prep tasks without `type` field will default to `"task"`.
+
+```typescript
+// In AddPrepTasksModal, handle legacy tasks:
+const taskType = task.type || "task";
+```
+
+### Export Implementation Options
+
+| Platform | Method | Complexity |
+|----------|--------|------------|
+| iOS Safari | `x-apple-reminderkit://` URL scheme | Medium (may not work on all iOS versions) |
+| iOS/Android | Clipboard + toast "Copied! Paste into Reminders" | Low (works everywhere) |
+| Android | Share API with text/plain | Low |
+| Web fallback | Download .txt file | Low |
+
+**Recommended**: Start with clipboard (works everywhere), add native deep links later if demanded.
+
+### Usage Tracking
+
+```typescript
+// Track export clicks for signal
+await incrementUsage("prep_task_export", familyId, {
+  event_id: eventId,
+  item_count: shoppingItems.length,
+  method: "clipboard" | "share" | "deeplink"
+});
+```
+
+---
+
 **Author**: Development Team
 **Created**: February 10, 2026
+**Updated**: February 10, 2026 (codebase review, revised recommendations)
