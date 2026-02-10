@@ -312,6 +312,13 @@ export default function ParentDashboard(
         >
           🧠 Insights
         </a>
+        <a
+          href="/parent/grid/weekly"
+          class="btn btn-secondary"
+          style={{ fontSize: "0.8rem", padding: "0.5rem 1rem", textDecoration: "none" }}
+        >
+          📅 Weekly Grid
+        </a>
       </div>
 
       {/* Theme Selector */}

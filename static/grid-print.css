@@ -1,0 +1,119 @@
+/**
+ * Weekly Grid Print Styles
+ * Optimized for printing the weekly chore grid
+ */
+
+@media print {
+  /* Hide non-printable elements */
+  .no-print,
+  .container > header,
+  .container > footer,
+  .app-header,
+  .app-footer,
+  nav,
+  button,
+  .btn {
+    display: none !important;
+  }
+
+  /* Show print-only elements */
+  .print-only {
+    display: block !important;
+  }
+
+  /* Reset page margins */
+  @page {
+    margin: 0.5in;
+    size: landscape;
+  }
+
+  /* Container adjustments */
+  .container {
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Card styling for print */
+  .card,
+  .weekly-grid-content {
+    box-shadow: none !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 0 !important;
+    padding: 1rem !important;
+    margin: 0 !important;
+  }
+
+  /* Table styling */
+  .grid-table {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .grid-table th,
+  .grid-table td {
+    padding: 0.5rem 0.25rem !important;
+    font-size: 10pt !important;
+  }
+
+  .grid-table th {
+    background: #f3f4f6 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Preserve background colors */
+  .grid-cell-day.has-points {
+    background: rgba(16, 185, 129, 0.15) !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Points styling */
+  .grid-cell-total .total-points {
+    color: #059669 !important;
+    font-size: 12pt !important;
+  }
+
+  /* Streak styling */
+  .streak-count {
+    color: #d97706 !important;
+  }
+
+  /* Legend styling */
+  .grid-legend {
+    border-top: 1px solid #e5e7eb;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+  }
+
+  /* Print header styling */
+  .print-header h1 {
+    font-size: 18pt !important;
+    font-weight: bold !important;
+  }
+
+  .print-header p {
+    font-size: 11pt !important;
+  }
+
+  /* Print footer */
+  .print-footer {
+    font-size: 8pt !important;
+  }
+
+  /* Avoid page breaks in grid */
+  .weekly-grid-content {
+    page-break-inside: avoid;
+  }
+
+  /* Text colors for print */
+  .grid-cell-name .kid-name {
+    color: #000 !important;
+  }
+
+  .grid-cell-day .day-points,
+  .grid-cell-total .total-label {
+    color: #666 !important;
+  }
+}
