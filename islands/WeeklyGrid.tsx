@@ -580,9 +580,21 @@ export default function WeeklyGrid({ gridData, familyName }: Props) {
           text-overflow: ellipsis;
         }
 
-        .chore-points {
-          color: var(--color-text-light, #94a3b8);
-          font-size: 0.65rem;
+        /* Override global gradient pill style - use plain numbers in grid */
+        .weekly-grid-container .chore-points,
+        .chore-item .chore-points,
+        .mobile-chore .chore-points {
+          background: none !important;
+          box-shadow: none !important;
+          color: var(--color-text-light, #6b7280) !important;
+          font-size: 0.65rem !important;
+          font-weight: 500 !important;
+          padding: 0 !important;
+          border-radius: 0 !important;
+        }
+
+        .mobile-chore .chore-points {
+          font-size: 0.75rem !important;
         }
 
         .grid-cell-total {
