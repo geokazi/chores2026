@@ -109,9 +109,9 @@ export const handler: Handlers<EventsPageData> = {
       weekFromNow.setDate(weekFromNow.getDate() + 7);
       const weekFromNowStr = toLocalDateStr(weekFromNow);
 
-      // Query end date: 60 days out to capture recurring events
+      // Query end date: 180 days out to capture events up to 6 months ahead
       const queryEnd = new Date(today);
-      queryEnd.setDate(queryEnd.getDate() + 60);
+      queryEnd.setDate(queryEnd.getDate() + 180);
       const queryEndStr = toLocalDateStr(queryEnd);
 
       // Fetch events - include events that may have started before today

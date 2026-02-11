@@ -8,7 +8,7 @@
  *
  * Query params for GET:
  * - localDate: Start date (default: today)
- * - endDate: End date for range (default: 30 days from localDate)
+ * - endDate: End date for range (default: 180 days from localDate)
  * - expand: If "true", expand multi-day and recurring events
  */
 
@@ -133,10 +133,10 @@ export const handler: Handlers = {
         return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
       })();
 
-      // End date for range queries (default: 30 days from start)
+      // End date for range queries (default: 180 days from start)
       const defaultEndDate = (() => {
         const d = new Date(localDate);
-        d.setDate(d.getDate() + 30);
+        d.setDate(d.getDate() + 180);
         // Use local date components to avoid UTC timezone issues
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       })();
