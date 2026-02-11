@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChoreGami Video Ad - Fairness Rotation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f0fdf4;
+            /* Light mint background */
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        #ad-container {
+            width: 1080px;
+            height: 1080px;
+            background: linear-gradient(135deg, #ffffff 0%, #ecfccb 100%);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+            border-radius: 20px;
+        }
+
+        .scene {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .scene.active {
+            opacity: 1;
+        }
+
+        /* Typography */
+        h1 {
+            font-size: 70px;
+            color: #0f172a;
+            margin-bottom: 20px;
+            font-weight: 800;
+            z-index: 10;
+        }
+
+        /* Component Styles (Rotation Card) */
+        .rotation-card {
+            background: white;
+            border-radius: 30px;
+            padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+            width: 800px;
+            transform: translateY(50px);
+            opacity: 0;
+            transition: all 0.8s ease-out;
+            position: relative;
+        }
+
+        .active .rotation-card {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .badge {
+            background-color: #10b981;
+            color: white;
+            padding: 10px 24px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 18px;
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #374151;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        /* Toggle */
+        .toggle-container {
+            background-color: #f3f4f6;
+            border-radius: 12px;
+            padding: 6px;
+            display: flex;
+            margin-bottom: 30px;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #6b7280;
+            transition: all 0.3s ease;
+            font-size: 18px;
+        }
+
+        .toggle-btn.active {
+            background-color: white;
+            color: #10b981;
+            /* Emerald-500 */
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Kids Grid */
+        .kids-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        .kid-column {
+            background-color: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 20px;
+            transition: all 0.5s ease;
+        }
+
+        .kid-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            font-weight: 700;
+            font-size: 20px;
+        }
+
+        .points {
+            color: #10b981;
+        }
+
+        .chore-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* Helper for highlighting */
+        .chore-list.highlight-swap {
+            animation: highlightPulse 2s ease-in-out;
+        }
+
+        @keyframes highlightPulse {
+            0% {
+                transform: scale(1);
+                box-shadow: none;
+            }
+
+            50% {
+                transform: scale(1.02);
+                box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+            }
+
+            100% {
+                transform: scale(1);
+                box-shadow: none;
+            }
+        }
+
+        .chore-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #f9fafb;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid #f3f4f6;
+            transition: all 0.3s ease;
+        }
+
+        /* Specific IDs for demo targeting */
+        #emma-list .chore-item:nth-child(1) {
+            order: 1;
+        }
+
+        #jake-list .chore-item:nth-child(1) {
+            order: 1;
+        }
+
+        .chore-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 18px;
+            color: #1f2937;
+            font-weight: 600;
+        }
+
+        .circle-icon {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #d1d5db;
+            border-radius: 50%;
+        }
+
+        .chore-points {
+            font-weight: 700;
+            color: #10b981;
+            font-size: 16px;
+        }
+
+        /* Completed State */
+        .chore-item.completed {
+            background-color: #f0fdf4;
+            /* Green-50 */
+            border-color: #f0fdf4;
+        }
+
+        .chore-item.completed .chore-left {
+            color: #9ca3af;
+            text-decoration: line-through;
+        }
+
+        .chore-item.completed .circle-icon {
+            background-color: #10b981;
+            border-color: #10b981;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white' stroke-width='3'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M5 13l4 4L19 7' /%3E%3C/svg%3E");
+            background-size: 16px;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .chore-item.completed .chore-points {
+            color: #9ca3af;
+        }
+
+
+        /* Cursor */
+        #cursor {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z'%3E%3C/path%3E%3Cpath d='M13 13l6 6'%3E%3C/path%3E%3C/svg%3E") no-repeat center;
+            background-size: contain;
+            top: 110%;
+            left: 50%;
+            z-index: 100;
+            filter: drop-shadow(2px 4px 6px rgba(0, 0, 0, 0.3));
+            transition: all 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        /* Focus Highlight Circle */
+        .focus-circle {
+            position: absolute;
+            border: 4px solid #f59e0b;
+            /* Amber */
+            border-radius: 50%;
+            width: 0;
+            height: 0;
+            opacity: 0;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 90;
+            animation: none;
+            pointer-events: none;
+        }
+
+        @keyframes focusPulse {
+            0% {
+                width: 0;
+                height: 0;
+                opacity: 0;
+            }
+
+            50% {
+                width: 350px;
+                height: 100px;
+                opacity: 1;
+                border-radius: 20px;
+            }
+
+            100% {
+                width: 380px;
+                height: 120px;
+                opacity: 0;
+                border-radius: 20px;
+            }
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: absolute;
+            background-color: #1f2937;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            z-index: 101;
+            white-space: nowrap;
+        }
+
+        .tooltip.show {
+            opacity: 1;
+        }
+
+        /* Confetti Canvas */
+        #confetti-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        /* Scene 4 CTA */
+        #cta-btn {
+            background: #10b981;
+            color: white;
+            font-size: 50px;
+            padding: 30px 80px;
+            border-radius: 60px;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 20px 40px rgba(16, 185, 129, 0.4);
+            font-weight: 700;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="ad-container">
+
+        <!-- Scene 1: Problem -->
+        <div id="scene1" class="scene active" style="background-color: #fee2e2;">
+            <h1 style="font-size: 80px;">"It's NOT<br>Fair!" 😫</h1>
+            <div style="font-size: 150px; margin-top:20px;">🏚️⚡️🗯️</div>
+        </div>
+
+        <!-- Scene 2: Solution (Rotation UI) -->
+        <div id="scene2" class="scene">
+            <h1 id="solution-text">Stop the Chore Wars 🛑</h1>
+
+            <div class="rotation-card">
+                <div class="badge">See It In Action</div>
+                <div class="card-header">Watch chores rotate automatically 🔄</div>
+
+                <div class="toggle-container">
+                    <div class="toggle-btn active" id="btn-this-week">This Week</div>
+                    <div class="toggle-btn" id="btn-next-week">Next Week</div>
+                </div>
+
+                <div class="kids-grid">
+                    <!-- Emma -->
+                    <div class="kid-column" id="col-emma">
+                        <div class="kid-header">
+                            <span>👩 Emma</span>
+                            <span class="points" id="emma-pts">125 pts</span>
+                        </div>
+                        <div class="chore-list" id="emma-list">
+                            <div class="chore-item" data-chore="dishes">
+                                <div class="chore-left">
+                                    <div class="circle-icon"></div>🍽️ Dishes
+                                </div>
+                                <div class="chore-points">+10</div>
+                            </div>
+                            <div class="chore-item completed">
+                                <div class="chore-left">
+                                    <div class="circle-icon"></div>🗑️ Trash
+                                </div>
+                                <div class="chore-points">+5</div>
+                            </div>
+                            <div class="chore-item">
+                                <div class="chore-left">
+                                    <div class="circle-icon"></div>🐕 Feed dog
+                                </div>
+                                <div class="chore-points">+5</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Jake -->
+                    <div class="kid-column" id="col-jake">
+                        <div class="kid-header">
+                            <span>👦 Jake</span>
+                            <span class="points" id="jake-pts">98 pts</span>
+                        </div>
+                        <div class="chore-list" id="jake-list">
+                            <div class="chore-item" id="jake-chore-1" data-chore="vacuum">
+                                <div class="chore-left">
+                                    <div class="circle-icon"></div>🧹 Vacuum
+                                </div>
+                                <div class="chore-points">+15</div>
+                            </div>
+                            <div class="chore-item">
+                                <div class="chore-left">
+                                    <div class="circle-icon"></div>🚿 Bathroom
+                                </div>
+                                <div class="chore-points">+10</div>
+                            </div>
+                            <div class="chore-item completed">
+                                <div class="chore-left">
+                                    <div class="circle-icon"></div>🗑️ Trash
+                                </div>
+                                <div class="chore-points">+5</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Helper Cursor & Tooltip -->
+                <div id="cursor"></div>
+                <div id="tooltip" class="tooltip">Click to Swap!</div>
+                <div id="focus-circle" class="focus-circle"></div>
+            </div>
+        </div>
+
+        <!-- Scene 4: CTA -->
+        <div id="scene4" class="scene">
+            <h1 style="font-size: 100px; color: #10b981;">ChoreGami</h1>
+            <button id="cta-btn">Start Free Today</button>
+        </div>
+
+        <canvas id="confetti-canvas"></canvas>
+
+    </div>
+
+    <!-- Local confetti script -->
+    <script src="vendor/confetti.js"></script>
+    <script>
+        // Setup Confetti
+        var myConfetti = confetti.create(document.getElementById('confetti-canvas'), {
+            resize: true,
+            useWorker: true
+        });
+
+        const scenes = document.querySelectorAll('.scene');
+        const cursor = document.getElementById('cursor');
+        const tooltip = document.getElementById('tooltip');
+
+        function showScene(index) {
+            scenes.forEach(s => s.classList.remove('active'));
+            scenes[index].classList.add('active');
+        }
+
+        function showTooltip(text, x, y) {
+            tooltip.innerText = text;
+            tooltip.style.left = x + 'px';
+            tooltip.style.top = y + 'px';
+            tooltip.classList.add('show');
+            setTimeout(() => tooltip.classList.remove('show'), 2000);
+        }
+
+        function wait(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function playAdFairness() {
+            console.log("Starting Fairness Focus Ad Sequence");
+
+            // --- Scene 1: Pain (0-3s) ---
+            showScene(0);
+            await wait(3000);
+
+            // --- Scene 2: Solution Enter (3-4s) ---
+            showScene(1); // Rotation Card
+            await wait(1500);
+
+            // --- Action 1: Highlight Current State (4-6s) ---
+            // Move cursor to point at Emma's Dishes
+            cursor.style.display = 'block';
+            cursor.style.top = '480px';
+            cursor.style.left = '25%'; // Left column = Emma
+            await wait(1000);
+
+            showTooltip("Emma: Dishes 🍽️", 230, 440);
+            await wait(1500);
+
+            // --- Action 2: Toggle Rotation (6-8s) ---
+            // Move cursor to "Next Week"
+            cursor.style.transition = 'all 0.8s ease';
+            cursor.style.top = '275px';
+            cursor.style.left = '60%'; // "Next Week" button
+
+            await wait(1000);
+
+            // Click Toggle
+            cursor.style.transform = 'scale(0.8)';
+            await wait(200);
+            cursor.style.transform = 'scale(1)';
+            toggleRotation();
+            // NOTE: Jake's Vacuum moves to Emma (Left). Emma's Dishes move to Jake (Right).
+
+            await wait(1000);
+
+            // --- Action 3: Highlight Swapped State (8-11s) ---
+            // Move to Dishes (Now on Right Column - Jake)
+            cursor.style.top = '480px';
+            cursor.style.left = '75%'; // Right column = Jake
+
+            await wait(1000);
+
+            showTooltip("Now: Jake! 👦", 770, 440);
+
+            // Highlight visual effect for Jake's new list
+            const jakeList = document.getElementById('jake-list');
+            jakeList.classList.add('highlight-swap');
+
+            await wait(2000);
+
+            // --- Action 4: Completion (11-14s) ---
+            // Click the Dishes item (Jake completes it)
+            cursor.style.transform = 'scale(0.8)';
+            await wait(200);
+            cursor.style.transform = 'scale(1)';
+
+            // Wait for completion - we need to find the element that WAS "dishes"
+            // Since we swapped HTML, the "data-chore='dishes'" attribute moved to the right column.
+            // We can query selector by attribute to find the right element to animate.
+            const dishesElement = document.querySelector('[data-chore="dishes"]');
+
+            // But we need its ID if we want to call completeChore helper, or just pass the element.
+            // Let's modify completeChore to take element directly.
+            completeChoreElement(dishesElement, 'jake-pts', 98, 10);
+
+            await wait(4000); // Wait for confetti
+
+            // --- Scene 3: CTA (14s+) ---
+            showScene(2); // CTA
+        }
+
+        function completeChoreElement(element, pointsId, currentPoints, addPoints) {
+            // Visual check
+            element.classList.add('completed');
+
+            // Confetti
+            myConfetti({
+                particleCount: 150,
+                spread: 70,
+                origin: { y: 0.6 }
+            });
+
+            // Points Count Up
+            const ptsEl = document.getElementById(pointsId);
+            let p = currentPoints;
+            const target = currentPoints + addPoints;
+
+            const interval = setInterval(() => {
+                p++;
+                ptsEl.innerText = p + " pts";
+                if (p >= target) clearInterval(interval);
+            }, 50);
+
+            // Floating Text
+            const float = document.createElement('div');
+            float.innerText = "+" + addPoints;
+            float.style.position = 'absolute';
+            float.style.right = '50px'; // Approx near the right column
+            float.style.top = '450px';
+            float.style.color = '#10b981';
+            float.style.fontSize = '40px';
+            float.style.fontWeight = 'bold';
+            float.style.zIndex = 100;
+            float.style.transition = 'all 1s ease-out';
+            document.querySelector('.rotation-card').appendChild(float);
+
+            setTimeout(() => {
+                float.style.transform = 'translateY(-100px)';
+                float.style.opacity = 0;
+            }, 50);
+        }
+
+        function toggleRotation() {
+            // Visual Update for Toggle
+            document.getElementById('btn-this-week').classList.remove('active');
+            document.getElementById('btn-next-week').classList.add('active');
+
+            // Swap lists logic (Simulated)
+            const emmaList = document.getElementById('emma-list');
+            const jakeList = document.getElementById('jake-list');
+
+            // Visual fade out for smooth swap
+            emmaList.style.opacity = 0;
+            jakeList.style.opacity = 0;
+
+            setTimeout(() => {
+                // Swap Text Content for demo effect layout
+                const emmaHTML = emmaList.innerHTML;
+                emmaList.innerHTML = jakeList.innerHTML;
+                jakeList.innerHTML = emmaHTML;
+
+                emmaList.style.opacity = 1;
+                jakeList.style.opacity = 1;
+
+                // Update header text to emphasize rotation
+                const solutionText = document.getElementById('solution-text');
+                solutionText.innerText = "Fairness: Solved! ✅";
+                solutionText.style.color = "#10b981";
+                solutionText.style.transform = "scale(1.1)";
+                setTimeout(() => solutionText.style.transform = "scale(1)", 300);
+
+            }, 400);
+        }
+
+        window.onload = function () {
+            playAdFairness();
+            document.getElementById('cta-btn').onclick = function () {
+                window.location.href = 'https://choregami.app';
+            };
+            document.getElementById('cta-btn').style.cursor = 'pointer';
+        };
+
+    </script>
+</body>
+
+</html>

@@ -120,7 +120,7 @@ export class GridService {
       .eq("family_id", familyId)
       .gte("assigned_date", weekStart)
       .lte("assigned_date", weekEnd)
-      .eq("is_deleted", false);
+      .or("is_deleted.is.null,is_deleted.eq.false");
 
     if (error) {
       console.error("❌ Error fetching weekly assignments:", error);
