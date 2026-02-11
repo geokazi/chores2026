@@ -106,7 +106,7 @@ export class GridService {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const client = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { data: assignments } = await client
+    const { data: assignments, error } = await client
       .schema("choretracker")
       .from("chore_assignments")
       .select(`
@@ -115,16 +115,17 @@ export class GridService {
         assigned_date,
         status,
         point_value,
-        chore_template:chore_template_id (
-          id,
-          name,
-          icon
-        )
+        chore_template:chore_templates(id, name, icon)
       `)
       .eq("family_id", familyId)
       .gte("assigned_date", weekStart)
       .lte("assigned_date", weekEnd)
-      .or("is_deleted.is.null,is_deleted.eq.false");
+      .eq("is_deleted", false);
+
+    if (error) {
+      console.error("❌ Error fetching weekly assignments:", error);
+    }
+    console.log(`📊 Weekly Grid: Found ${assignments?.length || 0} assignments for ${weekStart} to ${weekEnd}`);
 
     // Group by profile_id -> date -> chores[]
     const result = new Map<string, Map<string, GridChore[]>>();
