@@ -694,17 +694,54 @@ export default function WeeklyGrid({ gridData, familyName }: Props) {
           }
 
           .grid-table {
-            min-width: 100%;
-            font-size: 10pt;
+            min-width: auto;
+            width: 100%;
+            font-size: 9pt;
+            table-layout: fixed;
+          }
+
+          .grid-table th,
+          .grid-table td {
+            padding: 0.25rem;
+            word-wrap: break-word;
+            overflow: hidden;
+          }
+
+          /* Ensure kid name column is visible and wide enough */
+          .grid-cell-name {
+            min-width: 80px !important;
+            width: 12% !important;
+            font-weight: 600;
+          }
+
+          .grid-cell-name .kid-avatar {
+            font-size: 0.9rem;
+          }
+
+          .grid-cell-name .kid-name {
+            display: inline !important;
+            font-size: 9pt;
           }
 
           .grid-cell-day {
             min-width: auto;
-            padding: 0.5rem 0.25rem;
+            width: 11%;
+            padding: 0.25rem;
+          }
+
+          .grid-cell-total,
+          .grid-cell-streak {
+            width: 8%;
           }
 
           .chore-item {
-            font-size: 8pt;
+            font-size: 7pt;
+          }
+
+          .chore-name {
+            max-width: 80px;
+            overflow: hidden;
+            text-overflow: ellipsis;
           }
 
           .weekly-grid-content {
