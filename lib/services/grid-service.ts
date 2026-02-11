@@ -10,12 +10,23 @@ import { BalanceService } from "./balance-service.ts";
 import { InsightsService, calculateStreak, getLocalDate } from "./insights-service.ts";
 import type { BalanceInfo, DailyEarning } from "../types/finance.ts";
 
+/** Individual chore within a day */
+export interface GridChore {
+  id: string;
+  name: string;
+  icon?: string;
+  points: number;
+  status: "completed" | "pending" | "not_assigned";
+}
+
 /** Single day in the weekly grid */
 export interface GridDay {
   date: string;       // YYYY-MM-DD
   dayName: string;    // Sun, Mon, etc.
-  points: number;     // Points earned that day
+  points: number;     // Points earned that day (completed only)
+  totalPoints: number; // Total points possible (all assigned chores)
   complete: boolean;  // Had any activity
+  chores: GridChore[]; // Individual chores for this day
 }
 
 /** Single kid's row in the weekly grid */
@@ -25,6 +36,7 @@ export interface GridKid {
   avatar: string;
   days: GridDay[];
   weeklyTotal: number;
+  weeklyPossible: number; // Total points possible for the week
   streak: number;
 }
 
@@ -48,7 +60,7 @@ export class GridService {
 
   /**
    * Get weekly grid data for a family
-   * Composes data from existing services - no new DB queries
+   * Composes data from existing services + chore assignments
    */
   async getWeeklyGrid(
     familyId: string,
@@ -57,15 +69,20 @@ export class GridService {
     // Get balance data (includes daily earnings for rolling 7 days)
     const balances = await this.balanceService.getFamilyBalances(familyId, timezone);
 
-    // Transform balance data into grid format with streak
-    const kids = await Promise.all(
-      balances.map(async (balance) => await this.transformToGridKid(balance, familyId, timezone))
-    );
-
-    // Calculate week label from the daily earnings dates
+    // Calculate week dates from balance data
     const weekDates = balances[0]?.dailyEarnings || [];
     const weekStart = weekDates[0]?.date || this.getDefaultWeekStart(timezone);
     const weekEnd = weekDates[weekDates.length - 1]?.date || weekStart;
+
+    // Fetch chore assignments for the week (single query for all kids)
+    const assignments = await this.getWeekAssignments(familyId, weekStart, weekEnd);
+
+    // Transform balance data into grid format with streak and chores
+    const kids = await Promise.all(
+      balances.map(async (balance) =>
+        await this.transformToGridKid(balance, familyId, timezone, assignments)
+      )
+    );
 
     return {
       weekLabel: this.formatWeekLabel(weekStart, weekEnd),
@@ -77,27 +94,115 @@ export class GridService {
   }
 
   /**
-   * Transform BalanceInfo to GridKid format
+   * Fetch chore assignments for the week
+   */
+  private async getWeekAssignments(
+    familyId: string,
+    weekStart: string,
+    weekEnd: string
+  ): Promise<Map<string, Map<string, GridChore[]>>> {
+    const { createClient } = await import("@supabase/supabase-js");
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const client = createClient(supabaseUrl, supabaseServiceKey);
+
+    const { data: assignments } = await client
+      .schema("choretracker")
+      .from("chore_assignments")
+      .select(`
+        id,
+        assigned_to_profile_id,
+        assigned_date,
+        status,
+        point_value,
+        chore_template:chore_template_id (
+          id,
+          name,
+          icon
+        )
+      `)
+      .eq("family_id", familyId)
+      .gte("assigned_date", weekStart)
+      .lte("assigned_date", weekEnd)
+      .or("is_deleted.is.null,is_deleted.eq.false");
+
+    // Group by profile_id -> date -> chores[]
+    const result = new Map<string, Map<string, GridChore[]>>();
+
+    for (const assignment of assignments || []) {
+      const profileId = assignment.assigned_to_profile_id as string | null;
+      const date = assignment.assigned_date as string | null;
+      // Supabase returns single object for FK relations, but TS may infer array
+      const template = assignment.chore_template as unknown as { id: string; name: string; icon?: string } | null;
+
+      if (!profileId || !date) continue;
+
+      if (!result.has(profileId)) {
+        result.set(profileId, new Map());
+      }
+      const profileMap = result.get(profileId)!;
+
+      if (!profileMap.has(date)) {
+        profileMap.set(date, []);
+      }
+
+      profileMap.get(date)!.push({
+        id: assignment.id as string,
+        name: template?.name || "Unknown Chore",
+        icon: template?.icon,
+        points: (assignment.point_value as number) || 0,
+        status: assignment.status === "completed" || assignment.status === "verified"
+          ? "completed"
+          : "pending",
+      });
+    }
+
+    return result;
+  }
+
+  /**
+   * Transform BalanceInfo to GridKid format with chore details
    */
   private async transformToGridKid(
     balance: BalanceInfo,
     familyId: string,
-    timezone: string
+    timezone: string,
+    assignments: Map<string, Map<string, GridChore[]>>
   ): Promise<GridKid> {
     // Get streak data by fetching transactions
     const streak = await this.getProfileStreak(balance.profileId, familyId, timezone);
+
+    // Get this kid's assignments
+    const kidAssignments = assignments.get(balance.profileId) || new Map();
+
+    // Build days with chore details
+    const days: GridDay[] = balance.dailyEarnings.map((d: DailyEarning) => {
+      const dayChores: GridChore[] = kidAssignments.get(d.date) || [];
+      const totalPoints = dayChores.reduce((sum: number, c: GridChore) => sum + c.points, 0);
+      const earnedPoints = dayChores
+        .filter((c: GridChore) => c.status === "completed")
+        .reduce((sum: number, c: GridChore) => sum + c.points, 0);
+
+      return {
+        date: d.date,
+        dayName: d.dayName,
+        points: earnedPoints,
+        totalPoints,
+        complete: dayChores.length > 0 && dayChores.every((c: GridChore) => c.status === "completed"),
+        chores: dayChores,
+      };
+    });
+
+    // Calculate weekly possible points
+    const weeklyPossible = days.reduce((sum, d) => sum + d.totalPoints, 0);
 
     return {
       id: balance.profileId,
       name: balance.profileName,
       avatar: balance.avatarEmoji,
-      days: balance.dailyEarnings.map((d: DailyEarning) => ({
-        date: d.date,
-        dayName: d.dayName,
-        points: d.points,
-        complete: d.points > 0,
-      })),
+      days,
       weeklyTotal: balance.weeklyEarnings,
+      weeklyPossible,
       streak,
     };
   }

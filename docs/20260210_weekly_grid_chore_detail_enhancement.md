@@ -1,7 +1,7 @@
 # Weekly Grid Enhancement: Show Individual Chores
 
 **Date**: February 10, 2026
-**Status**: Proposed
+**Status**: Implemented
 **Related**: [Weekly Grid Architecture](./20260209_weekly_grid_template_architecture.md)
 
 ---
