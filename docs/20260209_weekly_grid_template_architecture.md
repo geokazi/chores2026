@@ -636,6 +636,9 @@ ON choretracker.chore_transactions (family_id, profile_id, created_at);
 
 ## References
 
+### Enhancement Proposals
+- [**Weekly Grid Chore Detail Enhancement**](./20260210_weekly_grid_chore_detail_enhancement.md) - Show individual chores per day instead of just totals
+
 ### Core Architecture (MUST READ)
 - [**JSONB Settings Architecture**](./20260114_JSONB_settings_architecture.md) - Storage pattern, GIN indexes, inheritance
 - [**SQL Migration**](../sql/20260114_jsonb_settings.sql) - GIN indexes already deployed
