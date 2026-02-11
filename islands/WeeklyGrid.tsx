@@ -124,7 +124,7 @@ export default function WeeklyGrid({ gridData, familyName }: Props) {
             {day.chores.map(chore => (
               <div key={chore.id} class={`chore-item ${chore.status}`}>
                 {renderChoreStatus(chore)}
-                <span class="chore-name">{chore.icon || ""} {chore.name}</span>
+                <span class="chore-name">{chore.name}</span>
                 <span class="chore-points">{chore.points}pt</span>
               </div>
             ))}
@@ -186,7 +186,7 @@ export default function WeeklyGrid({ gridData, familyName }: Props) {
                       {kidDay.chores.map(chore => (
                         <div key={chore.id} class={`mobile-chore ${chore.status}`}>
                           {renderChoreStatus(chore)}
-                          <span class="chore-name">{chore.icon || ""} {chore.name}</span>
+                          <span class="chore-name">{chore.name}</span>
                           <span class="chore-points">{chore.points} pt</span>
                         </div>
                       ))}
@@ -437,6 +437,8 @@ export default function WeeklyGrid({ gridData, familyName }: Props) {
 
         .mobile-chore .chore-name {
           flex: 1;
+          font-weight: 400;
+          font-size: 0.85rem;
         }
 
         .mobile-chore .chore-points {
@@ -578,9 +580,11 @@ export default function WeeklyGrid({ gridData, familyName }: Props) {
           flex: 1;
           overflow: hidden;
           text-overflow: ellipsis;
+          font-weight: 400;
+          font-size: 0.7rem;
         }
 
-        /* Override global gradient pill style - use plain numbers in grid */
+        /* Override global styles in grid */
         .weekly-grid-container .chore-points,
         .chore-item .chore-points,
         .mobile-chore .chore-points {
@@ -588,13 +592,21 @@ export default function WeeklyGrid({ gridData, familyName }: Props) {
           box-shadow: none !important;
           color: var(--color-text-light, #6b7280) !important;
           font-size: 0.65rem !important;
-          font-weight: 500 !important;
+          font-weight: 400 !important;
           padding: 0 !important;
           border-radius: 0 !important;
         }
 
         .mobile-chore .chore-points {
           font-size: 0.75rem !important;
+        }
+
+        /* Override global chore-name styles - use normal small font */
+        .weekly-grid-container .chore-name,
+        .chore-item .chore-name,
+        .mobile-chore .chore-name {
+          font-weight: 400 !important;
+          font-size: inherit !important;
         }
 
         .grid-cell-total {
