@@ -4,6 +4,7 @@
 **Updated**: February 10, 2026
 **Status**: ✅ **IMPLEMENTED** - MVP Complete
 **Architecture**: JSONB-First, Zero New Tables, Reuse Existing Systems
+**Related**: [Chore Detail Enhancement](./20260210_weekly_grid_chore_detail_enhancement.md) - Shows individual chores per day
 
 ---
 
