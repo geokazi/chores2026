@@ -1,6 +1,7 @@
 # Collaborative Family Goals & Bonus System
 
 **Date**: January 14, 2026
+**Last Updated**: February 11, 2026 (Timezone-aware week calculation fix)
 **Status**: ✅ Complete
 **Milestone**: Family Goal Achievement System
 **Implementation**: ~260 lines across existing files + 1 new API endpoint
@@ -189,29 +190,52 @@ January 14, 2026
 
 1. Fetch family JSONB settings
 2. If no `weekly_goal` set, return early (feature disabled)
-3. Calculate week start (Sunday)
-4. Sum all `chore_completed` transactions since week start
+3. **Calculate week start (Sunday) in user's timezone** (see Week Calculation below)
+4. Sum all `chore_completed` transactions since week start (filtered by local date)
 5. Convert points to dollars using `points_per_dollar`
-6. Check if `weekly_goal` bonus already awarded this week
+6. Check if `weekly_goal` bonus already awarded this week (filtered by local date)
 7. If goal reached and not yet awarded:
    - Fetch all family members
    - Award bonus to each via `TransactionService.recordBonusAward()`
    - Description includes "weekly_goal" for duplicate prevention
 8. Return goal status for UI display
 
+### Week Calculation (Timezone-Aware)
+
+**Critical**: Both `checkFamilyGoal()` and `getFamilyGoalStatus()` use the same timezone-aware Sunday-start week calculation:
+
+```typescript
+// Calculate week start in user's timezone
+const todayLocal = getLocalDate(now.toISOString(), timezone); // YYYY-MM-DD in user's TZ
+const [year, month, day] = todayLocal.split("-").map(Number);
+
+const todayDate = new Date(year, month - 1, day);
+const dayOfWeek = todayDate.getDay(); // 0=Sun in local context
+const weekStartLocal = new Date(year, month - 1, day - dayOfWeek);
+const weekStartStr = formatDate(weekStartLocal); // YYYY-MM-DD
+```
+
+**Why Timezone Matters**:
+- Server runs in UTC (Fly.io/Deno Deploy)
+- If user is in PST (UTC-8), Sunday 8 PM local = Monday 4 AM UTC
+- Without timezone handling, user would see their Sunday earnings counted in next week
+
 ### Duplicate Prevention
 
 ```typescript
-// Check if already awarded this week
-const { data: awarded } = await this.client
+// Check if already awarded this week (using local date filter)
+const { data: bonusTxns } = await this.client
   .schema("choretracker")
   .from("chore_transactions")
-  .select("id")
+  .select("id, created_at")
   .eq("family_id", familyId)
   .eq("transaction_type", "bonus_awarded")
-  .gte("created_at", weekStart.toISOString())
-  .ilike("description", "%weekly_goal%")
-  .limit(1);
+  .ilike("description", "%weekly_goal%");
+
+// Filter by local week
+const weekBonuses = (bonusTxns || []).filter((t) =>
+  getLocalDate(t.created_at, timezone) >= weekStartStr
+);
 ```
 
 ---
@@ -316,11 +340,57 @@ January 14, 2026
 
 ---
 
+## Update: February 11, 2026 - Timezone-Aware Week Calculation
+
+### Issue Fixed
+
+The `checkFamilyGoal()` function (used for bonus awarding) was using UTC Sunday-start, while `getFamilyGoalStatus()` (used for display) was using timezone-aware Sunday-start. This caused inconsistency between what users saw and when bonuses were awarded.
+
+Additionally, rotation and recurring chore completions were NOT triggering goal checks at all.
+
+### Changes Made
+
+| File | Change |
+|------|--------|
+| `lib/services/chore-service.ts` | `checkFamilyGoal()` now accepts `timezone` parameter, uses timezone-aware Sunday-start |
+| `routes/api/chores/[chore_id]/complete.ts` | Extracts timezone from request body, passes to `checkFamilyGoal()` |
+| `routes/api/rotation/complete.ts` | Added `checkFamilyGoal()` call after rotation chore completion |
+| `routes/api/recurring/complete.ts` | Added `checkFamilyGoal()` call after recurring chore completion |
+| `islands/ChoreList.tsx` | Sends browser timezone with complete requests |
+| `islands/ChoreDetail.tsx` | Sends browser timezone with complete requests |
+| `islands/SecureParentDashboard.tsx` | Sends browser timezone with complete requests |
+| `islands/EventMissionGroup.tsx` | Sends browser timezone with complete requests |
+
+### Client-Side Timezone Detection
+
+All chore completion API calls now include the browser's timezone:
+
+```typescript
+// Get browser timezone for consistent week boundary calculation
+const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+fetch(`/api/chores/${choreId}/complete`, {
+  method: "POST",
+  body: JSON.stringify({ kid_id: kidId, timezone }),
+});
+```
+
+### All Chore Types Now Trigger Goal Checks
+
+| Endpoint | Goal Check |
+|----------|------------|
+| `/api/chores/[id]/complete` | ✅ Yes (with timezone) |
+| `/api/rotation/complete` | ✅ Yes (with timezone) - Added Feb 11, 2026 |
+| `/api/recurring/complete` | ✅ Yes (with timezone) - Added Feb 11, 2026 |
+
+---
+
 ## Related Documentation
 
 - **Planning**: [UX Variations Considered](../planned/20260114_family_reports_ux_variations.md)
 - **Settings Architecture**: [JSONB Settings](../20260114_JSONB_settings_architecture.md)
 - **Reports Implementation**: [Family Reports Analytics](../20260114_family_reports_analytics_implementation.md)
+- **Points Consistency**: [Single Source of Truth](../troubleshooting/20260131_points_consistency_single_source_of_truth.md)
 
 ---
 

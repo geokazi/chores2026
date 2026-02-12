@@ -1,7 +1,7 @@
 # Points Consistency: Single Source of Truth
 
 **Date**: January 31, 2026
-**Last Updated**: January 31, 2026 (Rolling 7-day window update)
+**Last Updated**: February 11, 2026 (checkFamilyGoal timezone fix)
 **Status**: Resolved
 **Criticality**: HIGH - User trust depends on accurate, consistent data
 
@@ -260,6 +260,12 @@ When points don't match across pages:
 - [ ] Using `getLocalDate()` for date comparisons?
 - [ ] Search for `"UTC"` hardcoded - should only be in fallback/test code
 
+### 2b. Check Family Goal Timezone (Added Feb 11, 2026)
+- [ ] Client sending `timezone` in chore complete request body?
+- [ ] API route extracting `timezone` from body?
+- [ ] `checkFamilyGoal()` receiving timezone parameter?
+- [ ] Goal progress display matches bonus awarding (both use same week boundaries)?
+
 ### 3. Check Query Pattern
 - [ ] Querying `chore_transactions` by `family_id`?
 - [ ] Using `.gt("points_change", 0)` (not filtering by transaction_type)?
@@ -280,30 +286,53 @@ When points don't match across pages:
 | Service | What It Calculates | Time Window | Used By |
 |---------|-------------------|-------------|---------|
 | `chore-service.getFamilyAnalytics()` | Earned this week/month/YTD per member | Sunday-first | `/reports` |
-| `chore-service.getFamilyGoalStatus()` | Family weekly goal progress | Sunday-first | `/reports`, `/kid/dashboard` |
+| `chore-service.getFamilyGoalStatus()` | Family weekly goal progress (display) | Sunday-first | `/reports`, `/kid/dashboard` |
+| `chore-service.checkFamilyGoal()` | Goal check + bonus awarding | Sunday-first | All chore complete endpoints |
 | `balance-service.getFamilyBalances()` | Points + daily breakdown per kid | Rolling 7-day | `/parent/balances` |
 | `insights-service.computeThisWeekActivity()` | Day-by-day activity + points | Rolling 7-day | `/parent/dashboard`, `/kid/dashboard`, `/parent/insights` |
 
 **Note**: Reports (Sunday-first) and Dashboard/Balances (rolling 7-day) may show different totals - this is **intentional** for UX reasons.
+
+### Family Goal Consistency (Feb 11, 2026 Fix)
+
+`checkFamilyGoal()` and `getFamilyGoalStatus()` MUST use identical week calculations:
+
+| Function | Purpose | Time Window | Timezone |
+|----------|---------|-------------|----------|
+| `getFamilyGoalStatus()` | Display progress | Sunday-first | User's timezone (from URL `?tz=`) |
+| `checkFamilyGoal()` | Award bonus | Sunday-first | User's timezone (from request body) |
+
+Both functions use `getLocalDate()` to convert UTC timestamps to user's local date before filtering.
 
 ---
 
 ## Key Files Reference
 
 ### Services
-- `lib/services/chore-service.ts` - `getFamilyAnalytics()` (Sunday-first week)
+- `lib/services/chore-service.ts` - `getFamilyAnalytics()`, `getFamilyGoalStatus()`, `checkFamilyGoal()` (Sunday-first week)
 - `lib/services/balance-service.ts` - `getRolling7DayDates()`, `getFamilyBalances()` (rolling 7-day)
 - `lib/services/insights-service.ts` - `getLocalDate()`, `computeThisWeekActivity()` (rolling 7-day)
 
-### Routes (Timezone Detection)
-- `routes/reports.tsx` - Line 85 (timezone from URL)
+### Routes (Timezone Detection - GET requests)
+- `routes/reports.tsx` - Line 85 (timezone from URL `?tz=`)
 - `routes/parent/dashboard.tsx` - Line 49 (timezone from URL)
 - `routes/parent/balances.tsx` - Line 54 (timezone from URL)
 - `routes/kid/dashboard.tsx` - Line 51 (timezone from URL)
 
+### API Routes (Timezone from Request Body - POST requests)
+- `routes/api/chores/[chore_id]/complete.ts` - Extracts `timezone` from body, passes to `checkFamilyGoal()`
+- `routes/api/rotation/complete.ts` - Extracts `timezone` from body, passes to `checkFamilyGoal()`
+- `routes/api/recurring/complete.ts` - Extracts `timezone` from body, passes to `checkFamilyGoal()`
+
 ### Components (Display)
 - `islands/WeeklyProgress.tsx` - Shows points per day + total
 - `islands/HabitInsights.tsx` - Shows points per day + total
+
+### Components (Timezone Sending - Client-Side)
+- `islands/ChoreList.tsx` - Sends `timezone` in complete requests
+- `islands/ChoreDetail.tsx` - Sends `timezone` in complete requests
+- `islands/SecureParentDashboard.tsx` - Sends `timezone` in complete requests
+- `islands/EventMissionGroup.tsx` - Sends `timezone` in complete requests
 
 ---
 
@@ -322,6 +351,7 @@ When points don't match across pages:
 
 ## Related Documentation
 
-- [Family Reports Analytics Implementation](./20260114_family_reports_analytics_implementation.md)
+- [Family Reports Analytics Implementation](../20260114_family_reports_analytics_implementation.md)
 - [FamilyScore Sync Integration](./20260112_familyscore_sync_integration.md)
-- [JSONB Settings Architecture](./20260114_JSONB_settings_architecture.md)
+- [JSONB Settings Architecture](../20260114_JSONB_settings_architecture.md)
+- [Collaborative Family Goals & Bonus System](../milestones/20260114_collaborative_family_goals_bonus_system.md) - Includes Feb 11, 2026 timezone fix
