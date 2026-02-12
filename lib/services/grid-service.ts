@@ -8,7 +8,7 @@
 
 import { BalanceService } from "./balance-service.ts";
 import { InsightsService, calculateStreak, getLocalDate } from "./insights-service.ts";
-import { getRotationConfig, getChoresForChild } from "./rotation-service.ts";
+import { getRotationConfig, getChoresForChild, getFamilyCustomChores } from "./rotation-service.ts";
 import { getPresetByKey } from "../data/rotation-presets.ts";
 import type { BalanceInfo, DailyEarning } from "../types/finance.ts";
 
@@ -142,6 +142,16 @@ export class GridService {
       .single();
 
     const rotationConfig = getRotationConfig(family?.settings || {});
+    const familyCustomChores = getFamilyCustomChores(family?.settings || {});
+
+    // Diagnostic logging for rotation config
+    console.log(`📊 Grid: Family settings check`, {
+      familyId,
+      hasSettings: !!family?.settings,
+      hasRotation: !!rotationConfig,
+      rotationPreset: rotationConfig?.active_preset || null,
+      customChoresCount: familyCustomChores.length,
+    });
 
     // Get child profiles for this family (handle NULL is_deleted)
     const { data: childProfiles } = await client
@@ -198,12 +208,15 @@ export class GridService {
     if (rotationConfig) {
       const preset = getPresetByKey(rotationConfig.active_preset);
       if (preset) {
+        let rotationChoreCount = 0;
         for (const childId of childIds) {
           for (const dateStr of dates) {
             const dateObj = new Date(dateStr + "T12:00:00");
-            const chores = getChoresForChild(rotationConfig, childId, dateObj);
+            // Pass familyCustomChores as 4th parameter
+            const chores = getChoresForChild(rotationConfig, childId, dateObj, familyCustomChores);
             for (const chore of chores) {
-              const isCompleted = completedSet.has(`${childId}:rotation:${chore.key}:${dateStr}`);
+              const completionKey = `${childId}:rotation:${chore.key}:${dateStr}`;
+              const isCompleted = completedSet.has(completionKey);
               addChore(childId, dateStr, {
                 id: `rotation_${chore.key}_${dateStr}`,
                 name: chore.name,
@@ -211,11 +224,16 @@ export class GridService {
                 points: chore.points,
                 status: isCompleted ? "completed" : "pending",
               });
+              rotationChoreCount++;
             }
           }
         }
-        console.log(`📊 Weekly Grid: Added rotation chores from ${rotationConfig.active_preset}`);
+        console.log(`📊 Weekly Grid: Added ${rotationChoreCount} rotation chores from preset "${rotationConfig.active_preset}"`);
+      } else {
+        console.log(`📊 Weekly Grid: Rotation preset "${rotationConfig.active_preset}" not found!`);
       }
+    } else {
+      console.log(`📊 Weekly Grid: No rotation config for family ${familyId}, skipping rotation chores`);
     }
 
     // === 2. RECURRING CHORES (Manual recurring templates) ===

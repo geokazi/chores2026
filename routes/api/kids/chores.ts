@@ -132,6 +132,7 @@ export const handler: Handlers = {
       const todayDayNum = requestDate.getDay(); // 0-6
 
       // Query recurring templates assigned to this kid
+      // Use .or() for is_deleted to handle NULL values (consistent with grid-service)
       const { data: recurringTemplates } = await supabase
         .schema("choretracker")
         .from("chore_templates")
@@ -140,7 +141,7 @@ export const handler: Handlers = {
         .eq("assigned_to_profile_id", kidId)
         .eq("is_recurring", true)
         .eq("is_active", true)
-        .eq("is_deleted", false);
+        .or("is_deleted.is.null,is_deleted.eq.false");
 
       if (recurringTemplates && recurringTemplates.length > 0) {
         // Filter to templates due today
