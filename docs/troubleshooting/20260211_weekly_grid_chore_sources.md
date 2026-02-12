@@ -1,12 +1,15 @@
 # Weekly Grid: Multi-Source Chore Display
 
 **Date**: February 11, 2026
+**Updated**: February 11, 2026
 **Status**: Resolved
 **Criticality**: MEDIUM - Affects parent visibility into kid chore schedules
 
 ## Executive Summary
 
 The Weekly Grid (`/parent/grid/weekly`) displays chores from **three distinct sources**, merged together for a unified view. This document explains how each source works, completion tracking, and debugging steps.
+
+**February 11, 2026 Update**: Added **Manual Mode** which uses InsightsService for data consistency with Family Dashboard when no rotation template is active.
 
 ---
 
@@ -267,17 +270,72 @@ const chores = getChoresForChild(rotationConfig, childId, dateObj, familyCustomC
 
 ---
 
+## Manual Mode (No Rotation Template)
+
+When a family has **no active rotation template** (Manual Mode), the Weekly Grid uses a different data source for consistency with the Family Dashboard.
+
+### How It Works
+
+Instead of querying three separate sources, Manual Mode uses `InsightsService.getInsights()` which is the same data source powering the Family Dashboard's "This Week" display.
+
+**Data Flow:**
+```
+InsightsService.getInsights(familyId, settings, profiles, timezone)
+  → thisWeekActivity[] per kid
+  → Map to GridKid[] format with daily points
+```
+
+### Key Benefits
+
+1. **Data Consistency**: Weekly Grid totals match Family Dashboard totals exactly
+2. **Transaction-Based**: Counts points by transaction date (when earned), not assignment date
+3. **All Sources Unified**: Manual chores, recurring chores, and any other completions all included
+
+### Chore Name Display
+
+In Manual Mode, the expanded grid view shows **actual chore names** extracted from transaction descriptions:
+
+```typescript
+// Query actual chore completions with names
+const { data: transactions } = await supabase
+  .schema("choretracker")
+  .from("chore_transactions")
+  .select("profile_id, points_change, description, created_at")
+  .eq("family_id", familyId)
+  .gte("created_at", weekStart)
+  .lte("created_at", weekEnd);
+
+// Clean up description to get chore name
+let choreName = tx.description || "Chore";
+// Strip prefixes like "Chore completed: " or "Completed: "
+choreName = choreName.replace(/^(Chore completed: |Completed: )/, "");
+// Strip points suffix like "(+1 pts)"
+choreName = choreName.replace(/\s*\(\+\d+\s*pts?\)\s*$/, "").trim();
+```
+
+### Sorting
+
+Kids are sorted by **weekly total points** (highest first) for easy comparison:
+
+```typescript
+kids.sort((a, b) => b.weeklyTotal - a.weeklyTotal);
+```
+
+---
+
 ## Related Files
 
 | File | Purpose |
 |------|---------|
-| `lib/services/grid-service.ts` | Weekly Grid data composition |
+| `lib/services/grid-service.ts` | Weekly Grid data composition (includes Manual Mode) |
+| `lib/services/insights-service.ts` | Manual Mode data source |
 | `lib/services/rotation-service.ts` | Rotation algorithm + config getters |
 | `lib/data/rotation-presets.ts` | Preset definitions |
 | `routes/api/rotation/complete.ts` | Rotation completion endpoint |
 | `routes/api/recurring/complete.ts` | Recurring completion endpoint |
 | `routes/api/kids/chores.ts` | Kid dashboard chore fetching |
 | `islands/WeeklyGrid.tsx` | Grid UI component |
+| `routes/parent/grid/weekly.tsx` | Grid page (full-width desktop layout) |
 
 ---
 

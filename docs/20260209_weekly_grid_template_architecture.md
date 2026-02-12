@@ -1,10 +1,12 @@
 # Weekly Grid - Architecture Review
 
 **Document Created**: February 9, 2026
-**Updated**: February 10, 2026
-**Status**: ✅ **IMPLEMENTED** - MVP Complete
+**Updated**: February 11, 2026
+**Status**: ✅ **IMPLEMENTED** - MVP Complete + Manual Mode
 **Architecture**: JSONB-First, Zero New Tables, Reuse Existing Systems
-**Related**: [Chore Detail Enhancement](./20260210_weekly_grid_chore_detail_enhancement.md) - Shows individual chores per day
+**Related**:
+- [Chore Detail Enhancement](./20260210_weekly_grid_chore_detail_enhancement.md) - Shows individual chores per day
+- [Multi-Source Chore Display](./troubleshooting/20260211_weekly_grid_chore_sources.md) - Rotation + Recurring + Manual sources + Manual Mode
 
 ---
 
@@ -260,16 +262,20 @@ await supabase
 │                         FILE STRUCTURE                                       │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│   ✅ IMPLEMENTED FILES (Feb 10, 2026)                                       │
+│   ✅ IMPLEMENTED FILES (Feb 11, 2026)                                       │
 │   ═══════════════════════════════════                                       │
 │                                                                             │
 │   routes/api/grid/weekly.ts           ~75 lines    API endpoint (Pro gated) │
-│   routes/parent/grid/weekly.tsx       ~110 lines   Route page               │
-│   lib/services/grid-service.ts        ~145 lines   Compose existing services│
-│   islands/WeeklyGrid.tsx              ~290 lines   Display + print + share  │
+│   routes/parent/grid/weekly.tsx       ~140 lines   Route page (full-width)  │
+│   lib/services/grid-service.ts        ~410 lines   Multi-source + Manual    │
+│   islands/WeeklyGrid.tsx              ~300 lines   Display + print + share  │
 │   static/grid-print.css               ~95 lines    Print styles             │
 │                                                                             │
-│   TOTAL: ~715 lines (all modules well under 500 limit)                      │
+│   TOTAL: ~1020 lines (grid-service approaching 500 limit, monitor)          │
+│                                                                             │
+│   NOTE: grid-service.ts grew to support Manual Mode (InsightsService        │
+│   integration) and actual chore name display. Consider splitting if         │
+│   additional features are added.                      │
 │                                                                             │
 │   ───────────────────────────────────────────────────────────────────────   │
 │                                                                             │
@@ -342,6 +348,50 @@ await supabase
 | **Streaks** | 🔥 badge | Reuse existing streak logic |
 | **Colors** | Theme-aware | Use existing CSS variables |
 | **Print** | CSS @media print | No JS complexity |
+| **Desktop** | Full-width layout | Better visibility on larger screens |
+| **Sorting** | Kids by total points (desc) | Easy comparison |
+
+---
+
+## Manual Mode (Feb 11, 2026)
+
+When no rotation template is active, the Weekly Grid uses **Manual Mode** which sources data from `InsightsService` for consistency with the Family Dashboard.
+
+### Why Manual Mode?
+
+| Problem | Solution |
+|---------|----------|
+| Dashboard shows 14 chores, Grid shows 0 | Both use same data source (InsightsService) |
+| Transaction date vs assignment date mismatch | Manual Mode uses transaction date |
+| "—" shown instead of chores | Query actual completions, not assignments |
+| Generic "Completed" text | Extract and display actual chore names |
+
+### Manual Mode Features
+
+```typescript
+// Detection: No active rotation template
+const hasRotationTemplate = !!getRotationConfig(family?.settings)?.active_preset;
+
+if (!hasRotationTemplate) {
+  return this.getWeeklyGridManualMode(familyId, weekStart, weekEnd, timezone);
+}
+```
+
+**Key Behaviors:**
+1. Uses `InsightsService.getInsights()` for kid weekly totals
+2. Queries `chore_transactions` for actual chore names
+3. Strips description prefixes ("Chore completed: ", "Completed: ")
+4. Strips points suffixes ("(+1 pts)")
+5. Sorts kids by weekly total (highest first)
+6. Full-width display on desktop (max-width: none)
+
+### Data Consistency Guarantee
+
+```
+Family Dashboard "This Week" totals = Weekly Grid totals (when in Manual Mode)
+```
+
+Both use the same query pattern from `InsightsService`.
 
 ---
 

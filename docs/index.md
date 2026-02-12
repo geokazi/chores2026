@@ -1,8 +1,8 @@
 # ChoreGami 2026 Documentation
 
-**Version**: 1.50
+**Version**: 1.51
 **Status**: ✅ Production Ready
-**Last Updated**: February 8, 2026 (Shopify Store URLs)
+**Last Updated**: February 11, 2026 (Weekly Grid UX + Dashboard Buttons)
 
 **Project Overview**: A simplified, real-time chore completion system built with Deno Fresh, transforming routine family chores into an engaging, competitive experience with sub-second real-time updates across all family devices.
 
@@ -108,6 +108,8 @@ Transform the complex Choregami Eats meal planning system into a streamlined cho
 | 2026-02-08 | [**Shopify Product Images Spec**](./marketing/20260208_shopify_product_images_spec.md) | 📋 Ready | Canva design specs for product images; badges, mockups, alt text |
 | 2026-02-08 | [**Shopify Store URLs**](./marketing/20260208_shopify_store_urls.md) | ✅ Active | Live store URLs, SKUs, admin links, fulfillment flow |
 | 2026-02-07 | **Auth-Aware Landing Page Routing** | ✅ Complete | Default landing → `/families` (parent-focused); authenticated users redirect to `/setup` or `/` based on family status |
+| 2026-02-11 | [**Weekly Grid UX Improvements**](./troubleshooting/20260211_weekly_grid_chore_sources.md) | ✅ Complete | Manual Mode (InsightsService), actual chore names in grid, sort by points, full-width desktop |
+| 2026-02-11 | **Dashboard Button Reorganization** | ✅ Complete | Family Dashboard: removed Insights, added Add Event modal, 2x2 button layout; Kid Dashboard: "Plan Something" → "Add Event" |
 | TBD | Testing & Performance | 🔄 Planned | Test suite implementation and optimization |
 | TBD | Production Deployment | 📅 Pending | CI/CD pipeline and monitoring setup |
 
@@ -317,6 +319,8 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 - ✅ **Shopify SKU Admin**: Admin-configurable SKU-to-plan mappings via `/admin/shopify-skus` with in-memory cache; add CG-1M-TRIAL, CG-3M-PASS, CG-6M-PASS, CG-12M-PASS without code deployment
 - ✅ **Competitive Pricing**: Market-based pricing ($4.99/$14.99/$24.99/$39.99) matching Homey/Chap/Chorly; 1-month trial tier for low-barrier entry
 - ✅ **Auth-Aware Routing**: Unauthenticated → `/families`; authenticated without family → `/setup`; authenticated with family → `/` (dashboard); prevents logged-in users seeing login/signup on marketing pages
+- ✅ **Weekly Grid Manual Mode**: When no rotation template active, uses InsightsService for data consistency with Family Dashboard; shows actual chore names (not "Completed"), sorts kids by total points (highest first), full-width layout on desktop
+- ✅ **Dashboard Button UX**: Family Dashboard buttons reorganized in 2x2 grid (Add Chore + Add Event / Reports + Weekly Grid); Add Event opens modal directly (no extra navigation); Insights button removed; Kid Dashboard "Plan Something" → "Add Event" for consistency
 
 ### Known Limitations
 - **Testing**: Comprehensive test suite not yet implemented
@@ -367,5 +371,5 @@ TWILIO_VERIFY_SERVICE_SID=your_verify_service
 
 ---
 
-*Last updated: February 8, 2026 (v1.50)*
+*Last updated: February 11, 2026 (v1.51)*
 *Maintained by: Claude Code AI Assistant*
