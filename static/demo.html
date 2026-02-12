@@ -29,7 +29,63 @@
             overflow: hidden;
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
             border-radius: 20px;
+            transition: all 0.5s ease;
         }
+
+        /* ------------------
+           Vertical Mode (9:16)
+           ------------------ */
+        body.mode-vertical #ad-container {
+            width: 608px;
+            /* 1080 * 9/16 for fitting on desktop screen usually scaled, but let's stick to true vertical ratio if full size needed: 1080x1920 */
+            width: 60vh;
+            /* Responsive sizing for viewing */
+            height: 106vh;
+            /* 9:16 approx */
+
+            /* Actually let's do exact pixels if recording, or responsive for viewing. */
+            width: 1080px;
+            height: 1920px;
+        }
+
+        /* Adjustments for Vertical Mode */
+        body.mode-vertical h1 {
+            font-size: 80px;
+        }
+
+        body.mode-vertical #scene1 div {
+            font-size: 200px;
+        }
+
+        body.mode-vertical .rotation-card {
+            width: 90%;
+            padding: 40px;
+        }
+
+        body.mode-vertical .kids-grid {
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+
+        /* Stack kids vertically */
+        body.mode-vertical #solution-text {
+            font-size: 60px;
+            margin-top: 100px;
+        }
+
+        body.mode-vertical .toggle-container {
+            margin: 40px 0;
+        }
+
+        body.mode-vertical #cursor {
+            display: none !important;
+        }
+
+        /* Hide cursor for 'clean' feel or keep it? Let's hide it for mobile feel usually, or keep. User asked for vertical format. */
+
+        /* Actually cursor interactions explain the app well. Let's keep cursor but re-map coordinates. */
+        /* Mapping coordinates for responsive layout is hard with absolute pixels. */
+        /* Let's simplify: In Vertical Mode, we will center items and stack them. */
 
         .scene {
             position: absolute;
@@ -265,45 +321,6 @@
             transition: all 0.8s cubic-bezier(0.25, 1, 0.5, 1);
         }
 
-        /* Focus Highlight Circle */
-        .focus-circle {
-            position: absolute;
-            border: 4px solid #f59e0b;
-            /* Amber */
-            border-radius: 50%;
-            width: 0;
-            height: 0;
-            opacity: 0;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 90;
-            animation: none;
-            pointer-events: none;
-        }
-
-        @keyframes focusPulse {
-            0% {
-                width: 0;
-                height: 0;
-                opacity: 0;
-            }
-
-            50% {
-                width: 350px;
-                height: 100px;
-                opacity: 1;
-                border-radius: 20px;
-            }
-
-            100% {
-                width: 380px;
-                height: 120px;
-                opacity: 0;
-                border-radius: 20px;
-            }
-        }
-
         /* Tooltip */
         .tooltip {
             position: absolute;
@@ -362,10 +379,45 @@
                 transform: scale(1);
             }
         }
+
+        /* Controls */
+        #controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            z-index: 200;
+            display: flex;
+            gap: 10px;
+            font-family: sans-serif;
+        }
+
+        .ctrl-btn {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            background: #f8f9fa;
+        }
+
+        .ctrl-btn.active {
+            background: #10b981;
+            color: white;
+            border-color: #10b981;
+        }
     </style>
 </head>
 
 <body>
+
+    <div id="controls">
+        <button class="ctrl-btn active" onclick="setMode('square')">⏹️ Square</button>
+        <button class="ctrl-btn" onclick="setMode('vertical')">📱 Story</button>
+        <button class="ctrl-btn" onclick="replay()">🔄 Replay</button>
+    </div>
 
     <div id="ad-container">
 
@@ -449,7 +501,6 @@
                 <!-- Helper Cursor & Tooltip -->
                 <div id="cursor"></div>
                 <div id="tooltip" class="tooltip">Click to Swap!</div>
-                <div id="focus-circle" class="focus-circle"></div>
             </div>
         </div>
 
@@ -475,6 +526,30 @@
         const scenes = document.querySelectorAll('.scene');
         const cursor = document.getElementById('cursor');
         const tooltip = document.getElementById('tooltip');
+        let currentMode = 'square';
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.body.className = mode === 'vertical' ? 'mode-vertical' : '';
+
+            // Update buttons
+            document.querySelectorAll('.ctrl-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Adjust container scale for viewing if needed (optional)
+            if (mode === 'vertical') {
+                // Zoom out slightly if it doesn't fit screen
+                document.body.style.zoom = "0.5";
+            } else {
+                document.body.style.zoom = "0.8";
+            }
+
+            replay();
+        }
+
+        function replay() {
+            location.reload();
+        }
 
         function showScene(index) {
             scenes.forEach(s => s.classList.remove('active'));
@@ -493,32 +568,51 @@
             return new Promise(resolve => setTimeout(resolve, ms));
         }
 
+        // Coordinate helper for modes
+        function pos(squareX, squareY, vertX, vertY) {
+            if (currentMode === 'vertical') {
+                return { x: vertX, y: vertY };
+            }
+            return { x: squareX, y: squareY };
+        }
+
         async function playAdFairness() {
-            console.log("Starting Fairness Focus Ad Sequence");
+            console.log("Starting Ad Sequence in mode: " + currentMode);
 
             // --- Scene 1: Pain (0-3s) ---
             showScene(0);
             await wait(3000);
 
             // --- Scene 2: Solution Enter (3-4s) ---
-            showScene(1); // Rotation Card
+            showScene(1);
             await wait(1500);
 
             // --- Action 1: Highlight Current State (4-6s) ---
             // Move cursor to point at Emma's Dishes
             cursor.style.display = 'block';
-            cursor.style.top = '480px';
-            cursor.style.left = '25%'; // Left column = Emma
+
+            // Coords: Square(25%, 480px) vs Vertical(50%, 400px - emma is top)
+            // Vertical: Emma is Top, Jake is Bottom.
+            // Emma Dishes approx: Top 400px.
+
+            let p1 = pos('25%', '480px', '50%', '520px');
+
+            cursor.style.top = p1.y;
+            cursor.style.left = p1.x;
             await wait(1000);
 
-            showTooltip("Emma: Dishes 🍽️", 230, 440);
+            // Tooltip pos
+            let t1 = currentMode === 'vertical' ? { x: 200, y: 450 } : { x: 230, y: 440 };
+            showTooltip("Emma: Dishes 🍽️", t1.x, t1.y);
             await wait(1500);
 
             // --- Action 2: Toggle Rotation (6-8s) ---
-            // Move cursor to "Next Week"
+            // Toggle Button pos
+            let p2 = pos('60%', '275px', '70%', '350px');
+
             cursor.style.transition = 'all 0.8s ease';
-            cursor.style.top = '275px';
-            cursor.style.left = '60%'; // "Next Week" button
+            cursor.style.top = p2.y;
+            cursor.style.left = p2.x;
 
             await wait(1000);
 
@@ -527,58 +621,49 @@
             await wait(200);
             cursor.style.transform = 'scale(1)';
             toggleRotation();
-            // NOTE: Jake's Vacuum moves to Emma (Left). Emma's Dishes move to Jake (Right).
 
             await wait(1000);
 
             // --- Action 3: Highlight Swapped State (8-11s) ---
-            // Move to Dishes (Now on Right Column - Jake)
-            cursor.style.top = '480px';
-            cursor.style.left = '75%'; // Right column = Jake
+            // Move to Dishes (Jake). Square: Right Col. Vertical: Bottom Col.
+            let p3 = pos('75%', '480px', '50%', '1050px'); // Jake is way down in vertical
+
+            cursor.style.top = p3.y;
+            cursor.style.left = p3.x;
 
             await wait(1000);
 
-            showTooltip("Now: Jake! 👦", 770, 440);
+            let t2 = currentMode === 'vertical' ? { x: 300, y: 1000 } : { x: 770, y: 440 };
+            showTooltip("Now: Jake! 👦", t2.x, t2.y);
 
-            // Highlight visual effect for Jake's new list
-            const jakeList = document.getElementById('jake-list');
-            jakeList.classList.add('highlight-swap');
+            // Highlight list
+            document.getElementById('jake-list').classList.add('highlight-swap');
 
             await wait(2000);
 
             // --- Action 4: Completion (11-14s) ---
-            // Click the Dishes item (Jake completes it)
             cursor.style.transform = 'scale(0.8)';
             await wait(200);
             cursor.style.transform = 'scale(1)';
 
-            // Wait for completion - we need to find the element that WAS "dishes"
-            // Since we swapped HTML, the "data-chore='dishes'" attribute moved to the right column.
-            // We can query selector by attribute to find the right element to animate.
             const dishesElement = document.querySelector('[data-chore="dishes"]');
-
-            // But we need its ID if we want to call completeChore helper, or just pass the element.
-            // Let's modify completeChore to take element directly.
             completeChoreElement(dishesElement, 'jake-pts', 98, 10);
 
-            await wait(4000); // Wait for confetti
+            await wait(4000);
 
             // --- Scene 3: CTA (14s+) ---
-            showScene(2); // CTA
+            showScene(2);
         }
 
         function completeChoreElement(element, pointsId, currentPoints, addPoints) {
-            // Visual check
             element.classList.add('completed');
 
-            // Confetti
             myConfetti({
                 particleCount: 150,
                 spread: 70,
                 origin: { y: 0.6 }
             });
 
-            // Points Count Up
             const ptsEl = document.getElementById(pointsId);
             let p = currentPoints;
             const target = currentPoints + addPoints;
@@ -589,12 +674,14 @@
                 if (p >= target) clearInterval(interval);
             }, 50);
 
-            // Floating Text
             const float = document.createElement('div');
             float.innerText = "+" + addPoints;
             float.style.position = 'absolute';
-            float.style.right = '50px'; // Approx near the right column
-            float.style.top = '450px';
+            // Float pos relative to cursor or element?
+            // Simple hack: fixed relative to card for now
+            float.style.right = currentMode === 'vertical' ? '100px' : '50px';
+            float.style.top = currentMode === 'vertical' ? '1000px' : '450px';
+
             float.style.color = '#10b981';
             float.style.fontSize = '40px';
             float.style.fontWeight = 'bold';
@@ -609,20 +696,16 @@
         }
 
         function toggleRotation() {
-            // Visual Update for Toggle
             document.getElementById('btn-this-week').classList.remove('active');
             document.getElementById('btn-next-week').classList.add('active');
 
-            // Swap lists logic (Simulated)
             const emmaList = document.getElementById('emma-list');
             const jakeList = document.getElementById('jake-list');
 
-            // Visual fade out for smooth swap
             emmaList.style.opacity = 0;
             jakeList.style.opacity = 0;
 
             setTimeout(() => {
-                // Swap Text Content for demo effect layout
                 const emmaHTML = emmaList.innerHTML;
                 emmaList.innerHTML = jakeList.innerHTML;
                 jakeList.innerHTML = emmaHTML;
@@ -630,7 +713,6 @@
                 emmaList.style.opacity = 1;
                 jakeList.style.opacity = 1;
 
-                // Update header text to emphasize rotation
                 const solutionText = document.getElementById('solution-text');
                 solutionText.innerText = "Fairness: Solved! ✅";
                 solutionText.style.color = "#10b981";
@@ -641,7 +723,24 @@
         }
 
         window.onload = function () {
+            // Check URL params for mode
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('mode') === 'vertical') {
+                currentMode = 'vertical';
+                document.body.className = 'mode-vertical';
+                document.querySelectorAll('.ctrl-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.ctrl-btn')[1].classList.add('active'); // Select story btn
+            }
+
+            // Adjust Zoom default
+            if (currentMode === 'vertical') {
+                document.body.style.zoom = "0.5";
+            } else {
+                document.body.style.zoom = "0.8";
+            }
+
             playAdFairness();
+
             document.getElementById('cta-btn').onclick = function () {
                 window.location.href = 'https://choregami.app';
             };
