@@ -143,32 +143,48 @@ export class GridService {
 
     const rotationConfig = getRotationConfig(family?.settings || {});
 
-    // Get child profiles for this family
+    // Get child profiles for this family (handle NULL is_deleted)
     const { data: childProfiles } = await client
       .from("family_profiles")
       .select("id, name")
       .eq("family_id", familyId)
       .eq("role", "child")
-      .eq("is_deleted", false);
+      .or("is_deleted.is.null,is_deleted.eq.false");
 
     const childIds = (childProfiles || []).map((p: { id: string }) => p.id);
+    console.log(`📊 Weekly Grid: Found ${childIds.length} children`);
 
-    // Get all completed chore transactions for the week (for completion status)
+    // Get all completed chore transactions (wider range, filter by local date)
+    // Need to fetch more than just the week to handle timezone differences
+    const txStartDate = new Date(weekStart + "T00:00:00");
+    txStartDate.setDate(txStartDate.getDate() - 1); // 1 day before to handle timezone
+    const txEndDate = new Date(weekEnd + "T23:59:59");
+    txEndDate.setDate(txEndDate.getDate() + 1); // 1 day after to handle timezone
+
     const { data: completedTx } = await client
       .schema("choretracker")
       .from("chore_transactions")
-      .select("profile_id, metadata, created_at")
+      .select("profile_id, metadata, created_at, chore_assignment_id")
       .eq("family_id", familyId)
       .eq("transaction_type", "chore_completed")
-      .gte("created_at", weekStart + "T00:00:00")
-      .lte("created_at", weekEnd + "T23:59:59.999Z");
+      .gte("created_at", txStartDate.toISOString())
+      .lte("created_at", txEndDate.toISOString());
 
-    // Build completion lookup sets
-    // Key format: "profileId:rotation:presetKey:choreKey:date" or "profileId:recurring:templateId:date"
+    // Build completion lookup sets using metadata dates (timezone-safe)
+    // Key format: "profileId:rotation:choreKey:date" or "profileId:recurring:templateId:date"
+    // Also track completed assignment IDs for manual chores
     const completedSet = new Set<string>();
+    const completedAssignmentIds = new Set<string>();
+
     for (const tx of completedTx || []) {
       const meta = tx.metadata as Record<string, unknown> | null;
       const profileId = tx.profile_id as string;
+
+      // Track assignment ID for manual one-time chores
+      if (tx.chore_assignment_id) {
+        completedAssignmentIds.add(tx.chore_assignment_id as string);
+      }
+
       if (meta?.rotation_chore && meta?.rotation_date) {
         completedSet.add(`${profileId}:rotation:${meta.rotation_chore}:${meta.rotation_date}`);
       }
@@ -176,6 +192,7 @@ export class GridService {
         completedSet.add(`${profileId}:recurring:${meta.recurring_template_id}:${meta.recurring_date}`);
       }
     }
+    console.log(`📊 Weekly Grid: Found ${completedTx?.length || 0} completion transactions, ${completedSet.size} in set`);
 
     // === 1. ROTATION CHORES ===
     if (rotationConfig) {
@@ -201,7 +218,7 @@ export class GridService {
       }
     }
 
-    // === 2. RECURRING CHORES ===
+    // === 2. RECURRING CHORES (Manual recurring templates) ===
     const { data: recurringTemplates } = await client
       .schema("choretracker")
       .from("chore_templates")
@@ -209,23 +226,32 @@ export class GridService {
       .eq("family_id", familyId)
       .eq("is_recurring", true)
       .eq("is_active", true)
-      .eq("is_deleted", false);
+      .or("is_deleted.is.null,is_deleted.eq.false");
 
     const dayNameToNum: Record<string, number> = {
       sun: 0, mon: 1, tue: 2, wed: 3, thu: 4, fri: 5, sat: 6
     };
 
+    let recurringChoreCount = 0;
     for (const template of recurringTemplates || []) {
       const profileId = template.assigned_to_profile_id as string | null;
       const recurringDays = template.recurring_days as string[] | null;
-      if (!profileId || !recurringDays || !childIds.includes(profileId)) continue;
+      if (!profileId || !recurringDays || !childIds.includes(profileId)) {
+        console.log(`📊 Skipping template ${template.name}: profileId=${profileId}, days=${recurringDays}, inChildren=${childIds.includes(profileId || "")}`);
+        continue;
+      }
 
       for (const dateStr of dates) {
         const dateObj = new Date(dateStr + "T12:00:00");
         const dayNum = dateObj.getDay();
-        const isDueToday = recurringDays.some((dayName: string) => dayNameToNum[dayName] === dayNum);
+        // Handle both lowercase and array of numbers for recurring_days
+        const isDueToday = recurringDays.some((day: string | number) => {
+          if (typeof day === "number") return day === dayNum;
+          return dayNameToNum[day.toLowerCase()] === dayNum;
+        });
         if (isDueToday) {
-          const isCompleted = completedSet.has(`${profileId}:recurring:${template.id}:${dateStr}`);
+          const completionKey = `${profileId}:recurring:${template.id}:${dateStr}`;
+          const isCompleted = completedSet.has(completionKey);
           addChore(profileId, dateStr, {
             id: `recurring_${template.id}_${dateStr}`,
             name: template.name as string,
@@ -233,12 +259,14 @@ export class GridService {
             points: template.points as number,
             status: isCompleted ? "completed" : "pending",
           });
+          recurringChoreCount++;
         }
       }
     }
-    console.log(`📊 Weekly Grid: Added ${recurringTemplates?.length || 0} recurring templates`);
+    console.log(`📊 Weekly Grid: Found ${recurringTemplates?.length || 0} recurring templates, added ${recurringChoreCount} chore instances`);
 
     // === 3. MANUAL ONE-TIME CHORES (from chore_assignments) ===
+    // Query by due_date instead of assigned_date to match kid dashboard behavior
     const { data: assignments, error } = await client
       .schema("choretracker")
       .from("chore_assignments")
@@ -246,13 +274,12 @@ export class GridService {
         id,
         assigned_to_profile_id,
         assigned_date,
+        due_date,
         status,
         point_value,
         chore_template:chore_templates(id, name, icon, is_recurring)
       `)
       .eq("family_id", familyId)
-      .gte("assigned_date", weekStart)
-      .lte("assigned_date", weekEnd)
       .or("is_deleted.is.null,is_deleted.eq.false");
 
     if (error) {
@@ -260,26 +287,46 @@ export class GridService {
     }
 
     // Filter to non-recurring (manual one-time) assignments only
+    let manualChoreCount = 0;
     for (const assignment of assignments || []) {
       const profileId = assignment.assigned_to_profile_id as string | null;
-      const date = assignment.assigned_date as string | null;
       const template = assignment.chore_template as unknown as { id: string; name: string; icon?: string; is_recurring?: boolean } | null;
 
       // Skip recurring templates - they're handled above
       if (template?.is_recurring) continue;
-      if (!profileId || !date) continue;
+      if (!profileId) continue;
+
+      // Use due_date if available, fall back to assigned_date
+      // Extract just the date part (YYYY-MM-DD) from due_date timestamp
+      let date: string | null = null;
+      if (assignment.due_date) {
+        // due_date might be a timestamp like "2026-02-11T23:59:59.999Z"
+        const dueDate = assignment.due_date as string;
+        date = dueDate.split("T")[0];
+      } else if (assignment.assigned_date) {
+        date = assignment.assigned_date as string;
+      }
+
+      if (!date) continue;
+
+      // Check if date is within our week range
+      if (date < weekStart || date > weekEnd) continue;
+
+      // Check completion status from assignment or transaction tracking
+      const isCompleted = assignment.status === "completed" ||
+                          assignment.status === "verified" ||
+                          completedAssignmentIds.has(assignment.id as string);
 
       addChore(profileId, date, {
         id: assignment.id as string,
         name: template?.name || "Unknown Chore",
         icon: template?.icon,
         points: (assignment.point_value as number) || 0,
-        status: assignment.status === "completed" || assignment.status === "verified"
-          ? "completed"
-          : "pending",
+        status: isCompleted ? "completed" : "pending",
       });
+      manualChoreCount++;
     }
-    console.log(`📊 Weekly Grid: Added ${assignments?.length || 0} manual assignments`);
+    console.log(`📊 Weekly Grid: Found ${assignments?.length || 0} assignments, added ${manualChoreCount} manual chores for week ${weekStart} to ${weekEnd}`);
 
     return result;
   }
