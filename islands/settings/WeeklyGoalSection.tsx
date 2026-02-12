@@ -8,16 +8,24 @@ interface WeeklyGoalSectionProps {
   settings: {
     weekly_goal?: number;
     goal_bonus?: number;
+    apps?: {
+      choregami?: {
+        weekly_goal?: number;
+        goal_bonus?: number;
+      };
+    };
   };
   pointsOnlyMode?: boolean;
 }
 
 export default function WeeklyGoalSection({ settings, pointsOnlyMode = false }: WeeklyGoalSectionProps) {
+  // Read from correct nested path: settings.apps.choregami.weekly_goal
+  const choregamiSettings = settings?.apps?.choregami || {};
   const [weeklyGoal, setWeeklyGoal] = useState<string>(
-    settings?.weekly_goal?.toString() || ""
+    choregamiSettings.weekly_goal?.toString() || ""
   );
   const [goalBonus, setGoalBonus] = useState<string>(
-    settings?.goal_bonus?.toString() || "2"
+    choregamiSettings.goal_bonus?.toString() || "2"
   );
   const [isSavingGoal, setIsSavingGoal] = useState(false);
 
