@@ -327,6 +327,12 @@ export default function WeeklyGrid({ gridData, familyName }: Props) {
           margin-bottom: 1.5rem;
         }
 
+        /* Override card max-width for full-width grid on desktop */
+        .weekly-grid-content.card {
+          max-width: none;
+          width: 100%;
+        }
+
         .grid-header {
           display: flex;
           justify-content: space-between;

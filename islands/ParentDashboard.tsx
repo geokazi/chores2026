@@ -7,6 +7,7 @@ import { useState, useEffect } from "preact/hooks";
 import LiveLeaderboard from "./LiveLeaderboard.tsx";
 import LiveActivityFeed from "./LiveActivityFeed.tsx";
 import AddChoreModal from "./AddChoreModal.tsx";
+import AddEventModal from "./AddEventModal.tsx";
 import WebSocketManager from "./WebSocketManager.tsx";
 import WeeklyProgress from "./WeeklyProgress.tsx";
 import { getCurrentTheme, changeTheme, themes, type ThemeId } from "../lib/theme-manager.ts";
@@ -70,7 +71,7 @@ interface Props {
 }
 
 export default function ParentDashboard(
-  { family, members, chores, parentChores: _parentChores, parentProfileId: _parentProfileId, recentActivity, thisWeekActivity, streaks }: Props,
+  { family, members, chores, parentChores: _parentChores, parentProfileId, recentActivity, thisWeekActivity, streaks }: Props,
 ) {
   const [showPointAdjustment, setShowPointAdjustment] = useState(false);
   const [selectedMember, setSelectedMember] = useState<FamilyMember | null>(
@@ -79,6 +80,7 @@ export default function ParentDashboard(
   const [adjustmentAmount, setAdjustmentAmount] = useState("");
   const [adjustmentReason, setAdjustmentReason] = useState("");
   const [showAddChore, setShowAddChore] = useState(false);
+  const [showAddEventModal, setShowAddEventModal] = useState(false);
   const [selectedTheme, setSelectedTheme] = useState<ThemeId>(() => getCurrentTheme());
   
   // 🎮 Real-time family leaderboard updates via WebSocketManager
@@ -291,34 +293,40 @@ export default function ParentDashboard(
         marginBottom: "1.5rem",
         alignItems: "center"
       }}>
-        <button
-          onClick={() => setShowAddChore(true)}
-          class="btn btn-primary"
-          style={{ fontSize: "0.8rem", padding: "0.5rem 1rem" }}
-        >
-          ➕ Add Chore
-        </button>
-        <a
-          href="/reports"
-          class="btn btn-secondary"
-          style={{ fontSize: "0.8rem", padding: "0.5rem 1rem", textDecoration: "none" }}
-        >
-          📊 Reports
-        </a>
-        <a
-          href="/parent/insights"
-          class="btn btn-secondary"
-          style={{ fontSize: "0.8rem", padding: "0.5rem 1rem", textDecoration: "none" }}
-        >
-          🧠 Insights
-        </a>
-        <a
-          href="/parent/grid/weekly"
-          class="btn btn-secondary"
-          style={{ fontSize: "0.8rem", padding: "0.5rem 1rem", textDecoration: "none" }}
-        >
-          📅 Weekly Grid
-        </a>
+        {/* Row 1: Add Chore, Add Event */}
+        <div style={{ display: "flex", gap: "0.5rem", width: "100%", marginBottom: "0.5rem" }}>
+          <button
+            onClick={() => setShowAddChore(true)}
+            class="btn btn-primary"
+            style={{ fontSize: "0.8rem", padding: "0.5rem 1rem", flex: 1 }}
+          >
+            ✨ Add Chore
+          </button>
+          <button
+            onClick={() => setShowAddEventModal(true)}
+            class="btn btn-primary"
+            style={{ fontSize: "0.8rem", padding: "0.5rem 1rem", flex: 1 }}
+          >
+            📅 Add Event
+          </button>
+        </div>
+        {/* Row 2: Reports, Weekly Grid */}
+        <div style={{ display: "flex", gap: "0.5rem", width: "100%" }}>
+          <a
+            href="/reports"
+            class="btn btn-secondary"
+            style={{ fontSize: "0.8rem", padding: "0.5rem 1rem", textDecoration: "none", flex: 1, textAlign: "center" }}
+          >
+            📊 Reports
+          </a>
+          <a
+            href="/parent/grid/weekly"
+            class="btn btn-secondary"
+            style={{ fontSize: "0.8rem", padding: "0.5rem 1rem", textDecoration: "none", flex: 1, textAlign: "center" }}
+          >
+            📅 Weekly Grid
+          </a>
+        </div>
       </div>
 
       {/* Theme Selector */}
@@ -637,6 +645,18 @@ export default function ParentDashboard(
         onSuccess={() => {
           console.log("✅ Chore created successfully");
         }}
+      />
+
+      {/* Add Event Modal */}
+      <AddEventModal
+        isOpen={showAddEventModal}
+        onClose={() => setShowAddEventModal(false)}
+        familyMembers={members}
+        onSuccess={() => {
+          setShowAddEventModal(false);
+          console.log("✅ Event created successfully");
+        }}
+        creatorId={parentProfileId}
       />
       </div>
     </WebSocketManager>

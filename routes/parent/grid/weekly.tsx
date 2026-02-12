@@ -107,9 +107,34 @@ export default function WeeklyGridPage({ data }: PageProps<WeeklyGridPageData>) 
   `;
 
   return (
-    <div class="container">
+    <div class="grid-page-container">
       <script dangerouslySetInnerHTML={{ __html: timezoneScript }} />
       <link rel="stylesheet" href="/grid-print.css" />
+      <style dangerouslySetInnerHTML={{ __html: `
+        .grid-page-container {
+          min-height: 100vh;
+          background: linear-gradient(145deg, #f0fdf4 0%, #fff 50%, #ecfdf5 100%);
+        }
+        .grid-content {
+          padding: 0 1.5rem 2rem;
+          max-width: 1400px;
+          margin: 0 auto;
+        }
+        @media (min-width: 1024px) {
+          .grid-content {
+            padding: 0 2rem 2rem;
+          }
+        }
+        @media print {
+          .grid-page-container {
+            background: white;
+          }
+          .grid-content {
+            padding: 0;
+            max-width: none;
+          }
+        }
+      ` }} />
 
       <AppHeader
         currentPage="grid"
@@ -120,7 +145,7 @@ export default function WeeklyGridPage({ data }: PageProps<WeeklyGridPageData>) 
         planBadge={planBadge}
       />
 
-      <div style={{ padding: "0 1rem" }}>
+      <div class="grid-content">
         {!hasAccess ? (
           <div class="card" style={{ textAlign: "center", padding: "2rem" }}>
             <h2 style={{ fontSize: "1.5rem", marginBottom: "1rem" }}>

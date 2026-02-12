@@ -282,7 +282,9 @@ export default function AddEventModal({ isOpen, onClose, familyMembers, onSucces
                 <option value="🏊">🏊</option>
                 <option value="🎹">🎹</option>
                 <option value="🎨">🎨</option>
+                <option value="💃">💃</option>
                 <option value="📚">📚</option>
+                <option value="🩺">🩺</option>
                 <option value="🏥">🏥</option>
                 <option value="💼">💼</option>
                 <option value="🛒">🛒</option>

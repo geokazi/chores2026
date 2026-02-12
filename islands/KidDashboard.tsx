@@ -491,7 +491,7 @@ export default function KidDashboard({
                   cursor: "pointer",
                 }}
               >
-                + Plan Something
+                + Add Event
               </button>
             )}
           </div>

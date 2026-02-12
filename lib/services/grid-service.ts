@@ -62,12 +62,37 @@ export class GridService {
 
   /**
    * Get weekly grid data for a family
-   * Composes data from existing services + chore assignments
+   *
+   * In Manual Mode (no rotation): Uses InsightsService data to match dashboard exactly
+   * In Rotation Mode: Uses complex chore assignment logic
    */
   async getWeeklyGrid(
     familyId: string,
     timezone: string = "America/Los_Angeles"
   ): Promise<WeeklyGridData> {
+    // Check if rotation is active
+    const { createClient } = await import("@supabase/supabase-js");
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const client = createClient(supabaseUrl, supabaseServiceKey);
+
+    const { data: family } = await client
+      .from("families")
+      .select("settings")
+      .eq("id", familyId)
+      .single();
+
+    const rotationConfig = getRotationConfig(family?.settings || {});
+    const isManualMode = !rotationConfig;
+
+    console.log(`📊 Grid: Mode check - ${isManualMode ? "Manual Mode" : "Rotation Mode"}`);
+
+    if (isManualMode) {
+      // MANUAL MODE: Use InsightsService to match dashboard exactly
+      return await this.getWeeklyGridManualMode(familyId, timezone, client);
+    }
+
+    // ROTATION MODE: Use complex assignment logic
     // Get balance data (includes daily earnings for rolling 7 days)
     const balances = await this.balanceService.getFamilyBalances(familyId, timezone);
 
@@ -77,7 +102,7 @@ export class GridService {
     const weekEnd = weekDates[weekDates.length - 1]?.date || weekStart;
 
     // Fetch chore assignments for the week (single query for all kids)
-    const assignments = await this.getWeekAssignments(familyId, weekStart, weekEnd);
+    const assignments = await this.getWeekAssignments(familyId, weekStart, weekEnd, timezone);
 
     // Transform balance data into grid format with streak and chores
     const kids = await Promise.all(
@@ -85,6 +110,144 @@ export class GridService {
         await this.transformToGridKid(balance, familyId, timezone, assignments)
       )
     );
+
+    return {
+      weekLabel: this.formatWeekLabel(weekStart, weekEnd),
+      weekStart,
+      weekEnd,
+      kids,
+      generatedAt: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Manual Mode: Use same data source as Family Dashboard
+   * Gets daily activity from InsightsService and chore details from transactions
+   */
+  private async getWeeklyGridManualMode(
+    familyId: string,
+    timezone: string,
+    client: any
+  ): Promise<WeeklyGridData> {
+    // Get family settings and child profiles
+    const { data: familyData } = await client
+      .from("families")
+      .select("settings")
+      .eq("id", familyId)
+      .single();
+
+    const { data: childProfiles } = await client
+      .from("family_profiles")
+      .select("id, name")
+      .eq("family_id", familyId)
+      .eq("role", "child")
+      .or("is_deleted.is.null,is_deleted.eq.false");
+
+    const profiles = (childProfiles || []).map((p: any) => ({ id: p.id, name: p.name }));
+
+    // Use InsightsService - same as dashboard
+    const insights = await this.insightsService.getInsights(
+      familyId,
+      familyData?.settings,
+      profiles,
+      timezone
+    );
+
+    // Get week dates from insights
+    const firstActivity = insights.thisWeekActivity[0];
+    const weekDates = firstActivity?.days || [];
+    const weekStart = weekDates[0]?.date || this.getDefaultWeekStart(timezone);
+    const weekEnd = weekDates[weekDates.length - 1]?.date || weekStart;
+
+    // Get streaks for each kid
+    const streakMap = new Map<string, number>();
+    for (const streak of insights.streaks) {
+      streakMap.set(streak.profileId, streak.currentStreak);
+    }
+
+    // Query actual chore completions with names for the week
+    // Fetch transactions with chore names via description field
+    const txStartDate = new Date(weekStart + "T00:00:00");
+    txStartDate.setDate(txStartDate.getDate() - 1);
+    const txEndDate = new Date(weekEnd + "T23:59:59");
+    txEndDate.setDate(txEndDate.getDate() + 1);
+
+    const { data: transactions } = await client
+      .schema("choretracker")
+      .from("chore_transactions")
+      .select("profile_id, points_change, description, created_at")
+      .eq("family_id", familyId)
+      .eq("transaction_type", "chore_completed")
+      .gt("points_change", 0)
+      .gte("created_at", txStartDate.toISOString())
+      .lte("created_at", txEndDate.toISOString());
+
+    // Build map: profileId -> date -> array of {name, points}
+    const choresByProfileDate = new Map<string, Map<string, Array<{ name: string; points: number }>>>();
+
+    for (const tx of transactions || []) {
+      const profileId = tx.profile_id as string;
+      const txDate = getLocalDate(tx.created_at as string, timezone);
+
+      // Skip if outside week range
+      if (txDate < weekStart || txDate > weekEnd) continue;
+
+      if (!choresByProfileDate.has(profileId)) {
+        choresByProfileDate.set(profileId, new Map());
+      }
+      const profileMap = choresByProfileDate.get(profileId)!;
+      if (!profileMap.has(txDate)) {
+        profileMap.set(txDate, []);
+      }
+
+      // Extract chore name from description (formats: "Completed: X", "Chore completed: X")
+      // Also strip points suffix like "(+1 pts)" since points are shown separately
+      let choreName = tx.description as string || "Chore";
+      if (choreName.startsWith("Chore completed: ")) {
+        choreName = choreName.substring(17);
+      } else if (choreName.startsWith("Completed: ")) {
+        choreName = choreName.substring(11);
+      }
+      // Remove points suffix like "(+1 pts)" or "(+2 pts)"
+      choreName = choreName.replace(/\s*\(\+\d+\s*pts?\)\s*$/, "").trim();
+
+      profileMap.get(txDate)!.push({
+        name: choreName,
+        points: tx.points_change as number,
+      });
+    }
+
+    // Transform insights to grid format with actual chore names
+    const kids: GridKid[] = insights.thisWeekActivity.map((activity) => ({
+      id: activity.profileId,
+      name: activity.name,
+      avatar: "",
+      days: activity.days.map((day) => {
+        const dayChores = choresByProfileDate.get(activity.profileId)?.get(day.date) || [];
+
+        return {
+          date: day.date,
+          dayName: day.dayName,
+          points: day.points,
+          totalPoints: day.points,
+          complete: day.points > 0,
+          chores: dayChores.map((chore, idx) => ({
+            id: `chore_${activity.profileId}_${day.date}_${idx}`,
+            name: chore.name,
+            points: chore.points,
+            status: "completed" as const,
+          })),
+        };
+      }),
+      weeklyTotal: activity.totalPoints,
+      weeklyPossible: activity.totalPoints,
+      streak: streakMap.get(activity.profileId) || 0,
+    }));
+
+    // Sort kids by total points (highest first)
+    kids.sort((a, b) => b.weeklyTotal - a.weeklyTotal);
+
+    console.log(`📊 Weekly Grid (Manual Mode): ${kids.length} kids, week ${weekStart} to ${weekEnd}`);
 
     return {
       weekLabel: this.formatWeekLabel(weekStart, weekEnd),
@@ -104,7 +267,8 @@ export class GridService {
   private async getWeekAssignments(
     familyId: string,
     weekStart: string,
-    weekEnd: string
+    weekEnd: string,
+    timezone: string
   ): Promise<Map<string, Map<string, GridChore[]>>> {
     const { createClient } = await import("@supabase/supabase-js");
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -182,17 +346,22 @@ export class GridService {
 
     // Build completion lookup sets using metadata dates (timezone-safe)
     // Key format: "profileId:rotation:choreKey:date" or "profileId:recurring:templateId:date"
-    // Also track completed assignment IDs for manual chores
+    // Also track completed assignment IDs for manual chores with their completion dates
     const completedSet = new Set<string>();
     const completedAssignmentIds = new Set<string>();
+    // Map assignment_id -> { profileId, completionDate (local) } for showing completed chores by date
+    const assignmentCompletions = new Map<string, { profileId: string; completionDate: string }>();
 
     for (const tx of completedTx || []) {
       const meta = tx.metadata as Record<string, unknown> | null;
       const profileId = tx.profile_id as string;
+      // Convert transaction created_at to local date
+      const completionDate = getLocalDate(tx.created_at as string, timezone);
 
-      // Track assignment ID for manual one-time chores
+      // Track assignment ID for manual one-time chores with their completion date
       if (tx.chore_assignment_id) {
         completedAssignmentIds.add(tx.chore_assignment_id as string);
+        assignmentCompletions.set(tx.chore_assignment_id as string, { profileId, completionDate });
       }
 
       if (meta?.rotation_chore && meta?.rotation_date) {
@@ -202,7 +371,7 @@ export class GridService {
         completedSet.add(`${profileId}:recurring:${meta.recurring_template_id}:${meta.recurring_date}`);
       }
     }
-    console.log(`📊 Weekly Grid: Found ${completedTx?.length || 0} completion transactions, ${completedSet.size} in set`);
+    console.log(`📊 Weekly Grid: Found ${completedTx?.length || 0} completion transactions, ${completedSet.size} in set, ${assignmentCompletions.size} assignment completions`);
 
     // === 1. ROTATION CHORES ===
     if (rotationConfig) {
@@ -305,8 +474,78 @@ export class GridService {
     }
 
     // Filter to non-recurring (manual one-time) assignments only
+    // Two passes:
+    // 1. Add COMPLETED chores by their COMPLETION date (when they were actually done)
+    // 2. Add PENDING chores by their DUE date (when they're scheduled)
     let manualChoreCount = 0;
+    let completedByTxDate = 0;
+    let pendingByDueDate = 0;
+    const addedAssignmentIds = new Set<string>();
+
+    // Build a map of assignment_id -> assignment for quick lookup
+    const assignmentMap = new Map<string, typeof assignments[0]>();
+    let skippedRecurringInMap = 0;
+    let skippedNoProfileInMap = 0;
     for (const assignment of assignments || []) {
+      const template = assignment.chore_template as unknown as { id: string; name: string; icon?: string; is_recurring?: boolean } | null;
+      // Only include non-recurring assignments
+      if (template?.is_recurring) {
+        skippedRecurringInMap++;
+        continue;
+      }
+      if (!assignment.assigned_to_profile_id) {
+        skippedNoProfileInMap++;
+        continue;
+      }
+      assignmentMap.set(assignment.id as string, assignment);
+    }
+    console.log(`📊 Weekly Grid: Assignment map has ${assignmentMap.size} entries (skipped ${skippedRecurringInMap} recurring, ${skippedNoProfileInMap} no profile)`);
+
+    // Pass 1: Add completed chores by completion date (from transactions)
+    let skippedOutOfWeek = 0;
+    let skippedNotInMap = 0;
+    for (const [assignmentId, completion] of assignmentCompletions) {
+      const { profileId, completionDate } = completion;
+
+      // Check if completion is within week range
+      if (completionDate < weekStart || completionDate > weekEnd) {
+        skippedOutOfWeek++;
+        continue;
+      }
+
+      // Get assignment details
+      const assignment = assignmentMap.get(assignmentId);
+      if (!assignment) {
+        skippedNotInMap++;
+        // Log which assignment IDs are missing (first few only)
+        if (skippedNotInMap <= 3) {
+          console.log(`📊 Weekly Grid: Missing assignment ${assignmentId} (completed on ${completionDate})`);
+        }
+        continue; // Assignment may be deleted or recurring
+      }
+
+      const template = assignment.chore_template as unknown as { id: string; name: string; icon?: string } | null;
+
+      addChore(profileId, completionDate, {
+        id: assignmentId,
+        name: template?.name || "Unknown Chore",
+        icon: template?.icon,
+        points: (assignment.point_value as number) || 0,
+        status: "completed",
+      });
+      addedAssignmentIds.add(assignmentId);
+      manualChoreCount++;
+      completedByTxDate++;
+    }
+    console.log(`📊 Weekly Grid: Pass 1 completions: ${completedByTxDate} added, ${skippedOutOfWeek} out of week, ${skippedNotInMap} not in assignment map`);
+
+    // Pass 2: Add pending chores by due date (scheduled but not yet done)
+    for (const assignment of assignments || []) {
+      const assignmentId = assignment.id as string;
+
+      // Skip if already added as completed
+      if (addedAssignmentIds.has(assignmentId)) continue;
+
       const profileId = assignment.assigned_to_profile_id as string | null;
       const template = assignment.chore_template as unknown as { id: string; name: string; icon?: string; is_recurring?: boolean } | null;
 
@@ -314,11 +553,12 @@ export class GridService {
       if (template?.is_recurring) continue;
       if (!profileId) continue;
 
+      // Skip completed assignments (they should have been in pass 1, or completed outside this week)
+      if (assignment.status === "completed" || assignment.status === "verified") continue;
+
       // Use due_date if available, fall back to assigned_date
-      // Extract just the date part (YYYY-MM-DD) from due_date timestamp
       let date: string | null = null;
       if (assignment.due_date) {
-        // due_date might be a timestamp like "2026-02-11T23:59:59.999Z"
         const dueDate = assignment.due_date as string;
         date = dueDate.split("T")[0];
       } else if (assignment.assigned_date) {
@@ -330,21 +570,18 @@ export class GridService {
       // Check if date is within our week range
       if (date < weekStart || date > weekEnd) continue;
 
-      // Check completion status from assignment or transaction tracking
-      const isCompleted = assignment.status === "completed" ||
-                          assignment.status === "verified" ||
-                          completedAssignmentIds.has(assignment.id as string);
-
       addChore(profileId, date, {
-        id: assignment.id as string,
+        id: assignmentId,
         name: template?.name || "Unknown Chore",
         icon: template?.icon,
         points: (assignment.point_value as number) || 0,
-        status: isCompleted ? "completed" : "pending",
+        status: "pending",
       });
+      addedAssignmentIds.add(assignmentId);
       manualChoreCount++;
+      pendingByDueDate++;
     }
-    console.log(`📊 Weekly Grid: Found ${assignments?.length || 0} assignments, added ${manualChoreCount} manual chores for week ${weekStart} to ${weekEnd}`);
+    console.log(`📊 Weekly Grid: Added ${manualChoreCount} manual chores (${completedByTxDate} by completion date, ${pendingByDueDate} pending by due date)`);
 
     return result;
   }
