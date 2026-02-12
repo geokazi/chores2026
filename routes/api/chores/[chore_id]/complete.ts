@@ -24,7 +24,10 @@ export const handler: Handlers = {
 
     try {
       const body = await req.json();
-      const { kid_id, profile_id } = body;
+      const { kid_id, profile_id, timezone } = body;
+
+      // Use timezone from request body (sent by browser) or default
+      const tz = timezone || "America/Los_Angeles";
 
       // Accept either kid_id (for kid chore completion) or profile_id (for parent chore completion)
       const userId = kid_id || profile_id;
@@ -150,9 +153,10 @@ export const handler: Handlers = {
       }
 
       // Check if family goal was reached (non-blocking)
+      // Pass timezone so week boundaries match the display in getFamilyGoalStatus
       let goalResult = null;
       try {
-        goalResult = await choreService.checkFamilyGoal(user.family_id);
+        goalResult = await choreService.checkFamilyGoal(user.family_id, tz);
       } catch (error) {
         console.warn("Failed to check family goal:", error);
       }

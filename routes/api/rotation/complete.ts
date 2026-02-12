@@ -13,11 +13,13 @@ import { getRotationConfig, getChoresForChild } from "../../../lib/services/rota
 import { getPresetByKey } from "../../../lib/data/rotation-presets.ts";
 import { TransactionService } from "../../../lib/services/transaction-service.ts";
 import { getActivityService } from "../../../lib/services/activity-service.ts";
+import { ChoreService } from "../../../lib/services/chore-service.ts";
 
 interface CompleteRequest {
   chore_key: string;
   date: string; // YYYY-MM-DD for idempotency
   kid_id?: string; // Profile ID of the kid completing the chore
+  timezone?: string; // IANA timezone for goal calculation
 }
 
 export const handler: Handlers = {
@@ -30,7 +32,8 @@ export const handler: Handlers = {
 
       const familyId = session.family.id;
       const body: CompleteRequest = await req.json();
-      const { chore_key, date, kid_id } = body;
+      const { chore_key, date, kid_id, timezone } = body;
+      const tz = timezone || "America/Los_Angeles";
 
       // Use kid_id from body (kid dashboard) or fall back to session profile (parent)
       const profileId = kid_id || session.user?.profileId;
@@ -162,6 +165,15 @@ export const handler: Handlers = {
         date,
       });
 
+      // Check if family goal was reached (non-blocking)
+      let goalResult = null;
+      try {
+        const choreService = new ChoreService();
+        goalResult = await choreService.checkFamilyGoal(familyId, tz);
+      } catch (error) {
+        console.warn("Failed to check family goal:", error);
+      }
+
       return Response.json({
         success: true,
         chore: {
@@ -171,6 +183,8 @@ export const handler: Handlers = {
         },
         points_earned: chore.points,
         date,
+        goal_achieved: goalResult?.achieved || false,
+        goal_bonus: goalResult?.bonus,
       });
     } catch (err) {
       console.error('Rotation complete error:', err);

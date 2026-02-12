@@ -1053,8 +1053,9 @@ export class ChoreService {
   /**
    * Check if family weekly goal is reached and award bonus
    * Called after each chore completion
+   * @param timezone - IANA timezone (e.g. "America/Los_Angeles") for local week boundary
    */
-  async checkFamilyGoal(familyId: string): Promise<{
+  async checkFamilyGoal(familyId: string, timezone: string = "America/Los_Angeles"): Promise<{
     achieved: boolean;
     bonus?: number;
     progress?: number;
@@ -1082,20 +1083,26 @@ export class ChoreService {
       return { achieved: false };
     }
 
-    // Get week start (Sunday) - use UTC consistently to avoid server timezone issues
+    // Calculate week start (Sunday) in user's timezone - same logic as getFamilyGoalStatus
     const now = new Date();
-    const dayOfWeek = now.getUTCDay();
-    const weekStartDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - dayOfWeek));
-    const weekStartUtc = weekStartDate.toISOString();
+    const todayLocal = getLocalDate(now.toISOString(), timezone);
+    const [yearStr, monthStr, dayStr] = todayLocal.split("-");
+    const year = parseInt(yearStr, 10);
+    const month = parseInt(monthStr, 10);
+    const day = parseInt(dayStr, 10);
 
-    // Get week earnings from transactions
+    const todayDate = new Date(year, month - 1, day);
+    const dayOfWeek = todayDate.getDay(); // 0=Sun in local context
+    const weekStartLocal = new Date(year, month - 1, day - dayOfWeek);
+    const weekStartStr = `${weekStartLocal.getFullYear()}-${String(weekStartLocal.getMonth() + 1).padStart(2, "0")}-${String(weekStartLocal.getDate()).padStart(2, "0")}`;
+
+    // Get all positive transactions and filter by local date (consistent with getFamilyGoalStatus)
     const { data: txns, error: txError } = await this.client
       .schema("choretracker")
       .from("chore_transactions")
-      .select("points_change")
+      .select("points_change, created_at")
       .eq("family_id", familyId)
       .eq("transaction_type", "chore_completed")
-      .gte("created_at", weekStartUtc)
       .gt("points_change", 0);
 
     if (txError) {
@@ -1103,27 +1110,35 @@ export class ChoreService {
       return { achieved: false };
     }
 
+    // Filter by local week start
+    const weekTxns = (txns || []).filter((t: any) =>
+      getLocalDate(t.created_at, timezone) >= weekStartStr
+    );
+
     const pointsPerDollar = settings.points_per_dollar || 1;
-    const earnedPoints = txns?.reduce((sum: number, t: any) => sum + t.points_change, 0) || 0;
+    const earnedPoints = weekTxns.reduce((sum: number, t: any) => sum + t.points_change, 0);
     const earnedDollars = Math.round(earnedPoints / pointsPerDollar);
 
-    // Check if already awarded this week
-    const { data: awarded, error: awardError } = await this.client
+    // Check if already awarded this week (using local date filter)
+    const { data: bonusTxns, error: awardError } = await this.client
       .schema("choretracker")
       .from("chore_transactions")
-      .select("id")
+      .select("id, created_at")
       .eq("family_id", familyId)
       .eq("transaction_type", "bonus_awarded")
-      .gte("created_at", weekStartUtc)
-      .ilike("description", "%weekly_goal%")
-      .limit(1);
+      .ilike("description", "%weekly_goal%");
 
     if (awardError) {
       console.error("Error checking for existing award:", awardError);
     }
 
+    // Filter bonus transactions by local week
+    const weekBonuses = (bonusTxns || []).filter((t: any) =>
+      getLocalDate(t.created_at, timezone) >= weekStartStr
+    );
+
     // Already awarded this week
-    if (awarded && awarded.length > 0) {
+    if (weekBonuses.length > 0) {
       return {
         achieved: true,
         bonus,

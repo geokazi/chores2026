@@ -244,12 +244,15 @@ export default function SecureParentDashboard(
     setCompletingChoreId(choreId);
 
     try {
+      // Get browser timezone for consistent week boundary calculation
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       const response = await fetch(`/api/chores/${choreId}/complete`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           profile_id: activeParent.id,
           family_id: family.id,
+          timezone,
         }),
       });
 
@@ -320,12 +323,15 @@ export default function SecureParentDashboard(
     setCompletingChoreId(choreId);
 
     try {
+      // Get browser timezone for consistent week boundary calculation
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       const response = await fetch(`/api/chores/${choreId}/complete`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           profile_id: activeParent.id,
           family_id: family.id,
+          timezone,
         }),
       });
 

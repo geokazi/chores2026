@@ -45,6 +45,8 @@ export default function ChoreList({ chores, onChoreComplete, kidId, showPoints =
 
     try {
       let response: Response;
+      // Get browser timezone for consistent week boundary calculation
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
       if (chore.source === "rotation" && chore.rotation_key && chore.rotation_date) {
         // Rotation chore - use rotation complete endpoint
@@ -57,6 +59,7 @@ export default function ChoreList({ chores, onChoreComplete, kidId, showPoints =
             chore_key: chore.rotation_key,
             date: chore.rotation_date,
             kid_id: kidId,
+            timezone,
           }),
         });
       } else if (chore.source === "recurring" && chore.recurring_template_id && chore.recurring_date) {
@@ -70,6 +73,7 @@ export default function ChoreList({ chores, onChoreComplete, kidId, showPoints =
             template_id: chore.recurring_template_id,
             date: chore.recurring_date,
             kid_id: kidId,
+            timezone,
           }),
         });
       } else {
@@ -79,7 +83,7 @@ export default function ChoreList({ chores, onChoreComplete, kidId, showPoints =
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ kid_id: kidId }),
+          body: JSON.stringify({ kid_id: kidId, timezone }),
         });
       }
 

@@ -31,6 +31,8 @@ export default function EventMissionGroup({ event, chores, kidId, onChoreComplet
 
     try {
       let response: Response;
+      // Get browser timezone for consistent week boundary calculation
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
       if (chore.source === "rotation" && chore.rotation_key && chore.rotation_date) {
         response = await fetch("/api/rotation/complete", {
@@ -40,13 +42,14 @@ export default function EventMissionGroup({ event, chores, kidId, onChoreComplet
             chore_key: chore.rotation_key,
             date: chore.rotation_date,
             kid_id: kidId,
+            timezone,
           }),
         });
       } else {
         response = await fetch(`/api/chores/${chore.id}/complete`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ kid_id: kidId }),
+          body: JSON.stringify({ kid_id: kidId, timezone }),
         });
       }
 

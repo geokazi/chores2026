@@ -56,11 +56,13 @@ export default function ChoreDetail({ kid, family, chore }: Props) {
   const handleComplete = async () => {
     setIsCompleting(true);
     try {
+      // Get browser timezone for consistent week boundary calculation
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       const response = await fetch(`/api/chores/${chore.id}/complete`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ kid_id: kid.id }),
+        body: JSON.stringify({ kid_id: kid.id, timezone }),
       });
 
       if (response.ok) {
